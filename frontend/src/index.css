@@ -1,0 +1,13 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    height: 100svh;
+    width: 100svw;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
