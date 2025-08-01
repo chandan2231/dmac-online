@@ -85,7 +85,12 @@ const Login = () => {
           error={!!errors.password}
           helperText={errors.password?.message}
         />
-        <MorenButton type="submit" variant="contained" disabled={loading}>
+        <MorenButton
+          showGlanceEffect
+          type="submit"
+          variant="contained"
+          disabled={loading}
+        >
           Login
         </MorenButton>
       </Box>

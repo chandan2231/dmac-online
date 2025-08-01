@@ -3,6 +3,8 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../store';
 import { useDispatch } from 'react-redux';
 import { closeLogoutModal, openLogoutModal } from './logout.slice';
+import { logout } from '../../auth.slice';
+import { purgeLocalStorage } from '../../../../utils/functions';
 import LogoutIcon from '@mui/icons-material/Logout';
 import GenericModal from '../../../../components/modal';
 
@@ -12,6 +14,8 @@ export default function LogoutFeature() {
 
   const handleLogout = () => {
     console.log('User logged out');
+    dispatch(logout());
+    purgeLocalStorage();
     dispatch(closeLogoutModal());
   };
 
@@ -38,11 +42,10 @@ export default function LogoutFeature() {
       <GenericModal
         isOpen={isLogoutModalOpen}
         onClose={() => handleCloseModal()}
+        onSubmit={() => handleLogout()}
         title="Confirm Logout"
-        hideSubmitButton
         cancelButtonText="No"
         submitButtonText="Yes"
-        onSubmit={handleLogout}
       >
         Are you sure you want to logout?
       </GenericModal>
