@@ -26,7 +26,7 @@ const AuthLayout = () => {
       component="main"
       sx={{
         ...styles.main,
-        backgroundColor: theme => theme.palette.background.paper,
+        background: theme => theme.customBackgrounds.authLayout,
       }}
     >
       <Box
