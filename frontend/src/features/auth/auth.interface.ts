@@ -26,6 +26,8 @@ export const ROUTES = {
 
   // Protected routes
   DASHBOARD: '/dashboard',
+  RESET_PASSWORD: '/reset-password/:token',
+  VERIFY_EMAIL: '/verify-email/:token',
 
   // Not Found
   NOT_FOUND: '*',

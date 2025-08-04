@@ -9,6 +9,8 @@ import PageNotFound from '../../pages/not-found';
 
 // Protected Pages
 import DashboardPage from '../../pages/dashboard';
+import ResetPassword from '../../pages/reset-password';
+import VerifyEmail from '../../pages/verify-email';
 
 // Layouts
 import MainLayout from '../../layouts/MainLayout';
@@ -30,6 +32,8 @@ export const COMPONENT_MAP = {
   // These are the components that will be dynamically rendered based on the backend configuration
   // and can be accessed only after authentication
   DashboardPage,
+  ResetPassword,
+  VerifyEmail,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -86,5 +90,23 @@ export const DEV_MODE_ROUTES: IUserRoute[] = [
     sideBarTitle: 'Not Found',
     sideBarIcon: 'ErrorIcon',
     isAChildOf: ROUTES.HOME,
+  },
+  {
+    path: ROUTES.RESET_PASSWORD,
+    layout: 'AuthLayout',
+    component: 'ResetPassword',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.VERIFY_EMAIL,
+    layout: 'AuthLayout',
+    component: 'VerifyEmail',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
   },
 ];
