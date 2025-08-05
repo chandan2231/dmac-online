@@ -7,16 +7,16 @@ const lightTheme = createTheme({
     background: { default: '#1976d2' },
   },
   customBackgrounds: {
-    authLayout: 'linear-gradient(to right, #004754, #bebd00)', // Light theme auth background
+    authLayout: 'linear-gradient(to right, #ffffff, #ffffff)', // Light theme auth background
   },
   morenButton: {
     height: '36px',
     borderRadius: '999px',
   },
   colors: {
-    inputBorder: '#ccc',
-    focusBorder: '#0072F5',
-    loader: '#ffffff',
+    inputBorder: '#1976d2',
+    focusBorder: '#1976d2',
+    loader: '#1976d2',
   },
 });
 
@@ -27,16 +27,16 @@ const darkTheme = createTheme({
     background: { default: '#1976d2' },
   },
   customBackgrounds: {
-    authLayout: 'linear-gradient(to right, #004754, #bebd00)', // Light theme auth background
+    authLayout: 'linear-gradient(to right, #000000, #000000)', // Light theme auth background
   },
   morenButton: {
     height: '36px',
     borderRadius: '999px',
   },
   colors: {
-    inputBorder: '#ccc',
-    focusBorder: '#0072F5',
-    loader: '#ffffff',
+    inputBorder: '#1976d2',
+    focusBorder: '#1976d2',
+    loader: '#1976d2',
   },
 });
 

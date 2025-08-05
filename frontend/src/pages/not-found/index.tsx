@@ -25,7 +25,13 @@ const PageNotFound = () => {
         component="img"
         src={PageNotFoundImage}
         alt="404 Not Found"
-        sx={{ maxWidth: 400, width: '100%', mb: 4 }}
+        sx={{
+          maxWidth: 400,
+          width: '100%',
+          mb: 4,
+          backgroundColor: 'transparent',
+        }}
+        loading="lazy"
       />
 
       {/* Message */}
