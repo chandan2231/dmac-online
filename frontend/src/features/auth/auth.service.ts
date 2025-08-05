@@ -82,7 +82,7 @@ const registerUser = async (
       message: 'Registration failed: Invalid response data',
     };
   } catch (error: unknown) {
-    store.dispatch(loginFailure()); // or registerFailure
+    store.dispatch(setLoadingFalse()); // or registerFailure
 
     const message =
       get(error, 'response.data.message') ||
@@ -186,7 +186,7 @@ const resetPassword = async (payload: {
   password: string;
   token: string;
 }): Promise<{ success: boolean; message: string }> => {
-  store.dispatch(setLoadingFalse()); // Optional: create a separate resetPasswordStart
+  store.dispatch(loginStart()); // Optional: create a separate resetPasswordStart
 
   try {
     const response = await HttpService.post<{ message: string }>(
@@ -199,6 +199,8 @@ const resetPassword = async (payload: {
       message: response.data.message || 'Password reset successful',
     };
   } catch (error: unknown) {
+    store.dispatch(loginFailure()); // Optional: use resetPasswordFailure
+
     const message =
       get(error, 'response.data.message') ||
       'An unexpected error occurred during password reset';

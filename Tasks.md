@@ -20,5 +20,5 @@
 ## ✅ Other Routes changes
 
 - Fix forget-password Route
-- Add Reset password Route
+- ✅ Add Reset password Route
 - Add Verify Email Route
