@@ -12,6 +12,9 @@ import ModernInput from '../../../../components/input/index.tsx';
 import MorenButton from '../../../../components/button/index.tsx';
 import AuthService from '../../auth.service.ts';
 import CustomLoader from '../../../../components/loader/index.tsx';
+import ModernSelect from '../../../../components/select/index.tsx';
+
+type Option = { label: string; value: string };
 
 type FormValues = {
   name: string;
@@ -19,7 +22,16 @@ type FormValues = {
   password: string;
   confirmPassword: string;
   mobile: string;
+  area: string;
+  zipCode: string;
+  language: Option;
+  country: Option;
 };
+
+const optionShape = Yup.object({
+  label: Yup.string().required(),
+  value: Yup.string().required('This field is required'),
+});
 
 const schema = Yup.object({
   name: Yup.string().required('Name is required'),
@@ -33,28 +45,50 @@ const schema = Yup.object({
   mobile: Yup.string()
     .matches(/^\d{10}$/, 'Mobile number must be 10 digits')
     .required('Mobile number is required'),
+  area: Yup.string().required('Area is required'),
+  zipCode: Yup.string()
+    .matches(/^\d{5,6}$/, 'Zip Code must be 5 or 6 digits')
+    .required('Zip Code is required'),
+  language: optionShape,
+  country: optionShape,
 });
 
 const Register = () => {
-  const naivgate = useNavigate();
+  const navigate = useNavigate();
   const { showToast } = useToast();
-
   const { loading } = useSelector((state: RootState) => state.auth);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
+    watch,
   } = useForm<FormValues>({
     resolver: yupResolver(schema),
+    defaultValues: {
+      language: { label: '', value: '' },
+      country: { label: '', value: '' },
+    },
   });
 
+  const selectedLanguage = watch('language');
+  const selectedCountry = watch('country');
+
   const handleNavigation = (path: string) => {
-    naivgate(path);
+    navigate(path);
   };
 
   const onSubmit = async (data: FormValues) => {
-    const { ...payload } = data;
+    const { language, country } = data;
+    const { value: languageValue } = language;
+    const { value: countryValue } = country;
+
+    const payload = {
+      ...data,
+      language: languageValue,
+      country: countryValue,
+    };
 
     const { success, message } = await AuthService.registerUser(payload);
 
@@ -74,7 +108,7 @@ const Register = () => {
     <MorenCard
       title="Register"
       description="Enter your details to create an account"
-      maxWidth={480}
+      maxWidth={580}
     >
       <Box
         component="form"
@@ -83,13 +117,28 @@ const Register = () => {
         flexDirection="column"
         gap={2}
       >
-        <ModernInput
-          label="Name"
-          placeholder="Enter your name"
-          {...register('name')}
-          error={!!errors.name}
-          helperText={errors.name?.message}
-        />
+        <Box display="flex" gap={2} flexDirection={{ xs: 'column', sm: 'row' }}>
+          <Box flex={1}>
+            <ModernInput
+              label="Name"
+              placeholder="Enter your name"
+              {...register('name')}
+              error={!!errors.name}
+              helperText={errors.name?.message}
+            />
+          </Box>
+
+          <Box flex={1}>
+            <ModernInput
+              label="Mobile"
+              placeholder="Enter your mobile number"
+              {...register('mobile')}
+              error={!!errors.mobile}
+              helperText={errors.mobile?.message}
+            />
+          </Box>
+        </Box>
+
         <ModernInput
           label="Email"
           placeholder="Enter your email"
@@ -98,30 +147,86 @@ const Register = () => {
           error={!!errors.email}
           helperText={errors.email?.message}
         />
-        <ModernInput
-          label="Password"
-          placeholder="Enter your password"
-          type="password"
-          {...register('password')}
-          error={!!errors.password}
-          helperText={errors.password?.message}
+
+        <Box display="flex" gap={2} flexDirection={{ xs: 'column', sm: 'row' }}>
+          <Box flex={1}>
+            <ModernInput
+              label="Password"
+              placeholder="Enter your password"
+              type="password"
+              {...register('password')}
+              error={!!errors.password}
+              helperText={errors.password?.message}
+            />
+          </Box>
+
+          <Box flex={1}>
+            <ModernInput
+              label="Confirm Password"
+              placeholder="Confirm your password"
+              type="password"
+              {...register('confirmPassword')}
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword?.message}
+            />
+          </Box>
+        </Box>
+
+        <ModernSelect
+          value={selectedCountry}
+          onChange={option => setValue('country', option)}
+          placeholder="Select your country"
+          options={[
+            { value: 'US', label: 'United States' },
+            { value: 'IN', label: 'India' },
+            { value: 'ES', label: 'Spain' },
+            { value: 'CN', label: 'China' },
+          ]}
+          error={!!errors.country}
+          helperText={errors.country?.value?.message}
         />
-        <ModernInput
-          label="Confirm Password"
-          placeholder="Confirm your password"
-          type="password"
-          {...register('confirmPassword')}
-          error={!!errors.confirmPassword}
-          helperText={errors.confirmPassword?.message}
+
+        <Box display="flex" gap={2} flexDirection={{ xs: 'column', sm: 'row' }}>
+          <Box flex={1}>
+            <ModernInput
+              label="Area"
+              placeholder="Enter your area"
+              {...register('area')}
+              error={!!errors.area}
+              helperText={errors.area?.message}
+            />
+          </Box>
+
+          <Box flex={1}>
+            <ModernInput
+              label="Zip Code"
+              placeholder="Enter your zip code"
+              {...register('zipCode')}
+              error={!!errors.zipCode}
+              helperText={errors.zipCode?.message}
+            />
+          </Box>
+        </Box>
+
+        <ModernSelect
+          value={selectedLanguage}
+          onChange={option => setValue('language', option)}
+          placeholder="Choose your language"
+          options={[
+            { value: 'en', label: 'English' },
+            { value: 'fr', label: 'Français' },
+            { value: 'es', label: 'Español' },
+          ]}
+          error={!!errors.language}
+          helperText={errors.language?.value?.message}
         />
-        <ModernInput
-          label="Mobile"
-          placeholder="Enter your mobile number"
-          {...register('mobile')}
-          error={!!errors.mobile}
-          helperText={errors.mobile?.message}
-        />
-        <MorenButton type="submit" variant="contained" disabled={loading}>
+
+        <MorenButton
+          type="submit"
+          variant="contained"
+          showGlanceEffect
+          disabled={loading}
+        >
           Register
         </MorenButton>
       </Box>

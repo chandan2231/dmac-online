@@ -14,20 +14,7 @@ import { useDispatch } from 'react-redux';
 import { closeLanguageModal, openLanguageModal } from './language.slice';
 import TranslateIcon from '@mui/icons-material/Translate';
 import GenericModal from '../components/modal';
-
-const languages: Record<string, { label: string; flag: string }> = {
-  en: { label: 'English', flag: '🇺🇸' },
-  fr: { label: 'Français', flag: '🇫🇷' },
-  es: { label: 'Español', flag: '🇪🇸' },
-  de: { label: 'Deutsch', flag: '🇩🇪' },
-  it: { label: 'Italiano', flag: '🇮🇹' },
-  pt: { label: 'Português', flag: '🇵🇹' },
-  zh: { label: '中文', flag: '🇨🇳' },
-  ja: { label: '日本語', flag: '🇯🇵' },
-  ru: { label: 'Русский', flag: '🇷🇺' },
-  ar: { label: 'العربية', flag: '🇸🇦' },
-  hi: { label: 'हिन्दी', flag: '🇮🇳' },
-};
+import { LANGUAGES_LIST } from '../utils/constants';
 
 const styles = {
   list: {
@@ -89,7 +76,7 @@ export default function LanguageMode() {
         cancelButtonText="Close"
       >
         <List sx={styles.list}>
-          {Object.entries(languages).map(([code, { label, flag }]) => (
+          {Object.entries(LANGUAGES_LIST).map(([code, { label, flag }]) => (
             <ListItem key={code} sx={styles.listItem} disablePadding>
               <ListItemButton
                 selected={currentLang === code}
