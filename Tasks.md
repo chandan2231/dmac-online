@@ -15,4 +15,10 @@
 
 ## ✅ Glace Effect
 
-- [ ] For Buttons on hover only
+- ✅ For Buttons on hover only
+
+## ✅ Other Routes changes
+
+- Fix forget-password Route
+- Add Reset password Route
+- Add Verify Email Route

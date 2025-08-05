@@ -1,3 +1,5 @@
+import type { IOption } from '../components/select';
+
 export const LOCAL_STORAGE_KEYS = {
   SIDEBAR_OPEN: 'sidebarOpen',
 };
@@ -18,18 +20,10 @@ export const LANGUAGES_LIST: Record<string, { label: string; flag: string }> = {
   // Add more languages as needed
 };
 
-export const COUNTRIES_LIST: Record<string, string>[] = [
-  {
-    US: 'United States',
-  },
-  {
-    IN: 'India',
-  },
-  {
-    ES: 'Spain',
-  },
-  {
-    CN: 'China',
-  },
+export const COUNTRIES_LIST: IOption[] = [
+  { value: 'US', label: 'United States' },
+  { value: 'IN', label: 'India' },
+  { value: 'ES', label: 'Spain' },
+  { value: 'CN', label: 'China' },
   // Add more countries as needed
 ];

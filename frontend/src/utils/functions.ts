@@ -88,6 +88,15 @@ const getSidebarOptions = (allowedRoutes: IUserRoute[] | null) => {
     }));
 };
 
+const convertLanguagesListToOptions = (
+  languagesList: Record<string, { label: string; flag: string }>
+): { value: string; label: string }[] => {
+  return Object.entries(languagesList).map(([value, { label }]) => ({
+    value,
+    label,
+  }));
+};
+
 export {
   isDevModeActive,
   getCurrentYear,
@@ -98,4 +107,5 @@ export {
   getLocalStorageItem,
   setLocalStorageItem,
   getSidebarOptions,
+  convertLanguagesListToOptions,
 };

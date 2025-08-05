@@ -8,22 +8,22 @@ import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
 
-interface Option {
+export interface IOption {
   label: string;
   value: string;
 }
 
 interface IModernSelectProps {
   label?: string;
-  options: Option[];
-  value: Option | null;
+  options: IOption[];
+  value: IOption | null;
   placeholder?: string;
   id?: string;
   size?: 'small' | 'medium';
   fullWidth?: boolean;
   variant?: 'outlined' | 'filled' | 'standard';
-  onChange: (value: Option) => void;
-  renderValue?: (value: Option | null) => React.ReactNode;
+  onChange: (value: IOption) => void;
+  renderValue?: (value: IOption | null) => React.ReactNode;
   error?: boolean;
   helperText?: React.ReactNode;
 }
@@ -116,7 +116,7 @@ const ModernSelect = ({
           displayEmpty
           renderValue={
             renderValue
-              ? selected => renderValue(selected as Option)
+              ? selected => renderValue(selected as IOption)
               : selected => {
                   const found = options.find(opt => opt.value === selected);
                   return found ? found.label : placeholder;

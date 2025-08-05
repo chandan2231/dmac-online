@@ -12,9 +12,11 @@ import ModernInput from '../../../../components/input/index.tsx';
 import MorenButton from '../../../../components/button/index.tsx';
 import AuthService from '../../auth.service.ts';
 import CustomLoader from '../../../../components/loader/index.tsx';
-import ModernSelect from '../../../../components/select/index.tsx';
-
-type Option = { label: string; value: string };
+import ModernSelect, {
+  type IOption,
+} from '../../../../components/select/index.tsx';
+import { COUNTRIES_LIST, LANGUAGES_LIST } from '../../../../utils/constants.ts';
+import { convertLanguagesListToOptions } from '../../../../utils/functions.ts';
 
 type FormValues = {
   name: string;
@@ -24,8 +26,8 @@ type FormValues = {
   mobile: string;
   area: string;
   zipCode: string;
-  language: Option;
-  country: Option;
+  language: IOption;
+  country: IOption;
 };
 
 const optionShape = Yup.object({
@@ -176,12 +178,7 @@ const Register = () => {
           value={selectedCountry}
           onChange={option => setValue('country', option)}
           placeholder="Select your country"
-          options={[
-            { value: 'US', label: 'United States' },
-            { value: 'IN', label: 'India' },
-            { value: 'ES', label: 'Spain' },
-            { value: 'CN', label: 'China' },
-          ]}
+          options={COUNTRIES_LIST}
           error={!!errors.country}
           helperText={errors.country?.value?.message}
         />
@@ -212,11 +209,7 @@ const Register = () => {
           value={selectedLanguage}
           onChange={option => setValue('language', option)}
           placeholder="Choose your language"
-          options={[
-            { value: 'en', label: 'English' },
-            { value: 'fr', label: 'Français' },
-            { value: 'es', label: 'Español' },
-          ]}
+          options={convertLanguagesListToOptions(LANGUAGES_LIST)}
           error={!!errors.language}
           helperText={errors.language?.value?.message}
         />
