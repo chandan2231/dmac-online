@@ -51,12 +51,12 @@ const isDevModeActive = (payload: ILoginPayload) => {
     DEV_MODE
   ) {
     return {
-      isDev: true,
+      isUserOnDevMode: true,
     };
   }
 
   return {
-    isDev: false,
+    isUserOnDevMode: false,
   };
 };
 

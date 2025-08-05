@@ -52,9 +52,7 @@ const Login = () => {
     handleNavigation(ROUTES.HOME);
   };
 
-  if (loading) {
-    return <CustomLoader />;
-  }
+  if (loading) return <CustomLoader />;
 
   return (
     <MorenCard

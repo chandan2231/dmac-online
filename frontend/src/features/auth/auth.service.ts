@@ -101,13 +101,13 @@ const registerUser = async (
 const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
   store.dispatch(loginStart());
 
-  const { isDev } = isDevModeActive(payload);
-
-  if (isDev) {
-    return simulateDevLogin(payload);
-  }
+  const { isUserOnDevMode } = isDevModeActive(payload);
 
   try {
+    if (isUserOnDevMode) {
+      return simulateDevLogin(payload);
+    }
+
     const response = await HttpService.post<ILoginResponse>(
       '/auth/login',
       payload

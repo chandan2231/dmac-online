@@ -69,7 +69,6 @@ const Home = () => {
         width: '100%',
         height: '100%',
         padding: 2,
-        // backgroundColor: theme => theme.palette.background.default,
       }}
       gap={1}
     >

@@ -66,6 +66,11 @@ export const PUBLIC_ROUTES = [
     component: COMPONENT_MAP['ResetPassword'],
   },
   {
+    path: ROUTES.VERIFY_EMAIL,
+    layout: LAYOUT_MAP['AuthLayout'],
+    component: COMPONENT_MAP['VerifyEmail'],
+  },
+  {
     path: ROUTES.NOT_FOUND,
     layout: LAYOUT_MAP['AuthLayout'],
     component: COMPONENT_MAP['PageNotFound'],
@@ -84,6 +89,15 @@ export const DEV_MODE_ROUTES: IUserRoute[] = [
     showInSidebar: true,
     sideBarTitle: 'Home',
     sideBarIcon: 'HomeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.RESET_PASSWORD,
+    layout: 'AuthLayout',
+    component: 'ResetPassword',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
     isAChildOf: null,
   },
   {
