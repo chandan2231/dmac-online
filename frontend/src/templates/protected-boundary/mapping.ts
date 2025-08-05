@@ -4,7 +4,7 @@ import { ROUTES, type IUserRoute } from '../../features/auth/auth.interface';
 import LoginPage from '../../pages/login';
 import Register from '../../pages/register';
 import ForgotPassword from '../../pages/forgot-password';
-import HomePage from '../../pages/home';
+import AuthGuardedHomePage from '../../pages/home';
 import PageNotFound from '../../pages/not-found';
 
 // Protected Pages
@@ -27,7 +27,7 @@ export const COMPONENT_MAP = {
   Register,
   ForgotPassword,
   PageNotFound,
-  HomePage,
+  AuthGuardedHomePage,
 
   // These are the components that will be dynamically rendered based on the backend configuration
   // and can be accessed only after authentication
@@ -43,7 +43,7 @@ export const PUBLIC_ROUTES = [
   {
     path: ROUTES.HOME,
     layout: LAYOUT_MAP['MainLayout'],
-    component: COMPONENT_MAP['HomePage'],
+    component: COMPONENT_MAP['AuthGuardedHomePage'],
   },
   {
     path: ROUTES.LOGIN,
@@ -84,7 +84,7 @@ export const DEV_MODE_ROUTES: IUserRoute[] = [
   {
     path: ROUTES.HOME,
     layout: 'MainLayout',
-    component: 'HomePage',
+    component: 'AuthGuardedHomePage',
     // This route will be shown in the sidebar
     showInSidebar: true,
     sideBarTitle: 'Home',

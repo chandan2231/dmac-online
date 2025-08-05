@@ -5,4 +5,6 @@ const HomePage = () => {
   return <Home />;
 };
 
-export default withAuthGuard(HomePage);
+const AuthGuardedHomePage = withAuthGuard(HomePage);
+
+export default AuthGuardedHomePage;

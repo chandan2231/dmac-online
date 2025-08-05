@@ -212,11 +212,37 @@ const resetPassword = async (payload: {
   }
 };
 
+const getEmailVerification = async (payload: { token: string }) => {
+  try {
+    const response = await HttpService.get<{ status: number }>(
+      `/auth/verify-email?token=${payload.token}`
+    );
+
+    return {
+      success: response.data.status === 200,
+      message:
+        response.data.status === 200
+          ? 'Email verified successfully'
+          : 'Email verification failed',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      'An unexpected error occurred during email verification';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
 const AuthService = {
   loginUser,
   registerUser,
   forgotPassword,
   resetPassword,
+  getEmailVerification,
 };
 
 export default AuthService;
