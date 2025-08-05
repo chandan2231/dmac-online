@@ -8,7 +8,12 @@ import {
   type ILoginResponse,
   type IRegisterPayload,
 } from './auth.interface';
-import { loginFailure, loginStart, loginSuccess } from './auth.slice';
+import {
+  loginFailure,
+  loginStart,
+  loginSuccess,
+  setLoadingFalse,
+} from './auth.slice';
 import { DEV_MODE_ROUTES } from '../../templates/protected-boundary/mapping';
 
 // Simulate a successful login in development mode
@@ -177,10 +182,39 @@ const forgotPassword = async (payload: { email: string }) => {
   }
 };
 
+const resetPassword = async (payload: {
+  password: string;
+  token: string;
+}): Promise<{ success: boolean; message: string }> => {
+  store.dispatch(setLoadingFalse()); // Optional: create a separate resetPasswordStart
+
+  try {
+    const response = await HttpService.post<{ message: string }>(
+      '/auth/reset-password',
+      payload
+    );
+
+    return {
+      success: true,
+      message: response.data.message || 'Password reset successful',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      'An unexpected error occurred during password reset';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
 const AuthService = {
   loginUser,
   registerUser,
   forgotPassword,
+  resetPassword,
 };
 
 export default AuthService;
