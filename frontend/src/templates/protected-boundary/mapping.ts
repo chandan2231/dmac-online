@@ -4,11 +4,14 @@ import { ROUTES, type IUserRoute } from '../../features/auth/auth.interface';
 import LoginPage from '../../pages/login';
 import Register from '../../pages/register';
 import ForgotPassword from '../../pages/forgot-password';
-import HomePage from '../../pages/home';
+import AuthRedirectHomePage from '../../pages/home';
 import PageNotFound from '../../pages/not-found';
 
 // Protected Pages
 import DashboardPage from '../../pages/dashboard';
+import ResetPassword from '../../pages/reset-password';
+import VerifyEmail from '../../pages/verify-email';
+import ProfilePage from '../../pages/profile';
 
 // Layouts
 import MainLayout from '../../layouts/MainLayout';
@@ -25,11 +28,14 @@ export const COMPONENT_MAP = {
   Register,
   ForgotPassword,
   PageNotFound,
-  HomePage,
+  AuthRedirectHomePage,
 
   // These are the components that will be dynamically rendered based on the backend configuration
   // and can be accessed only after authentication
   DashboardPage,
+  ResetPassword,
+  VerifyEmail,
+  ProfilePage,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -39,7 +45,7 @@ export const PUBLIC_ROUTES = [
   {
     path: ROUTES.HOME,
     layout: LAYOUT_MAP['MainLayout'],
-    component: COMPONENT_MAP['HomePage'],
+    component: COMPONENT_MAP['AuthRedirectHomePage'],
   },
   {
     path: ROUTES.LOGIN,
@@ -57,6 +63,16 @@ export const PUBLIC_ROUTES = [
     component: COMPONENT_MAP['ForgotPassword'],
   },
   {
+    path: ROUTES.RESET_PASSWORD,
+    layout: LAYOUT_MAP['AuthLayout'],
+    component: COMPONENT_MAP['ResetPassword'],
+  },
+  {
+    path: ROUTES.VERIFY_EMAIL,
+    layout: LAYOUT_MAP['AuthLayout'],
+    component: COMPONENT_MAP['VerifyEmail'],
+  },
+  {
     path: ROUTES.NOT_FOUND,
     layout: LAYOUT_MAP['AuthLayout'],
     component: COMPONENT_MAP['PageNotFound'],
@@ -70,11 +86,38 @@ export const DEV_MODE_ROUTES: IUserRoute[] = [
   {
     path: ROUTES.HOME,
     layout: 'MainLayout',
-    component: 'HomePage',
+    component: 'AuthRedirectHomePage',
     // This route will be shown in the sidebar
     showInSidebar: true,
     sideBarTitle: 'Home',
     sideBarIcon: 'HomeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.RESET_PASSWORD,
+    layout: 'AuthLayout',
+    component: 'ResetPassword',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.VERIFY_EMAIL,
+    layout: 'AuthLayout',
+    component: 'VerifyEmail',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PROFILE,
+    layout: 'MainLayout',
+    component: 'ProfilePage',
+    showInSidebar: true,
+    sideBarTitle: 'Profile',
+    sideBarIcon: 'AccountBoxIcon',
     isAChildOf: null,
   },
   {

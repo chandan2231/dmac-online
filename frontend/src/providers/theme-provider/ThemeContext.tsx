@@ -7,34 +7,14 @@ import {
 } from 'react';
 import { ThemeProvider as MUIThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
-import {
-  darkTheme,
-  greenTheme,
-  lightTheme,
-  blueTheme,
-  yellowTheme,
-  violetTheme,
-  redTheme,
-} from './theme';
+import { darkTheme, lightTheme } from './theme';
 import { useCookies } from 'react-cookie';
 
-export type ThemeName =
-  | 'light'
-  | 'dark'
-  | 'red'
-  | 'blue'
-  | 'green'
-  | 'yellow'
-  | 'violet';
+export type ThemeName = 'light' | 'dark';
 
 const themeMap = {
   light: lightTheme,
   dark: darkTheme,
-  green: greenTheme,
-  red: redTheme,
-  blue: blueTheme,
-  yellow: yellowTheme,
-  violet: violetTheme,
 };
 
 interface ThemeContextProps {

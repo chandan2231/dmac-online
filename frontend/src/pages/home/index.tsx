@@ -1,8 +1,10 @@
 import Home from '../../features/home';
-import withAuthGuard from '../../middlewares/withAuthGuard';
+import withAuthRedirect from '../../middlewares/withAuthRedirect';
 
 const HomePage = () => {
   return <Home />;
 };
 
-export default withAuthGuard(HomePage);
+const AuthRedirectHomePage = withAuthRedirect(HomePage);
+
+export default AuthRedirectHomePage;

@@ -8,7 +8,12 @@ import {
   type ILoginResponse,
   type IRegisterPayload,
 } from './auth.interface';
-import { loginFailure, loginStart, loginSuccess } from './auth.slice';
+import {
+  loginFailure,
+  loginSuccess,
+  setLoadingFalse,
+  setLoadingTrue,
+} from './auth.slice';
 import { DEV_MODE_ROUTES } from '../../templates/protected-boundary/mapping';
 
 // Simulate a successful login in development mode
@@ -46,7 +51,7 @@ const simulateDevLogin = async (
 const registerUser = async (
   payload: IRegisterPayload
 ): Promise<ILoginResponse> => {
-  store.dispatch(loginStart()); // optional: create separate registerStart()
+  store.dispatch(setLoadingTrue()); // optional: create separate registerStart()
 
   try {
     const response = await HttpService.post<ILoginResponse>(
@@ -69,6 +74,8 @@ const registerUser = async (
       };
     }
 
+    store.dispatch(setLoadingFalse()); // or registerFailure
+
     return {
       user: null,
       token: null,
@@ -77,7 +84,7 @@ const registerUser = async (
       message: 'Registration failed: Invalid response data',
     };
   } catch (error: unknown) {
-    store.dispatch(loginFailure()); // or registerFailure
+    store.dispatch(setLoadingFalse()); // or registerFailure
 
     const message =
       get(error, 'response.data.message') ||
@@ -94,15 +101,15 @@ const registerUser = async (
 };
 
 const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
-  store.dispatch(loginStart());
+  store.dispatch(setLoadingTrue());
 
-  const { isDev } = isDevModeActive(payload);
-
-  if (isDev) {
-    return simulateDevLogin(payload);
-  }
+  const { isUserOnDevMode } = isDevModeActive(payload);
 
   try {
+    if (isUserOnDevMode) {
+      return simulateDevLogin(payload);
+    }
+
     const response = await HttpService.post<ILoginResponse>(
       '/auth/login',
       payload
@@ -128,6 +135,8 @@ const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
       };
     }
 
+    store.dispatch(setLoadingFalse());
+
     return {
       user,
       token,
@@ -151,13 +160,15 @@ const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
 };
 
 const forgotPassword = async (payload: { email: string }) => {
-  store.dispatch(loginStart()); // Optional: create a separate forgotPasswordStart
+  store.dispatch(setLoadingTrue()); // Optional: create a separate forgotPasswordStart
 
   try {
     const response = await HttpService.post<{ message: string }>(
       '/auth/forgot-password',
       payload
     );
+
+    store.dispatch(setLoadingFalse()); // Optional: use forgotPasswordSuccess
 
     return {
       success: true,
@@ -177,10 +188,69 @@ const forgotPassword = async (payload: { email: string }) => {
   }
 };
 
+const resetPassword = async (payload: {
+  password: string;
+  token: string;
+}): Promise<{ success: boolean; message: string }> => {
+  store.dispatch(setLoadingTrue()); // Optional: create a separate resetPasswordStart
+
+  try {
+    const response = await HttpService.post<{ message: string }>(
+      '/auth/reset-password',
+      payload
+    );
+
+    store.dispatch(setLoadingFalse()); // Optional: use resetPasswordSuccess
+
+    return {
+      success: true,
+      message: response.data.message || 'Password reset successful',
+    };
+  } catch (error: unknown) {
+    store.dispatch(loginFailure()); // Optional: use resetPasswordFailure
+
+    const message =
+      get(error, 'response.data.message') ||
+      'An unexpected error occurred during password reset';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
+const getEmailVerification = async (payload: { token: string }) => {
+  try {
+    const response = await HttpService.get<{ status: number }>(
+      `/auth/verify-email?token=${payload.token}`
+    );
+
+    return {
+      success: response.data.status === 200,
+      message:
+        response.data.status === 200
+          ? 'Email verified successfully'
+          : 'Email verification failed',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      'An unexpected error occurred during email verification';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
 const AuthService = {
   loginUser,
   registerUser,
   forgotPassword,
+  resetPassword,
+  getEmailVerification,
 };
 
 export default AuthService;

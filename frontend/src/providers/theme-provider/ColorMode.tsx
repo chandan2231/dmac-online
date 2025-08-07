@@ -26,31 +26,6 @@ const LIST_ITEM: IListItem[] = [
     value: 'dark',
     emoji: '🌙',
   },
-  {
-    label: 'Green',
-    value: 'green',
-    emoji: '🟢',
-  },
-  {
-    label: 'Red',
-    value: 'red',
-    emoji: '🔴',
-  },
-  {
-    label: 'Blue',
-    value: 'blue',
-    emoji: '🔵',
-  },
-  {
-    label: 'Yellow',
-    value: 'yellow',
-    emoji: '🟡',
-  },
-  {
-    label: 'Violet',
-    value: 'violet',
-    emoji: '🟣',
-  },
 ];
 
 const styles = {
@@ -91,11 +66,7 @@ export default function ColorMode() {
         hideSubmitButton
         cancelButtonText="Close"
       >
-        <List
-          sx={{
-            minHeight: '400px',
-          }}
-        >
+        <List>
           {LIST_ITEM.map(item => {
             const { label, value } = item;
             return (

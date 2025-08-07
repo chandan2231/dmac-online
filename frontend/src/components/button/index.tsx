@@ -1,40 +1,59 @@
 // MorenButton.tsx
 import React from 'react';
+import GlanceWrapper from '../glance-wrapper';
 import Button, { type ButtonProps } from '@mui/material/Button';
 import { styled } from '@mui/material/styles';
 
+interface MorenButtonProps extends ButtonProps {
+  showGlanceEffect?: boolean; // Optional prop to control the glance effect
+}
+
 // Customize styles to reflect Moren UI look
 const StyledButton = styled(Button)(({ theme }) => ({
-  borderRadius: '999px',
+  borderRadius: theme.morenButton?.borderRadius || '999px',
   textTransform: 'none',
   fontWeight: 400,
   padding: '8px 16px',
   boxShadow: 'none',
   fontSize: '16px',
   width: '100%',
-  height: '36px',
+  height: theme.morenButton?.height || '36px',
 
   '&:hover': {
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    boxShadow: theme.shadows[2],
   },
 
-  // You can customize variants as needed
   '&.MuiButton-contained': {
-    '&:hover': {},
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.getContrastText(theme.palette.primary.main),
+    '&:hover': {
+      backgroundColor: theme.palette.primary.dark,
+    },
   },
 
   '&.MuiButton-outlined': {
-    borderColor: '#0072F5',
-    color: '#0072F5',
+    borderColor: theme.palette.primary.main,
+    color: theme.palette.primary.main,
     '&:hover': {
-      backgroundColor: 'rgba(0, 114, 245, 0.1)',
+      backgroundColor: theme.palette.action.hover,
     },
   },
 }));
 
-const MorenButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
+const MorenButton = React.forwardRef<HTMLButtonElement, MorenButtonProps>(
   (props, ref) => {
-    return <StyledButton ref={ref} {...props} />;
+    const { showGlanceEffect, ...restProps } = props;
+
+    if (showGlanceEffect) {
+      // If the glance effect is enabled, wrap the button in a GlanceWrapper
+      return (
+        <GlanceWrapper>
+          <StyledButton ref={ref} {...restProps} />
+        </GlanceWrapper>
+      );
+    }
+
+    return <StyledButton ref={ref} {...restProps} />;
   }
 );
 
