@@ -1,4 +1,5 @@
 import express from 'express'
+import languageRoutes from './routes/language.js'
 import authRoutes from './routes/auth.js'
 import researchRoutes from './routes/researchInfo.js'
 import protocolRoutes from './routes/protocol.js'
@@ -65,6 +66,7 @@ if (process.env.NODE_ENV === 'localhost') {
   app.use(cors(corsOptions))
 }
 
+app.use('/api/language', languageRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/researchInfo', researchRoutes)
 app.use('/api/protocol', protocolRoutes)
