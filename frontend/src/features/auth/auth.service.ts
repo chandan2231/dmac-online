@@ -10,9 +10,9 @@ import {
 } from './auth.interface';
 import {
   loginFailure,
-  loginStart,
   loginSuccess,
   setLoadingFalse,
+  setLoadingTrue,
 } from './auth.slice';
 import { DEV_MODE_ROUTES } from '../../templates/protected-boundary/mapping';
 
@@ -51,7 +51,7 @@ const simulateDevLogin = async (
 const registerUser = async (
   payload: IRegisterPayload
 ): Promise<ILoginResponse> => {
-  store.dispatch(loginStart()); // optional: create separate registerStart()
+  store.dispatch(setLoadingTrue()); // optional: create separate registerStart()
 
   try {
     const response = await HttpService.post<ILoginResponse>(
@@ -73,6 +73,8 @@ const registerUser = async (
         message: 'Registration successful',
       };
     }
+
+    store.dispatch(setLoadingFalse()); // or registerFailure
 
     return {
       user: null,
@@ -99,7 +101,7 @@ const registerUser = async (
 };
 
 const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
-  store.dispatch(loginStart());
+  store.dispatch(setLoadingTrue());
 
   const { isUserOnDevMode } = isDevModeActive(payload);
 
@@ -133,6 +135,8 @@ const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
       };
     }
 
+    store.dispatch(setLoadingFalse());
+
     return {
       user,
       token,
@@ -156,13 +160,15 @@ const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
 };
 
 const forgotPassword = async (payload: { email: string }) => {
-  store.dispatch(loginStart()); // Optional: create a separate forgotPasswordStart
+  store.dispatch(setLoadingTrue()); // Optional: create a separate forgotPasswordStart
 
   try {
     const response = await HttpService.post<{ message: string }>(
       '/auth/forgot-password',
       payload
     );
+
+    store.dispatch(setLoadingFalse()); // Optional: use forgotPasswordSuccess
 
     return {
       success: true,
@@ -186,13 +192,15 @@ const resetPassword = async (payload: {
   password: string;
   token: string;
 }): Promise<{ success: boolean; message: string }> => {
-  store.dispatch(loginStart()); // Optional: create a separate resetPasswordStart
+  store.dispatch(setLoadingTrue()); // Optional: create a separate resetPasswordStart
 
   try {
     const response = await HttpService.post<{ message: string }>(
       '/auth/reset-password',
       payload
     );
+
+    store.dispatch(setLoadingFalse()); // Optional: use resetPasswordSuccess
 
     return {
       success: true,

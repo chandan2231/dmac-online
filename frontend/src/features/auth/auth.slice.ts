@@ -16,6 +16,9 @@ const authSlice = createSlice({
     loginStart: state => {
       state.loading = true;
     },
+    setLoadingTrue: state => {
+      state.loading = true;
+    },
     setLoadingFalse: state => {
       state.loading = false;
     },
@@ -64,6 +67,7 @@ const authSlice = createSlice({
 
 export const {
   loginStart,
+  setLoadingTrue,
   setLoadingFalse,
   loginSuccess,
   loginFailure,

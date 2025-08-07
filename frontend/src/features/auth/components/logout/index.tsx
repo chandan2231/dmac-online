@@ -5,18 +5,23 @@ import { useDispatch } from 'react-redux';
 import { closeLogoutModal, openLogoutModal } from './logout.slice';
 import { logout } from '../../auth.slice';
 import { purgeLocalStorage } from '../../../../utils/functions';
+import { useNavigate } from 'react-router-dom';
 import LogoutIcon from '@mui/icons-material/Logout';
 import GenericModal from '../../../../components/modal';
+import { ROUTES } from '../../auth.interface';
 
 export default function LogoutFeature() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { isLogoutModalOpen } = useSelector((state: RootState) => state.logout);
 
   const handleLogout = () => {
-    console.log('User logged out');
-    dispatch(logout());
-    purgeLocalStorage();
     dispatch(closeLogoutModal());
+    purgeLocalStorage();
+    dispatch(logout());
+
+    // Navigate to the Login page
+    navigate(ROUTES.LOGIN);
   };
 
   const handleOpenModal = () => {

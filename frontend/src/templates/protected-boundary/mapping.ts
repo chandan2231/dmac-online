@@ -11,6 +11,7 @@ import PageNotFound from '../../pages/not-found';
 import DashboardPage from '../../pages/dashboard';
 import ResetPassword from '../../pages/reset-password';
 import VerifyEmail from '../../pages/verify-email';
+import ProfilePage from '../../pages/profile';
 
 // Layouts
 import MainLayout from '../../layouts/MainLayout';
@@ -34,17 +35,13 @@ export const COMPONENT_MAP = {
   DashboardPage,
   ResetPassword,
   VerifyEmail,
+  ProfilePage,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
 
 // Here we define the public routes that do not require authentication
 export const PUBLIC_ROUTES = [
-  {
-    path: ROUTES.HOME,
-    layout: LAYOUT_MAP['MainLayout'],
-    component: COMPONENT_MAP['AuthGuardedHomePage'],
-  },
   {
     path: ROUTES.LOGIN,
     layout: LAYOUT_MAP['AuthLayout'],
@@ -107,6 +104,15 @@ export const DEV_MODE_ROUTES: IUserRoute[] = [
     showInSidebar: false,
     sideBarTitle: null,
     sideBarIcon: null,
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PROFILE,
+    layout: 'MainLayout',
+    component: 'ProfilePage',
+    showInSidebar: true,
+    sideBarTitle: 'Profile',
+    sideBarIcon: 'AccountBoxIcon',
     isAChildOf: null,
   },
   {
