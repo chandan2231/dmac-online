@@ -26,7 +26,7 @@ const lightTheme = createTheme({
 
 const darkTheme = createTheme({
   palette: {
-    mode: 'light',
+    mode: 'dark',
     primary: { main: '#1976d2' },
     success: { main: '#4caf50' },
     error: { main: '#d32f2f' },
