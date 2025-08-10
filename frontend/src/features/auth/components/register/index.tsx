@@ -15,8 +15,10 @@ import CustomLoader from '../../../../components/loader/index.tsx';
 import ModernSelect, {
   type IOption,
 } from '../../../../components/select/index.tsx';
-import { COUNTRIES_LIST, LANGUAGES_LIST } from '../../../../utils/constants.ts';
+import { COUNTRIES_LIST } from '../../../../utils/constants.ts';
+import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages.ts';
 import { convertLanguagesListToOptions } from '../../../../utils/functions.ts';
+import { get } from 'lodash';
 
 type FormValues = {
   name: string;
@@ -56,6 +58,7 @@ const schema = Yup.object({
 });
 
 const Register = () => {
+  const { data: listingResponse } = useLanguageList();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { loading } = useSelector((state: RootState) => state.auth);
@@ -83,7 +86,7 @@ const Register = () => {
 
   const onSubmit = async (data: FormValues) => {
     const { language, country } = data;
-    const { label: languageTitle } = language;
+    const { value: languageValue } = language;
     const { label: countryTitle } = country;
 
     const payload = {
@@ -94,7 +97,7 @@ const Register = () => {
       state: data.area,
       zipcode: data.zipCode,
       country: countryTitle,
-      language: languageTitle,
+      language: languageValue,
     };
 
     const { isSuccess, message } = await AuthService.registerUser(payload);
@@ -215,7 +218,9 @@ const Register = () => {
           value={selectedLanguage}
           onChange={option => setValue('language', option)}
           placeholder="Choose your language"
-          options={convertLanguagesListToOptions(LANGUAGES_LIST)}
+          options={convertLanguagesListToOptions(
+            get(listingResponse, ['data'], []) || []
+          )}
           error={!!errors.language}
           helperText={errors.language?.value?.message}
         />

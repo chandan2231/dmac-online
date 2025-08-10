@@ -1,6 +1,8 @@
 import { get } from 'lodash';
 import type { IUserRoute } from '../features/auth/auth.interface';
 import { LOCAL_STORAGE_KEYS } from './constants';
+import type { ILanguage } from '../i18n/language.interface';
+import type { IOption } from '../components/select';
 
 const getCurrentYear = (): number => {
   return new Date().getFullYear();
@@ -67,11 +69,11 @@ const getSidebarOptions = (allowedRoutes: IUserRoute[] | null) => {
 };
 
 const convertLanguagesListToOptions = (
-  languagesList: Record<string, { label: string; flag: string }>
-): { value: string; label: string }[] => {
-  return Object.entries(languagesList).map(([value, { label }]) => ({
-    value,
-    label,
+  languages: ILanguage[] | []
+): IOption[] => {
+  return languages.map(language => ({
+    label: get(language, ['language'], ''),
+    value: String(get(language, ['id'], '')),
   }));
 };
 
