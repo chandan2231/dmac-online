@@ -93,11 +93,11 @@ const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
     store.dispatch(setLoadingFalse());
 
     return {
-      user,
-      token,
+      user: null,
+      token: null,
       allowedRoutes: null,
       success: false,
-      message: 'Login failed: Invalid response data',
+      message: get(response, ['data', 'error'], 'Login failed'),
     };
   } catch (error: unknown) {
     store.dispatch(loginFailure());

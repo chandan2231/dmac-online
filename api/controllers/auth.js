@@ -169,7 +169,7 @@ export const login = (req, res) => {
 
     if (data.length === 0) {
       return res
-        .status(404)
+        .status(200)
         .json({ error: 'Email not found! Try with a valid email.' })
     }
 
@@ -177,11 +177,11 @@ export const login = (req, res) => {
     const isPasswordValid = bcrypt.compareSync(req.body.password, user.password)
 
     if (!isPasswordValid) {
-      return res.status(400).json({ error: 'Wrong password!' })
+      return res.status(200).json({ error: 'Wrong password!' })
     }
 
     if (!user.verified) {
-      return res.status(400).json({ error: 'Please verify your email first.' })
+      return res.status(200).json({ error: 'Please verify your email first.' })
     }
 
     const token = jwt.sign(
