@@ -14,6 +14,8 @@ export interface IUser {
   email: string;
   role: (typeof UserRole)[keyof typeof UserRole];
   token: string;
+  language: string;
+  phone: string;
 }
 
 export const ROUTES = {

@@ -198,8 +198,9 @@ export const login = (req, res) => {
       name: user.name,
       email: user.email,
       id: user.id,
-      user_type: user.user_type,
-      token: token
+      token: token,
+      language: user.language,
+      phone: user.mobile,
     }
 
     res.status(200).json({
