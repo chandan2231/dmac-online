@@ -120,14 +120,15 @@ export const USER_ROUTES: IUserRoute[] = [
     sideBarIcon: 'AccountBoxIcon',
     isAChildOf: null,
   },
-  {
-    path: ROUTES.NOT_FOUND,
-    layout: 'AuthLayout',
-    component: 'PageNotFound',
-    // This route will not be shown in the sidebar
-    showInSidebar: true,
-    sideBarTitle: 'Not Found',
-    sideBarIcon: 'ErrorIcon',
-    isAChildOf: ROUTES.HOME,
-  },
+  // Remove this route if you do not want to show the dashboard in the sidebar
+  // {
+  //   path: ROUTES.NOT_FOUND,
+  //   layout: 'AuthLayout',
+  //   component: 'PageNotFound',
+  //   // This route will not be shown in the sidebar
+  //   showInSidebar: true,
+  //   sideBarTitle: 'Not Found',
+  //   sideBarIcon: 'ErrorIcon',
+  //   isAChildOf: ROUTES.HOME,
+  // },
 ];

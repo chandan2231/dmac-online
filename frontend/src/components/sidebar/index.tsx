@@ -15,31 +15,22 @@ import { get } from 'lodash';
 import { useSidebarContext } from './provider';
 import { DRAWER_WIDTH, MINI_DRAWER_WIDTH } from '../../utils/constants';
 import { useDispatch } from 'react-redux';
-import { openLanguageModal } from '../../i18n/language.slice';
 import { openLogoutModal } from '../../features/auth/components/logout/logout.slice';
 import { useThemeContext } from '../../providers/theme-provider/ThemeContext';
 import { useSelector } from 'react-redux';
 import { getSidebarOptions } from '../../utils/functions';
 import { useLocation, useNavigate } from 'react-router-dom';
 import withAuthGuard from '../../middlewares/withAuthGuard';
-import TranslateIcon from '@mui/icons-material/Translate';
 import ColorLensIcon from '@mui/icons-material/ColorLens';
 import LogoutIcon from '@mui/icons-material/Logout';
-import LanguageMode from '../../i18n/LanguageMode';
 import ColorMode from '../../providers/theme-provider/ColorMode';
 import LogoutFeature from '../../features/auth/components/logout';
 import mappedIcons from './mapped-icons';
 
 const sidebarOptions = (
-  handleOpenLanguageModal: () => void,
   handleLogoutModal: () => void,
   handleThemeModal: () => void
 ) => [
-  {
-    title: 'Language',
-    icon: <TranslateIcon />,
-    action: handleOpenLanguageModal,
-  },
   {
     title: 'Color Mode',
     icon: <ColorLensIcon />,
@@ -60,10 +51,6 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   const dispatch = useDispatch();
-
-  const handleOpenLanguageModal = () => {
-    dispatch(openLanguageModal());
-  };
 
   const handleLogoutModal = () => {
     dispatch(openLogoutModal());
@@ -134,35 +121,36 @@ const Sidebar = () => {
       </List>
       {getSidebarOptions(allowedRoutes).length > 0 && <Divider />}
       <List>
-        {sidebarOptions(
-          handleOpenLanguageModal,
-          handleLogoutModal,
-          handleThemeModal
-        ).map((option, index) => (
-          <ListItem key={index} disablePadding sx={{ display: 'block' }}>
-            <Tooltip title={!drawerOpen ? option.title : ''} placement="right">
-              <ListItemButton
-                sx={{
-                  minHeight: 48,
-                  justifyContent: drawerOpen ? 'initial' : 'center',
-                  px: 2.5,
-                }}
-                onClick={() => option.action()}
+        {sidebarOptions(handleLogoutModal, handleThemeModal).map(
+          (option, index) => (
+            <ListItem key={index} disablePadding sx={{ display: 'block' }}>
+              <Tooltip
+                title={!drawerOpen ? option.title : ''}
+                placement="right"
               >
-                <ListItemIcon
+                <ListItemButton
                   sx={{
-                    minWidth: 0,
-                    mr: drawerOpen ? 3 : 'auto',
-                    justifyContent: 'center',
+                    minHeight: 48,
+                    justifyContent: drawerOpen ? 'initial' : 'center',
+                    px: 2.5,
                   }}
+                  onClick={() => option.action()}
                 >
-                  {option.icon}
-                </ListItemIcon>
-                {drawerOpen && <ListItemText primary={option.title} />}
-              </ListItemButton>
-            </Tooltip>
-          </ListItem>
-        ))}
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 0,
+                      mr: drawerOpen ? 3 : 'auto',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {option.icon}
+                  </ListItemIcon>
+                  {drawerOpen && <ListItemText primary={option.title} />}
+                </ListItemButton>
+              </Tooltip>
+            </ListItem>
+          )
+        )}
       </List>
 
       <Box
@@ -170,7 +158,6 @@ const Sidebar = () => {
           display: 'none',
         }}
       >
-        <LanguageMode />
         <ColorMode />
         <LogoutFeature />
       </Box>
@@ -178,4 +165,6 @@ const Sidebar = () => {
   );
 };
 
-export default withAuthGuard(Sidebar);
+const SidebarWithAuth = withAuthGuard(Sidebar);
+
+export default SidebarWithAuth;
