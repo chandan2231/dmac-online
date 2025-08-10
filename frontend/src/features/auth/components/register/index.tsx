@@ -83,13 +83,18 @@ const Register = () => {
 
   const onSubmit = async (data: FormValues) => {
     const { language, country } = data;
-    const { value: languageValue } = language;
-    const { value: countryValue } = country;
+    const { label: languageTitle } = language;
+    const { label: countryTitle } = country;
 
     const payload = {
-      ...data,
-      language: languageValue,
-      country: countryValue,
+      name: data.name,
+      email: data.email,
+      mobile: data.mobile,
+      password: data.password,
+      state: data.area,
+      zipCode: data.zipCode,
+      country: countryTitle,
+      language: languageTitle,
     };
 
     const { success, message } = await AuthService.registerUser(payload);
@@ -181,6 +186,7 @@ const Register = () => {
           options={COUNTRIES_LIST}
           error={!!errors.country}
           helperText={errors.country?.value?.message}
+          searchable={true}
         />
 
         <Box display="flex" gap={2} flexDirection={{ xs: 'column', sm: 'row' }}>
