@@ -1,5 +1,6 @@
 import express from 'express'
 import languageRoutes from './routes/language.js'
+import questionarRoutes from './routes/questionar.js'
 import authRoutes from './routes/auth.js'
 import researchRoutes from './routes/researchInfo.js'
 import protocolRoutes from './routes/protocol.js'
@@ -67,6 +68,7 @@ if (process.env.NODE_ENV === 'localhost') {
 }
 
 app.use('/api/language', languageRoutes)
+app.use('/api/questionar', questionarRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/researchInfo', researchRoutes)
 app.use('/api/protocol', protocolRoutes)
