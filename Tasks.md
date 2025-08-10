@@ -22,3 +22,6 @@
 - Fix forget-password Route
 - ✅ Add Reset password Route
 - Add Verify Email Route
+
+## 📅 Date: 10-Aug-2025
+## ✅ Auth Flow Done and Tested
