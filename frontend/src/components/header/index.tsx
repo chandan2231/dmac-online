@@ -48,7 +48,7 @@ const Header = () => {
           onClick={toggleDrawer}
         >
           {drawerOpen ? <MenuOpenIcon /> : <MenuIcon />}
-          IRB
+          DMAC
         </Typography>
 
         {/* Mobile */}
