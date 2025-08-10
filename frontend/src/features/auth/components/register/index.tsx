@@ -15,8 +15,10 @@ import CustomLoader from '../../../../components/loader/index.tsx';
 import ModernSelect, {
   type IOption,
 } from '../../../../components/select/index.tsx';
-import { COUNTRIES_LIST, LANGUAGES_LIST } from '../../../../utils/constants.ts';
+import { COUNTRIES_LIST } from '../../../../utils/constants.ts';
+import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages.ts';
 import { convertLanguagesListToOptions } from '../../../../utils/functions.ts';
+import { get } from 'lodash';
 
 type FormValues = {
   name: string;
@@ -56,6 +58,7 @@ const schema = Yup.object({
 });
 
 const Register = () => {
+  const { data: listingResponse } = useLanguageList();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { loading } = useSelector((state: RootState) => state.auth);
@@ -84,17 +87,22 @@ const Register = () => {
   const onSubmit = async (data: FormValues) => {
     const { language, country } = data;
     const { value: languageValue } = language;
-    const { value: countryValue } = country;
+    const { label: countryTitle } = country;
 
     const payload = {
-      ...data,
+      name: data.name,
+      email: data.email,
+      mobile: data.mobile,
+      password: data.password,
+      state: data.area,
+      zipcode: data.zipCode,
+      country: countryTitle,
       language: languageValue,
-      country: countryValue,
     };
 
-    const { success, message } = await AuthService.registerUser(payload);
+    const { isSuccess, message } = await AuthService.registerUser(payload);
 
-    if (!success) {
+    if (!isSuccess) {
       return showToast(message, 'error');
     }
 
@@ -181,6 +189,7 @@ const Register = () => {
           options={COUNTRIES_LIST}
           error={!!errors.country}
           helperText={errors.country?.value?.message}
+          searchable={true}
         />
 
         <Box display="flex" gap={2} flexDirection={{ xs: 'column', sm: 'row' }}>
@@ -209,7 +218,9 @@ const Register = () => {
           value={selectedLanguage}
           onChange={option => setValue('language', option)}
           placeholder="Choose your language"
-          options={convertLanguagesListToOptions(LANGUAGES_LIST)}
+          options={convertLanguagesListToOptions(
+            get(listingResponse, ['data'], []) || []
+          )}
           error={!!errors.language}
           helperText={errors.language?.value?.message}
         />

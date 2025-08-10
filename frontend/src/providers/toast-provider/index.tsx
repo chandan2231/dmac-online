@@ -1,6 +1,7 @@
 // ToastProvider.tsx
 import React, { createContext, useContext, type ReactNode } from 'react';
 import { SnackbarProvider, useSnackbar, type VariantType } from 'notistack';
+import { ThemedSnackbar } from './components/ThemedSnackbar';
 
 type ToastContextType = {
   showToast: (message: string, variant?: VariantType) => void;
@@ -40,6 +41,13 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({
       maxSnack={5}
       anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       autoHideDuration={3000}
+      Components={{
+        default: ThemedSnackbar,
+        success: ThemedSnackbar,
+        error: ThemedSnackbar,
+        warning: ThemedSnackbar,
+        info: ThemedSnackbar,
+      }}
     >
       <InnerToastProvider>{children}</InnerToastProvider>
     </SnackbarProvider>

@@ -13,6 +13,9 @@ export interface IUser {
   name: string;
   email: string;
   role: (typeof UserRole)[keyof typeof UserRole];
+  token: string;
+  language: string;
+  phone: string;
 }
 
 export const ROUTES = {
@@ -61,9 +64,14 @@ export interface ILoginPayload {
   password: string;
 }
 
+export interface IRegisterResponse {
+  isSuccess: boolean;
+  message: string;
+}
+
 export interface ILoginResponse {
-  token: string | null;
   user: IUser | null;
+  token: string | null;
   allowedRoutes: IUserRoute[] | null;
   success: boolean;
   message: string;

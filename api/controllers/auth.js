@@ -5,6 +5,25 @@ import sendEmail from '../emailService.js'
 import { v4 as uuidv4 } from 'uuid'
 import { createHash } from 'crypto';
 
+export const emailVerification = (req, res) => {
+  const { token } = req.body
+
+  db.query(
+    'UPDATE dmac_webapp_users SET verified = 1 WHERE verification_token = ?',
+    [token],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message })
+      if (result.affectedRows === 0)
+        return res.status(400).json({ error: 'Invalid or expired token' })
+
+      res.json({ message: 'Email verified successfully!' })
+    }
+  )
+}
+
+
+
+
 export const register = async (req, res) => {
   try {
     // Check if the email already exists
@@ -29,20 +48,21 @@ export const register = async (req, res) => {
     // Hash the password
     const salt = bcrypt.genSaltSync(10)
     const hashedPassword = bcrypt.hashSync(req.body.password, salt)
-    
+
     const verificationToken = uuidv4()
     // Insert new user into the database
     const insertQuery = `
-      INSERT INTO dmac_webapp_users (name, email, mobile, password, country, state, zip_code, verified, verification_token) 
+      INSERT INTO dmac_webapp_users (name, email, mobile, password, country, state, zip_code,language, verified, verification_token) 
       VALUES (?)`
     const values = [
       req.body.name,
       req.body.email,
       req.body.mobile,
       hashedPassword,
-      country,
-      state,
-      zipcode,
+      req.body.country,
+      req.body.state,
+      req.body.zipcode,
+      req.body.language,
       0,
       verificationToken
     ]
@@ -51,7 +71,7 @@ export const register = async (req, res) => {
 
     // const liccaPassword = createHash('md5').update(password).digest('hex');
     // const insertQueryLicca = `
-    //   INSERT INTO users (user_role, firstName, username, mobileNo, password, country, state, zipCode, active, dmac_user_verification_token) 
+    //   INSERT INTO users (user_role, firstName, username, mobileNo, password, country, state, zipCode, active, dmac_user_verification_token)
     //   VALUES (?)`
     // const liccaValues = [
     //   'dmac_user',
@@ -65,7 +85,6 @@ export const register = async (req, res) => {
     //   0,
     //   verificationToken
     // ]
-
 
     const insertResult = await new Promise((resolve, reject) => {
       db.query(insertQuery, [values], (err, data) => {
@@ -106,60 +125,14 @@ export const register = async (req, res) => {
     }
   } catch (err) {
     console.error('Error during registration:', err)
-    return res
-      .status(500)
-      .json({
-        status: 500,
-        isSuccess: false,
-        message: 'Internal server error.'
-      })
+    return res.status(500).json({
+      status: 500,
+      isSuccess: false,
+      message: 'Internal server error.'
+    })
   }
 }
 
-export const emailVerification = (req, res) => {
-  const { token } = req.body
-
-  db.query(
-    'UPDATE dmac_webapp_users SET verified = 1 WHERE verification_token = ?',
-    [token],
-    (err, result) => {
-      if (err) return res.status(500).json({ error: err.message })
-      if (result.affectedRows === 0)
-        return res.status(400).json({ error: 'Invalid or expired token' })
-
-      res.json({ message: 'Email verified successfully!' })
-    }
-  )
-}
-
-// Verification in both table licca and dmac online
-// export const emailVerification = (req, res) => {
-//   const { token } = req.body;
-
-//   // First, update dmac_webapp_users
-//   db.query(
-//     'UPDATE dmac_webapp_users SET verified = 1 WHERE verification_token = ?',
-//     [token],
-//     (err, result) => {
-//       if (err) return res.status(500).json({ error: err.message });
-
-//       if (result.affectedRows === 0) {
-//         return res.status(400).json({ error: 'Invalid or expired token' });
-//       }
-
-//       // Second, update users table
-//       db.query(
-//         'UPDATE users SET active = 1 WHERE verification_token = ?',
-//         [token],
-//         (err2, result2) => {
-//           if (err2) return res.status(500).json({ error: err2.message });
-
-//           res.json({ message: 'Email verified and user activated successfully!' });
-//         }
-//       );
-//     }
-//   );
-// };
 
 
 
@@ -174,7 +147,7 @@ export const login = (req, res) => {
 
     if (data.length === 0) {
       return res
-        .status(404)
+        .status(200)
         .json({ error: 'Email not found! Try with a valid email.' })
     }
 
@@ -182,11 +155,11 @@ export const login = (req, res) => {
     const isPasswordValid = bcrypt.compareSync(req.body.password, user.password)
 
     if (!isPasswordValid) {
-      return res.status(400).json({ error: 'Wrong password!' })
+      return res.status(200).json({ error: 'Wrong password!' })
     }
 
     if (!user.verified) {
-      return res.status(400).json({ error: 'Please verify your email first.' })
+      return res.status(200).json({ error: 'Please verify your email first.' })
     }
 
     const token = jwt.sign(
@@ -203,26 +176,17 @@ export const login = (req, res) => {
       name: user.name,
       email: user.email,
       id: user.id,
-      user_type: user.user_type,
-      token: token
+      token: token,
+      language: user.language,
+      phone: user.mobile,
     }
 
-    // Fetch the routes based on user type
-    const routesQuery = 'SELECT * FROM routes_config WHERE user_type = ?'
-
-    db.query(routesQuery, [user.user_type], (err, routesData) => {
-      if (err) {
-        console.error('Error fetching routes:', err)
-        return res.status(500).json({ error: 'Error fetching routes' })
-      }
-
-      // Add the routes to the response
-      res.status(200).json({
-        message: 'Login successful',
-        user: usersData,
-        routes: routesData // Include routes based on user type
-      })
+    res.status(200).json({
+      message: 'Login successful',
+      user: usersData
     })
+
+    
   })
 }
 
@@ -249,7 +213,7 @@ export const forgetPasswordVerifyEmail = (req, res) => {
         const resetLink = `${process.env.DOMAIN}reset-password/${encodeURIComponent(token)}`
 
         const to = email
-        const subject = 'IRBHUB Password Reset Link'
+        const subject = 'DMAC Password Reset Link'
         const greetingHtml = `<p>Dear ${user.name || 'User'},</p>`
         const bodyHtml = `<h2>Click the link to reset your password</h2>
                <a href="${resetLink}">Reset Password</a>`
@@ -280,7 +244,7 @@ export const resetPassword = (req, res) => {
     if (err) return res.status(400).json({ msg: 'Invalid or expired token' })
     const userId = decoded.id
     const salt = bcrypt.genSaltSync(10)
-    const hashedPassword = bcrypt.hashSync(req.body.password, salt)
+    const hashedPassword = bcrypt.hashSync(password, salt)
     db.query(
       'UPDATE dmac_webapp_users SET password = ? WHERE id = ?',
       [hashedPassword, userId],

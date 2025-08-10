@@ -17,7 +17,7 @@ import withAuthGuard from '../../middlewares/withAuthGuard';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
-const navItems = ['About Us', 'Contact', 'Help'];
+const navItems: string[] = [];
 
 const Header = () => {
   const theme = useTheme();
@@ -48,7 +48,7 @@ const Header = () => {
           onClick={toggleDrawer}
         >
           {drawerOpen ? <MenuOpenIcon /> : <MenuIcon />}
-          IRB
+          DMAC
         </Typography>
 
         {/* Mobile */}
@@ -67,11 +67,12 @@ const Header = () => {
               open={Boolean(anchorEl)}
               onClose={handleMenuClose}
             >
-              {navItems.map(item => (
-                <MenuItem key={item} onClick={handleMenuClose}>
-                  {item}
-                </MenuItem>
-              ))}
+              {navItems.length > 0 &&
+                navItems.map(item => (
+                  <MenuItem key={item} onClick={handleMenuClose}>
+                    {item}
+                  </MenuItem>
+                ))}
             </Menu>
           </>
         )}
@@ -79,11 +80,12 @@ const Header = () => {
         {/*  Desktop */}
         {!isMobile && (
           <Box sx={{ display: 'flex', gap: 2 }}>
-            {navItems.map(item => (
-              <Button key={item} color="inherit">
-                {item}
-              </Button>
-            ))}
+            {navItems.length > 0 &&
+              navItems.map(item => (
+                <Button key={item} color="inherit">
+                  {item}
+                </Button>
+              ))}
           </Box>
         )}
       </Toolbar>
@@ -91,4 +93,6 @@ const Header = () => {
   );
 };
 
-export default withAuthGuard(Header);
+const HeaderWithAuth = withAuthGuard(Header);
+
+export default HeaderWithAuth;

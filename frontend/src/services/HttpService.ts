@@ -5,7 +5,7 @@ import { get } from 'lodash';
 import { ROUTES } from '../features/auth/auth.interface';
 
 const TIMEOUT = 5000;
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const _axios = axios.create({
   timeout: TIMEOUT,

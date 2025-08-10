@@ -14,7 +14,6 @@ import { useDispatch } from 'react-redux';
 import { closeLanguageModal, openLanguageModal } from './language.slice';
 import TranslateIcon from '@mui/icons-material/Translate';
 import GenericModal from '../components/modal';
-import { LANGUAGES_LIST } from '../utils/constants';
 
 const styles = {
   list: {
@@ -76,7 +75,7 @@ export default function LanguageMode() {
         cancelButtonText="Close"
       >
         <List sx={styles.list}>
-          {Object.entries(LANGUAGES_LIST).map(([code, { label, flag }]) => (
+          {Object.entries([]).map(([code, { label, flag }]) => (
             <ListItem key={code} sx={styles.listItem} disablePadding>
               <ListItemButton
                 selected={currentLang === code}
