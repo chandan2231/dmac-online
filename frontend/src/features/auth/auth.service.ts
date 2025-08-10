@@ -1,12 +1,13 @@
 import HttpService from '../../services/HttpService';
 import { get } from 'lodash';
 import { store } from '../../store';
-import { isDevModeActive } from '../../utils/functions';
 import {
   UserRole,
   type ILoginPayload,
   type ILoginResponse,
   type IRegisterPayload,
+  type IRegisterResponse,
+  type IUser,
 } from './auth.interface';
 import {
   loginFailure,
@@ -14,74 +15,28 @@ import {
   setLoadingFalse,
   setLoadingTrue,
 } from './auth.slice';
-import { DEV_MODE_ROUTES } from '../../templates/protected-boundary/mapping';
-
-// Simulate a successful login in development mode
-const simulateDevLogin = async (
-  payload: ILoginPayload
-): Promise<ILoginResponse> => {
-  const { email } = payload;
-  const user = {
-    id: 'admin-dev-id-12345',
-    name: 'Admin Dev',
-    email: email,
-    role: UserRole['SUPER_ADMIN'],
-  };
-
-  const token = 'dev-token-12345';
-  const allowedRoutes = DEV_MODE_ROUTES;
-
-  const successPayload = {
-    user,
-    token,
-    allowedRoutes,
-  };
-
-  store.dispatch(loginSuccess(successPayload));
-
-  return {
-    user,
-    token,
-    allowedRoutes,
-    success: true,
-    message: 'Development login successful',
-  };
-};
+import { USER_ROUTES } from '../../templates/protected-boundary/mapping';
 
 const registerUser = async (
   payload: IRegisterPayload
-): Promise<ILoginResponse> => {
+): Promise<IRegisterResponse> => {
   store.dispatch(setLoadingTrue()); // optional: create separate registerStart()
 
   try {
-    const response = await HttpService.post<ILoginResponse>(
+    const response = await HttpService.post<IRegisterResponse>(
       '/auth/register',
       payload
     );
 
-    const { token, user, allowedRoutes } = response.data;
-
-    if (token && user && allowedRoutes) {
-      const successPayload = { user, token, allowedRoutes };
-      store.dispatch(loginSuccess(successPayload)); // or registerSuccess
-
-      return {
-        user,
-        token,
-        allowedRoutes,
-        success: true,
-        message: 'Registration successful',
-      };
-    }
+    const { isSuccess, message } = response.data;
 
     store.dispatch(setLoadingFalse()); // or registerFailure
 
     return {
-      user: null,
-      token: null,
-      allowedRoutes: null,
-      success: false,
-      message: 'Registration failed: Invalid response data',
+      isSuccess: isSuccess,
+      message:
+        message ||
+        (isSuccess ? 'Registration successful' : 'Registration failed'),
     };
   } catch (error: unknown) {
     store.dispatch(setLoadingFalse()); // or registerFailure
@@ -91,11 +46,8 @@ const registerUser = async (
       'An unexpected error occurred during registration';
 
     return {
-      user: null,
-      token: null,
-      allowedRoutes: null,
-      success: false,
-      message,
+      isSuccess: false,
+      message: message || 'Registration failed due to an error',
     };
   }
 };
@@ -103,23 +55,26 @@ const registerUser = async (
 const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
   store.dispatch(setLoadingTrue());
 
-  const { isUserOnDevMode } = isDevModeActive(payload);
-
   try {
-    if (isUserOnDevMode) {
-      return simulateDevLogin(payload);
-    }
-
     const response = await HttpService.post<ILoginResponse>(
       '/auth/login',
       payload
     );
 
-    const { token, user, allowedRoutes } = response.data;
+    const user = get(response, ['data', 'user'], null) as IUser | null;
+    const token = get(response, ['data', 'user', 'token'], null) as
+      | string
+      | null;
+    const allowedRoutes = USER_ROUTES;
 
     if (token && user && allowedRoutes) {
+      const updatedUser = {
+        ...user,
+        token: token,
+        role: UserRole.USER,
+      };
       const successPayload = {
-        user,
+        user: updatedUser,
         token,
         allowedRoutes,
       };
@@ -140,7 +95,7 @@ const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
     return {
       user,
       token,
-      allowedRoutes,
+      allowedRoutes: null,
       success: false,
       message: 'Login failed: Invalid response data',
     };
@@ -160,25 +115,30 @@ const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
 };
 
 const forgotPassword = async (payload: { email: string }) => {
-  store.dispatch(setLoadingTrue()); // Optional: create a separate forgotPasswordStart
+  store.dispatch(setLoadingTrue());
 
   try {
-    const response = await HttpService.post<{ message: string }>(
-      '/auth/forgot-password',
+    const response = await HttpService.post<{ msg?: string; message?: string }>(
+      '/auth/verify/username',
       payload
     );
 
-    store.dispatch(setLoadingFalse()); // Optional: use forgotPasswordSuccess
+    store.dispatch(setLoadingFalse());
 
     return {
       success: true,
-      message: response.data.message || 'Password reset email sent',
+      message:
+        response.data.message ||
+        response.data.msg ||
+        'Password reset email sent',
     };
   } catch (error: unknown) {
-    store.dispatch(loginFailure()); // Optional: use forgotPasswordFailure
+    store.dispatch(loginFailure());
 
     const message =
       get(error, 'response.data.message') ||
+      get(error, 'response.data.msg') ||
+      get(error, 'response.data.error') ||
       'An unexpected error occurred during password reset';
 
     return {
@@ -196,21 +156,29 @@ const resetPassword = async (payload: {
 
   try {
     const response = await HttpService.post<{ message: string }>(
-      '/auth/reset-password',
+      'auth/password/reset',
       payload
     );
 
     store.dispatch(setLoadingFalse()); // Optional: use resetPasswordSuccess
 
+    const message = get(
+      response,
+      ['data', 'message'],
+      'Password reset successful'
+    );
+
     return {
       success: true,
-      message: response.data.message || 'Password reset successful',
+      message: message || 'Password reset successful',
     };
   } catch (error: unknown) {
     store.dispatch(loginFailure()); // Optional: use resetPasswordFailure
 
     const message =
       get(error, 'response.data.message') ||
+      get(error, 'response.data.msg') ||
+      get(error, 'response.data.error') ||
       'An unexpected error occurred during password reset';
 
     return {
@@ -222,20 +190,18 @@ const resetPassword = async (payload: {
 
 const getEmailVerification = async (payload: { token: string }) => {
   try {
-    const response = await HttpService.get<{ status: number }>(
-      `/auth/verify-email?token=${payload.token}`
+    const response = await HttpService.post<{ message: string }>(
+      '/auth/email/verify',
+      { token: payload.token } // send in body
     );
 
     return {
-      success: response.data.status === 200,
-      message:
-        response.data.status === 200
-          ? 'Email verified successfully'
-          : 'Email verification failed',
+      success: true,
+      message: response.data.message || 'Email verified successfully',
     };
   } catch (error: unknown) {
     const message =
-      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
       'An unexpected error occurred during email verification';
 
     return {

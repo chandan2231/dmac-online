@@ -1,11 +1,6 @@
 import { get } from 'lodash';
-import type {
-  ILoginPayload,
-  IUserRoute,
-} from '../features/auth/auth.interface';
-import { ADMIN_CREDENTIALS, LOCAL_STORAGE_KEYS } from './constants';
-
-const DEV_MODE = import.meta.env.VITE_DEV_MODE;
+import type { IUserRoute } from '../features/auth/auth.interface';
+import { LOCAL_STORAGE_KEYS } from './constants';
 
 const getCurrentYear = (): number => {
   return new Date().getFullYear();
@@ -41,23 +36,6 @@ const setLocalStorageItem = (
   value: string
 ): void => {
   localStorage.setItem(key, value);
-};
-
-const isDevModeActive = (payload: ILoginPayload) => {
-  const { email, password } = payload;
-  if (
-    email === ADMIN_CREDENTIALS.email &&
-    password === ADMIN_CREDENTIALS.password &&
-    DEV_MODE
-  ) {
-    return {
-      isUserOnDevMode: true,
-    };
-  }
-
-  return {
-    isUserOnDevMode: false,
-  };
 };
 
 const getNestedRoutes = (
@@ -98,7 +76,6 @@ const convertLanguagesListToOptions = (
 };
 
 export {
-  isDevModeActive,
   getCurrentYear,
   getCurrentMonth,
   getCurrentDay,

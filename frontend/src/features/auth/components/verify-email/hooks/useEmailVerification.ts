@@ -36,10 +36,10 @@ export const useEmailVerification = () => {
       }
     };
 
-    if (token && loading) {
+    if (token) {
       verifyEmail();
     }
-  }, [token, loading, navigate, showToast]);
+  }, [token, navigate, showToast]); // removed loading
 
   return { loading, message };
 };

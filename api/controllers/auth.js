@@ -3,7 +3,6 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import sendEmail from '../emailService.js'
 import { v4 as uuidv4 } from 'uuid'
-import { createHash } from 'crypto';
 
 export const register = async (req, res) => {
   try {
@@ -29,20 +28,21 @@ export const register = async (req, res) => {
     // Hash the password
     const salt = bcrypt.genSaltSync(10)
     const hashedPassword = bcrypt.hashSync(req.body.password, salt)
-    
+
     const verificationToken = uuidv4()
     // Insert new user into the database
     const insertQuery = `
-      INSERT INTO dmac_webapp_users (name, email, mobile, password, country, state, zip_code, verified, verification_token) 
+      INSERT INTO dmac_webapp_users (name, email, mobile, password, country, state, zip_code,language, verified, verification_token) 
       VALUES (?)`
     const values = [
       req.body.name,
       req.body.email,
       req.body.mobile,
       hashedPassword,
-      country,
-      state,
-      zipcode,
+      req.body.country,
+      req.body.state,
+      req.body.zipcode,
+      req.body.language,
       0,
       verificationToken
     ]
@@ -51,7 +51,7 @@ export const register = async (req, res) => {
 
     // const liccaPassword = createHash('md5').update(password).digest('hex');
     // const insertQueryLicca = `
-    //   INSERT INTO users (user_role, firstName, username, mobileNo, password, country, state, zipCode, active, dmac_user_verification_token) 
+    //   INSERT INTO users (user_role, firstName, username, mobileNo, password, country, state, zipCode, active, dmac_user_verification_token)
     //   VALUES (?)`
     // const liccaValues = [
     //   'dmac_user',
@@ -65,7 +65,6 @@ export const register = async (req, res) => {
     //   0,
     //   verificationToken
     // ]
-
 
     const insertResult = await new Promise((resolve, reject) => {
       db.query(insertQuery, [values], (err, data) => {
@@ -106,13 +105,11 @@ export const register = async (req, res) => {
     }
   } catch (err) {
     console.error('Error during registration:', err)
-    return res
-      .status(500)
-      .json({
-        status: 500,
-        isSuccess: false,
-        message: 'Internal server error.'
-      })
+    return res.status(500).json({
+      status: 500,
+      isSuccess: false,
+      message: 'Internal server error.'
+    })
   }
 }
 
@@ -161,8 +158,6 @@ export const emailVerification = (req, res) => {
 //   );
 // };
 
-
-
 export const login = (req, res) => {
   const query = 'SELECT * FROM dmac_webapp_users WHERE email = ? AND status = ?'
 
@@ -207,22 +202,23 @@ export const login = (req, res) => {
       token: token
     }
 
-    // Fetch the routes based on user type
-    const routesQuery = 'SELECT * FROM routes_config WHERE user_type = ?'
-
-    db.query(routesQuery, [user.user_type], (err, routesData) => {
-      if (err) {
-        console.error('Error fetching routes:', err)
-        return res.status(500).json({ error: 'Error fetching routes' })
-      }
-
-      // Add the routes to the response
-      res.status(200).json({
-        message: 'Login successful',
-        user: usersData,
-        routes: routesData // Include routes based on user type
-      })
+    res.status(200).json({
+      message: 'Login successful',
+      user: usersData
+      // routes: routesData // Include routes based on user type
     })
+
+    // // Fetch the routes based on user type
+    // const routesQuery = 'SELECT * FROM routes_config WHERE user_type = ?'
+
+    // db.query(routesQuery, [user.user_type], (err, routesData) => {
+    //   if (err) {
+    //     console.error('Error fetching routes:', err)
+    //     return res.status(500).json({ error: 'Error fetching routes' })
+    //   }
+
+    //   // Add the routes to the response
+    // })
   })
 }
 
@@ -249,7 +245,7 @@ export const forgetPasswordVerifyEmail = (req, res) => {
         const resetLink = `${process.env.DOMAIN}reset-password/${encodeURIComponent(token)}`
 
         const to = email
-        const subject = 'IRBHUB Password Reset Link'
+        const subject = 'DMAC Password Reset Link'
         const greetingHtml = `<p>Dear ${user.name || 'User'},</p>`
         const bodyHtml = `<h2>Click the link to reset your password</h2>
                <a href="${resetLink}">Reset Password</a>`
@@ -280,7 +276,7 @@ export const resetPassword = (req, res) => {
     if (err) return res.status(400).json({ msg: 'Invalid or expired token' })
     const userId = decoded.id
     const salt = bcrypt.genSaltSync(10)
-    const hashedPassword = bcrypt.hashSync(req.body.password, salt)
+    const hashedPassword = bcrypt.hashSync(password, salt)
     db.query(
       'UPDATE dmac_webapp_users SET password = ? WHERE id = ?',
       [hashedPassword, userId],

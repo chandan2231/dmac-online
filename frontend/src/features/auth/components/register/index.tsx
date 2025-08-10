@@ -92,14 +92,14 @@ const Register = () => {
       mobile: data.mobile,
       password: data.password,
       state: data.area,
-      zipCode: data.zipCode,
+      zipcode: data.zipCode,
       country: countryTitle,
       language: languageTitle,
     };
 
-    const { success, message } = await AuthService.registerUser(payload);
+    const { isSuccess, message } = await AuthService.registerUser(payload);
 
-    if (!success) {
+    if (!isSuccess) {
       return showToast(message, 'error');
     }
 
