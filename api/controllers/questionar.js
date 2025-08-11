@@ -94,3 +94,31 @@ export const getQuestionWithFollowUps = (req, res) => {
     });
   });
 };
+
+
+export const getPageContent = (req, res) => {
+  const { pageKey } = req.params;
+  const { lang } = req.query;
+  if (!lang) {
+    return res.status(400).json({ error: 'Language code (lang) is required' });
+  }
+
+  const query = `
+    SELECT t.title, t.content, t.doctor_info, t.link_text, t.button_text
+    FROM dmac_webapp_agree_page p
+    JOIN dmac_webapp_agree_page_translations t ON p.id = t.page_id
+    WHERE p.page_key = ? AND t.language_code = ?
+  `;
+
+  db.query(query, [pageKey, lang], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Content not found for this language' });
+    }
+    res.json(results[0]);
+  });
+};
+
