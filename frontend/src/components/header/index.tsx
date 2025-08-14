@@ -21,7 +21,7 @@ const navItems: string[] = [];
 
 const Header = () => {
   const theme = useTheme();
-  const { drawerOpen, toggleDrawer } = useSidebarContext();
+  const { showDrawer, drawerOpen, toggleDrawer } = useSidebarContext();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
@@ -47,12 +47,14 @@ const Header = () => {
           }}
           onClick={toggleDrawer}
         >
-          {drawerOpen ? <MenuOpenIcon /> : <MenuIcon />}
+          {showDrawer ? (
+            <>{drawerOpen ? <MenuOpenIcon /> : <MenuIcon />}</>
+          ) : null}
           DMAC
         </Typography>
 
         {/* Mobile */}
-        {isMobile && (
+        {isMobile && navItems.length > 0 ? (
           <>
             <IconButton
               edge="start"
@@ -75,7 +77,7 @@ const Header = () => {
                 ))}
             </Menu>
           </>
-        )}
+        ) : null}
 
         {/*  Desktop */}
         {!isMobile && (

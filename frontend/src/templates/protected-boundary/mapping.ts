@@ -16,10 +16,12 @@ import ProfilePage from '../../pages/profile';
 // Layouts
 import MainLayout from '../../layouts/MainLayout';
 import AuthLayout from '../../layouts/AuthLayout';
+import ContentOnlyLayout from '../../layouts/ContentOnlyLayout';
 
 export const LAYOUT_MAP = {
   MainLayout,
   AuthLayout,
+  ContentOnlyLayout,
 };
 
 export const COMPONENT_MAP = {
@@ -44,7 +46,7 @@ export type ComponentKey = keyof typeof COMPONENT_MAP;
 export const PUBLIC_ROUTES = [
   {
     path: ROUTES.HOME,
-    layout: LAYOUT_MAP['MainLayout'],
+    layout: LAYOUT_MAP['ContentOnlyLayout'],
     component: COMPONENT_MAP['AuthRedirectHomePage'],
   },
   {
@@ -74,7 +76,7 @@ export const PUBLIC_ROUTES = [
   },
   {
     path: ROUTES.NOT_FOUND,
-    layout: LAYOUT_MAP['AuthLayout'],
+    layout: LAYOUT_MAP['ContentOnlyLayout'],
     component: COMPONENT_MAP['PageNotFound'],
   },
 ];
@@ -85,7 +87,7 @@ export const PUBLIC_ROUTES = [
 export const USER_ROUTES: IUserRoute[] = [
   {
     path: ROUTES.HOME,
-    layout: 'MainLayout',
+    layout: 'ContentOnlyLayout',
     component: 'AuthRedirectHomePage',
     // This route will be shown in the sidebar
     showInSidebar: true,
@@ -113,22 +115,20 @@ export const USER_ROUTES: IUserRoute[] = [
   },
   {
     path: ROUTES.PROFILE,
-    layout: 'MainLayout',
+    layout: 'ContentOnlyLayout',
     component: 'ProfilePage',
     showInSidebar: true,
     sideBarTitle: 'Profile',
     sideBarIcon: 'AccountBoxIcon',
     isAChildOf: null,
   },
-  // Remove this route if you do not want to show the dashboard in the sidebar
-  // {
-  //   path: ROUTES.NOT_FOUND,
-  //   layout: 'AuthLayout',
-  //   component: 'PageNotFound',
-  //   // This route will not be shown in the sidebar
-  //   showInSidebar: true,
-  //   sideBarTitle: 'Not Found',
-  //   sideBarIcon: 'ErrorIcon',
-  //   isAChildOf: ROUTES.HOME,
-  // },
+  {
+    path: ROUTES.NOT_FOUND,
+    layout: 'ContentOnlyLayout',
+    component: 'PageNotFound',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
 ];

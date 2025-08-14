@@ -6,7 +6,7 @@ export const UserRole = {
   SUPER_ADMIN: 'superadmin',
 };
 
-export type LayoutType = 'MainLayout' | 'AuthLayout';
+export type LayoutType = 'MainLayout' | 'AuthLayout' | 'ContentOnlyLayout';
 
 export interface IUser {
   id: string;
