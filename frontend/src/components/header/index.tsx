@@ -16,6 +16,8 @@ import MenuIcon from '@mui/icons-material/Menu';
 import withAuthGuard from '../../middlewares/withAuthGuard';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ColorMode from '../../providers/theme-provider/ColorMode';
+import LogoutFeature from '../../features/auth/components/logout';
 
 const navItems: string[] = [];
 
@@ -88,6 +90,8 @@ const Header = () => {
                   {item}
                 </Button>
               ))}
+            <ColorMode />
+            <LogoutFeature />
           </Box>
         )}
       </Toolbar>

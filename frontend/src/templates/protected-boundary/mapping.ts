@@ -12,6 +12,7 @@ import DashboardPage from '../../pages/dashboard';
 import ResetPassword from '../../pages/reset-password';
 import VerifyEmail from '../../pages/verify-email';
 import ProfilePage from '../../pages/profile';
+import QuestionersPage from '../../pages/questioners';
 
 // Layouts
 import MainLayout from '../../layouts/MainLayout';
@@ -38,6 +39,7 @@ export const COMPONENT_MAP = {
   ResetPassword,
   VerifyEmail,
   ProfilePage,
+  QuestionersPage,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -120,6 +122,15 @@ export const USER_ROUTES: IUserRoute[] = [
     showInSidebar: true,
     sideBarTitle: 'Profile',
     sideBarIcon: 'AccountBoxIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.QUESTIONERS,
+    layout: 'ContentOnlyLayout',
+    component: 'QuestionersPage',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
     isAChildOf: null,
   },
   {

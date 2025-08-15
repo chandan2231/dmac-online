@@ -159,8 +159,16 @@ export const emailVerification = (req, res) => {
 // };
 
 export const login = (req, res) => {
-  const query = 'SELECT * FROM dmac_webapp_users WHERE email = ? AND status = ?'
-
+  const query = `
+  SELECT 
+    u.*,
+    l.code AS language_code
+  FROM dmac_webapp_users u
+  LEFT JOIN dmac_webapp_language l
+    ON l.id = u.language
+  WHERE u.email = ? 
+    AND u.status = ?;
+`
   db.query(query, [req.body.email, 1], (err, data) => {
     if (err) {
       console.error('Database Error:', err)
@@ -201,6 +209,7 @@ export const login = (req, res) => {
       token: token,
       language: user.language,
       phone: user.mobile,
+      languageCode: user.language_code
     }
 
     res.status(200).json({

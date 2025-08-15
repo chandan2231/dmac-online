@@ -16,6 +16,7 @@ export interface IUser {
   token: string;
   language: string;
   phone: string;
+  languageCode: string;
 }
 
 export const ROUTES = {
@@ -32,6 +33,7 @@ export const ROUTES = {
   RESET_PASSWORD: '/reset-password/:token',
   VERIFY_EMAIL: '/verify-email/:token',
   PROFILE: '/profile',
+  QUESTIONERS: '/questioners',
 
   // Not Found
   NOT_FOUND: '*',
