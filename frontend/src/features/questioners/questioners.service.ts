@@ -1,15 +1,48 @@
 import { get } from 'lodash';
-import type { IAssessmentInfo } from './questioners.interface';
+import type {
+  IDisclaimerInfo,
+  IFalsePositiveInfo,
+  IQuestionDetails,
+} from './questioners.interface';
 import HttpService from '../../services/HttpService';
+
+const getQuestions = async (
+  sequenceNumber: number,
+  languageCode: string
+): Promise<IQuestionDetails | null> => {
+  try {
+    const response = await HttpService.get(
+      `/questionar/${sequenceNumber}?lang=${languageCode}`
+    );
+    return get(response, ['data'], null) as IQuestionDetails;
+  } catch (error) {
+    console.error('Error fetching questioners:', error);
+    return null;
+  }
+};
 
 const getDisclaimerPageDetails = async (
   languageCode: string
-): Promise<IAssessmentInfo | null> => {
+): Promise<IDisclaimerInfo | null> => {
   try {
     const response = await HttpService.get(
       `/questionar/page/dmac_intro?lang=${languageCode}`
     );
-    return get(response, ['data'], null) as IAssessmentInfo;
+    return get(response, ['data'], null) as IDisclaimerInfo;
+  } catch (error) {
+    console.error('Error fetching disclaimer page details:', error);
+    return null;
+  }
+};
+
+const getFalsePositivePageDetails = async (
+  languageCode: string
+): Promise<IFalsePositiveInfo | null> => {
+  try {
+    const response = await HttpService.get(
+      `/questionar/page/dmac_false_positive?lang=${languageCode}`
+    );
+    return get(response, ['data'], null) as IFalsePositiveInfo;
   } catch (error) {
     console.error('Error fetching disclaimer page details:', error);
     return null;
@@ -17,7 +50,9 @@ const getDisclaimerPageDetails = async (
 };
 
 const QuestionersService = {
+  getQuestions,
   getDisclaimerPageDetails,
+  getFalsePositivePageDetails,
 };
 
 export default QuestionersService;
