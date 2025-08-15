@@ -180,7 +180,8 @@ export const login = (req, res) => {
       id: user.id,
       token: token,
       language: user.language,
-      phone: user.mobile
+      phone: user.mobile,
+      languageCode: user.language_code
     }
 
     res.status(200).json({
