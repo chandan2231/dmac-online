@@ -1,17 +1,23 @@
-import { useSelector } from 'react-redux';
-import { useGetDisclaimerPageDetails } from './hooks/useGetDisclaimerPageDetails';
-import type { RootState } from '../../store';
-import { get } from 'lodash';
+import { Box } from '@mui/material';
+import { useState } from 'react';
+import Disclaimer from './components/Disclaimer';
 
 const Questioners = () => {
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { data } = useGetDisclaimerPageDetails(
-    get(user, ['languageCode'], 'en')
+  const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(false);
+
+  return (
+    <Box
+      sx={{
+        width: '100%',
+        height: '100%',
+        padding: 2,
+      }}
+    >
+      {!isDisclaimerAccepted ? (
+        <Disclaimer setIsDisclaimerAccepted={setIsDisclaimerAccepted} />
+      ) : null}
+    </Box>
   );
-
-  console.log('Disclaimer Page Details:', data);
-
-  return <>here we go</>;
 };
 
 export default Questioners;
