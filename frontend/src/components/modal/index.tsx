@@ -76,23 +76,25 @@ const GenericModal: React.FC<GenericModalProps> = ({
         <CloseIcon />
       </IconButton>
 
-      <DialogContent>
-        {subTitle && (
-          <Typography
-            variant="h6"
-            sx={{
-              textAlign: 'left',
-              fontSize: { xs: '0.875rem', sm: '0.875rem', md: '1rem' },
-              fontWeight: 'bold',
-              mb: 1,
-            }}
-          >
-            {subTitle}
-          </Typography>
-        )}
+      {children || subTitle ? (
+        <DialogContent>
+          {subTitle && (
+            <Typography
+              variant="h6"
+              sx={{
+                textAlign: 'left',
+                fontSize: { xs: '0.875rem', sm: '0.875rem', md: '1rem' },
+                fontWeight: 'bold',
+                mb: 1,
+              }}
+            >
+              {subTitle}
+            </Typography>
+          )}
 
-        {children}
-      </DialogContent>
+          {children}
+        </DialogContent>
+      ) : null}
 
       {(onSubmit || !hideCancelButton) && (
         <DialogActions>

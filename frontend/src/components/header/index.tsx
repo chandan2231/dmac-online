@@ -16,12 +16,14 @@ import MenuIcon from '@mui/icons-material/Menu';
 import withAuthGuard from '../../middlewares/withAuthGuard';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ColorMode from '../../providers/theme-provider/ColorMode';
+import LogoutFeature from '../../features/auth/components/logout';
 
 const navItems: string[] = [];
 
 const Header = () => {
   const theme = useTheme();
-  const { drawerOpen, toggleDrawer } = useSidebarContext();
+  const { showDrawer, drawerOpen, toggleDrawer } = useSidebarContext();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
@@ -47,12 +49,14 @@ const Header = () => {
           }}
           onClick={toggleDrawer}
         >
-          {drawerOpen ? <MenuOpenIcon /> : <MenuIcon />}
+          {showDrawer ? (
+            <>{drawerOpen ? <MenuOpenIcon /> : <MenuIcon />}</>
+          ) : null}
           DMAC
         </Typography>
 
         {/* Mobile */}
-        {isMobile && (
+        {isMobile && navItems.length > 0 ? (
           <>
             <IconButton
               edge="start"
@@ -75,7 +79,7 @@ const Header = () => {
                 ))}
             </Menu>
           </>
-        )}
+        ) : null}
 
         {/*  Desktop */}
         {!isMobile && (
@@ -86,6 +90,8 @@ const Header = () => {
                   {item}
                 </Button>
               ))}
+            <ColorMode />
+            <LogoutFeature />
           </Box>
         )}
       </Toolbar>

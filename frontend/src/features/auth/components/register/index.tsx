@@ -1,4 +1,5 @@
 import * as Yup from 'yup';
+import { get } from 'lodash';
 import { Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../../../providers/toast-provider/index.tsx';
@@ -7,18 +8,17 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { ROUTES } from '../../auth.interface.ts';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../store/index.ts';
-import MorenCard from '../../../../components/card/index.tsx';
-import ModernInput from '../../../../components/input/index.tsx';
-import MorenButton from '../../../../components/button/index.tsx';
-import AuthService from '../../auth.service.ts';
-import CustomLoader from '../../../../components/loader/index.tsx';
 import ModernSelect, {
   type IOption,
 } from '../../../../components/select/index.tsx';
 import { COUNTRIES_LIST } from '../../../../utils/constants.ts';
 import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages.ts';
 import { convertLanguagesListToOptions } from '../../../../utils/functions.ts';
-import { get } from 'lodash';
+import MorenCard from '../../../../components/card/index.tsx';
+import ModernInput from '../../../../components/input/index.tsx';
+import MorenButton from '../../../../components/button/index.tsx';
+import AuthService from '../../auth.service.ts';
+import CustomLoader from '../../../../components/loader/index.tsx';
 
 type FormValues = {
   name: string;

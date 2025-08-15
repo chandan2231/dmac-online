@@ -9,6 +9,7 @@ import { LOCAL_STORAGE_KEYS } from '../../../utils/constants';
 import { getLocalStorageItem } from '../../../utils/functions';
 
 interface SidebarContextProps {
+  showDrawer: boolean;
   drawerOpen: boolean;
   toggleDrawer: () => void;
   closeDrawer: () => void;
@@ -26,9 +27,10 @@ export const useSidebarContext = () => {
   return context;
 };
 
-export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const SidebarProvider: React.FC<{
+  showDrawer?: boolean;
+  children: React.ReactNode;
+}> = ({ showDrawer = true, children }) => {
   const [drawerOpen, setDrawerOpen] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -54,7 +56,14 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
   if (drawerOpen === null) return null; // or a spinner
 
   return (
-    <SidebarContext.Provider value={{ drawerOpen, toggleDrawer, closeDrawer }}>
+    <SidebarContext.Provider
+      value={{
+        showDrawer,
+        drawerOpen,
+        toggleDrawer,
+        closeDrawer,
+      }}
+    >
       {children}
     </SidebarContext.Provider>
   );

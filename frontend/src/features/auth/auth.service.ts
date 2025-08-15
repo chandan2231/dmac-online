@@ -1,4 +1,3 @@
-import HttpService from '../../services/HttpService';
 import { get } from 'lodash';
 import { store } from '../../store';
 import {
@@ -16,6 +15,7 @@ import {
   setLoadingTrue,
 } from './auth.slice';
 import { USER_ROUTES } from '../../templates/protected-boundary/mapping';
+import HttpService from '../../services/HttpService';
 
 const registerUser = async (
   payload: IRegisterPayload

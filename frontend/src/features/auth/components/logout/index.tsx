@@ -6,9 +6,9 @@ import { closeLogoutModal, openLogoutModal } from './logout.slice';
 import { logout } from '../../auth.slice';
 import { purgeLocalStorage } from '../../../../utils/functions';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../auth.interface';
 import LogoutIcon from '@mui/icons-material/Logout';
 import GenericModal from '../../../../components/modal';
-import { ROUTES } from '../../auth.interface';
 
 export default function LogoutFeature() {
   const dispatch = useDispatch();

@@ -40,7 +40,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({
     <SnackbarProvider
       maxSnack={5}
       anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      autoHideDuration={3000}
+      autoHideDuration={1000}
       Components={{
         default: ThemedSnackbar,
         success: ThemedSnackbar,
