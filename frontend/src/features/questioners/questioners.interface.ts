@@ -30,15 +30,12 @@ interface IQuestion {
   text: string;
   options: IQuestionOption[];
   alert: string | null;
-}
-
-interface FollowUp extends IQuestion {
-  trigger_option: string;
+  trigger_option: string | null;
 }
 
 export interface IQuestionDetails {
   sequence_no: number;
   next_sequence: number | null;
   main_question: IQuestion;
-  follow_ups: FollowUp[];
+  follow_ups: IQuestion[] | []
 }

@@ -33,6 +33,7 @@ type GenericModalProps = {
   submitButtonText?: string;
   cancelButtonText?: string;
   maxWidth?: DialogProps['maxWidth'];
+  onCancel?: () => void | null;
 };
 
 const GenericModal: React.FC<GenericModalProps> = ({
@@ -47,6 +48,7 @@ const GenericModal: React.FC<GenericModalProps> = ({
   submitButtonText = 'Submit',
   cancelButtonText = 'Cancel',
   maxWidth = 'sm',
+  onCancel = null,
 }) => {
   return (
     <StyledDialog
@@ -100,7 +102,12 @@ const GenericModal: React.FC<GenericModalProps> = ({
         <DialogActions>
           {!hideCancelButton && (
             <MorenButton
-              onClick={onClose}
+              onClick={() => {
+                if (onCancel) {
+                  return onCancel();
+                }
+                onClose();
+              }}
               variant="outlined"
               sx={{
                 maxWidth: '150px',

@@ -4,56 +4,157 @@ import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import { get } from 'lodash';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../auth/auth.interface';
 import CustomLoader from '../../../components/loader';
-import MorenButton from '../../../components/button';
 import GenericModal from '../../../components/modal';
+import MorenRadio from '../../../components/radio-input';
 
 type IQuestionsProps = {
   setIsQuestionerClosed: (value: boolean) => void;
 };
 
-const YES_CODE = 'yes';
-
 const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
+  const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
   const [currentSequenceNumber, setCurrentSequenceNumber] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFollowUp, setShowFollowUp] = useState(false);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [selectedMainOption, setSelectedMainOption] = useState<string | null>(
+    null
+  );
+  const [selectedFollowUpOption, setSelectedFollowUpOption] = useState<
+    string | null
+  >(null);
 
   const { data: questionsDetails, isPending: isLoadingQuestionsDetails } =
     useGetQuestions(currentSequenceNumber, get(user, 'languageCode', 'en'));
 
-  // Extract values for clarity
+  // Extract Main Question values for clarity
   const mainQuestion = get(questionsDetails, 'main_question', {});
-  const options = get(mainQuestion, 'options', []);
   const questionText = get(mainQuestion, 'text', '');
+  const options = get(mainQuestion, 'options', []);
   const alertMessage = get(mainQuestion, 'alert', null);
+  const triggerOption = get(mainQuestion, 'trigger_option', null);
   const hasAlert = alertMessage !== null;
   const isLastQuestion = get(questionsDetails, 'next_sequence', null) === null;
+  const cancelButtonTextForALert = get(
+    questionsDetails,
+    'cancel_button_text_for_alert',
+    'Cancel'
+  );
+  const submitButtonTextForAlert = get(
+    questionsDetails,
+    'submit_button_text_for_alert',
+    'Continue'
+  );
+
+  // Extract Follow-up Question values
+  const followUps = get(questionsDetails, 'follow_ups', []);
+  const firstFollowUp = get(followUps, [0], {}); // safer than conditional checks
+  const hasFollowUps = followUps.length > 0;
+  const followUpText = get(firstFollowUp, 'text', '');
+  const followUpOption = get(firstFollowUp, 'options', []);
+  const followUpAlertMessage = get(firstFollowUp, 'alert', null);
+  const triggerOptionForFollowUp = get(firstFollowUp, 'trigger_option', null);
+  const hasFollowUpAlert = followUpAlertMessage !== null;
+  const cancelButtonTextForFollowUpAlert = get(
+    questionsDetails,
+    'cancel_button_text_for_follow_up_alert',
+    'Cancel'
+  );
+  const submitButtonTextForFollowUpAlert = get(
+    questionsDetails,
+    'submit_button_text_for_follow_up_alert',
+    'Continue'
+  );
 
   // Logic helpers
-  const goToNextStep = () => {
+  const handleOptionSelect = (optionCode: string) => {
+    if (isLastQuestion && optionCode !== triggerOption) {
+      setIsQuestionerClosed(true);
+    }
+
+    if (!isLastQuestion && optionCode !== triggerOption) {
+      setCurrentSequenceNumber(prev => prev + 1);
+      setIsModalOpen(false);
+      setShowFollowUp(false);
+      setIsAlertModalOpen(false);
+      setSelectedMainOption(null);
+      setSelectedFollowUpOption(null);
+    }
+
+    if (optionCode === triggerOption) {
+      if (hasAlert) {
+        setIsModalOpen(true);
+      }
+      if (hasFollowUps) {
+        setShowFollowUp(true);
+        setSelectedMainOption(optionCode);
+      }
+    }
+  };
+
+  const handleOnSubmit = () => {
+    if (isLastQuestion) {
+      setIsQuestionerClosed(true);
+    }
     if (!isLastQuestion) {
       setCurrentSequenceNumber(prev => prev + 1);
-    } else {
-      if (!hasAlert) {
-        setIsQuestionerClosed(true);
+      setIsModalOpen(false);
+      setShowFollowUp(false);
+      setIsAlertModalOpen(false);
+      setSelectedMainOption(null);
+      setSelectedFollowUpOption(null);
+    }
+  };
+
+  const handleFollowUpOptionSelect = (optionCode: string) => {
+    if (isLastQuestion && optionCode !== triggerOption) {
+      setIsQuestionerClosed(true);
+    }
+
+    if (!isLastQuestion && optionCode !== triggerOptionForFollowUp) {
+      setCurrentSequenceNumber(prev => prev + 1);
+      setIsModalOpen(false);
+      setShowFollowUp(false);
+      setIsAlertModalOpen(false);
+      setSelectedMainOption(null);
+      setSelectedFollowUpOption(null);
+    }
+
+    if (optionCode === triggerOptionForFollowUp) {
+      if (hasFollowUpAlert) {
+        setIsAlertModalOpen(true);
       }
-      setIsAlertModalOpen(true);
+      if (!hasFollowUpAlert) {
+        setCurrentSequenceNumber(prev => prev + 1);
+        setIsModalOpen(false);
+        setShowFollowUp(false);
+        setIsAlertModalOpen(false);
+        setSelectedMainOption(null);
+        setSelectedFollowUpOption(null);
+      }
     }
   };
 
-  const advanceOrClose = (isYes: boolean) => {
-    if (isYes) {
-      goToNextStep();
-    } else {
-      setIsModalOpen(true);
+  const handleOnSubmitFollowUp = () => {
+    if (isLastQuestion) {
+      setIsQuestionerClosed(true);
+    }
+    if (!isLastQuestion) {
+      setCurrentSequenceNumber(prev => prev + 1);
+      setIsModalOpen(false);
+      setShowFollowUp(false);
+      setIsAlertModalOpen(false);
+      setSelectedMainOption(null);
+      setSelectedFollowUpOption(null);
     }
   };
 
-  const handleSubmitForModal = () => {
-    goToNextStep();
-    setIsModalOpen(false);
+  const handleNavigateToHome = () => {
+    navigate(ROUTES.HOME);
   };
 
   if (isLoadingQuestionsDetails) {
@@ -61,62 +162,85 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
   }
 
   return (
-    <Box
-      display="flex"
-      sx={{
-        flexDirection: 'column',
-      }}
-      gap={1}
-    >
-      {/* Text */}
-      {questionText}
+    <Box>
+      <Box display="flex" flexDirection={'column'} gap={1}>
+        {/* Text */}
+        <Box width={'400px'}>{questionText}</Box>
 
-      {/* Options */}
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        {options.map((option, index) => (
-          <Box key={index}>
-            <MorenButton
-              showGlanceEffect
-              variant="contained"
-              sx={{ minWidth: '100px' }}
-              onClick={() => advanceOrClose(option.code === YES_CODE)}
+        {/* Options */}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {options.map((option, index) => (
+            <Box
+              key={index}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+              }}
+              onClick={() => handleOptionSelect(get(option, ['code'], ''))}
             >
-              {get(option, 'text', '')}
-            </MorenButton>
+              <MorenRadio
+                showGlanceEffect
+                checked={get(option, ['code'], '') === selectedMainOption}
+              />
+              {get(option, ['text'], '')}
+            </Box>
+          ))}
+        </Box>
+
+        {/* Follow UP */}
+        {showFollowUp && (
+          <Box display="flex" flexDirection={'column'} gap={1}>
+            <Box width={'400px'}>{followUpText}</Box>
+
+            {/* Options */}
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              {followUpOption.map((option, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() =>
+                    handleFollowUpOptionSelect(get(option, ['code'], ''))
+                  }
+                >
+                  <MorenRadio
+                    showGlanceEffect
+                    checked={
+                      get(option, ['code'], '') === selectedFollowUpOption
+                    }
+                  />
+                  {get(option, ['text'], '')}
+                </Box>
+              ))}
+            </Box>
           </Box>
-        ))}
+        )}
       </Box>
 
-      {/* Modal */}
+      {/* Modal Alert For Main Question */}
       <GenericModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Confirm Action"
-        subTitle="Are you sure you want to proceed? This action might affect your records."
-        submitButtonText="Yes, Proceed"
-        onSubmit={handleSubmitForModal}
+        title={String(alertMessage || '')}
+        onCancel={() => handleNavigateToHome()}
+        cancelButtonText={cancelButtonTextForALert}
+        submitButtonText={submitButtonTextForAlert}
+        onSubmit={() => handleOnSubmit()}
       />
 
       {/* Alert Modal */}
       <GenericModal
         isOpen={isAlertModalOpen}
-        onClose={() => {
-          // If user on last question and clicks cancel, close the alert modal
-          if (isLastQuestion) {
-            setIsAlertModalOpen(false);
-            setIsQuestionerClosed(true);
-            return;
-          }
-
-          setIsAlertModalOpen(false);
-        }}
-        title={String(alertMessage || '')}
-        hideCancelButton
-        submitButtonText="Proceed"
-        onSubmit={() => {
-          setIsAlertModalOpen(false);
-          setIsQuestionerClosed(true);
-        }}
+        onClose={() => setIsAlertModalOpen(false)}
+        title={String(followUpAlertMessage || '')}
+        onCancel={() => handleNavigateToHome()}
+        cancelButtonText={cancelButtonTextForFollowUpAlert}
+        submitButtonText={submitButtonTextForFollowUpAlert}
+        onSubmit={() => handleOnSubmitFollowUp()}
       />
     </Box>
   );

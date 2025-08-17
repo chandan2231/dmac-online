@@ -24,6 +24,7 @@ const Disclaimer = ({ setIsDisclaimerAccepted }: IDisclaimerProps) => {
       display="flex"
       sx={{
         flexDirection: 'column',
+        width: '80%',
       }}
       gap={1}
     >

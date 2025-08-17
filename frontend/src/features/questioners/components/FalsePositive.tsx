@@ -26,6 +26,7 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
       display="flex"
       sx={{
         flexDirection: 'column',
+        width: '80%',
       }}
       gap={1}
     >
