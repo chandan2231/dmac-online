@@ -59,6 +59,15 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
   const triggerOptionForFollowUp = get(firstFollowUp, 'trigger_option', null);
   const hasFollowUpAlert = followUpAlertMessage !== null;
 
+  const handleResetState = () => {
+    setCurrentSequenceNumber(prev => prev + 1);
+    setIsModalOpen(false);
+    setShowFollowUp(false);
+    setIsAlertModalOpen(false);
+    setSelectedMainOption(null);
+    setSelectedFollowUpOption(null);
+  };
+
   // Logic helpers
   const handleOptionSelect = (optionCode: string) => {
     if (isLastQuestion && optionCode !== triggerOption) {
@@ -66,12 +75,7 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
     }
 
     if (!isLastQuestion && optionCode !== triggerOption) {
-      setCurrentSequenceNumber(prev => prev + 1);
-      setIsModalOpen(false);
-      setShowFollowUp(false);
-      setIsAlertModalOpen(false);
-      setSelectedMainOption(null);
-      setSelectedFollowUpOption(null);
+      handleResetState();
     }
 
     if (optionCode === triggerOption) {
@@ -90,12 +94,7 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
       setIsQuestionerClosed(true);
     }
     if (!isLastQuestion) {
-      setCurrentSequenceNumber(prev => prev + 1);
-      setIsModalOpen(false);
-      setShowFollowUp(false);
-      setIsAlertModalOpen(false);
-      setSelectedMainOption(null);
-      setSelectedFollowUpOption(null);
+      handleResetState();
     }
   };
 
@@ -105,12 +104,7 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
     }
 
     if (!isLastQuestion && optionCode !== triggerOptionForFollowUp) {
-      setCurrentSequenceNumber(prev => prev + 1);
-      setIsModalOpen(false);
-      setShowFollowUp(false);
-      setIsAlertModalOpen(false);
-      setSelectedMainOption(null);
-      setSelectedFollowUpOption(null);
+      handleResetState();
     }
 
     if (optionCode === triggerOptionForFollowUp) {
@@ -118,12 +112,7 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
         setIsAlertModalOpen(true);
       }
       if (!hasFollowUpAlert) {
-        setCurrentSequenceNumber(prev => prev + 1);
-        setIsModalOpen(false);
-        setShowFollowUp(false);
-        setIsAlertModalOpen(false);
-        setSelectedMainOption(null);
-        setSelectedFollowUpOption(null);
+        handleResetState();
       }
     }
   };
@@ -133,12 +122,7 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
       setIsQuestionerClosed(true);
     }
     if (!isLastQuestion) {
-      setCurrentSequenceNumber(prev => prev + 1);
-      setIsModalOpen(false);
-      setShowFollowUp(false);
-      setIsAlertModalOpen(false);
-      setSelectedMainOption(null);
-      setSelectedFollowUpOption(null);
+      handleResetState();
     }
   };
 
