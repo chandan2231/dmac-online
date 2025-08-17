@@ -6,6 +6,7 @@ import type { RootState } from '../../../store';
 import { get } from 'lodash';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../auth/auth.interface';
+import { getLanguageText } from '../../../utils/functions';
 import CustomLoader from '../../../components/loader';
 import GenericModal from '../../../components/modal';
 import MorenRadio from '../../../components/radio-input';
@@ -27,6 +28,14 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
   const [selectedFollowUpOption, setSelectedFollowUpOption] = useState<
     string | null
   >(null);
+  const cancelButtonText = getLanguageText(
+    get(user, ['languageCode'], 'en'),
+    'cancel'
+  );
+  const continueButtonText = getLanguageText(
+    get(user, ['languageCode'], 'en'),
+    'continue'
+  );
 
   const { data: questionsDetails, isPending: isLoadingQuestionsDetails } =
     useGetQuestions(currentSequenceNumber, get(user, 'languageCode', 'en'));
@@ -39,16 +48,6 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
   const triggerOption = get(mainQuestion, 'trigger_option', null);
   const hasAlert = alertMessage !== null;
   const isLastQuestion = get(questionsDetails, 'next_sequence', null) === null;
-  const cancelButtonTextForALert = get(
-    questionsDetails,
-    'cancel_button_text_for_alert',
-    'Cancel'
-  );
-  const submitButtonTextForAlert = get(
-    questionsDetails,
-    'submit_button_text_for_alert',
-    'Continue'
-  );
 
   // Extract Follow-up Question values
   const followUps = get(questionsDetails, 'follow_ups', []);
@@ -59,16 +58,6 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
   const followUpAlertMessage = get(firstFollowUp, 'alert', null);
   const triggerOptionForFollowUp = get(firstFollowUp, 'trigger_option', null);
   const hasFollowUpAlert = followUpAlertMessage !== null;
-  const cancelButtonTextForFollowUpAlert = get(
-    questionsDetails,
-    'cancel_button_text_for_follow_up_alert',
-    'Cancel'
-  );
-  const submitButtonTextForFollowUpAlert = get(
-    questionsDetails,
-    'submit_button_text_for_follow_up_alert',
-    'Continue'
-  );
 
   // Logic helpers
   const handleOptionSelect = (optionCode: string) => {
@@ -227,8 +216,8 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
         onClose={() => setIsModalOpen(false)}
         title={String(alertMessage || '')}
         onCancel={() => handleNavigateToHome()}
-        cancelButtonText={cancelButtonTextForALert}
-        submitButtonText={submitButtonTextForAlert}
+        cancelButtonText={cancelButtonText}
+        submitButtonText={continueButtonText}
         onSubmit={() => handleOnSubmit()}
       />
 
@@ -238,8 +227,8 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
         onClose={() => setIsAlertModalOpen(false)}
         title={String(followUpAlertMessage || '')}
         onCancel={() => handleNavigateToHome()}
-        cancelButtonText={cancelButtonTextForFollowUpAlert}
-        submitButtonText={submitButtonTextForFollowUpAlert}
+        cancelButtonText={cancelButtonText}
+        submitButtonText={continueButtonText}
         onSubmit={() => handleOnSubmitFollowUp()}
       />
     </Box>

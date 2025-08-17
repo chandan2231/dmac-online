@@ -1,4 +1,5 @@
 import type { ComponentKey } from '../../templates/protected-boundary/mapping';
+import type { LanguageCode } from '../../types/global';
 
 export const UserRole = {
   USER: 'user',
@@ -16,7 +17,7 @@ export interface IUser {
   token: string;
   language: string;
   phone: string;
-  languageCode: string;
+  languageCode: LanguageCode;
 }
 
 export const ROUTES = {
