@@ -212,3 +212,28 @@ export const getPageContent = (req, res) => {
   });
 };
 
+
+export const getUiTexts = (req, res) => {
+  const lang = req.query.lang || 'en';
+
+  const sql = `
+    SELECT ut.code, utt.text
+    FROM dmac_webapp_ui_texts ut
+    JOIN dmac_webapp_ui_text_translations utt
+      ON ut.id = utt.ui_text_id
+    WHERE utt.language_code = ? AND ut.status = 1
+  `;
+
+  db.query(sql, [lang], (err, rows) => {
+    if (err) return res.status(500).json(err);
+    
+    const response = {};
+    rows.forEach(r => {
+      response[r.code] = r.text; // { cancel: "Cancel", start: "Start", ... }
+    });
+
+    return res.status(200).json(response);
+  });
+};
+
+
