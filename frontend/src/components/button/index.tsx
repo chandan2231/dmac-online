@@ -1,6 +1,6 @@
 // MorenButton.tsx
 import React from 'react';
-import GlanceWrapper from '../glance-wrapper';
+// import GlanceWrapper from '../glance-wrapper';
 import Button, { type ButtonProps } from '@mui/material/Button';
 import { styled } from '@mui/material/styles';
 
@@ -42,16 +42,16 @@ const StyledButton = styled(Button)(({ theme }) => ({
 
 const MorenButton = React.forwardRef<HTMLButtonElement, MorenButtonProps>(
   (props, ref) => {
-    const { showGlanceEffect, ...restProps } = props;
+    const { ...restProps } = props;
 
-    if (showGlanceEffect) {
-      // If the glance effect is enabled, wrap the button in a GlanceWrapper
-      return (
-        <GlanceWrapper>
-          <StyledButton ref={ref} {...restProps} />
-        </GlanceWrapper>
-      );
-    }
+    // if (showGlanceEffect) {
+    //   // If the glance effect is enabled, wrap the button in a GlanceWrapper
+    //   return (
+    //     <GlanceWrapper>
+    //       <StyledButton ref={ref} {...restProps} />
+    //     </GlanceWrapper>
+    //   );
+    // }
 
     return <StyledButton ref={ref} {...restProps} />;
   }
