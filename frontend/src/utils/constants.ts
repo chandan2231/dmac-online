@@ -1,8 +1,8 @@
 import type { IOption } from '../components/select';
-import type { ILanguageConstants } from '../types/global';
 
 export const LOCAL_STORAGE_KEYS = {
   SIDEBAR_OPEN: 'sidebarOpen',
+  LANGUAGE_CONSTANTS: 'languageConstants',
 };
 
 export const DRAWER_WIDTH = 240;
@@ -205,22 +205,3 @@ export const COUNTRIES_LIST: IOption[] = [
   { value: 'ZM', label: 'Zambia' },
   { value: 'ZW', label: 'Zimbabwe' },
 ];
-
-export const LANGUAGE_CONSTANTS: ILanguageConstants = {
-  en: {
-    cancel: 'Cancel',
-    continue: 'Continue',
-  },
-  hi: {
-    cancel: 'रद्द करें',
-    continue: 'जारी रखें',
-  },
-  es: {
-    cancel: 'Cancelar',
-    continue: 'Continuar',
-  },
-  zh: {
-    cancel: '取消',
-    continue: '继续',
-  },
-};

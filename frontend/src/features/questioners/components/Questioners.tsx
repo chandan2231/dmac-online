@@ -7,6 +7,7 @@ import { get } from 'lodash';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../auth/auth.interface';
 import { getLanguageText } from '../../../utils/functions';
+import { useLanguageConstantContext } from '../../../providers/language-constant-provider';
 import CustomLoader from '../../../components/loader';
 import GenericModal from '../../../components/modal';
 import MorenRadio from '../../../components/radio-input';
@@ -17,6 +18,7 @@ type IQuestionsProps = {
 
 const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
   const navigate = useNavigate();
+  const { languageConstants } = useLanguageConstantContext();
   const { user } = useSelector((state: RootState) => state.auth);
   const [currentSequenceNumber, setCurrentSequenceNumber] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,14 +30,8 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
   const [selectedFollowUpOption, setSelectedFollowUpOption] = useState<
     string | null
   >(null);
-  const cancelButtonText = getLanguageText(
-    get(user, ['languageCode'], 'en'),
-    'cancel'
-  );
-  const continueButtonText = getLanguageText(
-    get(user, ['languageCode'], 'en'),
-    'continue'
-  );
+  const cancelButtonText = getLanguageText(languageConstants, 'cancel');
+  const continueButtonText = getLanguageText(languageConstants, 'start');
 
   const { data: questionsDetails, isPending: isLoadingQuestionsDetails } =
     useGetQuestions(currentSequenceNumber, get(user, 'languageCode', 'en'));

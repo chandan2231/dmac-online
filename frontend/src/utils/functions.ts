@@ -1,9 +1,8 @@
 import { get } from 'lodash';
 import type { IUserRoute } from '../features/auth/auth.interface';
-import { LANGUAGE_CONSTANTS, LOCAL_STORAGE_KEYS } from './constants';
-import type { ILanguage } from '../i18n/language.interface';
+import { LOCAL_STORAGE_KEYS } from './constants';
+import type { ILanguage, ILanguageConstants } from '../i18n/language.interface';
 import type { IOption } from '../components/select';
-import type { LanguageCode } from '../types/global';
 
 const getCurrentYear = (): number => {
   return new Date().getFullYear();
@@ -78,8 +77,11 @@ const convertLanguagesListToOptions = (
   }));
 };
 
-const getLanguageText = (languageCode: LanguageCode, text: string) => {
-  const languageText = get(LANGUAGE_CONSTANTS, [languageCode, text], '');
+const getLanguageText = (
+  languageConstants: ILanguageConstants | Record<string, string>,
+  text: string
+) => {
+  const languageText = get(languageConstants, [text], '');
   return languageText || text;
 };
 

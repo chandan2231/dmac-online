@@ -1,5 +1,5 @@
+import type { LanguageCode } from '../../i18n/language.interface';
 import type { ComponentKey } from '../../templates/protected-boundary/mapping';
-import type { LanguageCode } from '../../types/global';
 
 export const UserRole = {
   USER: 'user',
