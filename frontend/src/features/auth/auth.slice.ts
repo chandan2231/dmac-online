@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { IAuthState, IUser, IUserRoute } from './auth.interface';
+import type { IUpdateLanguageDetails } from '../../i18n/language.interface';
 
 const initialState: IAuthState = {
   user: null,
@@ -62,6 +63,14 @@ const authSlice = createSlice({
       state.loading = false;
       state.allowedRoutes = null;
     },
+    updateLanguageDetails: (
+      state,
+      action: PayloadAction<Partial<IUpdateLanguageDetails>>
+    ) => {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+      }
+    },
   },
 });
 
@@ -73,6 +82,7 @@ export const {
   loginFailure,
   logout,
   updateUser,
+  updateLanguageDetails,
 } = authSlice.actions;
 
 export default authSlice.reducer;

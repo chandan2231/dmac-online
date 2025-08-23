@@ -12,7 +12,9 @@ import { useDispatch } from 'react-redux';
 import { closeLanguageModal, openLanguageModal } from './language.slice';
 import { useLanguageList } from './hooks/useGetLanguages';
 import { get } from 'lodash';
-import type { ILanguage } from './language.interface';
+import type { ILanguage, IUpdateLanguageDetails } from './language.interface';
+import { useToast } from '../providers/toast-provider';
+import { updateLanguageDetails } from '../features/auth/auth.slice';
 import TranslateIcon from '@mui/icons-material/Translate';
 import GenericModal from '../components/modal';
 import LanguageService from './language.service';
@@ -43,6 +45,7 @@ const styles = {
 };
 
 export default function LanguageMode() {
+  const { showToast } = useToast();
   const dispatch = useDispatch();
   // const { i18n } = useTranslation();
   // const currentLang = i18n.language;
@@ -58,10 +61,28 @@ export default function LanguageMode() {
       language: Number(get(langCode, ['id'], '')),
       id: Number(get(user, ['id'], '')),
     };
-    await LanguageService.changeLanguage({
-      ...changeLanguagePayload,
-    });
     // dispatch(closeLanguageModal());
+
+    try {
+      const response = await LanguageService.changeLanguage({
+        ...changeLanguagePayload,
+      });
+      showToast(
+        get(response, ['msg'], 'Language Changed Successfully'),
+        response.isSuccess ? 'success' : 'error'
+      );
+      if (response.isSuccess) {
+        dispatch(closeLanguageModal());
+        const updatedLanguageDetails = {
+          language: get(langCode, ['id'], ''),
+          languageCode: get(langCode, ['code'], ''),
+        } as IUpdateLanguageDetails;
+        dispatch(updateLanguageDetails(updatedLanguageDetails));
+      }
+    } catch (error) {
+      console.error('Error changing language:', error);
+      showToast('Failed to change language', 'error');
+    }
   };
 
   const handleClose = () => {
@@ -71,8 +92,6 @@ export default function LanguageMode() {
   const handleOpen = () => {
     dispatch(openLanguageModal());
   };
-
-  console.log({ listingResponse });
 
   return (
     <>

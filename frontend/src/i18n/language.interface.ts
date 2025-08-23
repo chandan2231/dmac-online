@@ -5,6 +5,7 @@ export const QUERY_KEYS_FOR_LANGUAGE = {
 export interface ILanguage {
   id: number;
   language: string;
+  code: LanguageCode;
 }
 
 export type LanguageCode = 'en' | 'hi' | 'es' | 'zh';
@@ -20,4 +21,9 @@ export interface ILanguageConstants {
 export interface IChangeLanguagePayload {
   language: number;
   id: number;
+}
+
+export interface IUpdateLanguageDetails {
+  language: string;
+  languageCode: LanguageCode;
 }
