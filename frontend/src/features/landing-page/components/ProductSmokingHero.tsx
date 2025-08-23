@@ -32,7 +32,7 @@ function ProductSmokingHero() {
       </LandingPageTypography>
       <Box
         component="img"
-        src="/static/themes/onepirate/productBuoy.svg"
+        src="/onepirate/productBuoy.svg"
         alt="buoy"
         sx={{ width: 60 }}
       />

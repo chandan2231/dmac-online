@@ -48,7 +48,7 @@ export default function ProductHeroLayout(
         }}
       >
         <img
-          src="/static/themes/onepirate/productHeroWonder.png"
+          src="/onepirate/productHeroWonder.png"
           alt="wonder"
           width="147"
           height="80"
@@ -69,7 +69,7 @@ export default function ProductHeroLayout(
         <Background sx={sxBackground} />
         <Box
           component="img"
-          src="/static/themes/onepirate/productHeroArrowDown.png"
+          src="/onepirate/productHeroArrowDown.png"
           alt="arrow down"
           sx={{ height: '16', width: '12', position: 'absolute', bottom: 32 }}
         />
