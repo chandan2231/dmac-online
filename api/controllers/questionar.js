@@ -195,8 +195,8 @@ export const getPageContent = (req, res) => {
 
   const query = `
     SELECT t.title, t.content, t.doctor_info, t.link_text, t.button_text
-    FROM dmac_webapp_agree_page p
-    JOIN dmac_webapp_agree_page_translations t ON p.id = t.page_id
+    FROM dmac_webapp_page p
+    JOIN dmac_webapp_page_translations t ON p.id = t.page_id
     WHERE p.page_key = ? AND t.language_code = ?
   `;
 
