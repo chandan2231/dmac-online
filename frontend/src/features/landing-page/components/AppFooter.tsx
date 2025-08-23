@@ -23,10 +23,10 @@ const iconStyle = {
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
-  backgroundColor: 'warning.main',
+  backgroundColor: '#ffc071',
   mr: 1,
   '&:hover': {
-    bgcolor: 'warning.dark',
+    bgcolor: '#ffb25e',
   },
 };
 
