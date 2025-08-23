@@ -38,7 +38,9 @@ const Disclaimer = ({ setIsDisclaimerAccepted }: IDisclaimerProps) => {
       gap={1}
     >
       {/* Title */}
-      <Box>{get(disclaimerDetails, ['title'], '')}</Box>
+      <Box sx={{ fontWeight: 'bold', fontSize: '20px' }}>
+        {get(disclaimerDetails, ['title'], '')}
+      </Box>
 
       {/* Content */}
       <Box>{get(disclaimerDetails, ['content'], '')}</Box>
@@ -52,6 +54,7 @@ const Disclaimer = ({ setIsDisclaimerAccepted }: IDisclaimerProps) => {
           color: 'blue',
           textDecoration: 'none',
           cursor: 'pointer',
+          mb: 2,
         }}
         onClick={() => setIsReadDisclaimer(!isReadDisclaimer)}
       >

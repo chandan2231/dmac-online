@@ -31,7 +31,9 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
       gap={1}
     >
       {/* Title */}
-      <Box>{get(falsePositiveDetails, ['title'], '')}</Box>
+      <Box sx={{ fontWeight: 'bold', fontSize: '20px' }}>
+        {get(falsePositiveDetails, ['title'], '')}
+      </Box>
 
       {/* Content */}
       <Box>{get(falsePositiveDetails, ['content'], '')}</Box>

@@ -4,14 +4,15 @@ import {
   List,
   ListItem,
   ListItemButton,
-  ListItemText,
-  Typography,
 } from '@mui/material';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import { useDispatch } from 'react-redux';
 import { closeLanguageModal, openLanguageModal } from './language.slice';
+import { useLanguageList } from './hooks/useGetLanguages';
+import { get } from 'lodash';
+import type { ILanguage } from './language.interface';
 import TranslateIcon from '@mui/icons-material/Translate';
 import GenericModal from '../components/modal';
 
@@ -36,14 +37,17 @@ const styles = {
 
 export default function LanguageMode() {
   const dispatch = useDispatch();
-  const { i18n } = useTranslation();
-  const currentLang = i18n.language;
+  // const { i18n } = useTranslation();
+  // const currentLang = i18n.language;
   const { isLanguageModalOpen } = useSelector(
     (state: RootState) => state.language
   );
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { data: listingResponse } = useLanguageList(isLanguageModalOpen);
 
-  const handleSelect = (langCode: string) => {
-    i18n.changeLanguage(langCode);
+  const handleSelect = (langCode: ILanguage) => {
+    // i18n.changeLanguage(langCode);
+    console.log({ langCode });
     dispatch(closeLanguageModal());
   };
 
@@ -54,6 +58,8 @@ export default function LanguageMode() {
   const handleOpen = () => {
     dispatch(openLanguageModal());
   };
+
+  console.log({ listingResponse });
 
   return (
     <>
@@ -75,23 +81,22 @@ export default function LanguageMode() {
         cancelButtonText="Close"
       >
         <List sx={styles.list}>
-          {Object.entries([]).map(([code, { label, flag }]) => (
-            <ListItem key={code} sx={styles.listItem} disablePadding>
-              <ListItemButton
-                selected={currentLang === code}
-                onClick={() => handleSelect(code)}
-                sx={styles.listItemButton}
-              >
-                <ListItemText
-                  primary={
-                    <Typography variant="body1">
-                      {flag} {label}
-                    </Typography>
-                  }
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
+          {get(listingResponse, ['data'], []).map((language, index) => {
+            const currentLang = String(get(user, ['language'], ''));
+            const languageId = String(get(language, ['id'], ''));
+            const selectedLang = currentLang === languageId;
+            return (
+              <ListItem key={index} sx={styles.listItem} disablePadding>
+                <ListItemButton
+                  selected={selectedLang}
+                  onClick={() => handleSelect(language)}
+                  sx={styles.listItemButton}
+                >
+                  {get(language, ['language'], '')}
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
         </List>
       </GenericModal>
     </>
