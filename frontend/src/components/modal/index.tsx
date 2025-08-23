@@ -11,6 +11,7 @@ import {
 import { styled } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import MorenButton from '../button';
+import CustomLoader from '../loader';
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialogContent-root': {
@@ -34,6 +35,8 @@ type GenericModalProps = {
   cancelButtonText?: string;
   maxWidth?: DialogProps['maxWidth'];
   onCancel?: () => void | null;
+  isLoading?: boolean;
+  renderHtmlContent?: string;
 };
 
 const GenericModal: React.FC<GenericModalProps> = ({
@@ -49,7 +52,13 @@ const GenericModal: React.FC<GenericModalProps> = ({
   cancelButtonText = 'Cancel',
   maxWidth = 'sm',
   onCancel = null,
+  isLoading = false,
+  renderHtmlContent = null,
 }) => {
+  if (isLoading) {
+    return <CustomLoader />;
+  }
+
   return (
     <StyledDialog
       onClose={onClose}
@@ -77,6 +86,15 @@ const GenericModal: React.FC<GenericModalProps> = ({
       >
         <CloseIcon />
       </IconButton>
+
+      {renderHtmlContent && (
+        <DialogContent dividers sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
+          <div
+            dangerouslySetInnerHTML={{ __html: renderHtmlContent }}
+            className="ql-editor"
+          />
+        </DialogContent>
+      )}
 
       {children || subTitle ? (
         <DialogContent>
