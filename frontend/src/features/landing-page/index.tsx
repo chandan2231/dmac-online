@@ -7,18 +7,21 @@ import ProductHowItWorks from './components/ProductHowItWorks';
 import ProductCTA from './components/ProductCTA';
 import ProductSmokingHero from './components/ProductSmokingHero';
 import AppFooter from './components/AppFooter';
+import { Box } from '@mui/material';
 
 const LandingPage = () => {
   return (
     <React.Fragment>
       <AppAppBar />
       <ProductHero />
-      <ProductValues />
-      <ProductCategories />
-      <ProductHowItWorks />
-      <ProductCTA />
-      <ProductSmokingHero />
-      <AppFooter />
+      <Box sx={{ bgcolor: '#fff' }}>
+        <ProductValues />
+        <ProductCategories />
+        <ProductHowItWorks />
+        <ProductCTA />
+        <ProductSmokingHero />
+        <AppFooter />
+      </Box>
     </React.Fragment>
   );
 };

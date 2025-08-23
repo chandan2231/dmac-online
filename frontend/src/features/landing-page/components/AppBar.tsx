@@ -13,7 +13,12 @@ const rightLink = {
 function AppAppBar() {
   return (
     <div>
-      <LandingPageAppBar position="fixed">
+      <LandingPageAppBar
+        position="fixed"
+        sx={{
+          backgroundColor: '#28282a',
+        }}
+      >
         <LandingPageToolbar sx={{ justifyContent: 'space-between' }}>
           <Box sx={{ flex: 1 }} />
           <Link

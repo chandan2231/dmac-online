@@ -5,7 +5,6 @@ import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 
 const ProductHeroLayoutRoot = styled('section')(({ theme }) => ({
-  color: theme.palette.common.white,
   position: 'relative',
   display: 'flex',
   alignItems: 'center',
@@ -25,6 +24,7 @@ const Background = styled('div')({
   backgroundSize: 'cover',
   backgroundRepeat: 'no-repeat',
   zIndex: -2,
+  backgroundColor: '#7fc7d9',
 });
 
 interface ProductHeroLayoutProps {

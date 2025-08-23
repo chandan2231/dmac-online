@@ -102,57 +102,64 @@ const images = [
 
 export default function ProductCategories() {
   return (
-    <Container component="section" sx={{ mt: 8, mb: 4 }}>
-      <LandingPageTypography variant="h4" align="center" component="h2">
-        For all tastes and all desires
-      </LandingPageTypography>
-      <Box sx={{ mt: 8, display: 'flex', flexWrap: 'wrap' }}>
-        {images.map(image => (
-          <ImageIconButton
-            key={image.title}
-            style={{
-              width: image.width,
-            }}
-          >
-            <Box
-              sx={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                top: 0,
-                bottom: 0,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center 40%',
-                backgroundImage: `url(${image.url})`,
-              }}
-            />
-            <ImageBackdrop className="imageBackdrop" />
-            <Box
-              sx={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                top: 0,
-                bottom: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'common.white',
+    <Box
+      sx={{
+        pt: 8,
+        pb: 4,
+      }}
+    >
+      <Container component="section">
+        <LandingPageTypography variant="h4" align="center" component="h2">
+          For all tastes and all desires
+        </LandingPageTypography>
+        <Box sx={{ mt: 8, display: 'flex', flexWrap: 'wrap' }}>
+          {images.map(image => (
+            <ImageIconButton
+              key={image.title}
+              style={{
+                width: image.width,
               }}
             >
-              <LandingPageTypography
-                component="h3"
-                variant="h6"
-                color="inherit"
-                className="imageTitle"
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center 40%',
+                  backgroundImage: `url(${image.url})`,
+                }}
+              />
+              <ImageBackdrop className="imageBackdrop" />
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'common.white',
+                }}
               >
-                {image.title}
-                <div className="imageMarked" />
-              </LandingPageTypography>
-            </Box>
-          </ImageIconButton>
-        ))}
-      </Box>
-    </Container>
+                <LandingPageTypography
+                  component="h3"
+                  variant="h6"
+                  color="inherit"
+                  className="imageTitle"
+                >
+                  {image.title}
+                  <div className="imageMarked" />
+                </LandingPageTypography>
+              </Box>
+            </ImageIconButton>
+          ))}
+        </Box>
+      </Container>
+    </Box>
   );
 }
