@@ -6,6 +6,7 @@ import Register from '../../pages/register';
 import ForgotPassword from '../../pages/forgot-password';
 import AuthRedirectHomePage from '../../pages/home';
 import PageNotFound from '../../pages/not-found';
+import LandingPageComponent from '../../pages/landing-page';
 
 // Protected Pages
 import DashboardPage from '../../pages/dashboard';
@@ -18,8 +19,10 @@ import QuestionersPage from '../../pages/questioners';
 import MainLayout from '../../layouts/MainLayout';
 import AuthLayout from '../../layouts/AuthLayout';
 import ContentOnlyLayout from '../../layouts/ContentOnlyLayout';
+import BaseLayout from '../../layouts/BaseLayout';
 
 export const LAYOUT_MAP = {
+  BaseLayout,
   MainLayout,
   AuthLayout,
   ContentOnlyLayout,
@@ -32,6 +35,7 @@ export const COMPONENT_MAP = {
   ForgotPassword,
   PageNotFound,
   AuthRedirectHomePage,
+  LandingPageComponent,
 
   // These are the components that will be dynamically rendered based on the backend configuration
   // and can be accessed only after authentication
@@ -48,8 +52,8 @@ export type ComponentKey = keyof typeof COMPONENT_MAP;
 export const PUBLIC_ROUTES = [
   {
     path: ROUTES.HOME,
-    layout: LAYOUT_MAP['ContentOnlyLayout'],
-    component: COMPONENT_MAP['AuthRedirectHomePage'],
+    layout: LAYOUT_MAP['BaseLayout'],
+    component: COMPONENT_MAP['LandingPageComponent'],
   },
   {
     path: ROUTES.LOGIN,
