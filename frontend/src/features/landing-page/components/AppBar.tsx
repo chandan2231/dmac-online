@@ -1,20 +1,8 @@
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
-import MuiToolbar from '@mui/material/Toolbar';
-import MuiAppBar, { type AppBarProps } from '@mui/material/AppBar';
+import LandingPageToolbar from './LandingPageToolbar';
+import LandingPageAppBar from './LandingPageAppBar';
 import { ROUTES } from '../../auth/auth.interface';
-import { styled } from '@mui/material/styles';
-
-function AppBar(props: AppBarProps) {
-  return <MuiAppBar elevation={0} position="fixed" {...props} />;
-}
-
-const Toolbar = styled(MuiToolbar)(({ theme }) => ({
-  height: 64,
-  [theme.breakpoints.up('sm')]: {
-    height: 70,
-  },
-}));
 
 const rightLink = {
   fontSize: 16,
@@ -25,8 +13,8 @@ const rightLink = {
 function AppAppBar() {
   return (
     <div>
-      <AppBar position="fixed">
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
+      <LandingPageAppBar position="fixed">
+        <LandingPageToolbar sx={{ justifyContent: 'space-between' }}>
           <Box sx={{ flex: 1 }} />
           <Link
             variant="h6"
@@ -56,9 +44,9 @@ function AppAppBar() {
               {'Sign Up'}
             </Link>
           </Box>
-        </Toolbar>
-      </AppBar>
-      <Toolbar />
+        </LandingPageToolbar>
+      </LandingPageAppBar>
+      <LandingPageToolbar />
     </div>
   );
 }

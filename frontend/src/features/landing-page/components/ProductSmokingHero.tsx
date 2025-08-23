@@ -1,7 +1,7 @@
-import { Typography } from '@mui/material';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
+import LandingPageButton from './LandingPageButton';
+import LandingPageTypography from './LandingPageTypography';
 
 function ProductSmokingHero() {
   return (
@@ -14,7 +14,7 @@ function ProductSmokingHero() {
         my: 9,
       }}
     >
-      <Button
+      <LandingPageButton
         sx={{
           border: '4px solid currentColor',
           borderRadius: 0,
@@ -23,13 +23,13 @@ function ProductSmokingHero() {
           px: 5,
         }}
       >
-        <Typography variant="h4" component="span">
+        <LandingPageTypography variant="h4" component="span">
           Got any questions? Need help?
-        </Typography>
-      </Button>
-      <Typography variant="subtitle1" sx={{ my: 3 }}>
+        </LandingPageTypography>
+      </LandingPageButton>
+      <LandingPageTypography variant="subtitle1" sx={{ my: 3 }}>
         We are here to help. Get in touch!
-      </Typography>
+      </LandingPageTypography>
       <Box
         component="img"
         src="/static/themes/onepirate/productBuoy.svg"
