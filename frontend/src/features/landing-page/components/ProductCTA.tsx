@@ -2,8 +2,10 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/GridLegacy';
 import Container from '@mui/material/Container';
-import MorenButton from '../../../components/button';
-import { Snackbar, TextField, Typography } from '@mui/material';
+import LandingPageButton from './LandingPageButton';
+import LandingPageTypography from './LandingPageTypography';
+import LandingPageTextField from './LandingPageTextField';
+import LandingPageSnackbar from './LandingPageSnackbar';
 
 function ProductCTA() {
   const [open, setOpen] = React.useState(false);
@@ -35,25 +37,25 @@ function ProductCTA() {
               onSubmit={handleSubmit}
               sx={{ maxWidth: 400 }}
             >
-              <Typography variant="h2" component="h2" gutterBottom>
+              <LandingPageTypography variant="h2" component="h2" gutterBottom>
                 Receive offers
-              </Typography>
-              <Typography variant="h5">
+              </LandingPageTypography>
+              <LandingPageTypography variant="h5">
                 Taste the holidays of the everyday close to home.
-              </Typography>
-              <TextField
+              </LandingPageTypography>
+              <LandingPageTextField
                 placeholder="Your email"
                 variant="standard"
                 sx={{ width: '100%', mt: 3, mb: 2 }}
               />
-              <MorenButton
+              <LandingPageButton
                 type="submit"
                 color="primary"
                 variant="contained"
                 sx={{ width: '100%' }}
               >
                 Keep me updated
-              </MorenButton>
+              </LandingPageButton>
             </Box>
           </Box>
         </Grid>
@@ -91,7 +93,7 @@ function ProductCTA() {
           />
         </Grid>
       </Grid>
-      <Snackbar
+      <LandingPageSnackbar
         open={open}
         onClose={handleClose}
         message="We will send you our best offers, once a week."

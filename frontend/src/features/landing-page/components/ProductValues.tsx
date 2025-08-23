@@ -1,8 +1,9 @@
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/GridLegacy';
 import Container from '@mui/material/Container';
+import LandingPageTypography from './LandingPageTypography';
 import type { Theme } from '@emotion/react';
-import { Typography, type SxProps } from '@mui/material';
+import type { SxProps } from '@mui/material';
 
 const item: SxProps<Theme> = {
   display: 'flex',
@@ -33,17 +34,17 @@ function ProductValues() {
                 alt="suitcase"
                 sx={{ height: 55 }}
               />
-              <Typography variant="h6" sx={{ my: 5 }}>
+              <LandingPageTypography variant="h6" sx={{ my: 5 }}>
                 The best luxury hotels
-              </Typography>
-              <Typography variant="h5">
+              </LandingPageTypography>
+              <LandingPageTypography variant="h5">
                 {
                   'From the latest trendy boutique hotel to the iconic palace with XXL pool'
                 }
                 {
                   ', go for a mini-vacation just a few subway stops away from your home.'
                 }
-              </Typography>
+              </LandingPageTypography>
             </Box>
           </Grid>
           <Grid item xs={12} md={4}>
@@ -54,15 +55,15 @@ function ProductValues() {
                 alt="graph"
                 sx={{ height: 55 }}
               />
-              <Typography variant="h6" sx={{ my: 5 }}>
+              <LandingPageTypography variant="h6" sx={{ my: 5 }}>
                 New experiences
-              </Typography>
-              <Typography variant="h5">
+              </LandingPageTypography>
+              <LandingPageTypography variant="h5">
                 {
                   'Privatize a pool, take a Japanese bath or wake up in 900m2 of garden… '
                 }
                 {'your Sundays will not be alike.'}
-              </Typography>
+              </LandingPageTypography>
             </Box>
           </Grid>
           <Grid item xs={12} md={4}>
@@ -73,13 +74,13 @@ function ProductValues() {
                 alt="clock"
                 sx={{ height: 55 }}
               />
-              <Typography variant="h6" sx={{ my: 5 }}>
+              <LandingPageTypography variant="h6" sx={{ my: 5 }}>
                 Exclusive rates
-              </Typography>
-              <Typography variant="h5">
+              </LandingPageTypography>
+              <LandingPageTypography variant="h5">
                 {'By registering, you will access specially negotiated rates '}
                 {'that you will not find anywhere else.'}
-              </Typography>
+              </LandingPageTypography>
             </Box>
           </Grid>
         </Grid>

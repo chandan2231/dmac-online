@@ -1,7 +1,7 @@
-import MorenButton from '../../../components/button';
-import ProductHeroLayout from './ProductHeroLayout';
 import { ROUTES } from '../../auth/auth.interface';
-import { Typography } from '@mui/material';
+import LandingPageButton from './LandingPageButton';
+import LandingPageTypography from './LandingPageTypography';
+import ProductHeroLayout from './ProductHeroLayout';
 
 const backgroundImage =
   'https://images.unsplash.com/photo-1534854638093-bada1813ca19?auto=format&fit=crop&w=1400';
@@ -21,18 +21,23 @@ export default function ProductHero() {
         src={backgroundImage}
         alt="increase priority"
       />
-      <Typography color="inherit" align="center" variant="h2">
+      <LandingPageTypography
+        color="inherit"
+        align="center"
+        variant="h2"
+        marked="center"
+      >
         Upgrade your Sundays
-      </Typography>
-      <Typography
+      </LandingPageTypography>
+      <LandingPageTypography
         color="inherit"
         align="center"
         variant="h5"
         sx={{ mb: 4, mt: { xs: 4, sm: 10 } }}
       >
         Enjoy secret offers up to -70% off the best luxury hotels every Sunday.
-      </Typography>
-      <MorenButton
+      </LandingPageTypography>
+      <LandingPageButton
         color="secondary"
         variant="contained"
         size="large"
@@ -41,10 +46,10 @@ export default function ProductHero() {
         sx={{ minWidth: 200 }}
       >
         Register
-      </MorenButton>
-      <Typography variant="body2" color="inherit" sx={{ mt: 2 }}>
+      </LandingPageButton>
+      <LandingPageTypography variant="body2" color="inherit" sx={{ mt: 2 }}>
         Discover the experience
-      </Typography>
+      </LandingPageTypography>
     </ProductHeroLayout>
   );
 }

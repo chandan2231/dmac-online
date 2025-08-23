@@ -1,9 +1,10 @@
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/GridLegacy';
 import Container from '@mui/material/Container';
-import MorenButton from '../../../components/button';
+import LandingPageButton from './LandingPageButton';
+import LandingPageTypography from './LandingPageTypography';
 import type { Theme } from '@emotion/react';
-import { Typography, type SxProps } from '@mui/material';
+import type { SxProps } from '@mui/material';
 
 const item: SxProps<Theme> = {
   display: 'flex',
@@ -51,9 +52,9 @@ function ProductHowItWorks() {
             opacity: 0.7,
           }}
         />
-        <Typography variant="h4" component="h2" sx={{ mb: 14 }}>
+        <LandingPageTypography variant="h4" component="h2" sx={{ mb: 14 }}>
           How it works
-        </Typography>
+        </LandingPageTypography>
         <div>
           <Grid container spacing={5}>
             <Grid item xs={12} md={4}>
@@ -65,9 +66,9 @@ function ProductHowItWorks() {
                   alt="suitcase"
                   sx={image}
                 />
-                <Typography variant="h5" align="center">
+                <LandingPageTypography variant="h5" align="center">
                   Appointment every Wednesday 9am.
-                </Typography>
+                </LandingPageTypography>
               </Box>
             </Grid>
             <Grid item xs={12} md={4}>
@@ -79,10 +80,10 @@ function ProductHowItWorks() {
                   alt="graph"
                   sx={image}
                 />
-                <Typography variant="h5" align="center">
+                <LandingPageTypography variant="h5" align="center">
                   First come, first served. Our offers are in limited
                   quantities, so be quick.
-                </Typography>
+                </LandingPageTypography>
               </Box>
             </Grid>
             <Grid item xs={12} md={4}>
@@ -94,15 +95,15 @@ function ProductHowItWorks() {
                   alt="clock"
                   sx={image}
                 />
-                <Typography variant="h5" align="center">
+                <LandingPageTypography variant="h5" align="center">
                   {'New offers every week. New experiences, new surprises. '}
                   {'Your Sundays will no longer be alike.'}
-                </Typography>
+                </LandingPageTypography>
               </Box>
             </Grid>
           </Grid>
         </div>
-        <MorenButton
+        <LandingPageButton
           color="secondary"
           size="large"
           variant="contained"
@@ -111,7 +112,7 @@ function ProductHowItWorks() {
           sx={{ mt: 8 }}
         >
           Get started
-        </MorenButton>
+        </LandingPageButton>
       </Container>
     </Box>
   );

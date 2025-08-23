@@ -1,8 +1,8 @@
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Container from '@mui/material/Container';
+import LandingPageTypography from './LandingPageTypography';
 import { styled } from '@mui/material/styles';
-import { Typography } from '@mui/material';
 
 const ImageBackdrop = styled('div')(({ theme }) => ({
   position: 'absolute',
@@ -103,9 +103,9 @@ const images = [
 export default function ProductCategories() {
   return (
     <Container component="section" sx={{ mt: 8, mb: 4 }}>
-      <Typography variant="h4" align="center" component="h2">
+      <LandingPageTypography variant="h4" align="center" component="h2">
         For all tastes and all desires
-      </Typography>
+      </LandingPageTypography>
       <Box sx={{ mt: 8, display: 'flex', flexWrap: 'wrap' }}>
         {images.map(image => (
           <ImageIconButton
@@ -140,7 +140,7 @@ export default function ProductCategories() {
                 color: 'common.white',
               }}
             >
-              <Typography
+              <LandingPageTypography
                 component="h3"
                 variant="h6"
                 color="inherit"
@@ -148,7 +148,7 @@ export default function ProductCategories() {
               >
                 {image.title}
                 <div className="imageMarked" />
-              </Typography>
+              </LandingPageTypography>
             </Box>
           </ImageIconButton>
         ))}
