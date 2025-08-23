@@ -15,6 +15,8 @@ import { get } from 'lodash';
 import type { ILanguage, IUpdateLanguageDetails } from './language.interface';
 import { useToast } from '../providers/toast-provider';
 import { updateLanguageDetails } from '../features/auth/auth.slice';
+import { setLocalStorageItem } from '../utils/functions';
+import { LOCAL_STORAGE_KEYS } from '../utils/constants';
 import TranslateIcon from '@mui/icons-material/Translate';
 import GenericModal from '../components/modal';
 import LanguageService from './language.service';
@@ -62,7 +64,6 @@ export default function LanguageMode() {
       id: Number(get(user, ['id'], '')),
     };
     // dispatch(closeLanguageModal());
-
     try {
       const response = await LanguageService.changeLanguage({
         ...changeLanguagePayload,
@@ -78,6 +79,10 @@ export default function LanguageMode() {
           languageCode: get(langCode, ['code'], ''),
         } as IUpdateLanguageDetails;
         dispatch(updateLanguageDetails(updatedLanguageDetails));
+        setLocalStorageItem(
+          LOCAL_STORAGE_KEYS.LANGUAGE_CONSTANTS,
+          JSON.stringify(null)
+        );
       }
     } catch (error) {
       console.error('Error changing language:', error);
