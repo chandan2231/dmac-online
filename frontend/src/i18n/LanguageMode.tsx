@@ -15,6 +15,7 @@ import { get } from 'lodash';
 import type { ILanguage } from './language.interface';
 import TranslateIcon from '@mui/icons-material/Translate';
 import GenericModal from '../components/modal';
+import LanguageService from './language.service';
 
 const styles = {
   list: {
@@ -33,6 +34,12 @@ const styles = {
       backgroundColor: 'rgba(0, 0, 0, 0.08)',
     },
   },
+  selectedListItemButton: {
+    borderRadius: '8px',
+    backgroundColor: '#1976d2 !important',
+    color: '#fff',
+    '&:hover': { backgroundColor: 'primary.dark' },
+  },
 };
 
 export default function LanguageMode() {
@@ -45,10 +52,16 @@ export default function LanguageMode() {
   const { user } = useSelector((state: RootState) => state.auth);
   const { data: listingResponse } = useLanguageList(isLanguageModalOpen);
 
-  const handleSelect = (langCode: ILanguage) => {
+  const handleSelect = async (langCode: ILanguage) => {
     // i18n.changeLanguage(langCode);
-    console.log({ langCode });
-    dispatch(closeLanguageModal());
+    const changeLanguagePayload = {
+      language: Number(get(langCode, ['id'], '')),
+      id: Number(get(user, ['id'], '')),
+    };
+    await LanguageService.changeLanguage({
+      ...changeLanguagePayload,
+    });
+    // dispatch(closeLanguageModal());
   };
 
   const handleClose = () => {
@@ -90,7 +103,11 @@ export default function LanguageMode() {
                 <ListItemButton
                   selected={selectedLang}
                   onClick={() => handleSelect(language)}
-                  sx={styles.listItemButton}
+                  sx={
+                    selectedLang
+                      ? styles.selectedListItemButton
+                      : styles.listItemButton
+                  }
                 >
                   {get(language, ['language'], '')}
                 </ListItemButton>

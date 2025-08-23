@@ -34,11 +34,11 @@ _axios.interceptors.response.use(
   error => {
     const status = get(error, ['response', 'status'], null);
     const message = get(error, ['response', 'data', 'message'], null);
-    if (status === 404 && message === 'Invalid or expired token.') {
-      persistor.flush();
-      purgeLocalStorage();
-      window.location.replace(ROUTES.LOGIN);
-    }
+    // if (status === 404 && message === 'Invalid or expired token.') {
+    //   persistor.flush();
+    //   purgeLocalStorage();
+    //   window.location.replace(ROUTES.LOGIN);
+    // }
 
     return Promise.reject(error);
   }

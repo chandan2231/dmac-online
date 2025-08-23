@@ -16,3 +16,8 @@ export interface ILanguageConstants {
   done: string;
   start: string;
 }
+
+export interface IChangeLanguagePayload {
+  language: number;
+  id: number;
+}

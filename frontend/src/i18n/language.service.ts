@@ -1,5 +1,9 @@
 import HttpService from '../services/HttpService';
-import type { ILanguage, ILanguageConstants } from './language.interface';
+import type {
+  IChangeLanguagePayload,
+  ILanguage,
+  ILanguageConstants,
+} from './language.interface';
 
 const fetchLanguageList = async () => {
   try {
@@ -44,9 +48,31 @@ const fetchLanguageContants = async (languageCode: string) => {
   }
 };
 
+const changeLanguage = async ({
+  ...changeLanguagePayload
+}: IChangeLanguagePayload) => {
+  try {
+    const response = await HttpService.post('/language/language-update', {
+      ...changeLanguagePayload,
+    });
+    return {
+      isSuccess: true,
+      data: response.data,
+    };
+  } catch (error: unknown) {
+    console.error('Error changing language:', error);
+    return {
+      isSuccess: false,
+      message: 'Failed to change language',
+      data: null,
+    };
+  }
+};
+
 const LanguageService = {
   fetchLanguageList,
   fetchLanguageContants,
+  changeLanguage,
 };
 
 export default LanguageService;
