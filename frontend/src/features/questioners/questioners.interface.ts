@@ -2,6 +2,7 @@ export const QUERY_KEYS_FOR_QUESTIONERS = {
   GET_DISCLAIMER_PAGE_DETAILS: 'getDisclaimerPageDetails',
   GET_FALSE_POSITIVE_PAGE_DETAILS: 'getFalsePositivePageDetails',
   GET_QUESTIONERS: 'getQuestioners',
+  GET_READ_DISCLAIMER: 'getReadDisclaimer',
 } as const;
 
 export interface IDisclaimerInfo {
@@ -37,5 +38,13 @@ export interface IQuestionDetails {
   sequence_no: number;
   next_sequence: number | null;
   main_question: IQuestion;
-  follow_ups: IQuestion[] | []
+  follow_ups: IQuestion[] | [];
+}
+
+export interface IAgreementData {
+  title: string;
+  content: string;
+  doctor_info: string | null;
+  link_text: string | null;
+  button_text: string | null;
 }
