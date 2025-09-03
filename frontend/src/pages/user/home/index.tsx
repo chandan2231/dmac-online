@@ -1,5 +1,5 @@
-import Home from '../../features/home';
-import withAuthRedirect from '../../middlewares/withAuthRedirect';
+import Home from '../../../features/home';
+import withAuthRedirect from '../../../middlewares/withAuthRedirect';
 
 const HomePage = () => {
   return <Home />;

@@ -1,11 +1,7 @@
 import type { LanguageCode } from '../../i18n/language.interface';
 import type { ComponentKey } from '../../templates/protected-boundary/mapping';
 
-export const UserRole = {
-  USER: 'user',
-  ADMIN: 'admin',
-  SUPER_ADMIN: 'superadmin',
-};
+export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
 
 export type LayoutType = 'MainLayout' | 'AuthLayout' | 'ContentOnlyLayout';
 
@@ -13,7 +9,7 @@ export interface IUser {
   id: string;
   name: string;
   email: string;
-  role: (typeof UserRole)[keyof typeof UserRole];
+  role: UserRole;
   token: string;
   language: string;
   phone: string;
@@ -30,7 +26,6 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
 
   // Protected routes
-  DASHBOARD: '/dashboard',
   RESET_PASSWORD: '/reset-password/:token',
   VERIFY_EMAIL: '/verify-email/:token',
   PROFILE: '/profile',

@@ -1,4 +1,4 @@
-import Questioners from '../../features/questioners';
+import Questioners from '../../../features/questioners';
 
 const QuestionersPage = () => {
   return <Questioners />;
