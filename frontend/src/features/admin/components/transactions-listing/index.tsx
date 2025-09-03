@@ -60,7 +60,7 @@ function UserTable() {
   );
 }
 
-const UserListing = () => {
+const TransactionsListing = () => {
   return (
     <Box
       display="flex"
@@ -92,4 +92,4 @@ const UserListing = () => {
   );
 };
 
-export default UserListing;
+export default TransactionsListing;

@@ -1,7 +1,7 @@
-import UserListing from './components/user-listing';
+import UsersListing from './components/users-listing';
 
 const Admin = () => {
-  return <UserListing />;
+  return <UsersListing />;
 };
 
 export default Admin;

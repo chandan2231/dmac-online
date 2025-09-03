@@ -1,3 +1,4 @@
+import type { MapperObjectKey } from '../../components/sidebar/mapped-icons';
 import type { LanguageCode } from '../../i18n/language.interface';
 import type { ComponentKey } from '../../templates/protected-boundary/mapping';
 
@@ -31,6 +32,11 @@ export const ROUTES = {
   PROFILE: '/profile',
   QUESTIONERS: '/questioners',
 
+  // Admin routes
+  TRANSACTIONS: '/transactions',
+  CONSULTANTS: '/consultants',
+  PRODUCTS: '/products',
+
   // Not Found
   NOT_FOUND: '*',
 } as const;
@@ -43,7 +49,7 @@ export interface IUserRoute {
   component: ComponentKey;
   // additional properties can be added as needed
   showInSidebar: boolean;
-  sideBarIcon: string | null;
+  sideBarIcon: MapperObjectKey | null;
   sideBarTitle: string | null;
   isAChildOf: ROUTES | null;
 }

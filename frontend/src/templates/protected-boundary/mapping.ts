@@ -19,7 +19,10 @@ import ProfilePage from '../../pages/user/profile';
 import QuestionersPage from '../../pages/user/questioners';
 
 // Admin Pages
-import UserListingPageComponent from '../../pages/admin/user-listing';
+import UsersListingPageComponent from '../../pages/admin/users-listing';
+import ProductsListingPageComponent from '../../pages/admin/products-listing';
+import ConsultantsListingPageComponent from '../../pages/admin/consultants-listing';
+import TransactionsListingPageComponent from '../../pages/admin/transactions-listing';
 
 // Layouts
 import MainLayout from '../../layouts/MainLayout';
@@ -51,7 +54,10 @@ export const COMPONENT_MAP = {
   QuestionersPage,
 
   // Admin Components
-  UserListingPageComponent,
+  UsersListingPageComponent,
+  ProductsListingPageComponent,
+  ConsultantsListingPageComponent,
+  TransactionsListingPageComponent,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -160,11 +166,41 @@ const ADMIN_ROUTES: IUserRoute[] = [
   {
     path: ROUTES.HOME,
     layout: 'MainLayout',
-    component: 'UserListingPageComponent',
+    component: 'UsersListingPageComponent',
     // This route will be shown in the sidebar
     showInSidebar: true,
-    sideBarTitle: 'Home',
-    sideBarIcon: 'HomeIcon',
+    sideBarTitle: 'Users List',
+    sideBarIcon: 'GroupIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.TRANSACTIONS,
+    layout: 'MainLayout',
+    component: 'TransactionsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Transactions List',
+    sideBarIcon: 'ReceiptLongIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.CONSULTANTS,
+    layout: 'MainLayout',
+    component: 'ConsultantsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Consultants List',
+    sideBarIcon: 'BadgeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PRODUCTS,
+    layout: 'MainLayout',
+    component: 'ProductsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Products List',
+    sideBarIcon: 'InventoryIcon',
     isAChildOf: null,
   },
 ];
