@@ -18,6 +18,9 @@ import VerifyEmail from '../../pages/auth/verify-email';
 import ProfilePage from '../../pages/user/profile';
 import QuestionersPage from '../../pages/user/questioners';
 
+// Admin Pages
+import UserListingPageComponent from '../../pages/admin/user-listing';
+
 // Layouts
 import MainLayout from '../../layouts/MainLayout';
 import AuthLayout from '../../layouts/AuthLayout';
@@ -46,6 +49,9 @@ export const COMPONENT_MAP = {
   VerifyEmail,
   ProfilePage,
   QuestionersPage,
+
+  // Admin Components
+  UserListingPageComponent,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -153,8 +159,8 @@ const USER_ROUTES: IUserRoute[] = [
 const ADMIN_ROUTES: IUserRoute[] = [
   {
     path: ROUTES.HOME,
-    layout: 'ContentOnlyLayout',
-    component: 'AuthRedirectHomePage',
+    layout: 'MainLayout',
+    component: 'UserListingPageComponent',
     // This route will be shown in the sidebar
     showInSidebar: true,
     sideBarTitle: 'Home',
