@@ -6,6 +6,7 @@ import { GenericTable } from '../../../../components/table';
 import DynamicTabs from '../../../../components/tabs';
 import MorenButton from '../../../../components/button';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
+import GenericModal from '../../../../components/modal';
 
 type User = {
   id: number;
@@ -65,6 +66,17 @@ function UserTable() {
 }
 
 const ConsultantsListing = () => {
+  const [createConsultantModalOpen, setCreateConsultantModalOpen] =
+    useState(false);
+
+  const handleOpenCreateConsultantModal = () => {
+    setCreateConsultantModalOpen(true);
+  };
+
+  const handleCloseCreateConsultantModal = () => {
+    setCreateConsultantModalOpen(false);
+  };
+
   return (
     <Box
       display="flex"
@@ -86,6 +98,7 @@ const ConsultantsListing = () => {
           <MorenButton
             variant="text"
             startIcon={<AddCircleOutlineRoundedIcon />}
+            onClick={handleOpenCreateConsultantModal}
           >
             Add New Consultant
           </MorenButton>
@@ -102,6 +115,13 @@ const ConsultantsListing = () => {
         ]}
         defaultTabId="consultants"
         onTabChange={id => console.log('Tab changed to:', id)}
+      />
+
+      {/* Modal */}
+      <GenericModal
+        isOpen={createConsultantModalOpen}
+        onClose={handleCloseCreateConsultantModal}
+        title="Create New Consultant"
       />
     </Box>
   );
