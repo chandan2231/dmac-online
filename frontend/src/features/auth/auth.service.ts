@@ -65,15 +65,16 @@ const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
     const token = get(response, ['data', 'user', 'token'], null) as
       | string
       | null;
+    const ROLE = 'ADMIN' as UserRole;
     const allowedRoutes = getRoutesByRole(
-      get(response, ['data', 'user', 'role'], 'ADMIN' as UserRole)
+      get(response, ['data', 'user', 'role'], ROLE)
     );
 
     if (token && user && allowedRoutes) {
       const updatedUser = {
         ...user,
         token: token,
-        role: 'USER' as UserRole,
+        role: ROLE,
       };
       const successPayload = {
         user: updatedUser,

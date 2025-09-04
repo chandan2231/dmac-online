@@ -1,5 +1,7 @@
 import type { IOption } from '../components/select';
 
+export const ROLES_ALLOWED_TO_CHANGE_LANGUAGE = ['USER'];
+
 export const LOCAL_STORAGE_KEYS = {
   SIDEBAR_OPEN: 'sidebarOpen',
   LANGUAGE_CONSTANTS: 'languageConstants',
