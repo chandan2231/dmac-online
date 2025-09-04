@@ -56,6 +56,8 @@ function UserTable() {
       columns={columns}
       paginationModel={paginationModel}
       onPaginationModelChange={setPaginationModel}
+      maxHeight="calc(100vh - 200px)"
+      minHeight="calc(100vh - 200px)"
     />
   );
 }
@@ -75,7 +77,7 @@ const ConsultantsListing = () => {
       <TabHeaderLayout
         leftNode={
           <Typography variant="h6" sx={{ padding: 0 }}>
-            User Management Dashboard
+            Consultant Management Dashboard
           </Typography>
         }
       />
@@ -83,7 +85,6 @@ const ConsultantsListing = () => {
         tabs={[
           { label: 'Overview', id: 'overview', component: <UserTable /> },
           { label: 'Settings', id: 'settings', component: <UserTable /> },
-          { label: 'Advanced', id: 'advanced', component: <UserTable /> },
         ]}
         defaultTabId="overview"
         onTabChange={id => console.log('Tab changed to:', id)}

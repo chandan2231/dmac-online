@@ -1,9 +1,7 @@
 import type { GridColDef } from '@mui/x-data-grid';
 import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
-import { TabHeaderLayout } from '../../../../components/tab-header';
 import { GenericTable } from '../../../../components/table';
-import DynamicTabs from '../../../../components/tabs';
 
 type User = {
   id: number;
@@ -72,22 +70,10 @@ const ProductsListing = () => {
       }}
       gap={1}
     >
-      <TabHeaderLayout
-        leftNode={
-          <Typography variant="h6" sx={{ padding: 0 }}>
-            User Management Dashboard
-          </Typography>
-        }
-      />
-      <DynamicTabs
-        tabs={[
-          { label: 'Overview', id: 'overview', component: <UserTable /> },
-          { label: 'Settings', id: 'settings', component: <UserTable /> },
-          { label: 'Advanced', id: 'advanced', component: <UserTable /> },
-        ]}
-        defaultTabId="overview"
-        onTabChange={id => console.log('Tab changed to:', id)}
-      />
+      <Typography variant="h6" sx={{ padding: 0 }}>
+        Product Management Dashboard
+      </Typography>
+      <UserTable />
     </Box>
   );
 };
