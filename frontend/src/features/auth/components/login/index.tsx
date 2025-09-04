@@ -83,12 +83,7 @@ const Login = () => {
           error={!!errors.password}
           helperText={errors.password?.message}
         />
-        <MorenButton
-          showGlanceEffect
-          type="submit"
-          variant="contained"
-          disabled={loading}
-        >
+        <MorenButton type="submit" variant="contained" disabled={loading}>
           Login
         </MorenButton>
       </Box>

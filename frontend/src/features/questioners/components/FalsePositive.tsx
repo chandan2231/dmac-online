@@ -45,11 +45,7 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
       <Box>{get(falsePositiveDetails, ['link_text'], '')}</Box>
 
       <Box>
-        <MorenButton
-          showGlanceEffect
-          variant="contained"
-          onClick={() => setFalsePositive(true)}
-        >
+        <MorenButton variant="contained" onClick={() => setFalsePositive(true)}>
           {get(falsePositiveDetails, ['button_text'], '')}
         </MorenButton>
       </Box>

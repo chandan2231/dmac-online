@@ -149,7 +149,6 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
               onClick={() => handleOptionSelect(get(option, ['code'], ''))}
             >
               <MorenRadio
-                showGlanceEffect
                 checked={get(option, ['code'], '') === selectedMainOption}
               />
               {get(option, ['text'], '')}
@@ -177,7 +176,6 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
                   }
                 >
                   <MorenRadio
-                    showGlanceEffect
                     checked={
                       get(option, ['code'], '') === selectedFollowUpOption
                     }
