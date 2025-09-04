@@ -21,6 +21,7 @@ export const TabHeaderLayout: React.FC<TabHeaderLayoutProps> = ({
       <Stack
         direction="row"
         alignItems="center"
+        justifyContent={'space-between'}
         spacing={spacing}
         padding={padding}
       >

@@ -4,6 +4,8 @@ import { Box, Typography } from '@mui/material';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 import { GenericTable } from '../../../../components/table';
 import DynamicTabs from '../../../../components/tabs';
+import MorenButton from '../../../../components/button';
+import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 
 type User = {
   id: number;
@@ -80,13 +82,25 @@ const ConsultantsListing = () => {
             Consultant Management Dashboard
           </Typography>
         }
+        rightNode={
+          <MorenButton
+            variant="text"
+            startIcon={<AddCircleOutlineRoundedIcon />}
+          >
+            Add New Consultant
+          </MorenButton>
+        }
       />
       <DynamicTabs
         tabs={[
-          { label: 'Overview', id: 'overview', component: <UserTable /> },
-          { label: 'Settings', id: 'settings', component: <UserTable /> },
+          { label: 'Consultants', id: 'consultants', component: <UserTable /> },
+          {
+            label: 'Created Consultants',
+            id: 'created_consultants',
+            component: <UserTable />,
+          },
         ]}
-        defaultTabId="overview"
+        defaultTabId="consultants"
         onTabChange={id => console.log('Tab changed to:', id)}
       />
     </Box>
