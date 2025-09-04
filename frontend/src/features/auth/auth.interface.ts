@@ -4,7 +4,11 @@ import type { ComponentKey } from '../../templates/protected-boundary/mapping';
 
 export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
 
-export type LayoutType = 'MainLayout' | 'AuthLayout' | 'ContentOnlyLayout';
+export type LayoutType =
+  | 'MainLayout'
+  | 'AuthLayout'
+  | 'ContentOnlyLayout'
+  | 'BaseLayout';
 
 export interface IUser {
   id: string;

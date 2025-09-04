@@ -203,6 +203,36 @@ const ADMIN_ROUTES: IUserRoute[] = [
     sideBarIcon: 'InventoryIcon',
     isAChildOf: null,
   },
+  {
+    path: ROUTES.NOT_FOUND,
+    layout: 'ContentOnlyLayout',
+    component: 'PageNotFound',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+];
+
+const GUEST_USER_ROUTES: IUserRoute[] = [
+  {
+    path: ROUTES.HOME,
+    layout: 'ContentOnlyLayout',
+    component: 'PageNotFound',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.NOT_FOUND,
+    layout: 'ContentOnlyLayout',
+    component: 'PageNotFound',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
 ];
 
 export const getRoutesByRole = (role: UserRole): IUserRoute[] => {
@@ -212,5 +242,5 @@ export const getRoutesByRole = (role: UserRole): IUserRoute[] => {
   if (role === 'ADMIN') {
     return ADMIN_ROUTES;
   }
-  return [];
+  return GUEST_USER_ROUTES;
 };
