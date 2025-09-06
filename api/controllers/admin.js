@@ -4,6 +4,138 @@ import sendEmail from '../emailService.js'
 import { getUserInfo, getUserInfoByProtocolId } from '../userData.js'
 import { v4 as uuidv4 } from 'uuid'
 
+
+export const getProductList = (req, res) => {
+  const que = 'SELECT * FROM dmac_webapp_products'
+  db.query(que, [], (err, data) => {
+    if (err) return res.status(500).json(err)
+    if (data.length >= 0) {
+      return res.status(200).json(data)
+    }
+  })
+}
+
+
+export const getAllUsersByRole = (req, res) => {
+  const que = 'select * from dmac_webapp_users where role=?'
+  db.query(que, [req.body.role], (err, data) => {
+    if (err) return res.status(500).json(err)
+    if (data.length >= 0) {
+      return res.status(200).json(data)
+    }
+  })
+}
+
+export const changeUserStatus = (req, res) => {
+  const que = 'UPDATE dmac_webapp_users SET status=? WHERE id=?'
+  db.query(que, [req.body.status, req.body.id], (err, data) => {
+    if (err) {
+      return res.status(500).json(err)
+    } else {
+      let result = {}
+      result.status = 200
+      result.msg = 'User status updated successfully'
+      result.id = req.body.id
+      result.status = req.body.status
+      return res.json(result)
+    }
+  })
+}
+
+export const createUsersByRole = async (req, res) => {
+  try {
+    // Check if the email already exists
+    const checkEmailQuery = 'SELECT * FROM dmac_webapp_users WHERE email = ?'
+    const existingUserData = await new Promise((resolve, reject) => {
+      db.query(checkEmailQuery, [req.body.email], (err, data) => {
+        if (err) reject(err)
+        resolve(data)
+      })
+    })
+    const existingUser = Array.isArray(existingUserData)
+      ? existingUserData
+      : [existingUserData]
+    // If email exists, return an error
+    if (existingUser.length > 0) {
+      return res
+        .status(409)
+        .json('Email already exists. Please try with another email.')
+    }
+
+    // Hash the password
+    const salt = bcrypt.genSaltSync(10)
+    const hashedPassword = bcrypt.hashSync(req.body.password, salt)
+    const verificationToken = uuidv4()
+
+    // Insert new user into the database
+    const insertQuery = `
+      INSERT INTO dmac_webapp_users (name, mobile, email, password, role, verified, verification_token, time_zone, country, address, speciality, license_number, license_expiration, contracted_rate_per_consult ) 
+      VALUES (?)`
+    const values = [
+      req.body.name,
+      req.body.mobile,
+      req.body.email,
+      hashedPassword,
+      req.body.role,
+      0,
+      verificationToken,
+      req.body.time_zone,
+      req.body.country,
+      req.body.address,
+      req.body.speciality,
+      req.body.license_number,
+      req.body.license_expiration,
+      req.body.contracted_rate_per_consult
+    ]
+
+    const insertResult = await new Promise((resolve, reject) => {
+      db.query(insertQuery, [values], (err, data) => {
+        if (err) reject(err)
+        resolve(data)
+      })
+    })
+    // Now, send the welcome email
+    const loginUrl = `${process.env.DOMAIN}signin`
+    const verifyLink = `${process.env.DOMAIN}verify-email/${verificationToken}`
+
+    const to = req.body.email
+    const subject = 'Welcome to DMAC'
+    const greetingHtml = `<p>Dear ${req.body.name},</p>`
+    let bodyHtml = `<p>You have successfully registered with DMAC as a ${req.body.role} role.</p>`
+    bodyHtml += `<p>Your login details are</p>`
+    bodyHtml += `<p>Email: ${req.body.email}</p>`
+    bodyHtml += `<p>Password: ${req.body.password}</p>`
+    bodyHtml += `<p>Login URL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">
+              Click here
+            </a></p>`
+    bodyHtml += `<h4>Click the link below to verify your email before login</h4><a href="${verifyLink}">Verify Email</a>`
+    const emailHtml = `
+      <div>
+        ${greetingHtml}
+        ${bodyHtml}
+      </div>`
+    const text = emailHtml
+    const html = emailHtml
+
+    // Send email
+    try {
+      await sendEmail(to, subject, text, html)
+      return res
+        .status(200)
+        .json('User has been created successfully and email sent.')
+    } catch (emailError) {
+      console.error('Error sending email:', emailError)
+      return res
+        .status(500)
+        .json({ status: 500, msg: 'User created but failed to send email.' })
+    }
+  } catch (err) {
+    console.error('Error during registration:', err)
+    return res.status(500).json({ status: 500, msg: 'Internal server error.' })
+  }
+}
+
+
 export const getAllProtocolList = (req, res) => {
   const que = `
     SELECT 
@@ -371,92 +503,7 @@ export const chairCommitteeApprovalProtocol = async (req, res) => {
   }
 }
 
-export const createMember = async (req, res) => {
-  try {
-    // Check if the email already exists
-    const checkEmailQuery = 'SELECT * FROM users WHERE email = ?'
-    const existingUserData = await new Promise((resolve, reject) => {
-      db.query(checkEmailQuery, [req.body.email], (err, data) => {
-        if (err) reject(err)
-        resolve(data)
-      })
-    })
-    const existingUser = Array.isArray(existingUserData)
-      ? existingUserData
-      : [existingUserData]
-    // If email exists, return an error
-    if (existingUser.length > 0) {
-      return res
-        .status(409)
-        .json('Email already exists. Please try with another email.')
-    }
 
-    // Hash the password
-    const salt = bcrypt.genSaltSync(10)
-    const hashedPassword = bcrypt.hashSync(req.body.password, salt)
-    const verificationToken = uuidv4()
-
-    // Insert new user into the database
-    const insertQuery = `
-      INSERT INTO users (name, mobile, email, password, researcher_type, user_type, verified, verification_token) 
-      VALUES (?)`
-    const values = [
-      req.body.name,
-      req.body.phone,
-      req.body.email,
-      hashedPassword,
-      req.body.user_type === 'admin' ? 'admin' : 'member',
-      req.body.user_type,
-      0,
-      verificationToken
-    ]
-
-    const insertResult = await new Promise((resolve, reject) => {
-      db.query(insertQuery, [values], (err, data) => {
-        if (err) reject(err)
-        resolve(data)
-      })
-    })
-    // Now, send the welcome email
-    const loginUrl = `${process.env.DOMAIN}signin`
-    const verifyLink = `${process.env.DOMAIN}verify-email/${verificationToken}`
-
-    const to = req.body.email
-    const subject = 'Welcome to IRBHUB'
-    const greetingHtml = `<p>Dear ${req.body.name},</p>`
-    let bodyHtml = `<p>You have successfully registered with IRBHUB as a ${req.body.user_type} role.</p>`
-    bodyHtml += `<p>Your login details are</p>`
-    bodyHtml += `<p>Email: ${req.body.email}</p>`
-    bodyHtml += `<p>Password: ${req.body.password}</p>`
-    bodyHtml += `<p>Login URL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">
-              Click here
-            </a></p>`
-    bodyHtml += `<h4>Click the link below to verify your email before login</h4><a href="${verifyLink}">Verify Email</a>`
-    const emailHtml = `
-      <div>
-        ${greetingHtml}
-        ${bodyHtml}
-      </div>`
-    const text = emailHtml
-    const html = emailHtml
-
-    // Send email
-    try {
-      await sendEmail(to, subject, text, html)
-      return res
-        .status(200)
-        .json('Member has been created successfully and email sent.')
-    } catch (emailError) {
-      console.error('Error sending email:', emailError)
-      return res
-        .status(500)
-        .json({ status: 500, msg: 'Member created but failed to send email.' })
-    }
-  } catch (err) {
-    console.error('Error during registration:', err)
-    return res.status(500).json({ status: 500, msg: 'Internal server error.' })
-  }
-}
 
 export const getActiveVotingMemberList = (req, res) => {
   const que = 'SELECT * FROM users WHERE user_type IN (?, ?, ?) AND status = ?'
@@ -558,21 +605,7 @@ export const changeMemberPassword = (req, res) => {
   })
 }
 
-export const changeUserStatus = (req, res) => {
-  const que = 'UPDATE users SET status=? WHERE id=?'
-  db.query(que, [req.body.status, req.body.id], (err, data) => {
-    if (err) {
-      return res.status(500).json(err)
-    } else {
-      let result = {}
-      result.status = 200
-      result.msg = 'User has been deleted successfully'
-      result.id = req.body.id
-      result.status = req.body.status
-      return res.json(result)
-    }
-  })
-}
+
 
 export const changeMemberStatus = (req, res) => {
   const que = 'UPDATE users SET status=? WHERE id=?'
@@ -780,15 +813,7 @@ export const getCreatedProtocolList = (req, res) => {
   })
 }
 
-export const getAllUsers = (req, res) => {
-  const que = 'select * from users where researcher_type=? AND status=?'
-  db.query(que, ['user', 1], (err, data) => {
-    if (err) return res.status(500).json(err)
-    if (data.length >= 0) {
-      return res.status(200).json(data)
-    }
-  })
-}
+
 
 export const getContinuinDetailsById = (req, res) => {
   const continuinReviewDetailObj = {}

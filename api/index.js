@@ -2,10 +2,12 @@ import express from 'express'
 import languageRoutes from './routes/language.js'
 import questionarRoutes from './routes/questionar.js'
 import authRoutes from './routes/auth.js'
+import adminRoutes from './routes/admin.js'
+
+
 import researchRoutes from './routes/researchInfo.js'
 import protocolRoutes from './routes/protocol.js'
 import continuinReviewRoutes from './routes/continuinReview.js'
-import adminRoutes from './routes/admin.js'
 import eventAndRequest from './routes/eventAndRequest.js'
 import communication from './routes/communication.js'
 import payment from './routes/payment.js'

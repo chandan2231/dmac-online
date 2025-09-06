@@ -1,7 +1,11 @@
 import express from 'express'
 import {
+  getAllUsersByRole,
+  changeUserStatus,
+  createUsersByRole,
+  getProductList,
+
   getApprovedProtocolList,
-  getAllUsers,
   getContinuinDetailsById,
   getProtocolDetailsById,
   getStudyCloseoutRequestList,
@@ -14,10 +18,8 @@ import {
   getProtocolAmendmentRequestById,
   allowProtocolEdit,
   getMemberList,
-  createMember,
   changeMemberStatus,
   changeMemberPassword,
-  changeUserStatus,
   changeUserPassword,
   getUnderReviewProtocolList,
   getRejectedProtocolList,
@@ -47,6 +49,12 @@ import {
 import { authenticateUser } from '../utils/middleware.js'
 
 const router = express.Router()
+
+router.post('/users/list', getAllUsersByRole)
+router.post('/user/status/change', changeUserStatus)
+router.post('/user/create', createUsersByRole)
+router.get('/products/list', getProductList)
+
 router.post(
   '/member/chairCommitteeApprovalProtocol',
   authenticateUser,
@@ -95,9 +103,9 @@ router.post('/eventprice/create', authenticateUser, createEventPrice)
 router.get('/eventprice/list', authenticateUser, getEventPriceList)
 router.post('/user/reset/password', authenticateUser, changeUserPassword)
 router.post('/member/reset/password', authenticateUser, changeMemberPassword)
-router.post('/user/status/change', authenticateUser, changeUserStatus)
+
 router.post('/member/status/change', authenticateUser, changeMemberStatus)
-router.post('/member/create', authenticateUser, createMember)
+
 router.get('/member/list', authenticateUser, getMemberList)
 router.get('/super/member/list', authenticateUser, getMemberListForSuperAdmin)
 router.post('/member/allowVoteForMember', authenticateUser, allowVoteForMember)
@@ -120,7 +128,7 @@ router.post(
 router.post('/created/protocol/list', authenticateUser, getCreatedProtocolList)
 router.post('/protocol/allowEdit', authenticateUser, allowProtocolEdit)
 router.post('/protocol/waiveFee', authenticateUser, allowProtocolWaiveFee)
-router.get('/users/list', authenticateUser, getAllUsers)
+
 router.post('/continuinDetailsById', authenticateUser, getContinuinDetailsById)
 router.post('/protocolDetailsById', authenticateUser, getProtocolDetailsById)
 router.post(
