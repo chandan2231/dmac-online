@@ -2,10 +2,9 @@ import { ROUTES } from '../../auth/auth.interface';
 import LandingPageButton from './LandingPageButton';
 import LandingPageTypography from './LandingPageTypography';
 import ProductHeroLayout from './ProductHeroLayout';
+ 
 
-const backgroundImage =
-  'https://images.unsplash.com/photo-1534854638093-bada1813ca19?auto=format&fit=crop&w=1400';
-
+const backgroundImage = '/onepirate/memory-loss.jpg'
 export default function ProductHero() {
   return (
     <ProductHeroLayout
@@ -26,16 +25,17 @@ export default function ProductHero() {
         align="center"
         variant="h2"
         marked="center"
+        sx={{color: '#ffffff'}}
       >
-        Upgrade your Sundays
+        Solution to Memory Loss
       </LandingPageTypography>
       <LandingPageTypography
         color="inherit"
         align="center"
         variant="h5"
-        sx={{ mb: 4, mt: { xs: 4, sm: 10 } }}
+        sx={{ mb: 4, mt: { xs: 4, sm: 10 }, color: '#ffffff' }}
       >
-        Enjoy secret offers up to -70% off the best luxury hotels every Sunday.
+        Regain Memory 360 (RM360) is a research-backed brain workout for memory loss and cognitive decline.
       </LandingPageTypography>
       <LandingPageButton
         color="secondary"
