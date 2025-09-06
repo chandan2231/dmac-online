@@ -14,6 +14,8 @@ type GenericTableProps<T> = {
   paginationModel?: GridPaginationModel;
   onPaginationModelChange?: (model: GridPaginationModel) => void;
   loading?: boolean;
+  maxHeight?: string;
+  minHeight?: string;
 };
 
 export function GenericTable<T extends { id: string | number }>({
@@ -24,14 +26,16 @@ export function GenericTable<T extends { id: string | number }>({
   paginationModel,
   onPaginationModelChange,
   loading = false,
+  maxHeight = 'calc(100vh - 150px)',
+  minHeight = 'calc(100vh - 150px)',
 }: GenericTableProps<T>) {
   return (
     <Box
       sx={{
         width: '100%',
         height: '100%',
-        maxHeight: 'calc(100vh - 200px)', // Adjust based on your layout
-        minHeight: 'calc(100vh - 200px)', // Adjust based on your layout
+        maxHeight: maxHeight, // Adjust based on your layout
+        minHeight: minHeight, // Adjust based on your layout
         overflow: 'scroll',
       }}
     >
@@ -48,8 +52,14 @@ export function GenericTable<T extends { id: string | number }>({
         onRowClick={params => onRowClick?.(params.row)}
         sx={{
           backgroundColor: 'background.paper',
-          maxHeight: 'calc(100vh - 200px)', // Adjust based on your layout
-          minHeight: 'calc(100vh - 200px)', // Adjust based on your layout
+          maxHeight: maxHeight, // Adjust based on your layout
+          minHeight: minHeight, // Adjust based on your layout
+          '.MuiDataGrid-columnHeaderTitle': {
+            color: '#ffffff',
+          },
+          '& .MuiDataGrid-row:hover': {
+            color: '#ffffff',
+          },
         }}
       />
     </Box>

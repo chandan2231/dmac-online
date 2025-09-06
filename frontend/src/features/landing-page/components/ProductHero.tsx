@@ -1,5 +1,3 @@
-import { ROUTES } from '../../auth/auth.interface';
-import LandingPageButton from './LandingPageButton';
 import LandingPageTypography from './LandingPageTypography';
 import ProductHeroLayout from './ProductHeroLayout';
  
@@ -37,16 +35,7 @@ export default function ProductHero() {
       >
         Regain Memory 360 (RM360) is a research-backed brain workout for memory loss and cognitive decline.
       </LandingPageTypography>
-      <LandingPageButton
-        color="secondary"
-        variant="contained"
-        size="large"
-        component="a"
-        href={ROUTES.REGISTER}
-        sx={{ minWidth: 200 }}
-      >
-        Register
-      </LandingPageButton>
+
       <LandingPageTypography variant="body2" color="inherit" sx={{ mt: 2 }}>
         Discover the experience
       </LandingPageTypography>

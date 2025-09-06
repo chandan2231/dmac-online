@@ -225,12 +225,7 @@ const Register = () => {
           helperText={errors.language?.value?.message}
         />
 
-        <MorenButton
-          type="submit"
-          variant="contained"
-          showGlanceEffect
-          disabled={loading}
-        >
+        <MorenButton type="submit" variant="contained" disabled={loading}>
           Register
         </MorenButton>
       </Box>

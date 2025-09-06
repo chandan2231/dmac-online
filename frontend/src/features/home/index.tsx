@@ -26,7 +26,6 @@ const Home = () => {
     >
       <MorenButton
         variant="contained"
-        showGlanceEffect
         sx={{
           maxWidth: '250px',
         }}

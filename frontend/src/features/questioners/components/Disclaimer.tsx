@@ -63,7 +63,6 @@ const Disclaimer = ({ setIsDisclaimerAccepted }: IDisclaimerProps) => {
 
       <Box>
         <MorenButton
-          showGlanceEffect
           variant="contained"
           onClick={() => setIsDisclaimerAccepted(true)}
         >

@@ -1,19 +1,28 @@
-import { ROUTES, type IUserRoute } from '../../features/auth/auth.interface';
+import {
+  ROUTES,
+  type IUserRoute,
+  type UserRole,
+} from '../../features/auth/auth.interface';
 
 // Public Pages
-import LoginPage from '../../pages/login';
-import Register from '../../pages/register';
-import ForgotPassword from '../../pages/forgot-password';
-import AuthRedirectHomePage from '../../pages/home';
+import LoginPage from '../../pages/auth/login';
+import Register from '../../pages/auth/register';
+import ForgotPassword from '../../pages/auth/forgot-password';
+import AuthRedirectHomePage from '../../pages/user/home';
 import PageNotFound from '../../pages/not-found';
 import LandingPageComponent from '../../pages/landing-page';
 
 // Protected Pages
-import DashboardPage from '../../pages/dashboard';
-import ResetPassword from '../../pages/reset-password';
-import VerifyEmail from '../../pages/verify-email';
-import ProfilePage from '../../pages/profile';
-import QuestionersPage from '../../pages/questioners';
+import ResetPassword from '../../pages/auth/reset-password';
+import VerifyEmail from '../../pages/auth/verify-email';
+import ProfilePage from '../../pages/user/profile';
+import QuestionersPage from '../../pages/user/questioners';
+
+// Admin Pages
+import UsersListingPageComponent from '../../pages/admin/users-listing';
+import ProductsListingPageComponent from '../../pages/admin/products-listing';
+import ConsultantsListingPageComponent from '../../pages/admin/consultants-listing';
+import TransactionsListingPageComponent from '../../pages/admin/transactions-listing';
 
 // Layouts
 import MainLayout from '../../layouts/MainLayout';
@@ -39,11 +48,16 @@ export const COMPONENT_MAP = {
 
   // These are the components that will be dynamically rendered based on the backend configuration
   // and can be accessed only after authentication
-  DashboardPage,
   ResetPassword,
   VerifyEmail,
   ProfilePage,
   QuestionersPage,
+
+  // Admin Components
+  UsersListingPageComponent,
+  ProductsListingPageComponent,
+  ConsultantsListingPageComponent,
+  TransactionsListingPageComponent,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -90,7 +104,7 @@ export const PUBLIC_ROUTES = [
 // For protected routes, we can define them here
 // This is just a placeholder for now, as the actual routes will be dynamically rendered based on the backend configuration
 // These routes are for Development purposes only
-export const USER_ROUTES: IUserRoute[] = [
+const USER_ROUTES: IUserRoute[] = [
   {
     path: ROUTES.HOME,
     layout: 'ContentOnlyLayout',
@@ -147,3 +161,86 @@ export const USER_ROUTES: IUserRoute[] = [
     isAChildOf: null,
   },
 ];
+
+const ADMIN_ROUTES: IUserRoute[] = [
+  {
+    path: ROUTES.HOME,
+    layout: 'MainLayout',
+    component: 'UsersListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Users List',
+    sideBarIcon: 'GroupIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.TRANSACTIONS,
+    layout: 'MainLayout',
+    component: 'TransactionsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Transactions List',
+    sideBarIcon: 'ReceiptLongIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.CONSULTANTS,
+    layout: 'MainLayout',
+    component: 'ConsultantsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Consultants List',
+    sideBarIcon: 'BadgeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PRODUCTS,
+    layout: 'MainLayout',
+    component: 'ProductsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Products List',
+    sideBarIcon: 'InventoryIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.NOT_FOUND,
+    layout: 'ContentOnlyLayout',
+    component: 'PageNotFound',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+];
+
+const GUEST_USER_ROUTES: IUserRoute[] = [
+  {
+    path: ROUTES.HOME,
+    layout: 'ContentOnlyLayout',
+    component: 'PageNotFound',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.NOT_FOUND,
+    layout: 'ContentOnlyLayout',
+    component: 'PageNotFound',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+];
+
+export const getRoutesByRole = (role: UserRole): IUserRoute[] => {
+  if (role === 'USER') {
+    return USER_ROUTES;
+  }
+  if (role === 'ADMIN') {
+    return ADMIN_ROUTES;
+  }
+  return GUEST_USER_ROUTES;
+};

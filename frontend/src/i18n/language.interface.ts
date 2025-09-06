@@ -8,7 +8,7 @@ export interface ILanguage {
   code: LanguageCode;
 }
 
-export type LanguageCode = 'en' | 'hi' | 'es' | 'zh';
+export type LanguageCode = 'en' | 'hi' | 'es' | 'ar';
 
 export interface ILanguageConstants {
   agree: string;

@@ -1,6 +1,9 @@
 import { get } from 'lodash';
-import type { IUserRoute } from '../features/auth/auth.interface';
-import { LOCAL_STORAGE_KEYS } from './constants';
+import type { IUser, IUserRoute } from '../features/auth/auth.interface';
+import {
+  LOCAL_STORAGE_KEYS,
+  ROLES_ALLOWED_TO_CHANGE_LANGUAGE,
+} from './constants';
 import type { ILanguage, ILanguageConstants } from '../i18n/language.interface';
 import type { IOption } from '../components/select';
 
@@ -85,6 +88,11 @@ const getLanguageText = (
   return languageText || text;
 };
 
+const canWeShowChangeLanguageOption = (user: IUser | null) => {
+  const userRole = get(user, ['role'], '');
+  return ROLES_ALLOWED_TO_CHANGE_LANGUAGE.includes(userRole);
+};
+
 export {
   getCurrentYear,
   getCurrentMonth,
@@ -96,4 +104,5 @@ export {
   getSidebarOptions,
   convertLanguagesListToOptions,
   getLanguageText,
+  canWeShowChangeLanguageOption,
 };

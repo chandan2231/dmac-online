@@ -12,6 +12,9 @@ import {
   Button,
 } from '@mui/material';
 import { useSidebarContext } from '../sidebar/provider';
+import { canWeShowChangeLanguageOption } from '../../utils/functions';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../store';
 import MenuIcon from '@mui/icons-material/Menu';
 import withAuthGuard from '../../middlewares/withAuthGuard';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
@@ -24,6 +27,7 @@ const navItems: string[] = [];
 
 const Header = () => {
   const theme = useTheme();
+  const { user } = useSelector((state: RootState) => state.auth);
   const { showDrawer, drawerOpen, toggleDrawer } = useSidebarContext();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -91,7 +95,7 @@ const Header = () => {
                   {item}
                 </Button>
               ))}
-            <LanguageMode />
+            {canWeShowChangeLanguageOption(user) && <LanguageMode />}
             <ColorMode />
             <LogoutFeature />
           </Box>

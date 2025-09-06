@@ -1,12 +1,12 @@
 import { get } from 'lodash';
 import { store } from '../../store';
 import {
-  UserRole,
   type ILoginPayload,
   type ILoginResponse,
   type IRegisterPayload,
   type IRegisterResponse,
   type IUser,
+  type UserRole,
 } from './auth.interface';
 import {
   loginFailure,
@@ -14,7 +14,7 @@ import {
   setLoadingFalse,
   setLoadingTrue,
 } from './auth.slice';
-import { USER_ROUTES } from '../../templates/protected-boundary/mapping';
+import { getRoutesByRole } from '../../templates/protected-boundary/mapping';
 import HttpService from '../../services/HttpService';
 
 const registerUser = async (
@@ -65,13 +65,16 @@ const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
     const token = get(response, ['data', 'user', 'token'], null) as
       | string
       | null;
-    const allowedRoutes = USER_ROUTES;
+    const ROLE = 'ADMIN' as UserRole;
+    const allowedRoutes = getRoutesByRole(
+      get(response, ['data', 'user', 'role'], ROLE)
+    );
 
     if (token && user && allowedRoutes) {
       const updatedUser = {
         ...user,
         token: token,
-        role: UserRole.USER,
+        role: ROLE,
       };
       const successPayload = {
         user: updatedUser,

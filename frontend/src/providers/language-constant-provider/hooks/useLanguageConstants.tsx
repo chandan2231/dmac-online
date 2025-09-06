@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import type { ILanguageConstants } from '../../../i18n/language.interface';
 import {
+  canWeShowChangeLanguageOption,
   getLocalStorageItem,
   setLocalStorageItem,
 } from '../../../utils/functions';
@@ -20,7 +21,11 @@ export const useLanguageConstants = () => {
 
   useEffect(() => {
     const fetchAndStoreLanguage = async () => {
-      if (!isAuthenticated || !user?.languageCode) {
+      if (
+        !isAuthenticated ||
+        !user?.languageCode ||
+        !canWeShowChangeLanguageOption(user)
+      ) {
         setLanguageConstants({});
         return;
       }

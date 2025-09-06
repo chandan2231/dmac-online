@@ -1,12 +1,9 @@
 // MorenRadio.tsx
 import React from 'react';
-import GlanceWrapper from '../glance-wrapper';
 import Radio, { type RadioProps } from '@mui/material/Radio';
 import { styled } from '@mui/material/styles';
 
-interface MorenRadioProps extends RadioProps {
-  showGlanceEffect?: boolean; // Optional prop to control the glance effect
-}
+interface MorenRadioProps extends RadioProps {}
 
 // Customize styles to reflect Moren UI look
 const StyledRadio = styled(Radio)(({ theme }) => ({
@@ -30,17 +27,7 @@ const StyledRadio = styled(Radio)(({ theme }) => ({
 
 const MorenRadio = React.forwardRef<HTMLButtonElement, MorenRadioProps>(
   (props, ref) => {
-    const { showGlanceEffect, ...restProps } = props;
-
-    if (showGlanceEffect) {
-      return (
-        <GlanceWrapper>
-          <StyledRadio ref={ref} {...restProps} />
-        </GlanceWrapper>
-      );
-    }
-
-    return <StyledRadio ref={ref} {...restProps} />;
+    return <StyledRadio ref={ref} {...props} />;
   }
 );
 

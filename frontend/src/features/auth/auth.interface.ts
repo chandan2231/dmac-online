@@ -1,19 +1,20 @@
+import type { MapperObjectKey } from '../../components/sidebar/mapped-icons';
 import type { LanguageCode } from '../../i18n/language.interface';
 import type { ComponentKey } from '../../templates/protected-boundary/mapping';
 
-export const UserRole = {
-  USER: 'user',
-  ADMIN: 'admin',
-  SUPER_ADMIN: 'superadmin',
-};
+export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
 
-export type LayoutType = 'MainLayout' | 'AuthLayout' | 'ContentOnlyLayout';
+export type LayoutType =
+  | 'MainLayout'
+  | 'AuthLayout'
+  | 'ContentOnlyLayout'
+  | 'BaseLayout';
 
 export interface IUser {
   id: string;
   name: string;
   email: string;
-  role: (typeof UserRole)[keyof typeof UserRole];
+  role: UserRole;
   token: string;
   language: string;
   phone: string;
@@ -30,11 +31,15 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
 
   // Protected routes
-  DASHBOARD: '/dashboard',
   RESET_PASSWORD: '/reset-password/:token',
   VERIFY_EMAIL: '/verify-email/:token',
   PROFILE: '/profile',
   QUESTIONERS: '/questioners',
+
+  // Admin routes
+  TRANSACTIONS: '/transactions',
+  CONSULTANTS: '/consultants',
+  PRODUCTS: '/products',
 
   // Not Found
   NOT_FOUND: '*',
@@ -48,7 +53,7 @@ export interface IUserRoute {
   component: ComponentKey;
   // additional properties can be added as needed
   showInSidebar: boolean;
-  sideBarIcon: string | null;
+  sideBarIcon: MapperObjectKey | null;
   sideBarTitle: string | null;
   isAChildOf: ROUTES | null;
 }
