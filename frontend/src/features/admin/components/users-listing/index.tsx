@@ -1,60 +1,197 @@
+import * as Yup from 'yup';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { GenericTable } from '../../../../components/table';
+import ModernSwitch from '../../../../components/switch';
+import GenericModal from '../../../../components/modal';
+import ModernInput from '../../../../components/input';
+import MorenButton from '../../../../components/button';
+import { useGetUsersListing } from '../../hooks/useGetUsersListing';
+import type { IUser } from '../../admin.interface';
+import { get } from 'lodash';
+import AdminService from '../../admin.service';
+import CustomLoader from '../../../../components/loader';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import EditIcon from '@mui/icons-material/Edit';
+import { useToast } from '../../../../providers/toast-provider';
 
-type User = {
-  id: number;
-  name: string;
-  email: string;
-  age: number;
+type ChangePasswordFormValues = {
+  password: string;
 };
 
-const columns: GridColDef[] = [
-  { field: 'name', headerName: 'Name', flex: 1 },
-  { field: 'email', headerName: 'Email', flex: 1 },
-  { field: 'age', headerName: 'Age', width: 100 },
-];
+function UsersTable() {
+  const { data, isLoading, refetch } = useGetUsersListing('USER');
 
-const rows: User[] = [
-  { id: 1, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 2, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 3, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 4, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 5, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 6, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 7, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 8, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 9, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 10, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 11, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 12, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 13, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 14, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 15, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 16, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 17, name: 'Alice', email: 'bob@example.com', age: 25 },
-  { id: 18, name: 'Bob', email: 'bob@example.com', age: 25 },
-  { id: 19, name: 'Alice', email: 'bob@example.com', age: 25 },
-  { id: 20, name: 'Bob', email: 'bob@example.com', age: 25 },
-  { id: 21, name: 'Alice', email: 'bob@example.com', age: 25 },
-  { id: 22, name: 'Bob', email: 'bob@example.com', age: 25 },
-  { id: 23, name: 'Alice', email: 'bob@example.com', age: 25 },
-];
-
-function UserTable() {
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 10,
     page: 0,
   });
 
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
+  const { showToast } = useToast();
+
+  const handleUpdateStatus = async (id: number, status: number) => {
+    setIsLoadingStatus(true);
+    const result = await AdminService.updateUserStatus(id, status);
+    if (result.success) {
+      await refetch();
+    } else {
+      console.error('Status update failed:', result.message);
+    }
+    setIsLoadingStatus(false);
+  };
+
+  const schema = Yup.object({
+    password: Yup.string()
+      .required('Password is required')
+      .min(6, 'Min 6 characters'),
+  });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ChangePasswordFormValues>({
+    resolver: yupResolver(schema),
+  });
+
+  const handleOpenPasswordModal = (user: IUser) => {
+    setSelectedUser(user);
+    reset({ password: '' });
+    setIsPasswordModalOpen(true);
+  };
+
+  const handleClosePasswordModal = () => {
+    setIsPasswordModalOpen(false);
+    setSelectedUser(null);
+    reset({ password: '' });
+  };
+
+  const onSubmitChangePassword = async (values: ChangePasswordFormValues) => {
+    if (!selectedUser) return;
+    setIsLoadingStatus(true);
+    const result = await AdminService.changeUserPassword({
+      id: selectedUser.id,
+      password: values.password,
+    });
+    if (result.success) {
+      showToast(result.message, 'success');
+      handleClosePasswordModal();
+      await refetch();
+    } else {
+      console.error('Password change failed:', result.message);
+    }
+    setIsLoadingStatus(false);
+  };
+
+  const columns: GridColDef<IUser>[] = [
+    { field: 'name', headerName: 'Name', flex: 1 },
+    { field: 'email', headerName: 'Email', flex: 1 },
+    { field: 'mobile', headerName: 'Mobile', width: 140 },
+    { field: 'language_name', headerName: 'Language', width: 120 },
+    { field: 'state', headerName: 'State', width: 140 },
+    { field: 'zip_code', headerName: 'Zip Code', width: 120 },
+    { field: 'country', headerName: 'Country', width: 140 },
+    { field: 'created_date', headerName: 'Created Date', width: 140 },
+    {
+      field: 'status',
+      headerName: 'Status',
+      width: 150,
+      renderCell: params => {
+        const isActive = params.row.status === 1;
+        return (
+          <Box display="flex" alignItems="center" height="100%">
+            <ModernSwitch
+              checked={isActive}
+              onChange={() => {
+                handleUpdateStatus(params.row.id, isActive ? 0 : 1);
+              }}
+              trackColor={isActive ? '#4caf50' : '#ccc'}
+            />
+          </Box>
+        );
+      },
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 170,
+      sortable: false,
+      filterable: false,
+      renderCell: params => (
+        <Box display="flex" alignItems="center" height="100%" gap={1}>
+          <Typography
+            variant="body2"
+            sx={{ color: 'primary.main', cursor: 'pointer' }}
+            onClick={() => handleOpenPasswordModal(params.row)}
+          >
+            <EditIcon
+              fontSize="small"
+              sx={{ mr: 0.5, verticalAlign: 'middle' }}
+            />{' '}
+            Change Password
+          </Typography>
+        </Box>
+      ),
+    },
+  ];
+
+  if (isLoading || isLoadingStatus) {
+    return <CustomLoader />;
+  }
+
   return (
-    <GenericTable
-      rows={rows}
-      columns={columns}
-      paginationModel={paginationModel}
-      onPaginationModelChange={setPaginationModel}
-    />
+    <>
+      <GenericTable
+        rows={get(data, 'data', []) as IUser[]}
+        columns={columns}
+        paginationModel={paginationModel}
+        onPaginationModelChange={setPaginationModel}
+        loading={isLoading}
+      />
+
+      <GenericModal
+        isOpen={isPasswordModalOpen}
+        onClose={handleClosePasswordModal}
+        title={`Change Password${selectedUser ? ` - ${selectedUser.name}` : ''}`}
+        hideCancelButton
+      >
+        <Box
+          component="form"
+          onSubmit={handleSubmit(onSubmitChangePassword)}
+          display="flex"
+          flexDirection="column"
+          gap={2}
+        >
+          <ModernInput
+            label="New Password"
+            placeholder="Enter new password"
+            type="password"
+            {...register('password')}
+            error={!!errors.password}
+            helperText={errors.password?.message}
+          />
+
+          <MorenButton
+            type="submit"
+            variant="contained"
+            sx={{
+              alignSelf: 'flex-end',
+              mt: 2,
+              minWidth: '140px',
+              maxWidth: '180px',
+            }}
+          >
+            Update Password
+          </MorenButton>
+        </Box>
+      </GenericModal>
+    </>
   );
 }
 
@@ -73,7 +210,7 @@ const UsersListing = () => {
       <Typography variant="h6" sx={{ padding: 0 }}>
         User Management Dashboard
       </Typography>
-      <UserTable />
+      <UsersTable />
     </Box>
   );
 };

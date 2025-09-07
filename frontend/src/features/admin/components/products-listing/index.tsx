@@ -6,7 +6,7 @@ import ModernInput from '../../../../components/input';
 import MorenButton from '../../../../components/button';
 import AdminService from '../../admin.service';
 import type { GridColDef } from '@mui/x-data-grid';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import { GenericTable } from '../../../../components/table';
 import { useGetProductListing } from '../../hooks/useGetProductListing';
@@ -14,6 +14,8 @@ import type { IProduct } from '../../admin.interface';
 import { get } from 'lodash';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useToast } from '../../../../providers/toast-provider';
+import CustomLoader from '../../../../components/loader';
 
 // ✅ Validation schema
 const schema = Yup.object({
@@ -33,7 +35,7 @@ type ProductFormValues = {
 };
 
 function ProductsTable() {
-  const { data, isLoading } = useGetProductListing();
+  const { data, isLoading, refetch } = useGetProductListing();
 
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 10,
@@ -42,6 +44,9 @@ function ProductsTable() {
 
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+
+  const { showToast } = useToast();
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
@@ -78,17 +83,36 @@ function ProductsTable() {
   const onSubmit = async (values: ProductFormValues) => {
     if (!selectedProduct) return;
 
+    setIsLoadingStatus(true);
+
     const result = await AdminService.updateProduct({
       id: selectedProduct.id,
       ...values,
     });
 
     if (result.success) {
+      setIsLoadingStatus(false);
       handleCloseEditModal();
+      // ✅ Show success message
+      showToast(result.message, 'success');
       // Optionally refresh list
+      refetch();
     } else {
       console.error('❌ Update failed:', result.message);
     }
+    setIsLoadingStatus(false);
+  };
+
+  const handleUpdateStatus = async (id: number, status: number) => {
+    setIsLoadingStatus(true);
+    const result = await AdminService.updateProductStatus(id, status);
+    if (result.success) {
+      showToast(result.message, 'success');
+      refetch();
+    } else {
+      console.error('❌ Status update failed:', result.message);
+    }
+    setIsLoadingStatus(false);
   };
 
   // ✅ Define product columns
@@ -107,12 +131,9 @@ function ProductsTable() {
             <ModernSwitch
               checked={isActive}
               onChange={() => {
-                console.log(
-                  `Toggled status for product ${params.row.id} → ${
-                    !isActive ? 1 : 0
-                  }`
-                );
+                handleUpdateStatus(params.row.id, isActive ? 0 : 1);
               }}
+              trackColor={isActive ? '#4caf50' : '#ccc'}
             />
           </Box>
         );
@@ -144,8 +165,25 @@ function ProductsTable() {
     },
   ];
 
+  if (isLoadingStatus) {
+    return <CustomLoader />;
+  }
+
   return (
-    <React.Fragment>
+    <Box
+      display="flex"
+      sx={{
+        flexDirection: 'column',
+        width: '100%',
+        height: '100%',
+        padding: 2,
+      }}
+      gap={1}
+    >
+      <Typography variant="h6" sx={{ padding: 0 }}>
+        Product Management Dashboard
+      </Typography>
+
       <GenericTable
         rows={get(data, 'data', []) as IProduct[]}
         columns={columns}
@@ -207,7 +245,7 @@ function ProductsTable() {
           </MorenButton>
         </Box>
       </GenericModal>
-    </React.Fragment>
+    </Box>
   );
 }
 
