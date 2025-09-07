@@ -8,6 +8,8 @@ import type {
   TransactionFilter,
   IConsultant,
   ICreateConsultantPayload,
+  ITherapist,
+  ICreateTherapistPayload,
 } from './admin.interface';
 import moment from 'moment';
 import HttpService from '../../services/HttpService';
@@ -395,6 +397,139 @@ const updateConsultantPassword = async (
   }
 };
 
+const getTherapistListing = async (): Promise<{
+  success: boolean;
+  data: ITherapist[] | null;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/admin/users/list', {
+      role: 'THERAPIST',
+    });
+
+    const consultants = (get(response, 'data', []) as ITherapist[]).map(
+      item => ({
+        ...item,
+        created_date: moment(get(item, 'created_date')).format('YYYY-MM-DD'),
+      })
+    );
+
+    return {
+      success: true,
+      data: consultants,
+      message: 'Consultants fetched successfully',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while fetching consultants';
+
+    return {
+      success: false,
+      data: null,
+      message,
+    };
+  }
+};
+
+const updateTherapistStatus = async (
+  id: number,
+  status: number
+): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/admin/user/status/change', {
+      id,
+      status,
+    });
+    return {
+      success: true,
+      message: get(
+        response,
+        ['data', 'message'],
+        'Consultant status updated successfully'
+      ),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while updating consultant status';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
+const createTherapist = async (
+  payload: Omit<ICreateTherapistPayload, 'role'>
+): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/admin/user/create', {
+      ...payload,
+      role: 'EXPERT',
+    });
+    return {
+      success: true,
+      message: get(
+        response,
+        ['data', 'message'],
+        'Consultant created successfully'
+      ),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while creating consultant';
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
+const updateTherapistPassword = async (
+  payload: IChangeUserPasswordPayload
+): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post(
+      '/admin/user/reset/password',
+      payload
+    );
+
+    return {
+      success: true,
+      message: get(
+        response,
+        ['data', 'message'],
+        'Consultant password reset successfully'
+      ),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while resetting consultant password';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
   updateProduct, // ✅ export update service
@@ -407,6 +542,10 @@ const AdminService = {
   updateConsultantStatus,
   createConsultant,
   updateConsultantPassword,
+  getTherapistListing,
+  updateTherapistStatus,
+  createTherapist,
+  updateTherapistPassword,
 };
 
 export default AdminService;

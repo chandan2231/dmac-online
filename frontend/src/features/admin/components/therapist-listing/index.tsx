@@ -6,6 +6,7 @@ import { GenericTable } from '../../../../components/table';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import GenericModal from '../../../../components/modal';
 import ModernInput from '../../../../components/input';
+import EditIcon from '@mui/icons-material/Edit';
 import ModernSelect, { type IOption } from '../../../../components/select';
 import MorenButton from '../../../../components/button';
 import * as Yup from 'yup';
@@ -16,10 +17,9 @@ import {
   TIMEZONES_BY_COUNTRY,
 } from '../../../../utils/constants';
 import ModernSwitch from '../../../../components/switch';
-import { useGetConsultantsListing } from '../../hooks/useGetConsultantsListing';
 import type {
-  IConsultant,
-  ICreateConsultantPayload,
+  ITherapist,
+  ICreateTherapistPayload,
 } from '../../admin.interface';
 import { get } from 'lodash';
 import CustomLoader from '../../../../components/loader';
@@ -29,9 +29,16 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import { useToast } from '../../../../providers/toast-provider';
+import { useGetTherapistListing } from '../../hooks/useGetTherapistListing';
+
+const forgotPasswordSchema = Yup.object({
+  password: Yup.string()
+    .required('Password is required')
+    .min(6, 'Min 6 characters'),
+});
 
 function UserTable() {
-  const { data, isLoading, refetch } = useGetConsultantsListing();
+  const { data, isLoading, refetch } = useGetTherapistListing();
 
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 10,
@@ -39,10 +46,46 @@ function UserTable() {
   });
 
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedTherapist, setSelectedTherapist] = useState<ITherapist | null>(
+    null
+  );
+  const { showToast } = useToast();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(forgotPasswordSchema),
+  });
+
+  const handleOpenPasswordModal = (user: ITherapist) => {
+    setSelectedTherapist(user);
+    setIsPasswordModalOpen(true);
+  };
+
+  const handleClosePasswordModal = () => {
+    setIsPasswordModalOpen(false);
+    setSelectedTherapist(null);
+    reset(); // clear form
+  };
+
+  const handleOpenEditModal = (consultant: ITherapist) => {
+    setSelectedTherapist(consultant);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedTherapist(null);
+  };
 
   const handleUpdateStatus = async (id: number, status: number) => {
     setIsLoadingStatus(true);
-    const result = await AdminService.updateConsultantStatus(id, status);
+    const result = await AdminService.updateTherapistStatus(id, status);
     if (result.success) {
       await refetch();
     } else {
@@ -51,7 +94,26 @@ function UserTable() {
     setIsLoadingStatus(false);
   };
 
-  const columns: GridColDef<IConsultant>[] = [
+  const onSubmitChangePassword = async (values: { password: string }) => {
+    if (!selectedTherapist) return;
+    setIsLoadingStatus(true);
+    const result = await AdminService.updateTherapistPassword({
+      id: selectedTherapist.id,
+      password: values.password,
+    });
+    if (result.success) {
+      setIsPasswordModalOpen(false);
+      setSelectedTherapist(null);
+      reset(); // clear form
+      showToast('Password updated successfully', 'success');
+    } else {
+      showToast(result.message, 'error');
+      console.error('Change password failed:', result.message);
+    }
+    setIsLoadingStatus(false);
+  };
+
+  const columns: GridColDef<ITherapist>[] = [
     { field: 'name', headerName: 'Name', flex: 1 },
     { field: 'email', headerName: 'Email', flex: 1 },
     { field: 'mobile', headerName: 'Mobile', width: 140 },
@@ -75,6 +137,50 @@ function UserTable() {
         );
       },
     },
+    {
+      field: 'edit',
+      headerName: 'Edit',
+      width: 150,
+      sortable: false,
+      filterable: false,
+      renderCell: params => (
+        <Box display="flex" alignItems="center" height="100%" gap={1}>
+          <Typography
+            variant="body2"
+            sx={{ color: 'primary.main', cursor: 'pointer' }}
+            onClick={() => handleOpenEditModal(params.row)}
+          >
+            <EditIcon
+              fontSize="small"
+              sx={{ mr: 0.5, verticalAlign: 'middle' }}
+            />{' '}
+            Edit
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 170,
+      sortable: false,
+      filterable: false,
+      renderCell: params => (
+        <Box display="flex" alignItems="center" height="100%" gap={1}>
+          <Typography
+            variant="body2"
+            sx={{ color: 'primary.main', cursor: 'pointer' }}
+            onClick={() => handleOpenPasswordModal(params.row)}
+          >
+            <EditIcon
+              fontSize="small"
+              sx={{ mr: 0.5, verticalAlign: 'middle' }}
+            />{' '}
+            Change Password
+          </Typography>
+        </Box>
+      ),
+    },
   ];
 
   if (isLoading || isLoadingStatus) {
@@ -82,18 +188,68 @@ function UserTable() {
   }
 
   return (
-    <GenericTable
-      rows={get(data, 'data', []) as IConsultant[]}
-      columns={columns}
-      paginationModel={paginationModel}
-      onPaginationModelChange={setPaginationModel}
-      loading={isLoading}
-    />
+    <>
+      <GenericTable
+        rows={get(data, 'data', []) as ITherapist[]}
+        columns={columns}
+        paginationModel={paginationModel}
+        onPaginationModelChange={setPaginationModel}
+        loading={isLoading}
+      />
+
+      <GenericModal
+        isOpen={isPasswordModalOpen}
+        onClose={handleClosePasswordModal}
+        title={`Change Password${selectedTherapist ? ` - ${selectedTherapist.name}` : ''}`}
+        hideCancelButton
+      >
+        <Box
+          component="form"
+          onSubmit={handleSubmit(onSubmitChangePassword)}
+          display="flex"
+          flexDirection="column"
+          gap={2}
+        >
+          <ModernInput
+            label="New Password"
+            placeholder="Enter new password"
+            type="password"
+            {...register('password')}
+            error={!!errors.password}
+            helperText={errors.password?.message}
+          />
+
+          <MorenButton
+            type="submit"
+            variant="contained"
+            sx={{
+              alignSelf: 'flex-end',
+              mt: 2,
+              minWidth: '140px',
+              maxWidth: '180px',
+            }}
+          >
+            Update Password
+          </MorenButton>
+        </Box>
+      </GenericModal>
+
+      <GenericModal
+        isOpen={isEditModalOpen}
+        onClose={() => handleCloseEditModal()}
+        title="Edit Therapist"
+        hideCancelButton
+      >
+        <Box p={2}>
+          <Typography>Edit Therapist form goes here.</Typography>
+        </Box>
+      </GenericModal>
+    </>
   );
 }
 
 const TherapistListing = () => {
-  const [createConsultantModalOpen, setCreateConsultantModalOpen] =
+  const [createTherapistModalOpen, setCreateTherapistModalOpen] =
     useState(false);
   const [selectedCountry, setSelectedCountry] = useState<IOption | null>(null);
   const [selectedTimeZone, setSelectedTimeZone] = useState<IOption | null>(
@@ -104,11 +260,11 @@ const TherapistListing = () => {
   const { showToast } = useToast();
 
   const handleOpenCreateConsultantModal = () => {
-    setCreateConsultantModalOpen(true);
+    setCreateTherapistModalOpen(true);
   };
 
   const handleCloseCreateConsultantModal = () => {
-    setCreateConsultantModalOpen(false);
+    setCreateTherapistModalOpen(false);
     reset();
     setSelectedCountry(null);
     setSelectedTimeZone(null);
@@ -151,11 +307,11 @@ const TherapistListing = () => {
 
   const onSubmitCreateConsultant = async (values: unknown) => {
     setIsLoadingStatus(true);
-    const result = await AdminService.createConsultant({
-      ...(values as Omit<ICreateConsultantPayload, 'role'>),
+    const result = await AdminService.createTherapist({
+      ...(values as Omit<ICreateTherapistPayload, 'role'>),
     });
     if (result.success) {
-      setCreateConsultantModalOpen(false);
+      setCreateTherapistModalOpen(false);
       // reset country and time zone
       setSelectedCountry(null);
       setSelectedTimeZone(null);
@@ -185,7 +341,7 @@ const TherapistListing = () => {
       <TabHeaderLayout
         leftNode={
           <Typography variant="h6" sx={{ padding: 0 }}>
-            Consultant Management Dashboard
+            Therapist Management Dashboard
           </Typography>
         }
         rightNode={
@@ -194,7 +350,7 @@ const TherapistListing = () => {
             startIcon={<AddCircleOutlineRoundedIcon />}
             onClick={handleOpenCreateConsultantModal}
           >
-            Add New Consultant
+            Add New Therapist
           </MorenButton>
         }
       />
@@ -202,9 +358,9 @@ const TherapistListing = () => {
 
       {/* Modal */}
       <GenericModal
-        isOpen={createConsultantModalOpen}
+        isOpen={createTherapistModalOpen}
         onClose={handleCloseCreateConsultantModal}
-        title="Create New Consultant"
+        title="Create New Therapist"
         hideCancelButton
       >
         <Box

@@ -3,6 +3,7 @@ export const QUERY_KEYS_FOR_ADMIN = {
   GET_USER_LISTING: 'getUserListing',
   GET_TRANSACTION_LISTING: 'getTransactionListing',
   GET_CONSULTANT_LISTING: 'getConsultantListing',
+  GET_THERAPIST_LISTING: 'getTherapistListing',
 } as const;
 
 export interface IProduct {
@@ -82,6 +83,30 @@ export interface IConsultant {
 }
 
 export interface ICreateConsultantPayload {
+  name: string;
+  mobile: string;
+  email: string;
+  password: string;
+  role: string; // will be hard-coded as 'EXPERT'
+  time_zone: string;
+  country: string;
+  address: string;
+  speciality: string;
+  license_number: string;
+  license_expiration: string;
+  contracted_rate_per_consult: string;
+}
+
+export interface ITherapist {
+  id: number;
+  name: string;
+  email: string;
+  mobile: string;
+  status: number;
+  created_date: string;
+}
+
+export interface ICreateTherapistPayload {
   name: string;
   mobile: string;
   email: string;
