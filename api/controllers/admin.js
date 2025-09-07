@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs'
 import sendEmail from '../emailService.js'
 import { getUserInfo, getUserInfoByProtocolId } from '../userData.js'
 import { v4 as uuidv4 } from 'uuid'
-
+import { getRoleMessage } from '../utils/roleMessages.js'
 
 export const changeProductStatus = (req, res) => {
   const que = 'UPDATE dmac_webapp_products SET status=? WHERE id=?'
@@ -21,21 +21,43 @@ export const changeProductStatus = (req, res) => {
   })
 }
 
-export const updateProductDetails = (req, res) => {
-  const que = 'UPDATE dmac_webapp_products SET product_name=?, product_description=?, product_amount=? WHERE id=?'
-  db.query(que, [req.body.product_name, req.body.product_description, req.body.product_amount,  req.body.id], (err, data) => {
-    if (err) {
-      return res.status(500).json(err)
-    } else {
-      let result = {}
-      result.status = 200
-      result.msg = 'Product details updated successfully'
-      result.id = req.body.id
-      result.status = req.body.status
-      return res.json(result)
+export const updateProductDetails = async (req, res) => {
+  try {
+    const { id, product_name, product_description, product_amount, status } = req.body;
+
+    if (!id || !product_name || !product_description || product_amount == null) {
+      return res.status(400).json({ status: 400, msg: "Missing required fields" });
     }
-  })
-}
+
+    const query = `
+      UPDATE dmac_webapp_products 
+      SET product_name = ?, product_description = ?, product_amount = ? 
+      WHERE id = ?
+    `;
+
+    const values = [product_name, product_description, product_amount, id];
+
+    db.query(query, values, (err, result) => {
+      if (err) {
+        return res.status(500).json({ status: 500, msg: "Database error", error: err });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ status: 404, msg: "Product not found" });
+      }
+
+      return res.json({
+        status: 200,
+        msg: "Product details updated successfully",
+        id,
+        product_status: status ?? null
+      });
+    });
+  } catch (error) {
+    return res.status(500).json({ status: 500, msg: "Server error", error });
+  }
+};
+
 
 
 export const getProductList = (req, res) => {
@@ -44,33 +66,6 @@ export const getProductList = (req, res) => {
     if (err) return res.status(500).json(err)
     if (data.length >= 0) {
       return res.status(200).json(data)
-    }
-  })
-}
-
-
-export const getAllUsersByRole = (req, res) => {
-  const que = 'select * from dmac_webapp_users where role=?'
-  db.query(que, [req.body.role], (err, data) => {
-    if (err) return res.status(500).json(err)
-    if (data.length >= 0) {
-      return res.status(200).json(data)
-    }
-  })
-}
-
-export const changeUserStatus = (req, res) => {
-  const que = 'UPDATE dmac_webapp_users SET status=? WHERE id=?'
-  db.query(que, [req.body.status, req.body.id], (err, data) => {
-    if (err) {
-      return res.status(500).json(err)
-    } else {
-      let result = {}
-      result.status = 200
-      result.msg = 'User status updated successfully'
-      result.id = req.body.id
-      result.status = req.body.status
-      return res.json(result)
     }
   })
 }
@@ -88,7 +83,7 @@ export const createUsersByRole = async (req, res) => {
     const existingUser = Array.isArray(existingUserData)
       ? existingUserData
       : [existingUserData]
-    // If email exists, return an error
+
     if (existingUser.length > 0) {
       return res
         .status(409)
@@ -100,7 +95,7 @@ export const createUsersByRole = async (req, res) => {
     const hashedPassword = bcrypt.hashSync(req.body.password, salt)
     const verificationToken = uuidv4()
 
-    // Insert new user into the database
+    // Insert new user
     const insertQuery = `
       INSERT INTO dmac_webapp_users (name, mobile, email, password, role, verified, verification_token, time_zone, country, address, speciality, license_number, license_expiration, contracted_rate_per_consult ) 
       VALUES (?)`
@@ -121,52 +116,171 @@ export const createUsersByRole = async (req, res) => {
       req.body.contracted_rate_per_consult
     ]
 
-    const insertResult = await new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
       db.query(insertQuery, [values], (err, data) => {
         if (err) reject(err)
         resolve(data)
       })
     })
-    // Now, send the welcome email
+
+    // Email setup
     const loginUrl = `${process.env.DOMAIN}signin`
     const verifyLink = `${process.env.DOMAIN}verify-email/${verificationToken}`
-
     const to = req.body.email
     const subject = 'Welcome to DMAC'
+
     const greetingHtml = `<p>Dear ${req.body.name},</p>`
-    let bodyHtml = `<p>You have successfully registered with DMAC as a ${req.body.role} role.</p>`
+    let bodyHtml = `<p>You have successfully registered with DMAC as a ${req.body.role}.</p>`
     bodyHtml += `<p>Your login details are</p>`
     bodyHtml += `<p>Email: ${req.body.email}</p>`
     bodyHtml += `<p>Password: ${req.body.password}</p>`
-    bodyHtml += `<p>Login URL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">
-              Click here
-            </a></p>`
+    bodyHtml += `<p>Login URL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">Click here</a></p>`
     bodyHtml += `<h4>Click the link below to verify your email before login</h4><a href="${verifyLink}">Verify Email</a>`
-    const emailHtml = `
-      <div>
-        ${greetingHtml}
-        ${bodyHtml}
-      </div>`
-    const text = emailHtml
-    const html = emailHtml
+
+    const emailHtml = `<div>${greetingHtml}${bodyHtml}</div>`
 
     // Send email
     try {
-      await sendEmail(to, subject, text, html)
-      return res
-        .status(200)
-        .json('User has been created successfully and email sent.')
+      await sendEmail(to, subject, emailHtml, emailHtml)
+      return res.status(200).json({
+        status: 200,
+        msg: getRoleMessage(req.body.role, "created", true, true),
+      })
     } catch (emailError) {
       console.error('Error sending email:', emailError)
-      return res
-        .status(500)
-        .json({ status: 500, msg: 'User created but failed to send email.' })
+      return res.status(500).json({
+        status: 500,
+        msg: getRoleMessage(req.body.role, "created but failed to send email", false),
+      })
     }
   } catch (err) {
     console.error('Error during registration:', err)
     return res.status(500).json({ status: 500, msg: 'Internal server error.' })
   }
 }
+
+
+export const getAllUsersByRole = (req, res) => {
+  const { role } = req.body;
+
+  let query;
+  let values = [role];
+
+  if (role === "USER") {
+    query = `
+      SELECT u.*, l.language as language_name
+      FROM dmac_webapp_users u
+      LEFT JOIN dmac_webapp_language l ON u.language = l.id
+      WHERE u.role = ?
+    `;
+  } else {
+    query = `
+      SELECT *
+      FROM dmac_webapp_users
+      WHERE role = ?
+    `;
+  }
+
+  db.query(query, values, (err, data) => {
+    if (err) {
+      console.error("Error fetching users:", err);
+      return res.status(500).json({ status: 500, msg: "Database error", error: err });
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ status: 404, msg: `No ${role} records found.` });
+    }
+
+    return res.status(200).json(data);
+  });
+};
+
+
+export const updateUsersDetails = async (req, res) => {
+  try {
+    const { 
+      id, 
+      name, 
+      mobile,
+      time_zone, 
+      country, 
+      address, 
+      speciality, 
+      license_number, 
+      license_expiration, 
+      contracted_rate_per_consult 
+    } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ status: 400, msg: "User ID is required for update." });
+    }
+
+    const updateQuery = `
+      UPDATE dmac_webapp_users 
+      SET 
+        name = ?, 
+        mobile = ?,
+        time_zone = ?, 
+        country = ?, 
+        address = ?, 
+        speciality = ?, 
+        license_number = ?, 
+        license_expiration = ?, 
+        contracted_rate_per_consult = ?
+      WHERE id = ?
+    `;
+
+    const values = [
+      name,
+      mobile,
+      time_zone,
+      country,
+      address,
+      speciality,
+      license_number,
+      license_expiration,
+      contracted_rate_per_consult,
+      id
+    ];
+
+    const updateResult = await new Promise((resolve, reject) => {
+      db.query(updateQuery, values, (err, data) => {
+        if (err) reject(err);
+        resolve(data);
+      });
+    });
+
+    if (updateResult.affectedRows === 0) {
+      return res.status(404).json({ status: 404, msg: "Consultant not found." });
+    }
+
+    return res.json({
+      status: 200,
+      msg: "Consultant details updated successfully",
+      id
+    });
+  } catch (err) {
+    console.error("Error updating user:", err);
+    return res.status(500).json({ status: 500, msg: "Internal server error." });
+  }
+};
+
+export const changeUserStatus = (req, res) => {
+  const que = 'UPDATE dmac_webapp_users SET status=? WHERE id=?'
+  db.query(que, [req.body.status, req.body.id], (err, data) => {
+    if (err) {
+      return res.status(500).json(err)
+    } else {
+      let result = {}
+      result.status = 200
+      result.msg = 'User status updated successfully'
+      result.id = req.body.id
+      result.status = req.body.status
+      return res.json(result)
+    }
+  })
+}
+
 
 
 export const getAllProtocolList = (req, res) => {
