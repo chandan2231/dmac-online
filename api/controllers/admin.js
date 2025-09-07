@@ -23,7 +23,7 @@ export const changeProductStatus = (req, res) => {
 
 export const updateProductDetails = (req, res) => {
   const que = 'UPDATE dmac_webapp_products SET product_name=?, product_description=?, product_amount=? WHERE id=?'
-  db.query(que, [req.body.status, req.body.id], (err, data) => {
+  db.query(que, [req.body.product_name, req.body.product_description, req.body.product_amount,  req.body.id], (err, data) => {
     if (err) {
       return res.status(500).json(err)
     } else {
