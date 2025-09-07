@@ -4,6 +4,8 @@ import {
   changeUserStatus,
   createUsersByRole,
   getProductList,
+  updateProductDetails,
+  changeProductStatus,
 
   getApprovedProtocolList,
   getContinuinDetailsById,
@@ -54,6 +56,8 @@ router.post('/users/list', getAllUsersByRole)
 router.post('/user/status/change', changeUserStatus)
 router.post('/user/create', createUsersByRole)
 router.get('/products/list', getProductList)
+router.get('/products/update', updateProductDetails)
+router.post('/products/status/change', changeProductStatus)
 
 router.post(
   '/member/chairCommitteeApprovalProtocol',

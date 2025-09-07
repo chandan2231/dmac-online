@@ -5,6 +5,39 @@ import { getUserInfo, getUserInfoByProtocolId } from '../userData.js'
 import { v4 as uuidv4 } from 'uuid'
 
 
+export const changeProductStatus = (req, res) => {
+  const que = 'UPDATE dmac_webapp_products SET status=? WHERE id=?'
+  db.query(que, [req.body.status, req.body.id], (err, data) => {
+    if (err) {
+      return res.status(500).json(err)
+    } else {
+      let result = {}
+      result.status = 200
+      result.msg = 'Product status updated successfully'
+      result.id = req.body.id
+      result.status = req.body.status
+      return res.json(result)
+    }
+  })
+}
+
+export const updateProductDetails = (req, res) => {
+  const que = 'UPDATE dmac_webapp_products SET product_name=?, product_description=?, product_amount=? WHERE id=?'
+  db.query(que, [req.body.status, req.body.id], (err, data) => {
+    if (err) {
+      return res.status(500).json(err)
+    } else {
+      let result = {}
+      result.status = 200
+      result.msg = 'Product details updated successfully'
+      result.id = req.body.id
+      result.status = req.body.status
+      return res.json(result)
+    }
+  })
+}
+
+
 export const getProductList = (req, res) => {
   const que = 'SELECT * FROM dmac_webapp_products'
   db.query(que, [], (err, data) => {
