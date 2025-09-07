@@ -1,5 +1,5 @@
 import type { GridColDef } from '@mui/x-data-grid';
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import { GenericTable } from '../../../../components/table';
 import { useGetProductListing } from '../../hooks/useGetProductListing';
@@ -7,66 +7,29 @@ import type { IProduct } from '../../admin.interface';
 import { get } from 'lodash';
 import ModernSwitch from '../../../../components/switch';
 import EditIcon from '@mui/icons-material/Edit';
+import GenericModal from '../../../../components/modal';
+import * as Yup from 'yup';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import ModernInput from '../../../../components/input';
+import MorenButton from '../../../../components/button';
 
-// ✅ Define product columns
-const columns: GridColDef<IProduct>[] = [
-  // { field: 'id', headerName: 'ID', width: 80 },
-  { field: 'product_name', headerName: 'Product Name', flex: 1 },
-  { field: 'product_description', headerName: 'Description', flex: 2 },
-  { field: 'product_amount', headerName: 'Amount', width: 120 },
-  {
-    field: 'status',
-    headerName: 'Status',
-    width: 150,
-    renderCell: params => {
-      const isActive = params.row.status === 1;
+// ✅ Validation schema
+const schema = Yup.object({
+  product_name: Yup.string().required('Product name is required'),
+  product_description: Yup.string().required('Description is required'),
+  product_amount: Yup.number()
+    .typeError('Amount must be a number')
+    .positive('Amount must be greater than 0')
+    .required('Amount is required'),
+});
 
-      return (
-        <Box display="flex" alignItems="center" height="100%">
-          <ModernSwitch
-            checked={isActive}
-            onChange={() => {
-              console.log(
-                `Toggled status for product ${params.row.id} → ${!isActive ? 1 : 0}`
-              );
-            }}
-          />
-        </Box>
-      );
-    },
-  },
-  { field: 'created_date', headerName: 'Created At', flex: 1 },
-  { field: 'updated_date', headerName: 'Updated At', flex: 1 },
-  {
-    field: 'actions',
-    headerName: 'Actions',
-    width: 150,
-    sortable: false,
-    filterable: false,
-    renderCell: params => {
-      return (
-        <Box display="flex" alignItems="center" height="100%" gap={1}>
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'primary.main',
-              cursor: 'pointer',
-            }}
-            onClick={() => {
-              console.log(`Edit product ${params.row.id}`);
-            }}
-          >
-            <EditIcon
-              fontSize="small"
-              sx={{ mr: 0.5, verticalAlign: 'middle' }}
-            />{' '}
-            Edit
-          </Typography>
-        </Box>
-      );
-    },
-  },
-];
+// ✅ Only the fields we edit in the form
+type ProductFormValues = {
+  product_name: string;
+  product_description: string;
+  product_amount: number;
+};
 
 function ProductsTable() {
   const { data, isLoading } = useGetProductListing();
@@ -76,35 +39,169 @@ function ProductsTable() {
     page: 0,
   });
 
+  const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedProduct(null);
+    reset(); // clear form
+  };
+
+  const handleOpenEditModal = (product: IProduct) => {
+    setSelectedProduct(product);
+    setIsEditModalOpen(true);
+  };
+
+  // ✅ Form setup
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ProductFormValues>({
+    resolver: yupResolver(schema),
+  });
+
+  // ✅ Reset form values whenever a new product is selected
+  useEffect(() => {
+    if (selectedProduct) {
+      reset({
+        product_name: selectedProduct.product_name,
+        product_description: selectedProduct.product_description,
+        product_amount: selectedProduct.product_amount,
+      });
+    }
+  }, [selectedProduct, reset]);
+
+  const onSubmit = (values: ProductFormValues) => {
+    console.log('Updated product details:', {
+      ...selectedProduct, // keep other fields like id, status, etc.
+      ...values, // overwrite editable ones
+    });
+    // 🔥 Call your update API here
+    handleCloseEditModal();
+  };
+
+  // ✅ Define product columns
+  const columns: GridColDef<IProduct>[] = [
+    { field: 'product_name', headerName: 'Product Name', flex: 1 },
+    { field: 'product_description', headerName: 'Description', flex: 2 },
+    { field: 'product_amount', headerName: 'Amount', width: 120 },
+    {
+      field: 'status',
+      headerName: 'Status',
+      width: 150,
+      renderCell: params => {
+        const isActive = params.row.status === 1;
+        return (
+          <Box display="flex" alignItems="center" height="100%">
+            <ModernSwitch
+              checked={isActive}
+              onChange={() => {
+                console.log(
+                  `Toggled status for product ${params.row.id} → ${
+                    !isActive ? 1 : 0
+                  }`
+                );
+              }}
+            />
+          </Box>
+        );
+      },
+    },
+    { field: 'created_date', headerName: 'Created At', flex: 1 },
+    { field: 'updated_date', headerName: 'Updated At', flex: 1 },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 150,
+      sortable: false,
+      filterable: false,
+      renderCell: params => (
+        <Box display="flex" alignItems="center" height="100%" gap={1}>
+          <Typography
+            variant="body2"
+            sx={{ color: 'primary.main', cursor: 'pointer' }}
+            onClick={() => handleOpenEditModal(params.row)}
+          >
+            <EditIcon
+              fontSize="small"
+              sx={{ mr: 0.5, verticalAlign: 'middle' }}
+            />{' '}
+            Edit
+          </Typography>
+        </Box>
+      ),
+    },
+  ];
+
   return (
-    <GenericTable
-      rows={get(data, 'data', []) as IProduct[]}
-      columns={columns}
-      paginationModel={paginationModel}
-      onPaginationModelChange={setPaginationModel}
-      loading={isLoading}
-    />
+    <React.Fragment>
+      <GenericTable
+        rows={get(data, 'data', []) as IProduct[]}
+        columns={columns}
+        paginationModel={paginationModel}
+        onPaginationModelChange={setPaginationModel}
+        loading={isLoading}
+      />
+
+      {/* ✅ Modal with form */}
+      <GenericModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        title="Edit Product Details"
+        hideCancelButton
+      >
+        <Box
+          component="form"
+          onSubmit={handleSubmit(onSubmit)}
+          display="flex"
+          flexDirection="column"
+          gap={2}
+        >
+          <ModernInput
+            label="Product Name"
+            placeholder="Enter product name"
+            {...register('product_name')}
+            error={!!errors.product_name}
+            helperText={errors.product_name?.message}
+          />
+
+          <ModernInput
+            label="Description"
+            placeholder="Enter product description"
+            multiline
+            {...register('product_description')}
+            error={!!errors.product_description}
+            helperText={errors.product_description?.message}
+          />
+
+          <ModernInput
+            label="Amount"
+            placeholder="Enter product amount"
+            type="number"
+            {...register('product_amount')}
+            error={!!errors.product_amount}
+            helperText={errors.product_amount?.message}
+          />
+
+          <MorenButton
+            type="submit"
+            variant="contained"
+            sx={{
+              alignSelf: 'flex-end',
+              mt: 2,
+              minWidth: '120px',
+              maxWidth: '150px',
+            }}
+          >
+            Save Changes
+          </MorenButton>
+        </Box>
+      </GenericModal>
+    </React.Fragment>
   );
 }
 
-const ProductsListing = () => {
-  return (
-    <Box
-      display="flex"
-      sx={{
-        flexDirection: 'column',
-        width: '100%',
-        height: '100%',
-        padding: 2,
-      }}
-      gap={1}
-    >
-      <Typography variant="h6" sx={{ padding: 0 }}>
-        Product Management Dashboard
-      </Typography>
-      <ProductsTable />
-    </Box>
-  );
-};
-
-export default ProductsListing;
+export default ProductsTable;
