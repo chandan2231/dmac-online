@@ -6,7 +6,7 @@ import ModernInput from '../../../../components/input';
 import MorenButton from '../../../../components/button';
 import AdminService from '../../admin.service';
 import type { GridColDef } from '@mui/x-data-grid';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import { GenericTable } from '../../../../components/table';
 import { useGetProductListing } from '../../hooks/useGetProductListing';
@@ -170,7 +170,20 @@ function ProductsTable() {
   }
 
   return (
-    <React.Fragment>
+    <Box
+      display="flex"
+      sx={{
+        flexDirection: 'column',
+        width: '100%',
+        height: '100%',
+        padding: 2,
+      }}
+      gap={1}
+    >
+      <Typography variant="h6" sx={{ padding: 0 }}>
+        Product Management Dashboard
+      </Typography>
+
       <GenericTable
         rows={get(data, 'data', []) as IProduct[]}
         columns={columns}
@@ -232,7 +245,7 @@ function ProductsTable() {
           </MorenButton>
         </Box>
       </GenericModal>
-    </React.Fragment>
+    </Box>
   );
 }
 
