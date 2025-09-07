@@ -1,3 +1,10 @@
+import * as Yup from 'yup';
+import ModernSwitch from '../../../../components/switch';
+import EditIcon from '@mui/icons-material/Edit';
+import GenericModal from '../../../../components/modal';
+import ModernInput from '../../../../components/input';
+import MorenButton from '../../../../components/button';
+import AdminService from '../../admin.service';
 import type { GridColDef } from '@mui/x-data-grid';
 import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
@@ -5,14 +12,8 @@ import { GenericTable } from '../../../../components/table';
 import { useGetProductListing } from '../../hooks/useGetProductListing';
 import type { IProduct } from '../../admin.interface';
 import { get } from 'lodash';
-import ModernSwitch from '../../../../components/switch';
-import EditIcon from '@mui/icons-material/Edit';
-import GenericModal from '../../../../components/modal';
-import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import ModernInput from '../../../../components/input';
-import MorenButton from '../../../../components/button';
 
 // ✅ Validation schema
 const schema = Yup.object({
@@ -74,13 +75,20 @@ function ProductsTable() {
     }
   }, [selectedProduct, reset]);
 
-  const onSubmit = (values: ProductFormValues) => {
-    console.log('Updated product details:', {
-      ...selectedProduct, // keep other fields like id, status, etc.
-      ...values, // overwrite editable ones
+  const onSubmit = async (values: ProductFormValues) => {
+    if (!selectedProduct) return;
+
+    const result = await AdminService.updateProduct({
+      id: selectedProduct.id,
+      ...values,
     });
-    // 🔥 Call your update API here
-    handleCloseEditModal();
+
+    if (result.success) {
+      handleCloseEditModal();
+      // Optionally refresh list
+    } else {
+      console.error('❌ Update failed:', result.message);
+    }
   };
 
   // ✅ Define product columns
@@ -171,7 +179,6 @@ function ProductsTable() {
           <ModernInput
             label="Description"
             placeholder="Enter product description"
-            multiline
             {...register('product_description')}
             error={!!errors.product_description}
             helperText={errors.product_description?.message}

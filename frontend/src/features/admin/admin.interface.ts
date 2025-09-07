@@ -11,3 +11,10 @@ export interface IProduct {
   created_date: string; // could be Date if you want to parse
   updated_date: string;
 }
+
+export interface IUpdateProductPayload {
+  id: number | string;
+  product_name: string;
+  product_description: string;
+  product_amount: number;
+}

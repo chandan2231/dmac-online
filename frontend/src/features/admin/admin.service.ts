@@ -1,5 +1,5 @@
 import { get } from 'lodash';
-import type { IProduct } from './admin.interface';
+import type { IProduct, IUpdateProductPayload } from './admin.interface';
 import moment from 'moment';
 import HttpService from '../../services/HttpService';
 
@@ -38,8 +38,36 @@ const getProductsListing = async (): Promise<{
   }
 };
 
+// ✅ Update product
+const updateProduct = async (
+  payload: IUpdateProductPayload
+): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/products/update', payload);
+
+    return {
+      success: true,
+      message: get(response, 'data.message', 'Product updated successfully'),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while updating product';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
+  updateProduct, // ✅ export update service
 };
 
 export default AdminService;
