@@ -17,7 +17,10 @@ import {
 } from '../../../../utils/constants';
 import ModernSwitch from '../../../../components/switch';
 import { useGetConsultantsListing } from '../../hooks/useGetConsultantsListing';
-import type { IConsultant } from '../../admin.interface';
+import type {
+  IConsultant,
+  ICreateConsultantPayload,
+} from '../../admin.interface';
 import { get } from 'lodash';
 import CustomLoader from '../../../../components/loader';
 import AdminService from '../../admin.service';
@@ -119,27 +122,18 @@ const ConsultantsListing = () => {
       .min(6, 'Min 6 characters')
       .required('Password is required'),
     country: Yup.string().required('Country is required'),
-    time_zone: Yup.string().required('Time zone is required'),
+    time_zone: Yup.string().when('country', {
+      is: (country: string) =>
+        !!country && (TIMEZONES_BY_COUNTRY[country] ?? []).length > 0,
+      then: schema => schema.required('Time zone is required'),
+      otherwise: schema => schema.notRequired().default(''),
+    }),
     address: Yup.string().required('Address is required'),
     speciality: Yup.string().required('Speciality is required'),
     license_number: Yup.string().required('License number is required'),
     license_expiration: Yup.string().required('License expiration is required'),
     contracted_rate_per_consult: Yup.string().required('Rate is required'),
   });
-
-  type CreateConsultantFormValues = {
-    name: string;
-    mobile: string;
-    email: string;
-    password: string;
-    country: string;
-    time_zone: string;
-    address: string;
-    speciality: string;
-    license_number: string;
-    license_expiration: string;
-    contracted_rate_per_consult: string;
-  };
 
   const {
     register,
@@ -148,16 +142,17 @@ const ConsultantsListing = () => {
     setValue,
     reset,
     formState: { errors },
-  } = useForm<CreateConsultantFormValues>({
+  } = useForm({
     resolver: yupResolver(schema),
+    defaultValues: {
+      time_zone: '',
+    },
   });
 
-  const onSubmitCreateConsultant = async (
-    values: CreateConsultantFormValues
-  ) => {
+  const onSubmitCreateConsultant = async (values: unknown) => {
     setIsLoadingStatus(true);
     const result = await AdminService.createConsultant({
-      ...values,
+      ...(values as Omit<ICreateConsultantPayload, 'role'>),
     });
     if (result.success) {
       setCreateConsultantModalOpen(false);
