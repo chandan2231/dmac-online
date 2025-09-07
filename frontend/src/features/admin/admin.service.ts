@@ -46,11 +46,15 @@ const updateProduct = async (
   message: string;
 }> => {
   try {
-    const response = await HttpService.post('/products/update', payload);
+    const response = await HttpService.post('/admin/products/update', payload);
 
     return {
       success: true,
-      message: get(response, 'data.message', 'Product updated successfully'),
+      message: get(
+        response,
+        ['data', 'message'],
+        'Product updated successfully'
+      ),
     };
   } catch (error: unknown) {
     const message =
