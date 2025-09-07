@@ -1,6 +1,7 @@
 export const QUERY_KEYS_FOR_ADMIN = {
   GET_PRODUCT_LISTING: 'getProductListing',
   GET_USER_LISTING: 'getUserListing',
+  GET_TRANSACTION_LISTING: 'getTransactionListing',
 } as const;
 
 export interface IProduct {
@@ -49,6 +50,26 @@ export interface IChangeUserPasswordPayload {
   id: number | string;
   password: string;
 }
+
+export interface ITransaction {
+  id: number;
+  payment_id: string;
+  payer_id: string;
+  amount: number | string;
+  currency: string;
+  status: string;
+  protocol_id: string;
+  user_id: number;
+  payment_type: string; // 'paypal' | 'waive_fee' | etc.
+  name: string; // joined from users
+  email: string; // joined from users
+  protocol_name: string; // research_type from protocols
+  protocol_pi: string; // protocol_user_type from protocols
+  created_date?: string;
+  updated_date?: string;
+}
+
+export type TransactionFilter = 'Transaction' | 'Waive Fee' | '';
 
 export interface IGetUsersPayload {
   role: string;

@@ -2,58 +2,44 @@ import type { GridColDef } from '@mui/x-data-grid';
 import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { GenericTable } from '../../../../components/table';
+import CustomLoader from '../../../../components/loader';
+import { useGetTransactionsListing } from '../../hooks/useGetTransactionsListing';
+import type { ITransaction, TransactionFilter } from '../../admin.interface';
+import { get } from 'lodash';
 
-type User = {
-  id: number;
-  name: string;
-  email: string;
-  age: number;
-};
+function TransactionsTable() {
+  const [filter] = useState<TransactionFilter>('');
+  const { data, isLoading } = useGetTransactionsListing(filter);
 
-const columns: GridColDef[] = [
-  { field: 'name', headerName: 'Name', flex: 1 },
-  { field: 'email', headerName: 'Email', flex: 1 },
-  { field: 'age', headerName: 'Age', width: 100 },
-];
-
-const rows: User[] = [
-  { id: 1, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 2, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 3, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 4, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 5, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 6, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 7, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 8, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 9, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 10, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 11, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 12, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 13, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 14, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 15, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 16, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 17, name: 'Alice', email: 'bob@example.com', age: 25 },
-  { id: 18, name: 'Bob', email: 'bob@example.com', age: 25 },
-  { id: 19, name: 'Alice', email: 'bob@example.com', age: 25 },
-  { id: 20, name: 'Bob', email: 'bob@example.com', age: 25 },
-  { id: 21, name: 'Alice', email: 'bob@example.com', age: 25 },
-  { id: 22, name: 'Bob', email: 'bob@example.com', age: 25 },
-  { id: 23, name: 'Alice', email: 'bob@example.com', age: 25 },
-];
-
-function UserTable() {
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 10,
     page: 0,
   });
 
+  const columns: GridColDef<ITransaction>[] = [
+    { field: 'name', headerName: 'Name', flex: 1 },
+    { field: 'email', headerName: 'Email', flex: 1 },
+    { field: 'protocol_id', headerName: 'Protocol ID', width: 150 },
+    { field: 'protocol_name', headerName: 'Research Type', width: 160 },
+    { field: 'protocol_pi', headerName: 'Protocol User Type', width: 180 },
+    { field: 'amount', headerName: 'Amount', width: 120 },
+    { field: 'currency', headerName: 'Currency', width: 120 },
+    { field: 'payment_type', headerName: 'Payment Type', width: 140 },
+    { field: 'status', headerName: 'Status', width: 140 },
+    { field: 'created_date', headerName: 'Created Date', width: 140 },
+  ];
+
+  if (isLoading) {
+    return <CustomLoader />;
+  }
+
   return (
     <GenericTable
-      rows={rows}
+      rows={get(data, 'data', []) as ITransaction[]}
       columns={columns}
       paginationModel={paginationModel}
       onPaginationModelChange={setPaginationModel}
+      loading={isLoading}
     />
   );
 }
@@ -73,7 +59,7 @@ const TransactionsListing = () => {
       <Typography variant="h6" sx={{ padding: 0 }}>
         Transaction Management Dashboard
       </Typography>
-      <UserTable />
+      <TransactionsTable />
     </Box>
   );
 };

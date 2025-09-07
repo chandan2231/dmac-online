@@ -4,6 +4,8 @@ import type {
   IUpdateProductPayload,
   IUser,
   IChangeUserPasswordPayload,
+  ITransaction,
+  TransactionFilter,
 } from './admin.interface';
 import moment from 'moment';
 import HttpService from '../../services/HttpService';
@@ -213,12 +215,58 @@ const changeUserPassword = async (
   }
 };
 
+// ✅ Get transactions listing by type filter
+const getTransactionsListing = async (
+  filter: TransactionFilter
+): Promise<{
+  success: boolean;
+  data: ITransaction[] | null;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/payment/transaction', {
+      selectedUserType: filter,
+    });
+
+    const transactions = (get(response, 'data', []) as ITransaction[]).map(
+      item => ({
+        ...item,
+        // normalize any date fields if present
+        created_date: item?.created_date
+          ? moment(item.created_date).format('YYYY-MM-DD')
+          : undefined,
+        updated_date: item?.updated_date
+          ? moment(item.updated_date).format('YYYY-MM-DD')
+          : undefined,
+      })
+    );
+
+    return {
+      success: true,
+      data: transactions,
+      message: 'Transactions fetched successfully',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while fetching transactions';
+
+    return {
+      success: false,
+      data: null,
+      message,
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
   updateProduct, // ✅ export update service
   updateProductStatus,
   getUsersListing,
   updateUserStatus,
+  getTransactionsListing,
   changeUserPassword,
 };
 
