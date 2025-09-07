@@ -2,6 +2,7 @@ export const QUERY_KEYS_FOR_ADMIN = {
   GET_PRODUCT_LISTING: 'getProductListing',
   GET_USER_LISTING: 'getUserListing',
   GET_TRANSACTION_LISTING: 'getTransactionListing',
+  GET_CONSULTANT_LISTING: 'getConsultantListing',
 } as const;
 
 export interface IProduct {
@@ -70,6 +71,15 @@ export interface ITransaction {
 }
 
 export type TransactionFilter = 'Transaction' | 'Waive Fee' | '';
+
+export interface IConsultant {
+  id: number;
+  name: string;
+  email: string;
+  mobile: string;
+  status: number;
+  created_date: string;
+}
 
 export interface IGetUsersPayload {
   role: string;

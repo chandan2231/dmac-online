@@ -6,6 +6,7 @@ import type {
   IChangeUserPasswordPayload,
   ITransaction,
   TransactionFilter,
+  IConsultant,
 } from './admin.interface';
 import moment from 'moment';
 import HttpService from '../../services/HttpService';
@@ -260,6 +261,75 @@ const getTransactionsListing = async (
   }
 };
 
+const getConsultantsListing = async (): Promise<{
+  success: boolean;
+  data: IConsultant[] | null;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/admin/users/list', {
+      role: 'EXPERT',
+    });
+
+    const consultants = (get(response, 'data', []) as IConsultant[]).map(
+      item => ({
+        ...item,
+        created_date: moment(get(item, 'created_date')).format('YYYY-MM-DD'),
+      })
+    );
+
+    return {
+      success: true,
+      data: consultants,
+      message: 'Consultants fetched successfully',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while fetching consultants';
+
+    return {
+      success: false,
+      data: null,
+      message,
+    };
+  }
+};
+
+const updateConsultantStatus = async (
+  id: number,
+  status: number
+): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/admin/user/status/change', {
+      id,
+      status,
+    });
+    return {
+      success: true,
+      message: get(
+        response,
+        ['data', 'message'],
+        'Consultant status updated successfully'
+      ),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while updating consultant status';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
   updateProduct, // ✅ export update service
@@ -268,6 +338,8 @@ const AdminService = {
   updateUserStatus,
   getTransactionsListing,
   changeUserPassword,
+  getConsultantsListing,
+  updateConsultantStatus,
 };
 
 export default AdminService;
