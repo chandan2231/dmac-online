@@ -6,6 +6,7 @@ import {
   getProductList,
   updateProductDetails,
   changeProductStatus,
+  updateUsersDetails,
 
   getApprovedProtocolList,
   getContinuinDetailsById,
