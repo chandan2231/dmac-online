@@ -17,16 +17,15 @@ function TransactionsTable() {
   });
 
   const columns: GridColDef<ITransaction>[] = [
-    { field: 'name', headerName: 'Name', flex: 1 },
-    { field: 'email', headerName: 'Email', flex: 1 },
-    { field: 'protocol_id', headerName: 'Protocol ID', width: 150 },
-    { field: 'protocol_name', headerName: 'Research Type', width: 160 },
-    { field: 'protocol_pi', headerName: 'Protocol User Type', width: 180 },
-    { field: 'amount', headerName: 'Amount', width: 120 },
-    { field: 'currency', headerName: 'Currency', width: 120 },
-    { field: 'payment_type', headerName: 'Payment Type', width: 140 },
-    { field: 'status', headerName: 'Status', width: 140 },
-    { field: 'created_date', headerName: 'Created Date', width: 140 },
+    { field: 'name', headerName: 'User Name', flex: 1 },
+    { field: 'email', headerName: 'User Email', flex: 1 },
+    { field: 'product_name', headerName: 'Product Name', flex: 1 },
+    { field: 'product_description', headerName: 'Product Description', flex: 1 },
+    { field: 'amount', headerName: 'Amount', flex: 1 },
+    { field: 'currency', headerName: 'Currency', flex: 1 },
+    { field: 'payment_type', headerName: 'Payment Type', flex: 1 },
+    { field: 'status', headerName: 'Status', flex: 1 },
+    { field: 'created_date', headerName: 'Created Date', flex: 1 },
   ];
 
   if (isLoading) {
@@ -57,7 +56,7 @@ const TransactionsListing = () => {
       gap={1}
     >
       <Typography variant="h6" sx={{ padding: 0 }}>
-        Transaction Management Dashboard
+        Users Transaction List
       </Typography>
       <TransactionsTable />
     </Box>

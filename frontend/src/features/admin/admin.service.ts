@@ -228,7 +228,7 @@ const getTransactionsListing = async (
   message: string;
 }> => {
   try {
-    const response = await HttpService.post('/payment/transaction', {
+    const response = await HttpService.post('/admin/user/transactions/list', {
       selectedUserType: filter,
     });
 
