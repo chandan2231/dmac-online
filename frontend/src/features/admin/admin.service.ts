@@ -475,7 +475,7 @@ const createTherapist = async (
   try {
     const response = await HttpService.post('/admin/user/create', {
       ...payload,
-      role: 'EXPERT',
+      role: 'THERAPIST',
     });
     return {
       success: true,

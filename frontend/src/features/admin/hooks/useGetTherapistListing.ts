@@ -5,6 +5,6 @@ import AdminService from '../admin.service';
 export function useGetTherapistListing() {
   return useQuery({
     queryKey: [QUERY_KEYS_FOR_ADMIN.GET_THERAPIST_LISTING],
-    queryFn: () => AdminService.getConsultantsListing(),
+    queryFn: () => AdminService.getTherapistListing(),
   });
 }
