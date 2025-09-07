@@ -37,7 +37,7 @@ const forgotPasswordSchema = Yup.object({
     .min(6, 'Min 6 characters'),
 });
 
-function UserTable() {
+function TherapistTable() {
   const { data, isLoading, refetch } = useGetTherapistListing();
 
   const [paginationModel, setPaginationModel] = useState({
@@ -354,7 +354,7 @@ const TherapistListing = () => {
           </MorenButton>
         }
       />
-      <UserTable />
+      <TherapistTable />
 
       {/* Modal */}
       <GenericModal

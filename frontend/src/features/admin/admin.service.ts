@@ -300,6 +300,38 @@ const getConsultantsListing = async (): Promise<{
   }
 };
 
+const updateConsultant = async (
+  payload: Omit<ICreateConsultantPayload, 'password' | 'email' | 'role'> & {
+    id: number;
+  }
+): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/admin/user/update', payload);
+
+    return {
+      success: true,
+      message: get(
+        response,
+        ['data', 'message'],
+        'Consultant updated successfully'
+      ),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while updating consultant';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
 const updateConsultantStatus = async (
   id: number,
   status: number
@@ -546,6 +578,7 @@ const AdminService = {
   updateTherapistStatus,
   createTherapist,
   updateTherapistPassword,
+  updateConsultant,
 };
 
 export default AdminService;
