@@ -1,5 +1,5 @@
 import { get } from 'lodash';
-import type { IProduct, IUpdateProductPayload } from './admin.interface';
+import type { IProduct, IUpdateProductPayload, IUser } from './admin.interface';
 import moment from 'moment';
 import HttpService from '../../services/HttpService';
 
@@ -103,10 +103,79 @@ const updateProductStatus = async (
   }
 };
 
+// ✅ Get users by role
+const getUsersListing = async (
+  role: string
+): Promise<{
+  success: boolean;
+  data: IUser[] | null;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/admin/users/list', { role });
+
+    const users = get(response, 'data', []) as IUser[] as IUser[];
+
+    return {
+      success: true,
+      data: users,
+      message: 'Users fetched successfully',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while fetching users';
+
+    return {
+      success: false,
+      data: null,
+      message,
+    };
+  }
+};
+
+// ✅ Update user status
+const updateUserStatus = async (
+  id: number,
+  status: number
+): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/admin/user/status/change', {
+      id,
+      status,
+    });
+
+    return {
+      success: true,
+      message: get(
+        response,
+        ['data', 'message'],
+        'User status updated successfully'
+      ),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while updating user status';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
   updateProduct, // ✅ export update service
   updateProductStatus,
+  getUsersListing,
+  updateUserStatus,
 };
 
 export default AdminService;

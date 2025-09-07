@@ -1,5 +1,6 @@
 export const QUERY_KEYS_FOR_ADMIN = {
   GET_PRODUCT_LISTING: 'getProductListing',
+  GET_USER_LISTING: 'getUserListing',
 } as const;
 
 export interface IProduct {
@@ -17,4 +18,32 @@ export interface IUpdateProductPayload {
   product_name: string;
   product_description: string;
   product_amount: number;
+}
+
+export interface IUser {
+  id: number;
+  name: string;
+  email: string;
+  mobile: string;
+  password?: string;
+  country: string;
+  state: string;
+  zip_code: string;
+  language: string; // comes as string id like '1'
+  role: string; // e.g., 'USER'
+  time_zone: string;
+  address: string;
+  speciality: string;
+  license_number: string;
+  license_expiration: string;
+  contracted_rate_per_consult: string;
+  verified: number; // 0/1
+  verification_token: string;
+  status: number; // 0/1
+  created_date: string; // ISO string
+  updated_date: string; // ISO string
+}
+
+export interface IGetUsersPayload {
+  role: string;
 }

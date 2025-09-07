@@ -2,58 +2,71 @@ import type { GridColDef } from '@mui/x-data-grid';
 import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { GenericTable } from '../../../../components/table';
+import ModernSwitch from '../../../../components/switch';
+import { useGetUsersListing } from '../../hooks/useGetUsersListing';
+import type { IUser } from '../../admin.interface';
+import { get } from 'lodash';
+import AdminService from '../../admin.service';
+import CustomLoader from '../../../../components/loader';
 
-type User = {
-  id: number;
-  name: string;
-  email: string;
-  age: number;
-};
+function UsersTable() {
+  const { data, isLoading, refetch } = useGetUsersListing('USER');
 
-const columns: GridColDef[] = [
-  { field: 'name', headerName: 'Name', flex: 1 },
-  { field: 'email', headerName: 'Email', flex: 1 },
-  { field: 'age', headerName: 'Age', width: 100 },
-];
-
-const rows: User[] = [
-  { id: 1, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 2, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 3, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 4, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 5, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 6, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 7, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 8, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 9, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 10, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 11, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 12, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 13, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 14, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 15, name: 'Alice', email: 'alice@example.com', age: 25 },
-  { id: 16, name: 'Bob', email: 'bob@example.com', age: 30 },
-  { id: 17, name: 'Alice', email: 'bob@example.com', age: 25 },
-  { id: 18, name: 'Bob', email: 'bob@example.com', age: 25 },
-  { id: 19, name: 'Alice', email: 'bob@example.com', age: 25 },
-  { id: 20, name: 'Bob', email: 'bob@example.com', age: 25 },
-  { id: 21, name: 'Alice', email: 'bob@example.com', age: 25 },
-  { id: 22, name: 'Bob', email: 'bob@example.com', age: 25 },
-  { id: 23, name: 'Alice', email: 'bob@example.com', age: 25 },
-];
-
-function UserTable() {
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 10,
     page: 0,
   });
 
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+
+  const handleUpdateStatus = async (id: number, status: number) => {
+    setIsLoadingStatus(true);
+    const result = await AdminService.updateUserStatus(id, status);
+    if (result.success) {
+      await refetch();
+    } else {
+      console.error('Status update failed:', result.message);
+    }
+    setIsLoadingStatus(false);
+  };
+
+  const columns: GridColDef<IUser>[] = [
+    { field: 'name', headerName: 'Name', flex: 1 },
+    { field: 'email', headerName: 'Email', flex: 1 },
+    { field: 'mobile', headerName: 'Mobile', width: 140 },
+    { field: 'role', headerName: 'Role', width: 120 },
+    {
+      field: 'status',
+      headerName: 'Status',
+      width: 150,
+      renderCell: params => {
+        const isActive = params.row.status === 1;
+        return (
+          <Box display="flex" alignItems="center" height="100%">
+            <ModernSwitch
+              checked={isActive}
+              onChange={() => {
+                handleUpdateStatus(params.row.id, isActive ? 0 : 1);
+              }}
+              trackColor={isActive ? '#4caf50' : '#ccc'}
+            />
+          </Box>
+        );
+      },
+    },
+  ];
+
+  if (isLoading || isLoadingStatus) {
+    return <CustomLoader />;
+  }
+
   return (
     <GenericTable
-      rows={rows}
+      rows={get(data, 'data', []) as IUser[]}
       columns={columns}
       paginationModel={paginationModel}
       onPaginationModelChange={setPaginationModel}
+      loading={isLoading}
     />
   );
 }
@@ -73,7 +86,7 @@ const UsersListing = () => {
       <Typography variant="h6" sx={{ padding: 0 }}>
         User Management Dashboard
       </Typography>
-      <UserTable />
+      <UsersTable />
     </Box>
   );
 };
