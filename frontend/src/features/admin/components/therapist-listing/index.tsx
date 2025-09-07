@@ -6,7 +6,6 @@ import { GenericTable } from '../../../../components/table';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import GenericModal from '../../../../components/modal';
 import ModernInput from '../../../../components/input';
-import EditIcon from '@mui/icons-material/Edit';
 import ModernSelect, { type IOption } from '../../../../components/select';
 import MorenButton from '../../../../components/button';
 import * as Yup from 'yup';
@@ -31,12 +30,6 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import { useToast } from '../../../../providers/toast-provider';
 
-const forgotPasswordSchema = Yup.object({
-  password: Yup.string()
-    .required('Password is required')
-    .min(6, 'Min 6 characters'),
-});
-
 function UserTable() {
   const { data, isLoading, refetch } = useGetConsultantsListing();
 
@@ -46,41 +39,6 @@ function UserTable() {
   });
 
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedConsultant, setSelectedConsultant] =
-    useState<IConsultant | null>(null);
-  const { showToast } = useToast();
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm({
-    resolver: yupResolver(forgotPasswordSchema),
-  });
-
-  const handleOpenPasswordModal = (user: IConsultant) => {
-    setSelectedConsultant(user);
-    setIsPasswordModalOpen(true);
-  };
-
-  const handleClosePasswordModal = () => {
-    setIsPasswordModalOpen(false);
-    setSelectedConsultant(null);
-    reset(); // clear form
-  };
-
-  const handleOpenEditModal = (consultant: IConsultant) => {
-    setSelectedConsultant(consultant);
-    setIsEditModalOpen(true);
-  };
-
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-    setSelectedConsultant(null);
-  };
 
   const handleUpdateStatus = async (id: number, status: number) => {
     setIsLoadingStatus(true);
@@ -89,25 +47,6 @@ function UserTable() {
       await refetch();
     } else {
       console.error('Status update failed:', result.message);
-    }
-    setIsLoadingStatus(false);
-  };
-
-  const onSubmitChangePassword = async (values: { password: string }) => {
-    if (!selectedConsultant) return;
-    setIsLoadingStatus(true);
-    const result = await AdminService.updateConsultantPassword({
-      id: selectedConsultant.id,
-      password: values.password,
-    });
-    if (result.success) {
-      setIsPasswordModalOpen(false);
-      setSelectedConsultant(null);
-      reset(); // clear form
-      showToast('Password updated successfully', 'success');
-    } else {
-      showToast(result.message, 'error');
-      console.error('Change password failed:', result.message);
     }
     setIsLoadingStatus(false);
   };
@@ -136,50 +75,6 @@ function UserTable() {
         );
       },
     },
-    {
-      field: 'edit',
-      headerName: 'Edit',
-      width: 150,
-      sortable: false,
-      filterable: false,
-      renderCell: params => (
-        <Box display="flex" alignItems="center" height="100%" gap={1}>
-          <Typography
-            variant="body2"
-            sx={{ color: 'primary.main', cursor: 'pointer' }}
-            onClick={() => handleOpenEditModal(params.row)}
-          >
-            <EditIcon
-              fontSize="small"
-              sx={{ mr: 0.5, verticalAlign: 'middle' }}
-            />{' '}
-            Edit
-          </Typography>
-        </Box>
-      ),
-    },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      width: 170,
-      sortable: false,
-      filterable: false,
-      renderCell: params => (
-        <Box display="flex" alignItems="center" height="100%" gap={1}>
-          <Typography
-            variant="body2"
-            sx={{ color: 'primary.main', cursor: 'pointer' }}
-            onClick={() => handleOpenPasswordModal(params.row)}
-          >
-            <EditIcon
-              fontSize="small"
-              sx={{ mr: 0.5, verticalAlign: 'middle' }}
-            />{' '}
-            Change Password
-          </Typography>
-        </Box>
-      ),
-    },
   ];
 
   if (isLoading || isLoadingStatus) {
@@ -187,67 +82,17 @@ function UserTable() {
   }
 
   return (
-    <>
-      <GenericTable
-        rows={get(data, 'data', []) as IConsultant[]}
-        columns={columns}
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        loading={isLoading}
-      />
-
-      <GenericModal
-        isOpen={isPasswordModalOpen}
-        onClose={handleClosePasswordModal}
-        title={`Change Password${selectedConsultant ? ` - ${selectedConsultant.name}` : ''}`}
-        hideCancelButton
-      >
-        <Box
-          component="form"
-          onSubmit={handleSubmit(onSubmitChangePassword)}
-          display="flex"
-          flexDirection="column"
-          gap={2}
-        >
-          <ModernInput
-            label="New Password"
-            placeholder="Enter new password"
-            type="password"
-            {...register('password')}
-            error={!!errors.password}
-            helperText={errors.password?.message}
-          />
-
-          <MorenButton
-            type="submit"
-            variant="contained"
-            sx={{
-              alignSelf: 'flex-end',
-              mt: 2,
-              minWidth: '140px',
-              maxWidth: '180px',
-            }}
-          >
-            Update Password
-          </MorenButton>
-        </Box>
-      </GenericModal>
-
-      <GenericModal
-        isOpen={isEditModalOpen}
-        onClose={() => handleCloseEditModal()}
-        title="Edit Consultant"
-        hideCancelButton
-      >
-        <Box p={2}>
-          <Typography>Edit consultant form goes here.</Typography>
-        </Box>
-      </GenericModal>
-    </>
+    <GenericTable
+      rows={get(data, 'data', []) as IConsultant[]}
+      columns={columns}
+      paginationModel={paginationModel}
+      onPaginationModelChange={setPaginationModel}
+      loading={isLoading}
+    />
   );
 }
 
-const ConsultantsListing = () => {
+const TherapistListing = () => {
   const [createConsultantModalOpen, setCreateConsultantModalOpen] =
     useState(false);
   const [selectedCountry, setSelectedCountry] = useState<IOption | null>(null);
@@ -502,7 +347,7 @@ const ConsultantsListing = () => {
               maxWidth: '200px',
             }}
           >
-            Create Consultant
+            Create Therapist
           </MorenButton>
         </Box>
       </GenericModal>
@@ -510,4 +355,4 @@ const ConsultantsListing = () => {
   );
 };
 
-export default ConsultantsListing;
+export default TherapistListing;

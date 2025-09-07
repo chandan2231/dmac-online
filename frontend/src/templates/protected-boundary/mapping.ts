@@ -24,6 +24,7 @@ import UsersListingPageComponent from '../../pages/admin/users-listing';
 import ProductsListingPageComponent from '../../pages/admin/products-listing';
 import ConsultantsListingPageComponent from '../../pages/admin/consultants-listing';
 import TransactionsListingPageComponent from '../../pages/admin/transactions-listing';
+import TherapistListingPageComponent from '../../pages/admin/tharapist-listing';
 
 // Layouts
 import MainLayout from '../../layouts/MainLayout';
@@ -60,6 +61,7 @@ export const COMPONENT_MAP = {
   ProductsListingPageComponent,
   ConsultantsListingPageComponent,
   TransactionsListingPageComponent,
+  TherapistListingPageComponent,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -202,6 +204,16 @@ const ADMIN_ROUTES: IUserRoute[] = [
     // This route will be shown in the sidebar
     showInSidebar: true,
     sideBarTitle: 'Consultants List',
+    sideBarIcon: 'BadgeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.THERAPISTS,
+    layout: 'MainLayout',
+    component: 'TherapistListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Therapists List',
     sideBarIcon: 'BadgeIcon',
     isAChildOf: null,
   },
