@@ -341,7 +341,7 @@ const TherapistListing = () => {
       <TabHeaderLayout
         leftNode={
           <Typography variant="h6" sx={{ padding: 0 }}>
-            Therapist Management Dashboard
+            Therapist List
           </Typography>
         }
         rightNode={

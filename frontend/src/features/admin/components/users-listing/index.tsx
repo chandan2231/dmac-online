@@ -208,7 +208,7 @@ const UsersListing = () => {
       gap={1}
     >
       <Typography variant="h6" sx={{ padding: 0 }}>
-        User Management Dashboard
+        Users List
       </Typography>
       <UsersTable />
     </Box>

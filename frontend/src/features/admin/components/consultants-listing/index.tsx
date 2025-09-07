@@ -340,7 +340,7 @@ const ConsultantsListing = () => {
       <TabHeaderLayout
         leftNode={
           <Typography variant="h6" sx={{ padding: 0 }}>
-            Consultant Management Dashboard
+            Consultants List
           </Typography>
         }
         rightNode={

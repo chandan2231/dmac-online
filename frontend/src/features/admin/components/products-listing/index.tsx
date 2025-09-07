@@ -181,7 +181,7 @@ function ProductsTable() {
       gap={1}
     >
       <Typography variant="h6" sx={{ padding: 0 }}>
-        Product Management Dashboard
+        Products List
       </Typography>
 
       <GenericTable
