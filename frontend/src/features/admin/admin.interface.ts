@@ -81,6 +81,21 @@ export interface IConsultant {
   created_date: string;
 }
 
+export interface ICreateConsultantPayload {
+  name: string;
+  mobile: string;
+  email: string;
+  password: string;
+  role: string; // will be hard-coded as 'EXPERT'
+  time_zone: string;
+  country: string;
+  address: string;
+  speciality: string;
+  license_number: string;
+  license_expiration: string;
+  contracted_rate_per_consult: string;
+}
+
 export interface IGetUsersPayload {
   role: string;
 }

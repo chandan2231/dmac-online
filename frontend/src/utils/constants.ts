@@ -207,3 +207,51 @@ export const COUNTRIES_LIST: IOption[] = [
   { value: 'ZM', label: 'Zambia' },
   { value: 'ZW', label: 'Zimbabwe' },
 ];
+
+// Hard-coded timezones by country code
+export const TIMEZONES_BY_COUNTRY: Record<string, IOption[]> = {
+  US: [
+    { value: 'America/New_York', label: 'Eastern Time (ET)' },
+    { value: 'America/Chicago', label: 'Central Time (CT)' },
+    { value: 'America/Denver', label: 'Mountain Time (MT)' },
+    { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
+    { value: 'America/Anchorage', label: 'Alaska Time (AKT)' },
+    { value: 'Pacific/Honolulu', label: 'Hawaii Time (HST)' },
+  ],
+  CA: [
+    { value: 'America/Toronto', label: 'Eastern Time (ET)' },
+    { value: 'America/Winnipeg', label: 'Central Time (CT)' },
+    { value: 'America/Edmonton', label: 'Mountain Time (MT)' },
+    { value: 'America/Vancouver', label: 'Pacific Time (PT)' },
+    { value: 'America/St_Johns', label: 'Newfoundland Time (NT)' },
+  ],
+  IN: [{ value: 'Asia/Kolkata', label: 'India Standard Time (IST)' }],
+  GB: [{ value: 'Europe/London', label: 'UK Time (GMT/BST)' }],
+  AU: [
+    { value: 'Australia/Sydney', label: 'Australian Eastern Time (AET)' },
+    { value: 'Australia/Adelaide', label: 'Australian Central Time (ACT)' },
+    { value: 'Australia/Perth', label: 'Australian Western Time (AWT)' },
+  ],
+  CN: [{ value: 'Asia/Shanghai', label: 'China Standard Time (CST)' }],
+  JP: [{ value: 'Asia/Tokyo', label: 'Japan Standard Time (JST)' }],
+  RU: [
+    { value: 'Europe/Moscow', label: 'Moscow Time (MSK)' },
+    { value: 'Asia/Yekaterinburg', label: 'Yekaterinburg Time (YEKT)' },
+    { value: 'Asia/Novosibirsk', label: 'Novosibirsk Time (NOVT)' },
+    { value: 'Asia/Vladivostok', label: 'Vladivostok Time (VLAT)' },
+    { value: 'Asia/Kamchatka', label: 'Kamchatka Time (PETT)' },
+  ],
+  BR: [
+    { value: 'America/Sao_Paulo', label: 'Brasília Time (BRT)' },
+    { value: 'America/Manaus', label: 'Amazon Time (AMT)' },
+    { value: 'America/Cuiaba', label: 'Cuiabá Time (AMT)' },
+    { value: 'America/Fortaleza', label: 'Northeast Time (BRT)' },
+  ],
+  ZA: [
+    {
+      value: 'Africa/Johannesburg',
+      label: 'South Africa Standard Time (SAST)',
+    },
+  ],
+  AE: [{ value: 'Asia/Dubai', label: 'Gulf Standard Time (GST)' }],
+};

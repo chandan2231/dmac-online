@@ -3,15 +3,29 @@ import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 import { GenericTable } from '../../../../components/table';
-import MorenButton from '../../../../components/button';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import GenericModal from '../../../../components/modal';
+import ModernInput from '../../../../components/input';
+import ModernSelect, { type IOption } from '../../../../components/select';
+import MorenButton from '../../../../components/button';
+import * as Yup from 'yup';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import {
+  COUNTRIES_LIST,
+  TIMEZONES_BY_COUNTRY,
+} from '../../../../utils/constants';
 import ModernSwitch from '../../../../components/switch';
 import { useGetConsultantsListing } from '../../hooks/useGetConsultantsListing';
 import type { IConsultant } from '../../admin.interface';
 import { get } from 'lodash';
 import CustomLoader from '../../../../components/loader';
 import AdminService from '../../admin.service';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs from 'dayjs';
+import { useToast } from '../../../../providers/toast-provider';
 
 function UserTable() {
   const { data, isLoading, refetch } = useGetConsultantsListing();
@@ -70,8 +84,6 @@ function UserTable() {
       columns={columns}
       paginationModel={paginationModel}
       onPaginationModelChange={setPaginationModel}
-      maxHeight="calc(100vh - 200px)"
-      minHeight="calc(100vh - 200px)"
       loading={isLoading}
     />
   );
@@ -80,6 +92,13 @@ function UserTable() {
 const ConsultantsListing = () => {
   const [createConsultantModalOpen, setCreateConsultantModalOpen] =
     useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<IOption | null>(null);
+  const [selectedTimeZone, setSelectedTimeZone] = useState<IOption | null>(
+    null
+  );
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+
+  const { showToast } = useToast();
 
   const handleOpenCreateConsultantModal = () => {
     setCreateConsultantModalOpen(true);
@@ -87,7 +106,73 @@ const ConsultantsListing = () => {
 
   const handleCloseCreateConsultantModal = () => {
     setCreateConsultantModalOpen(false);
+    reset();
   };
+
+  const schema = Yup.object({
+    name: Yup.string().required('Name is required'),
+    mobile: Yup.string().required('Mobile is required'),
+    email: Yup.string().email('Invalid email').required('Email is required'),
+    password: Yup.string()
+      .min(6, 'Min 6 characters')
+      .required('Password is required'),
+    country: Yup.string().required('Country is required'),
+    time_zone: Yup.string().required('Time zone is required'),
+    address: Yup.string().required('Address is required'),
+    speciality: Yup.string().required('Speciality is required'),
+    license_number: Yup.string().required('License number is required'),
+    license_expiration: Yup.string().required('License expiration is required'),
+    contracted_rate_per_consult: Yup.string().required('Rate is required'),
+  });
+
+  type CreateConsultantFormValues = {
+    name: string;
+    mobile: string;
+    email: string;
+    password: string;
+    country: string;
+    time_zone: string;
+    address: string;
+    speciality: string;
+    license_number: string;
+    license_expiration: string;
+    contracted_rate_per_consult: string;
+  };
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm<CreateConsultantFormValues>({
+    resolver: yupResolver(schema),
+  });
+
+  const onSubmitCreateConsultant = async (
+    values: CreateConsultantFormValues
+  ) => {
+    setIsLoadingStatus(true);
+    const result = await AdminService.createConsultant({
+      ...values,
+    });
+    if (result.success) {
+      setCreateConsultantModalOpen(false);
+      // reset country and time zone
+      setSelectedCountry(null);
+      setSelectedTimeZone(null);
+      reset();
+    } else {
+      showToast(result.message, 'error');
+      console.error('Create consultant failed:', result.message);
+    }
+    setIsLoadingStatus(false);
+  };
+
+  if (isLoadingStatus) {
+    return <CustomLoader />;
+  }
 
   return (
     <Box
@@ -124,6 +209,156 @@ const ConsultantsListing = () => {
         onClose={handleCloseCreateConsultantModal}
         title="Create New Consultant"
       />
+      <GenericModal
+        isOpen={createConsultantModalOpen}
+        onClose={handleCloseCreateConsultantModal}
+        title="Create New Consultant"
+        hideCancelButton
+      >
+        <Box
+          component="form"
+          onSubmit={handleSubmit(onSubmitCreateConsultant)}
+          display="flex"
+          flexDirection="column"
+          gap={2}
+        >
+          <ModernInput
+            label="Name"
+            placeholder="Enter name"
+            {...register('name')}
+            error={!!errors.name}
+            helperText={errors.name?.message}
+          />
+          <ModernInput
+            label="Mobile"
+            placeholder="Enter mobile"
+            {...register('mobile')}
+            error={!!errors.mobile}
+            helperText={errors.mobile?.message}
+          />
+          <ModernInput
+            label="Email"
+            placeholder="Enter email"
+            {...register('email')}
+            error={!!errors.email}
+            helperText={errors.email?.message}
+          />
+          <ModernInput
+            label="Password"
+            type="password"
+            placeholder="Enter password"
+            {...register('password')}
+            error={!!errors.password}
+            helperText={errors.password?.message}
+          />
+
+          <ModernSelect
+            label="Country"
+            options={COUNTRIES_LIST}
+            value={selectedCountry}
+            onChange={opt => {
+              setSelectedCountry(opt);
+              setSelectedTimeZone(null);
+              setValue('country', opt.label, { shouldValidate: true });
+            }}
+            fullWidth
+            searchable
+          />
+          {errors.country && (
+            <Typography color="error" variant="caption">
+              {errors.country.message}
+            </Typography>
+          )}
+
+          <ModernSelect
+            label="Time Zone"
+            options={
+              selectedCountry
+                ? TIMEZONES_BY_COUNTRY[selectedCountry.value] || []
+                : []
+            }
+            value={selectedTimeZone}
+            onChange={opt => {
+              setSelectedTimeZone(opt);
+              setValue('time_zone', opt.value, { shouldValidate: true });
+            }}
+            fullWidth
+            searchable
+          />
+          {errors.time_zone && (
+            <Typography color="error" variant="caption">
+              {errors.time_zone.message}
+            </Typography>
+          )}
+
+          <ModernInput
+            label="Address"
+            placeholder="Enter address"
+            {...register('address')}
+            error={!!errors.address}
+            helperText={errors.address?.message}
+          />
+          <ModernInput
+            label="Speciality"
+            placeholder="Enter speciality"
+            {...register('speciality')}
+            error={!!errors.speciality}
+            helperText={errors.speciality?.message}
+          />
+          <ModernInput
+            label="License Number"
+            placeholder="Enter license number"
+            {...register('license_number')}
+            error={!!errors.license_number}
+            helperText={errors.license_number?.message}
+          />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Controller
+              control={control}
+              name="license_expiration"
+              render={({ field }) => (
+                <DatePicker
+                  label="License Expiration"
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date: dayjs.Dayjs | null) =>
+                    setValue(
+                      'license_expiration',
+                      date ? date.format('YYYY-MM-DD') : '',
+                      { shouldValidate: true }
+                    )
+                  }
+                  slotProps={{
+                    textField: {
+                      error: !!errors.license_expiration,
+                      helperText: errors.license_expiration?.message,
+                    },
+                  }}
+                />
+              )}
+            />
+          </LocalizationProvider>
+          <ModernInput
+            label="Rate per Consult"
+            placeholder="Enter rate"
+            {...register('contracted_rate_per_consult')}
+            error={!!errors.contracted_rate_per_consult}
+            helperText={errors.contracted_rate_per_consult?.message}
+          />
+
+          <MorenButton
+            type="submit"
+            variant="contained"
+            sx={{
+              alignSelf: 'flex-end',
+              mt: 2,
+              minWidth: '140px',
+              maxWidth: '200px',
+            }}
+          >
+            Create Consultant
+          </MorenButton>
+        </Box>
+      </GenericModal>
     </Box>
   );
 };

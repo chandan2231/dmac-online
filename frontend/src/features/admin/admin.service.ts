@@ -7,6 +7,7 @@ import type {
   ITransaction,
   TransactionFilter,
   IConsultant,
+  ICreateConsultantPayload,
 } from './admin.interface';
 import moment from 'moment';
 import HttpService from '../../services/HttpService';
@@ -330,6 +331,37 @@ const updateConsultantStatus = async (
   }
 };
 
+const createConsultant = async (
+  payload: Omit<ICreateConsultantPayload, 'role'>
+): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/admin/user/create', {
+      ...payload,
+      role: 'EXPERT',
+    });
+    return {
+      success: true,
+      message: get(
+        response,
+        ['data', 'message'],
+        'Consultant created successfully'
+      ),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while creating consultant';
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
   updateProduct, // ✅ export update service
@@ -340,6 +372,7 @@ const AdminService = {
   changeUserPassword,
   getConsultantsListing,
   updateConsultantStatus,
+  createConsultant,
 };
 
 export default AdminService;
