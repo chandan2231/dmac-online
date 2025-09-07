@@ -7,6 +7,7 @@ import {
   updateProductDetails,
   changeProductStatus,
   updateUsersDetails,
+  changeUserPassword,
 
   getApprovedProtocolList,
   getContinuinDetailsById,
@@ -23,7 +24,6 @@ import {
   getMemberList,
   changeMemberStatus,
   changeMemberPassword,
-  changeUserPassword,
   getUnderReviewProtocolList,
   getRejectedProtocolList,
   getCreatedProtocolList,
@@ -60,6 +60,7 @@ router.post('/user/update', updateUsersDetails)
 router.get('/products/list', getProductList)
 router.post('/products/update', updateProductDetails)
 router.post('/products/status/change', changeProductStatus)
+router.post('/user/reset/password', changeUserPassword)
 
 router.post(
   '/member/chairCommitteeApprovalProtocol',

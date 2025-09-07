@@ -281,6 +281,19 @@ export const changeUserStatus = (req, res) => {
   })
 }
 
+export const changeUserPassword = (req, res) => {
+  const salt = bcrypt.genSaltSync(10)
+  const hashedPassword = bcrypt.hashSync(req.body.password, salt)
+  const que = 'UPDATE dmac_webapp_users SET password=? WHERE id=?'
+  db.query(que, [hashedPassword, req.body.id], (err, data) => {
+    if (err) {
+      return res.status(500).json(err)
+    } else {
+      return res.status(200).json('User Password Reset Successfully')
+    }
+  })
+}
+
 
 
 export const getAllProtocolList = (req, res) => {
@@ -726,18 +739,7 @@ export const getEventPriceList = (req, res) => {
   })
 }
 
-export const changeUserPassword = (req, res) => {
-  const salt = bcrypt.genSaltSync(10)
-  const hashedPassword = bcrypt.hashSync(req.body.password, salt)
-  const que = 'UPDATE users SET password=? WHERE id=?'
-  db.query(que, [hashedPassword, req.body.id], (err, data) => {
-    if (err) {
-      return res.status(500).json(err)
-    } else {
-      return res.status(200).json('User Password Reset Successfully')
-    }
-  })
-}
+
 
 export const changeMemberPassword = (req, res) => {
   const salt = bcrypt.genSaltSync(10)
