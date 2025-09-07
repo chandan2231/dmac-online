@@ -14,6 +14,7 @@ import type { IProduct } from '../../admin.interface';
 import { get } from 'lodash';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useToast } from '../../../../providers/toast-provider';
 
 // ✅ Validation schema
 const schema = Yup.object({
@@ -33,7 +34,7 @@ type ProductFormValues = {
 };
 
 function ProductsTable() {
-  const { data, isLoading } = useGetProductListing();
+  const { data, isLoading, refetch } = useGetProductListing();
 
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 10,
@@ -42,6 +43,8 @@ function ProductsTable() {
 
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const { showToast } = useToast();
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
@@ -85,7 +88,12 @@ function ProductsTable() {
 
     if (result.success) {
       handleCloseEditModal();
+
+      // ✅ Show success message
+      showToast(result.message, 'success');
+
       // Optionally refresh list
+      refetch();
     } else {
       console.error('❌ Update failed:', result.message);
     }
