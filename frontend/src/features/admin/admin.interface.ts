@@ -117,6 +117,17 @@ export interface ITherapist {
   created_date: string;
 }
 
+export type TherapistState = ITherapist & {
+  name: string;
+  address: string;
+  speciality: string;
+  license_number: string;
+  license_expiration: string;
+  contracted_rate_per_consult: string;
+  country: string;
+  time_zone: string;
+};
+
 export interface ICreateTherapistPayload {
   name: string;
   mobile: string;
