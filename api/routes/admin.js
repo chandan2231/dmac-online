@@ -8,6 +8,9 @@ import {
   changeProductStatus,
   updateUsersDetails,
   changeUserPassword,
+  getUsersTransactionList,
+
+  
 
   getApprovedProtocolList,
   getContinuinDetailsById,
@@ -61,6 +64,7 @@ router.get('/products/list', getProductList)
 router.post('/products/update', updateProductDetails)
 router.post('/products/status/change', changeProductStatus)
 router.post('/user/reset/password', changeUserPassword)
+router.post('/user/transactions/list', getUsersTransactionList)
 
 router.post(
   '/member/chairCommitteeApprovalProtocol',

@@ -72,12 +72,12 @@ if (process.env.NODE_ENV === 'localhost') {
 app.use('/api/language', languageRoutes)
 app.use('/api/questionar', questionarRoutes)
 app.use('/api/auth', authRoutes)
+app.use('/api/admin', adminRoutes)
 app.use('/api/researchInfo', researchRoutes)
 app.use('/api/protocol', protocolRoutes)
 app.use('/api/continuinReview', continuinReviewRoutes)
 app.use('/api/eventAndRequest', eventAndRequest)
 app.use('/api/communication', communication)
-app.use('/api/admin', adminRoutes)
 app.use('/api/payment', payment)
 app.use('/api/externalMonitor', externalMonitor)
 

@@ -294,6 +294,24 @@ export const changeUserPassword = (req, res) => {
   })
 }
 
+export const getUsersTransactionList = (req, res) => {
+
+  const que = `SELECT trans.*, users.name AS name, users.email, product.product_name AS product_name, product.product_description as product_description 
+       FROM dmac_webapp_users_transaction as trans 
+       JOIN dmac_webapp_users AS users ON trans.user_id = users.id 
+       JOIN dmac_webapp_products AS product ON trans.product_id = product.id 
+       ORDER BY trans.id DESC`
+    
+  db.query(que, [], (err, data) => {
+    if (err) return res.status(500).json(err)
+    if (data.length > 0) {
+      return res.status(200).json(data)
+    } else {
+      return res.status(404).json({ message: 'No transactions found.' })
+    }
+  })
+}
+
 
 
 export const getAllProtocolList = (req, res) => {
