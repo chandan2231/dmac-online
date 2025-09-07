@@ -19,6 +19,7 @@ import ProfilePage from '../../pages/user/profile';
 import QuestionersPage from '../../pages/user/questioners';
 
 // Admin Pages
+import DashboardPageComponent from '../../pages/admin/dashboard';
 import UsersListingPageComponent from '../../pages/admin/users-listing';
 import ProductsListingPageComponent from '../../pages/admin/products-listing';
 import ConsultantsListingPageComponent from '../../pages/admin/consultants-listing';
@@ -54,6 +55,7 @@ export const COMPONENT_MAP = {
   QuestionersPage,
 
   // Admin Components
+  DashboardPageComponent,
   UsersListingPageComponent,
   ProductsListingPageComponent,
   ConsultantsListingPageComponent,
@@ -164,7 +166,17 @@ const USER_ROUTES: IUserRoute[] = [
 
 const ADMIN_ROUTES: IUserRoute[] = [
   {
-    path: ROUTES.HOME,
+    path: ROUTES.ADMIN_DASHBOARD,
+    layout: 'MainLayout',
+    component: 'DashboardPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Dashboard',
+    sideBarIcon: 'GroupIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.USERS_LISTING,
     layout: 'MainLayout',
     component: 'UsersListingPageComponent',
     // This route will be shown in the sidebar
@@ -239,7 +251,7 @@ export const getRoutesByRole = (role: UserRole): IUserRoute[] => {
   if (role === 'USER') {
     return USER_ROUTES;
   }
-  if (role === 'ADMIN') {
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
     return ADMIN_ROUTES;
   }
   return GUEST_USER_ROUTES;

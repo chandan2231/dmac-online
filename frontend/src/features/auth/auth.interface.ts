@@ -2,7 +2,12 @@ import type { MapperObjectKey } from '../../components/sidebar/mapped-icons';
 import type { LanguageCode } from '../../i18n/language.interface';
 import type { ComponentKey } from '../../templates/protected-boundary/mapping';
 
-export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+export type UserRole =
+  | 'USER'
+  | 'ADMIN'
+  | 'SUPER_ADMIN'
+  | 'EXPERT'
+  | 'THERAPIST';
 
 export type LayoutType =
   | 'MainLayout'
@@ -37,9 +42,11 @@ export const ROUTES = {
   QUESTIONERS: '/questioners',
 
   // Admin routes
-  TRANSACTIONS: '/transactions',
-  CONSULTANTS: '/consultants',
-  PRODUCTS: '/products',
+  ADMIN_DASHBOARD: '/admin/dashboard',
+  USERS_LISTING: '/admin/users',
+  TRANSACTIONS: '/admin/transactions',
+  CONSULTANTS: '/admin/consultants',
+  PRODUCTS: '/admin/products',
 
   // Not Found
   NOT_FOUND: '*',

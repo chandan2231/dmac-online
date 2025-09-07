@@ -1,7 +1,7 @@
-import UsersListing from './components/users-listing';
+import Dashboard from './components/dashboard';
 
 const Admin = () => {
-  return <UsersListing />;
+  return <Dashboard />;
 };
 
 export default Admin;
