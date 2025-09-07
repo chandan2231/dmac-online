@@ -48,7 +48,7 @@ export function GenericTable<T extends { id: string | number }>({
         onPaginationModelChange={onPaginationModelChange}
         pagination
         loading={loading}
-        autoHeight
+        disableRowSelectionOnClick
         onRowClick={params => onRowClick?.(params.row)}
         sx={{
           backgroundColor: 'background.paper',
@@ -58,7 +58,7 @@ export function GenericTable<T extends { id: string | number }>({
             color: '#ffffff',
           },
           '& .MuiDataGrid-row:hover': {
-            color: '#ffffff',
+            backgroundColor: '#eee',
           },
         }}
       />

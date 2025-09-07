@@ -182,7 +182,8 @@ export const login = (req, res) => {
       token: token,
       language: user.language,
       phone: user.mobile,
-      languageCode: user.language_code
+      languageCode: user.language_code,
+      role: user.role
     }
 
     res.status(200).json({

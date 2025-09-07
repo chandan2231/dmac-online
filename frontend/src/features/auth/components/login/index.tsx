@@ -4,7 +4,7 @@ import { Box } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../auth.interface.ts';
+import { ROUTES, type IUser } from '../../auth.interface.ts';
 import { useSelector } from 'react-redux';
 import { useToast } from '../../../../providers/toast-provider';
 import MorenButton from '../../../../components/button';
@@ -16,6 +16,14 @@ import CustomLoader from '../../../../components/loader/index.tsx';
 type FormValues = {
   email: string;
   password: string;
+};
+
+const navigateUserTo = (user: IUser | null) => {
+  const role = user?.role || 'USER';
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+    return ROUTES.ADMIN_DASHBOARD;
+  }
+  return ROUTES.HOME;
 };
 
 const schema = Yup.object({
@@ -43,13 +51,13 @@ const Login = () => {
   };
 
   const onSubmit = async (data: FormValues) => {
-    const { success, message } = await AuthService.loginUser(data);
+    const { success, message, user } = await AuthService.loginUser(data);
     if (!success) {
       return showToast(message, 'error');
     }
 
     showToast(message, 'success');
-    handleNavigation(ROUTES.HOME);
+    handleNavigation(navigateUserTo(user));
   };
 
   if (loading) return <CustomLoader />;
