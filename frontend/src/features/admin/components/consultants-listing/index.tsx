@@ -107,6 +107,8 @@ const ConsultantsListing = () => {
   const handleCloseCreateConsultantModal = () => {
     setCreateConsultantModalOpen(false);
     reset();
+    setSelectedCountry(null);
+    setSelectedTimeZone(null);
   };
 
   const schema = Yup.object({
@@ -204,11 +206,6 @@ const ConsultantsListing = () => {
       <UserTable />
 
       {/* Modal */}
-      <GenericModal
-        isOpen={createConsultantModalOpen}
-        onClose={handleCloseCreateConsultantModal}
-        title="Create New Consultant"
-      />
       <GenericModal
         isOpen={createConsultantModalOpen}
         onClose={handleCloseCreateConsultantModal}
