@@ -69,9 +69,44 @@ const updateProduct = async (
   }
 };
 
+const updateProductStatus = async (
+  id: number,
+  status: number
+): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/admin/products/status/change', {
+      id,
+      status,
+    });
+
+    return {
+      success: true,
+      message: get(
+        response,
+        ['data', 'message'],
+        'Product status updated successfully'
+      ),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while updating product status';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
   updateProduct, // ✅ export update service
+  updateProductStatus,
 };
 
 export default AdminService;
