@@ -30,6 +30,7 @@ export interface IUser {
   state: string;
   zip_code: string;
   language: string; // comes as string id like '1'
+  language_name: string; // human-readable language label (if provided)
   role: string; // e.g., 'USER'
   time_zone: string;
   address: string;
@@ -42,6 +43,11 @@ export interface IUser {
   status: number; // 0/1
   created_date: string; // ISO string
   updated_date: string; // ISO string
+}
+
+export interface IChangeUserPasswordPayload {
+  id: number | string;
+  password: string;
 }
 
 export interface IGetUsersPayload {

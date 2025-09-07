@@ -1,5 +1,10 @@
 import { get } from 'lodash';
-import type { IProduct, IUpdateProductPayload, IUser } from './admin.interface';
+import type {
+  IProduct,
+  IUpdateProductPayload,
+  IUser,
+  IChangeUserPasswordPayload,
+} from './admin.interface';
 import moment from 'moment';
 import HttpService from '../../services/HttpService';
 
@@ -114,7 +119,11 @@ const getUsersListing = async (
   try {
     const response = await HttpService.post('/admin/users/list', { role });
 
-    const users = get(response, 'data', []) as IUser[] as IUser[];
+    const users = (get(response, 'data', []) as IUser[]).map(item => ({
+      ...item,
+      created_date: moment(get(item, 'created_date')).format('YYYY-MM-DD'),
+      updated_date: moment(get(item, 'updated_date')).format('YYYY-MM-DD'),
+    }));
 
     return {
       success: true,
@@ -170,12 +179,47 @@ const updateUserStatus = async (
   }
 };
 
+// ✅ Change user password
+const changeUserPassword = async (
+  payload: IChangeUserPasswordPayload
+): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post(
+      '/admin/user/reset/password',
+      payload
+    );
+
+    return {
+      success: true,
+      message: get(
+        response,
+        ['data', 'message'],
+        'User password reset successfully'
+      ),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while resetting user password';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
   updateProduct, // ✅ export update service
   updateProductStatus,
   getUsersListing,
   updateUserStatus,
+  changeUserPassword,
 };
 
 export default AdminService;
