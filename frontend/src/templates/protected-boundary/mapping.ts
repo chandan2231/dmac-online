@@ -193,7 +193,7 @@ const ADMIN_ROUTES: IUserRoute[] = [
     component: 'TransactionsListingPageComponent',
     // This route will be shown in the sidebar
     showInSidebar: true,
-    sideBarTitle: 'Transactions List',
+    sideBarTitle: 'User’s Transactions',
     sideBarIcon: 'ReceiptLongIcon',
     isAChildOf: null,
   },

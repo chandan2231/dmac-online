@@ -313,6 +313,37 @@ export const getUsersTransactionList = (req, res) => {
 }
 
 
+export const getConsultationList = (req, res) => {
+  const que = `
+    SELECT 
+      cons.*, 
+      u.name AS user_name, 
+      u.email AS user_email, 
+      c.name AS consultant_name,
+      c.email AS consultant_email,
+      c.country AS consultation_country,
+      p.product_name, 
+      p.product_description
+    FROM dmac_webapp_consultations AS cons
+    JOIN dmac_webapp_users AS u 
+      ON cons.user_id = u.id
+    JOIN dmac_webapp_users AS c
+      ON cons.consultant_id = c.id
+    JOIN dmac_webapp_products AS p 
+      ON cons.product_id = p.id
+    ORDER BY cons.id DESC
+  `
+
+  db.query(que, [], (err, data) => {
+    if (err) {
+      return res.status(500).json(err)
+    }
+    return res.status(200).json(data || [])
+  })
+}
+
+
+
 
 export const getAllProtocolList = (req, res) => {
   const que = `
