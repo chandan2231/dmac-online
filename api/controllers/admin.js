@@ -314,7 +314,9 @@ export const getUsersTransactionList = (req, res) => {
 
 
 export const getConsultationList = (req, res) => {
-  const que = `
+  const { consultant_id } = req.body
+
+  let que = `
     SELECT 
       cons.*, 
       u.name AS user_name, 
@@ -331,16 +333,25 @@ export const getConsultationList = (req, res) => {
       ON cons.consultant_id = c.id
     JOIN dmac_webapp_products AS p 
       ON cons.product_id = p.id
-    ORDER BY cons.id DESC
   `
 
-  db.query(que, [], (err, data) => {
+  const params = []
+
+  if (consultant_id) {
+    que += ` WHERE cons.consultant_id = ?`
+    params.push(consultant_id)
+  }
+
+  que += ` ORDER BY cons.id DESC`
+
+  db.query(que, params, (err, data) => {
     if (err) {
       return res.status(500).json(err)
     }
     return res.status(200).json(data || [])
   })
 }
+
 
 
 
