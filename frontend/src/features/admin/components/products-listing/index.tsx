@@ -302,41 +302,51 @@ function ProductsTable() {
             : ''
         }`}
         hideCancelButton
+        maxWidth="md"
       >
         {selectedProduct && (
           <Box display="flex" flexDirection="column" gap={2}>
-            <ModernInput
-              label="Product Name"
-              value={get(selectedProduct, 'product_name', '')}
-              disabled
-            />
-            <ModernInput
-              label="Description"
-              value={get(selectedProduct, 'product_description', '')}
-              disabled
-            />
-            <ModernInput
-              label="Amount"
-              value={get(selectedProduct, 'product_amount', '')}
-              disabled
-            />
-            <ModernInput
-              label="Status"
-              value={
-                get(selectedProduct, 'status', 0) === 1 ? 'Active' : 'Inactive'
-              }
-              disabled
-            />
-            <ModernInput
-              label="Created Date"
-              value={get(selectedProduct, 'created_date', '')}
-              disabled
-            />
-            <ModernInput
-              label="Updated Date"
-              value={get(selectedProduct, 'updated_date', '')}
-              disabled
-            />
+            <Box display="flex" gap={2}>
+              {' '}
+              <ModernInput
+                label="Product Name"
+                value={get(selectedProduct, 'product_name', '')}
+                disabled
+              />
+              <ModernInput
+                label="Description"
+                value={get(selectedProduct, 'product_description', '')}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Amount"
+                value={get(selectedProduct, 'product_amount', '')}
+                disabled
+              />
+              <ModernInput
+                label="Status"
+                value={
+                  get(selectedProduct, 'status', 0) === 1
+                    ? 'Active'
+                    : 'Inactive'
+                }
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Created Date"
+                value={get(selectedProduct, 'created_date', '')}
+                disabled
+              />
+              <ModernInput
+                label="Updated Date"
+                value={get(selectedProduct, 'updated_date', '')}
+                disabled
+              />
+            </Box>
           </Box>
         )}
       </GenericModal>

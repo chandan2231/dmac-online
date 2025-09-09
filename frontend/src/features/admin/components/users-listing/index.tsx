@@ -234,56 +234,68 @@ function UsersTable() {
         onClose={handleCloseViewModal}
         title={`User Details${selectedUser ? ` - ${selectedUser.name}` : ''}`}
         hideCancelButton
+        maxWidth="md"
       >
         {selectedUser && (
           <Box display="flex" flexDirection="column" gap={2}>
-            <ModernInput
-              label="Name"
-              value={get(selectedUser, 'name', '')}
-              disabled
-            />
-            <ModernInput
-              label="Email"
-              value={get(selectedUser, 'email', '')}
-              disabled
-            />
-            <ModernInput
-              label="Mobile"
-              value={get(selectedUser, 'mobile', '')}
-              disabled
-            />
-            <ModernInput
-              label="Language"
-              value={get(selectedUser, 'language_name', '')}
-              disabled
-            />
-            <ModernInput
-              label="State"
-              value={get(selectedUser, 'state', '')}
-              disabled
-            />
-            <ModernInput
-              label="Zip Code"
-              value={get(selectedUser, 'zip_code', '')}
-              disabled
-            />
-            <ModernInput
-              label="Country"
-              value={get(selectedUser, 'country', '')}
-              disabled
-            />
-            <ModernInput
-              label="Status"
-              value={
-                get(selectedUser, 'status', 0) === 1 ? 'Active' : 'Inactive'
-              }
-              disabled
-            />
-            <ModernInput
-              label="Created Date"
-              value={get(selectedUser, 'created_date', '')}
-              disabled
-            />
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Name"
+                value={get(selectedUser, 'name', '')}
+                disabled
+              />
+              <ModernInput
+                label="Email"
+                value={get(selectedUser, 'email', '')}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Mobile"
+                value={get(selectedUser, 'mobile', '')}
+                disabled
+              />
+              <ModernInput
+                label="Language"
+                value={get(selectedUser, 'language_name', '')}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="State"
+                value={get(selectedUser, 'state', '')}
+                disabled
+              />
+              <ModernInput
+                label="Zip Code"
+                value={get(selectedUser, 'zip_code', '')}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Country"
+                value={get(selectedUser, 'country', '')}
+                disabled
+              />
+              <ModernInput
+                label="Status"
+                value={
+                  get(selectedUser, 'status', 0) === 1 ? 'Active' : 'Inactive'
+                }
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Created Date"
+                value={get(selectedUser, 'created_date', '')}
+                disabled
+              />
+              <Box width="100%"></Box>
+            </Box>
           </Box>
         )}
       </GenericModal>

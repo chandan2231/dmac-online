@@ -486,7 +486,6 @@ function ConsultantTable() {
       </GenericModal>
 
       {/* View Modal */}
-      {/* View Modal */}
       <GenericModal
         isOpen={isViewMode}
         onClose={() => {
@@ -497,91 +496,103 @@ function ConsultantTable() {
           selectedConsultant ? ` - ${get(selectedConsultant, 'name', '')}` : ''
         }`}
         hideCancelButton
+        maxWidth="md"
       >
         {selectedConsultant && (
           <Box display="flex" flexDirection="column" gap={2}>
-            <ModernInput
-              label="Name"
-              value={get(selectedConsultant, 'name', '')}
-              disabled
-            />
-            <ModernInput
-              label="Email"
-              value={get(selectedConsultant, 'email', '')}
-              disabled
-            />
-            <ModernInput
-              label="Mobile"
-              value={get(selectedConsultant, 'mobile', '')}
-              disabled
-            />
-
-            {/* Country as text */}
-            <ModernInput
-              label="Country"
-              value={get(selectedConsultant, 'country', '')}
-              disabled
-            />
-
-            {/* Time Zone as text */}
-            <ModernInput
-              label="Time Zone"
-              value={get(selectedConsultant, 'time_zone', '')}
-              disabled
-            />
-
-            <ModernInput
-              label="Address"
-              value={get(selectedConsultant, 'address', '')}
-              disabled
-            />
-            <ModernInput
-              label="Speciality"
-              value={get(selectedConsultant, 'speciality', '')}
-              disabled
-            />
-            <ModernInput
-              label="License Number"
-              value={get(selectedConsultant, 'license_number', '')}
-              disabled
-            />
-
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DatePicker
-                label="License Expiration"
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Name"
+                value={get(selectedConsultant, 'name', '')}
+                disabled
+              />
+              <ModernInput
+                label="Email"
+                value={get(selectedConsultant, 'email', '')}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Mobile"
+                value={get(selectedConsultant, 'mobile', '')}
+                disabled
+              />
+              {/* Country as text */}
+              <ModernInput
+                label="Country"
+                value={get(selectedConsultant, 'country', '')}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              {/* Time Zone as text */}
+              <ModernInput
+                label="Time Zone"
+                value={get(selectedConsultant, 'time_zone', '')}
+                disabled
+              />
+              <ModernInput
+                label="Address"
+                value={get(selectedConsultant, 'address', '')}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Speciality"
+                value={get(selectedConsultant, 'speciality', '')}
+                disabled
+              />
+              <ModernInput
+                label="License Number"
+                value={get(selectedConsultant, 'license_number', '')}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="License Expiration"
+                  value={
+                    get(selectedConsultant, 'license_expiration')
+                      ? dayjs(get(selectedConsultant, 'license_expiration'))
+                      : null
+                  }
+                  disabled
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+              <ModernInput
+                label="Rate per Consult"
+                value={get(
+                  selectedConsultant,
+                  'contracted_rate_per_consult',
+                  ''
+                )}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Status"
                 value={
-                  get(selectedConsultant, 'license_expiration')
-                    ? dayjs(get(selectedConsultant, 'license_expiration'))
-                    : null
+                  get(selectedConsultant, 'status', 0) === 1
+                    ? 'Active'
+                    : 'Inactive'
                 }
                 disabled
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                  },
-                }}
               />
-            </LocalizationProvider>
-
-            <ModernInput
-              label="Rate per Consult"
-              value={get(selectedConsultant, 'contracted_rate_per_consult', '')}
-              disabled
-            />
-            <ModernInput
-              label="Status"
-              value={
-                get(selectedConsultant, 'status', 0) === 1
-                  ? 'Active'
-                  : 'Inactive'
-              }
-              disabled
-            />
-            <ModernInput
-              label="Created Date"
-              value={get(selectedConsultant, 'created_date', '')}
-              disabled
-            />
+              <ModernInput
+                label="Created Date"
+                value={get(selectedConsultant, 'created_date', '')}
+                disabled
+              />
+            </Box>
           </Box>
         )}
       </GenericModal>

@@ -20,6 +20,9 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialogActions-root': {
     padding: theme.spacing(1),
   },
+  '& .MuiPaper-root': {
+    borderRadius: theme.spacing(2),
+  },
 }));
 
 type GenericModalProps = {
@@ -69,7 +72,13 @@ const GenericModal: React.FC<GenericModalProps> = ({
     >
       <DialogTitle
         id="generic-modal-title"
-        sx={{ m: 0, p: 2, fontSize: '1.5rem' }}
+        sx={{
+          m: 0,
+          p: 2,
+          fontSize: '1.5rem',
+          backgroundColor: theme => theme.palette.primary.main,
+          color: theme => theme.palette.common.white,
+        }}
       >
         {title}
       </DialogTitle>
@@ -81,7 +90,11 @@ const GenericModal: React.FC<GenericModalProps> = ({
           position: 'absolute',
           right: 8,
           top: 8,
-          color: theme => theme.palette.grey[500],
+          color: theme => theme.palette.common.white,
+          backgroundColor: theme => theme.palette.grey[700],
+          '&:hover': {
+            backgroundColor: theme => theme.palette.grey[900],
+          },
         }}
       >
         <CloseIcon />

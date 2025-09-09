@@ -131,63 +131,75 @@ function TransactionsTable() {
             : ''
         }`}
         hideCancelButton
+        maxWidth="md"
       >
         {selectedTransaction && (
           <Box display="flex" flexDirection="column" gap={2}>
-            <ModernInput
-              label="User Name"
-              value={selectedTransaction.name}
-              fullWidth
-              disabled
-            />
-            <ModernInput
-              label="User Email"
-              value={selectedTransaction.email}
-              fullWidth
-              disabled
-            />
-            <ModernInput
-              label="Product Name"
-              value={get(selectedTransaction, 'product_name') || ''}
-              fullWidth
-              disabled
-            />
-            <ModernInput
-              label="Product Description"
-              value={get(selectedTransaction, 'product_description') || ''}
-              fullWidth
-              disabled
-            />
-            <ModernInput
-              label="Amount"
-              value={selectedTransaction.amount.toString()}
-              fullWidth
-              disabled
-            />
-            <ModernInput
-              label="Currency"
-              value={selectedTransaction.currency}
-              fullWidth
-              disabled
-            />
-            <ModernInput
-              label="Payment Type"
-              value={selectedTransaction.payment_type}
-              fullWidth
-              disabled
-            />
-            <ModernInput
-              label="Status"
-              value={selectedTransaction.status}
-              fullWidth
-              disabled
-            />
-            <ModernInput
-              label="Created Date"
-              value={selectedTransaction.created_date}
-              fullWidth
-              disabled
-            />
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="User Name"
+                value={selectedTransaction.name}
+                fullWidth
+                disabled
+              />
+              <ModernInput
+                label="User Email"
+                value={selectedTransaction.email}
+                fullWidth
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Product Name"
+                value={get(selectedTransaction, 'product_name') || ''}
+                fullWidth
+                disabled
+              />
+              <ModernInput
+                label="Product Description"
+                value={get(selectedTransaction, 'product_description') || ''}
+                fullWidth
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Amount"
+                value={selectedTransaction.amount.toString()}
+                fullWidth
+                disabled
+              />
+              <ModernInput
+                label="Currency"
+                value={selectedTransaction.currency}
+                fullWidth
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Payment Type"
+                value={selectedTransaction.payment_type}
+                fullWidth
+                disabled
+              />
+              <ModernInput
+                label="Status"
+                value={selectedTransaction.status}
+                fullWidth
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Created Date"
+                value={selectedTransaction.created_date}
+                fullWidth
+                disabled
+              />
+              <Box width="100%"></Box>
+            </Box>
           </Box>
         )}
       </GenericModal>

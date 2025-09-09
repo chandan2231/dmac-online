@@ -521,91 +521,103 @@ function UserTable() {
           selectedTherapist ? ` - ${get(selectedTherapist, 'name', '')}` : ''
         }`}
         hideCancelButton
+        maxWidth="md"
       >
         {selectedTherapist && (
           <Box display="flex" flexDirection="column" gap={2}>
-            <ModernInput
-              label="Name"
-              value={get(selectedTherapist, 'name', '')}
-              disabled
-            />
-            <ModernInput
-              label="Email"
-              value={get(selectedTherapist, 'email', '')}
-              disabled
-            />
-            <ModernInput
-              label="Mobile"
-              value={get(selectedTherapist, 'mobile', '')}
-              disabled
-            />
-
-            {/* Country as text */}
-            <ModernInput
-              label="Country"
-              value={get(selectedTherapist, 'country', '')}
-              disabled
-            />
-
-            {/* Time Zone as text */}
-            <ModernInput
-              label="Time Zone"
-              value={get(selectedTherapist, 'time_zone', '')}
-              disabled
-            />
-
-            <ModernInput
-              label="Address"
-              value={get(selectedTherapist, 'address', '')}
-              disabled
-            />
-            <ModernInput
-              label="Speciality"
-              value={get(selectedTherapist, 'speciality', '')}
-              disabled
-            />
-            <ModernInput
-              label="License Number"
-              value={get(selectedTherapist, 'license_number', '')}
-              disabled
-            />
-
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DatePicker
-                label="License Expiration"
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Name"
+                value={get(selectedTherapist, 'name', '')}
+                disabled
+              />
+              <ModernInput
+                label="Email"
+                value={get(selectedTherapist, 'email', '')}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Mobile"
+                value={get(selectedTherapist, 'mobile', '')}
+                disabled
+              />
+              {/* Country as text */}
+              <ModernInput
+                label="Country"
+                value={get(selectedTherapist, 'country', '')}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              {/* Time Zone as text */}
+              <ModernInput
+                label="Time Zone"
+                value={get(selectedTherapist, 'time_zone', '')}
+                disabled
+              />
+              <ModernInput
+                label="Address"
+                value={get(selectedTherapist, 'address', '')}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Speciality"
+                value={get(selectedTherapist, 'speciality', '')}
+                disabled
+              />
+              <ModernInput
+                label="License Number"
+                value={get(selectedTherapist, 'license_number', '')}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="License Expiration"
+                  value={
+                    get(selectedTherapist, 'license_expiration')
+                      ? dayjs(get(selectedTherapist, 'license_expiration'))
+                      : null
+                  }
+                  disabled
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+              <ModernInput
+                label="Rate per Consult"
+                value={get(
+                  selectedTherapist,
+                  'contracted_rate_per_consult',
+                  ''
+                )}
+                disabled
+              />
+            </Box>
+            <Box display="flex" gap={2}>
+              <ModernInput
+                label="Status"
                 value={
-                  get(selectedTherapist, 'license_expiration')
-                    ? dayjs(get(selectedTherapist, 'license_expiration'))
-                    : null
+                  get(selectedTherapist, 'status', 0) === 1
+                    ? 'Active'
+                    : 'Inactive'
                 }
                 disabled
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                  },
-                }}
               />
-            </LocalizationProvider>
-
-            <ModernInput
-              label="Rate per Consult"
-              value={get(selectedTherapist, 'contracted_rate_per_consult', '')}
-              disabled
-            />
-            <ModernInput
-              label="Status"
-              value={
-                get(selectedTherapist, 'status', 0) === 1
-                  ? 'Active'
-                  : 'Inactive'
-              }
-              disabled
-            />
-            <ModernInput
-              label="Created Date"
-              value={get(selectedTherapist, 'created_date', '')}
-              disabled
-            />
+              <ModernInput
+                label="Created Date"
+                value={get(selectedTherapist, 'created_date', '')}
+                disabled
+              />
+            </Box>
           </Box>
         )}
       </GenericModal>
