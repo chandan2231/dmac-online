@@ -10,6 +10,8 @@ import type {
   ICreateConsultantPayload,
   ITherapist,
   ICreateTherapistPayload,
+  IConsultation,
+  ConsultationFilter,
 } from './admin.interface';
 import moment from 'moment';
 import HttpService from '../../services/HttpService';
@@ -594,6 +596,51 @@ const updateTherapist = async (
   }
 };
 
+const getConsultationsListing = async (
+  consultantId: ConsultationFilter
+): Promise<{
+  success: boolean;
+  data: IConsultation[] | null;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/admin/consultations/list', {
+      consultant_id: consultantId,
+    });
+
+    const consultations = (get(response, 'data', []) as IConsultation[]).map(
+      item => ({
+        ...item,
+        consultation_date: moment(get(item, 'consultation_date')).format(
+          'YYYY-MM-DD HH:mm'
+        ),
+        payment_date: item.payment_date
+          ? moment(item.payment_date).format('YYYY-MM-DD HH:mm')
+          : null,
+        created_date: moment(get(item, 'created_date')).format('YYYY-MM-DD'),
+        updated_date: moment(get(item, 'updated_date')).format('YYYY-MM-DD'),
+      })
+    );
+
+    return {
+      success: true,
+      data: consultations,
+      message: 'Consultations fetched successfully',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while fetching consultations';
+
+    return {
+      success: false,
+      data: null,
+      message,
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
   updateProduct, // ✅ export update service
@@ -612,6 +659,7 @@ const AdminService = {
   updateTherapistPassword,
   updateConsultant,
   updateTherapist,
+  getConsultationsListing,
 };
 
 export default AdminService;

@@ -48,6 +48,7 @@ export const ROUTES = {
   CONSULTANTS: '/admin/consultants',
   PRODUCTS: '/admin/products',
   THERAPISTS: '/admin/therapists',
+  CONSULTATIONS: '/admin/consultations',
 
   // Not Found
   NOT_FOUND: '*',

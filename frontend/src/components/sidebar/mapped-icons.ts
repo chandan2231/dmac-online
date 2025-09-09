@@ -6,6 +6,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import BadgeIcon from '@mui/icons-material/Badge';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import EventIcon from '@mui/icons-material/Event';
 
 const mapperObject = {
   HomeIcon: HomeIcon,
@@ -16,6 +17,7 @@ const mapperObject = {
   ReceiptLongIcon: ReceiptLongIcon,
   BadgeIcon: BadgeIcon,
   InventoryIcon: InventoryIcon,
+  EventIcon: EventIcon,
 };
 
 export type MapperObjectKey = keyof typeof mapperObject;

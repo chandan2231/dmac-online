@@ -4,6 +4,7 @@ export const QUERY_KEYS_FOR_ADMIN = {
   GET_TRANSACTION_LISTING: 'getTransactionListing',
   GET_CONSULTANT_LISTING: 'getConsultantListing',
   GET_THERAPIST_LISTING: 'getTherapistListing',
+  GET_CONSULTATION_LISTING: 'getConsultationListing',
 } as const;
 
 export interface IProduct {
@@ -146,3 +147,29 @@ export interface ICreateTherapistPayload {
 export interface IGetUsersPayload {
   role: string;
 }
+
+export interface IConsultation {
+  id: number;
+  consultation_id: string;
+  user_id: number;
+  consultant_id: number;
+  product_id: number;
+  time_slot: string;
+  time_zone: string;
+  consultation_date: string;
+  consultation_status: number;
+  payment_date: string | null;
+  created_date: string;
+  updated_date: string;
+  consultation_notes: string;
+  consultant_country: string;
+  user_name: string;
+  user_email: string;
+  consultant_name: string;
+  consultant_email: string;
+  consultation_country: string;
+  product_name: string;
+  product_description: string;
+}
+
+export type ConsultationFilter = number | null;
