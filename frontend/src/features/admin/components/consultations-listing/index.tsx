@@ -156,6 +156,8 @@ function ConsultationsTable() {
               }
               onChange={handleConsultantFilterChange}
               placeholder="Select Consultant"
+              variant="standard"
+              sx={{ minWidth: 200 }}
             />
           </Box>
         }

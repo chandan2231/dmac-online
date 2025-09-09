@@ -21,7 +21,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
     padding: theme.spacing(1),
   },
   '& .MuiPaper-root': {
-    borderRadius: theme.spacing(2),
+    borderRadius: theme.spacing(1),
   },
 }));
 

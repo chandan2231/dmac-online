@@ -89,7 +89,9 @@ const ModernSelect = ({
   helperText,
   searchable = false, // <-- default to false
   ...props
-}: IModernSelectProps) => {
+}: IModernSelectProps & {
+  [key: string]: unknown;
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Filtered options
