@@ -14,8 +14,9 @@ import AdminService from '../../admin.service';
 import CustomLoader from '../../../../components/loader';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import EditIcon from '@mui/icons-material/Edit';
 import { useToast } from '../../../../providers/toast-provider';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { IconButton, Menu, MenuItem } from '@mui/material';
 
 type ChangePasswordFormValues = {
   password: string;
@@ -32,6 +33,8 @@ function UsersTable() {
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const { showToast } = useToast();
 
   const handleUpdateStatus = async (id: number, status: number) => {
@@ -89,6 +92,24 @@ function UsersTable() {
     setIsLoadingStatus(false);
   };
 
+  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleOpenViewModal = (user: IUser) => {
+    setSelectedUser(user);
+    setIsViewModalOpen(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setIsViewModalOpen(false);
+    setSelectedUser(null);
+  };
+
   const columns: GridColDef<IUser>[] = [
     { field: 'name', headerName: 'Name', flex: 1 },
     { field: 'email', headerName: 'Email', flex: 1 },
@@ -108,9 +129,9 @@ function UsersTable() {
           <Box display="flex" alignItems="center" height="100%">
             <ModernSwitch
               checked={isActive}
-              onChange={() => {
-                handleUpdateStatus(params.row.id, isActive ? 0 : 1);
-              }}
+              onChange={() =>
+                handleUpdateStatus(params.row.id, isActive ? 0 : 1)
+              }
               trackColor={isActive ? '#4caf50' : '#ccc'}
             />
           </Box>
@@ -120,27 +141,42 @@ function UsersTable() {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 170,
+      width: 100,
       sortable: false,
       filterable: false,
       renderCell: params => (
-        <Box display="flex" alignItems="center" height="100%" gap={1}>
-          <Typography
-            variant="body2"
-            sx={{ color: 'primary.main', cursor: 'pointer' }}
-            onClick={() => handleOpenPasswordModal(params.row)}
+        <>
+          <IconButton onClick={handleMenuClick} size="small">
+            <MoreVertIcon />
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
           >
-            <EditIcon
-              fontSize="small"
-              sx={{ mr: 0.5, verticalAlign: 'middle' }}
-            />{' '}
-            Change Password
-          </Typography>
-        </Box>
+            <MenuItem
+              onClick={() => {
+                handleMenuClose();
+                handleOpenViewModal(params.row);
+              }}
+            >
+              View Details
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                handleMenuClose();
+                handleOpenPasswordModal(params.row);
+              }}
+            >
+              Change Password
+            </MenuItem>
+          </Menu>
+        </>
       ),
     },
   ];
-
   if (isLoading || isLoadingStatus) {
     return <CustomLoader />;
   }
@@ -190,6 +226,66 @@ function UsersTable() {
             Update Password
           </MorenButton>
         </Box>
+      </GenericModal>
+
+      {/* View Modal */}
+      <GenericModal
+        isOpen={isViewModalOpen}
+        onClose={handleCloseViewModal}
+        title={`User Details${selectedUser ? ` - ${selectedUser.name}` : ''}`}
+        hideCancelButton
+      >
+        {selectedUser && (
+          <Box display="flex" flexDirection="column" gap={2}>
+            <ModernInput
+              label="Name"
+              value={get(selectedUser, 'name', '')}
+              disabled
+            />
+            <ModernInput
+              label="Email"
+              value={get(selectedUser, 'email', '')}
+              disabled
+            />
+            <ModernInput
+              label="Mobile"
+              value={get(selectedUser, 'mobile', '')}
+              disabled
+            />
+            <ModernInput
+              label="Language"
+              value={get(selectedUser, 'language_name', '')}
+              disabled
+            />
+            <ModernInput
+              label="State"
+              value={get(selectedUser, 'state', '')}
+              disabled
+            />
+            <ModernInput
+              label="Zip Code"
+              value={get(selectedUser, 'zip_code', '')}
+              disabled
+            />
+            <ModernInput
+              label="Country"
+              value={get(selectedUser, 'country', '')}
+              disabled
+            />
+            <ModernInput
+              label="Status"
+              value={
+                get(selectedUser, 'status', 0) === 1 ? 'Active' : 'Inactive'
+              }
+              disabled
+            />
+            <ModernInput
+              label="Created Date"
+              value={get(selectedUser, 'created_date', '')}
+              disabled
+            />
+          </Box>
+        )}
       </GenericModal>
     </>
   );
