@@ -6,7 +6,6 @@ import { GenericTable } from '../../../../components/table';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import GenericModal from '../../../../components/modal';
 import ModernInput from '../../../../components/input';
-import EditIcon from '@mui/icons-material/Edit';
 import ModernSelect, { type IOption } from '../../../../components/select';
 import MorenButton from '../../../../components/button';
 import * as Yup from 'yup';
@@ -31,6 +30,8 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import { useToast } from '../../../../providers/toast-provider';
 import { useGetTherapistListing } from '../../hooks/useGetTherapistListing';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { IconButton, Menu, MenuItem } from '@mui/material';
 
 /* -------------------- SCHEMAS -------------------- */
 const changePasswordSchema = Yup.object({
@@ -95,6 +96,8 @@ function UserTable() {
   const [selectedTimeZone, setSelectedTimeZone] = useState<IOption | null>(
     null
   );
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [isViewMode, setIsViewMode] = useState(false);
   const { showToast } = useToast();
 
   /* Password Form */
@@ -167,6 +170,11 @@ function UserTable() {
     reset();
     setSelectedCountry(null);
     setSelectedTimeZone(null);
+  };
+
+  const handleOpenViewModal = (therapist: TherapistState) => {
+    setSelectedTherapist(therapist);
+    setIsViewMode(true);
   };
 
   const handleUpdateStatus = async (id: number, status: number) => {
@@ -254,48 +262,69 @@ function UserTable() {
       },
     },
     {
-      field: 'edit',
-      headerName: 'Edit',
-      width: 150,
-      sortable: false,
-      filterable: false,
-      renderCell: params => (
-        <Box display="flex" alignItems="center" height="100%" gap={1}>
-          <Typography
-            variant="body2"
-            sx={{ color: 'primary.main', cursor: 'pointer' }}
-            onClick={() => handleOpenEditModal(params.row as TherapistState)}
-          >
-            <EditIcon
-              fontSize="small"
-              sx={{ mr: 0.5, verticalAlign: 'middle' }}
-            />{' '}
-            Edit
-          </Typography>
-        </Box>
-      ),
-    },
-    {
       field: 'actions',
       headerName: 'Actions',
-      width: 170,
+      width: 100,
       sortable: false,
       filterable: false,
-      renderCell: params => (
-        <Box display="flex" alignItems="center" height="100%" gap={1}>
-          <Typography
-            variant="body2"
-            sx={{ color: 'primary.main', cursor: 'pointer' }}
-            onClick={() => handleOpenPasswordModal(params.row as ITherapist)}
-          >
-            <EditIcon
-              fontSize="small"
-              sx={{ mr: 0.5, verticalAlign: 'middle' }}
-            />{' '}
-            Change Password
-          </Typography>
-        </Box>
-      ),
+      renderCell: params => {
+        const open = Boolean(anchorEl);
+
+        const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+          setAnchorEl(event.currentTarget);
+        };
+
+        const handleClose = () => {
+          setAnchorEl(null);
+        };
+
+        return (
+          <>
+            <IconButton aria-label="actions" onClick={handleClick} size="small">
+              <MoreVertIcon />
+            </IconButton>
+
+            <Menu
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <MenuItem
+                onClick={() => {
+                  handleClose();
+                  handleOpenViewModal(params.row as TherapistState);
+                }}
+              >
+                View Details
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  handleClose();
+                  handleOpenEditModal(params.row as TherapistState);
+                }}
+              >
+                Edit
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  handleClose();
+                  handleOpenPasswordModal(params.row);
+                }}
+              >
+                Change Password
+              </MenuItem>
+            </Menu>
+          </>
+        );
+      },
     },
   ];
 
@@ -479,6 +508,106 @@ function UserTable() {
             Update Therapist
           </MorenButton>
         </Box>
+      </GenericModal>
+
+      {/* View Modal */}
+      <GenericModal
+        isOpen={isViewMode}
+        onClose={() => {
+          setIsViewMode(false);
+          setSelectedTherapist(null);
+        }}
+        title={`Therapist Details${
+          selectedTherapist ? ` - ${get(selectedTherapist, 'name', '')}` : ''
+        }`}
+        hideCancelButton
+      >
+        {selectedTherapist && (
+          <Box display="flex" flexDirection="column" gap={2}>
+            <ModernInput
+              label="Name"
+              value={get(selectedTherapist, 'name', '')}
+              disabled
+            />
+            <ModernInput
+              label="Email"
+              value={get(selectedTherapist, 'email', '')}
+              disabled
+            />
+            <ModernInput
+              label="Mobile"
+              value={get(selectedTherapist, 'mobile', '')}
+              disabled
+            />
+
+            {/* Country as text */}
+            <ModernInput
+              label="Country"
+              value={get(selectedTherapist, 'country', '')}
+              disabled
+            />
+
+            {/* Time Zone as text */}
+            <ModernInput
+              label="Time Zone"
+              value={get(selectedTherapist, 'time_zone', '')}
+              disabled
+            />
+
+            <ModernInput
+              label="Address"
+              value={get(selectedTherapist, 'address', '')}
+              disabled
+            />
+            <ModernInput
+              label="Speciality"
+              value={get(selectedTherapist, 'speciality', '')}
+              disabled
+            />
+            <ModernInput
+              label="License Number"
+              value={get(selectedTherapist, 'license_number', '')}
+              disabled
+            />
+
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="License Expiration"
+                value={
+                  get(selectedTherapist, 'license_expiration')
+                    ? dayjs(get(selectedTherapist, 'license_expiration'))
+                    : null
+                }
+                disabled
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
+              />
+            </LocalizationProvider>
+
+            <ModernInput
+              label="Rate per Consult"
+              value={get(selectedTherapist, 'contracted_rate_per_consult', '')}
+              disabled
+            />
+            <ModernInput
+              label="Status"
+              value={
+                get(selectedTherapist, 'status', 0) === 1
+                  ? 'Active'
+                  : 'Inactive'
+              }
+              disabled
+            />
+            <ModernInput
+              label="Created Date"
+              value={get(selectedTherapist, 'created_date', '')}
+              disabled
+            />
+          </Box>
+        )}
       </GenericModal>
     </>
   );

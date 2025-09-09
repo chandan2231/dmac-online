@@ -1,6 +1,5 @@
 import * as Yup from 'yup';
 import ModernSwitch from '../../../../components/switch';
-import EditIcon from '@mui/icons-material/Edit';
 import GenericModal from '../../../../components/modal';
 import ModernInput from '../../../../components/input';
 import MorenButton from '../../../../components/button';
@@ -16,6 +15,8 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useToast } from '../../../../providers/toast-provider';
 import CustomLoader from '../../../../components/loader';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { IconButton, Menu, MenuItem } from '@mui/material';
 
 // ✅ Validation schema
 const schema = Yup.object({
@@ -45,6 +46,8 @@ function ProductsTable() {
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [isViewMode, setIsViewMode] = useState(false);
 
   const { showToast } = useToast();
 
@@ -57,6 +60,11 @@ function ProductsTable() {
   const handleOpenEditModal = (product: IProduct) => {
     setSelectedProduct(product);
     setIsEditModalOpen(true);
+  };
+
+  const handleOpenViewModal = (product: IProduct) => {
+    setSelectedProduct(product);
+    setIsViewMode(true);
   };
 
   // ✅ Form setup
@@ -144,24 +152,59 @@ function ProductsTable() {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 150,
+      width: 100,
       sortable: false,
       filterable: false,
-      renderCell: params => (
-        <Box display="flex" alignItems="center" height="100%" gap={1}>
-          <Typography
-            variant="body2"
-            sx={{ color: 'primary.main', cursor: 'pointer' }}
-            onClick={() => handleOpenEditModal(params.row)}
-          >
-            <EditIcon
-              fontSize="small"
-              sx={{ mr: 0.5, verticalAlign: 'middle' }}
-            />{' '}
-            Edit
-          </Typography>
-        </Box>
-      ),
+      renderCell: params => {
+        const open = Boolean(anchorEl);
+
+        const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+          setAnchorEl(event.currentTarget);
+        };
+
+        const handleClose = () => {
+          setAnchorEl(null);
+        };
+
+        return (
+          <>
+            <IconButton aria-label="actions" onClick={handleClick} size="small">
+              <MoreVertIcon />
+            </IconButton>
+
+            <Menu
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <MenuItem
+                onClick={() => {
+                  handleClose();
+                  handleOpenViewModal(params.row);
+                }}
+              >
+                View Details
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  handleClose();
+                  handleOpenEditModal(params.row);
+                }}
+              >
+                Edit
+              </MenuItem>
+            </Menu>
+          </>
+        );
+      },
     },
   ];
 
@@ -244,6 +287,58 @@ function ProductsTable() {
             Save Changes
           </MorenButton>
         </Box>
+      </GenericModal>
+
+      {/* View Modal */}
+      <GenericModal
+        isOpen={isViewMode}
+        onClose={() => {
+          setIsViewMode(false);
+          setSelectedProduct(null);
+        }}
+        title={`Product Details${
+          selectedProduct
+            ? ` - ${get(selectedProduct, 'product_name', '')}`
+            : ''
+        }`}
+        hideCancelButton
+      >
+        {selectedProduct && (
+          <Box display="flex" flexDirection="column" gap={2}>
+            <ModernInput
+              label="Product Name"
+              value={get(selectedProduct, 'product_name', '')}
+              disabled
+            />
+            <ModernInput
+              label="Description"
+              value={get(selectedProduct, 'product_description', '')}
+              disabled
+            />
+            <ModernInput
+              label="Amount"
+              value={get(selectedProduct, 'product_amount', '')}
+              disabled
+            />
+            <ModernInput
+              label="Status"
+              value={
+                get(selectedProduct, 'status', 0) === 1 ? 'Active' : 'Inactive'
+              }
+              disabled
+            />
+            <ModernInput
+              label="Created Date"
+              value={get(selectedProduct, 'created_date', '')}
+              disabled
+            />
+            <ModernInput
+              label="Updated Date"
+              value={get(selectedProduct, 'updated_date', '')}
+              disabled
+            />
+          </Box>
+        )}
       </GenericModal>
     </Box>
   );
