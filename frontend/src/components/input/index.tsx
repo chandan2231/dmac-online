@@ -34,6 +34,12 @@ const StyledInput = styled((props: TextFieldProps) => (
     fontWeight: 400,
     color: theme.palette.text.primary, // Input text color
   },
+
+  // Disabled state styles
+  // Cursor not-allowed for disabled state
+  '& .Mui-disabled': {
+    cursor: 'not-allowed',
+  },
 }));
 
 const ModernInput = React.forwardRef<HTMLInputElement, TextFieldProps>(

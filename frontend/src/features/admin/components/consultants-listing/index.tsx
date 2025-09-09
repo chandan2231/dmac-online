@@ -6,7 +6,6 @@ import { GenericTable } from '../../../../components/table';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import GenericModal from '../../../../components/modal';
 import ModernInput from '../../../../components/input';
-import EditIcon from '@mui/icons-material/Edit';
 import ModernSelect, { type IOption } from '../../../../components/select';
 import MorenButton from '../../../../components/button';
 import * as Yup from 'yup';
@@ -31,6 +30,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import { useToast } from '../../../../providers/toast-provider';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { IconButton, Menu, MenuItem } from '@mui/material';
 
 /* -------------------- SCHEMAS -------------------- */
 const changePasswordSchema = Yup.object({
@@ -92,6 +93,8 @@ function ConsultantTable() {
   const [selectedTimeZone, setSelectedTimeZone] = useState<IOption | null>(
     null
   );
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [isViewMode, setIsViewMode] = useState(false);
   const { showToast } = useToast();
 
   /* Password Form */
@@ -217,6 +220,11 @@ function ConsultantTable() {
     setIsLoadingStatus(false);
   };
 
+  const handleOpenViewModal = (consultant: ConsultantState) => {
+    setSelectedConsultant(consultant);
+    setIsViewMode(true);
+  };
+
   const columns: GridColDef<IConsultant>[] = [
     { field: 'name', headerName: 'Name', flex: 1 },
     { field: 'email', headerName: 'Email', flex: 1 },
@@ -242,58 +250,69 @@ function ConsultantTable() {
       },
     },
     {
-      field: 'edit',
-      headerName: 'Edit',
-      width: 150,
-      sortable: false,
-      filterable: false,
-      renderCell: params => (
-        <Typography
-          variant="body2"
-          sx={{
-            color: 'primary.main',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            width: '100%',
-            height: '100%',
-          }}
-          onClick={() => handleOpenEditModal(params.row as ConsultantState)}
-        >
-          <EditIcon
-            fontSize="small"
-            sx={{ mr: 0.5, verticalAlign: 'middle' }}
-          />{' '}
-          Edit
-        </Typography>
-      ),
-    },
-    {
       field: 'actions',
       headerName: 'Actions',
-      width: 170,
+      width: 100,
       sortable: false,
       filterable: false,
-      renderCell: params => (
-        <Typography
-          variant="body2"
-          sx={{
-            color: 'primary.main',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            width: '100%',
-            height: '100%',
-          }}
-          onClick={() => handleOpenPasswordModal(params.row)}
-        >
-          <EditIcon
-            fontSize="small"
-            sx={{ mr: 0.5, verticalAlign: 'middle' }}
-          />{' '}
-          Change Password
-        </Typography>
-      ),
+      renderCell: params => {
+        const open = Boolean(anchorEl);
+
+        const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+          setAnchorEl(event.currentTarget);
+        };
+
+        const handleClose = () => {
+          setAnchorEl(null);
+        };
+
+        return (
+          <>
+            <IconButton aria-label="actions" onClick={handleClick} size="small">
+              <MoreVertIcon />
+            </IconButton>
+
+            <Menu
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <MenuItem
+                onClick={() => {
+                  handleClose();
+                  handleOpenViewModal(params.row as ConsultantState);
+                }}
+              >
+                View Details
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  handleClose();
+                  handleOpenEditModal(params.row as ConsultantState);
+                }}
+              >
+                Edit
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  handleClose();
+                  handleOpenPasswordModal(params.row);
+                }}
+              >
+                Change Password
+              </MenuItem>
+            </Menu>
+          </>
+        );
+      },
     },
   ];
 
@@ -464,6 +483,107 @@ function ConsultantTable() {
             Update Consultant
           </MorenButton>
         </Box>
+      </GenericModal>
+
+      {/* View Modal */}
+      {/* View Modal */}
+      <GenericModal
+        isOpen={isViewMode}
+        onClose={() => {
+          setIsViewMode(false);
+          setSelectedConsultant(null);
+        }}
+        title={`Consultant Details${
+          selectedConsultant ? ` - ${get(selectedConsultant, 'name', '')}` : ''
+        }`}
+        hideCancelButton
+      >
+        {selectedConsultant && (
+          <Box display="flex" flexDirection="column" gap={2}>
+            <ModernInput
+              label="Name"
+              value={get(selectedConsultant, 'name', '')}
+              disabled
+            />
+            <ModernInput
+              label="Email"
+              value={get(selectedConsultant, 'email', '')}
+              disabled
+            />
+            <ModernInput
+              label="Mobile"
+              value={get(selectedConsultant, 'mobile', '')}
+              disabled
+            />
+
+            {/* Country as text */}
+            <ModernInput
+              label="Country"
+              value={get(selectedConsultant, 'country', '')}
+              disabled
+            />
+
+            {/* Time Zone as text */}
+            <ModernInput
+              label="Time Zone"
+              value={get(selectedConsultant, 'time_zone', '')}
+              disabled
+            />
+
+            <ModernInput
+              label="Address"
+              value={get(selectedConsultant, 'address', '')}
+              disabled
+            />
+            <ModernInput
+              label="Speciality"
+              value={get(selectedConsultant, 'speciality', '')}
+              disabled
+            />
+            <ModernInput
+              label="License Number"
+              value={get(selectedConsultant, 'license_number', '')}
+              disabled
+            />
+
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="License Expiration"
+                value={
+                  get(selectedConsultant, 'license_expiration')
+                    ? dayjs(get(selectedConsultant, 'license_expiration'))
+                    : null
+                }
+                disabled
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
+              />
+            </LocalizationProvider>
+
+            <ModernInput
+              label="Rate per Consult"
+              value={get(selectedConsultant, 'contracted_rate_per_consult', '')}
+              disabled
+            />
+            <ModernInput
+              label="Status"
+              value={
+                get(selectedConsultant, 'status', 0) === 1
+                  ? 'Active'
+                  : 'Inactive'
+              }
+              disabled
+            />
+            <ModernInput
+              label="Created Date"
+              value={get(selectedConsultant, 'created_date', '')}
+              disabled
+            />
+          </Box>
+        )}
       </GenericModal>
     </>
   );
