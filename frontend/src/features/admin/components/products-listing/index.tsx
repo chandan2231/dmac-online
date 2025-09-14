@@ -306,46 +306,102 @@ function ProductsTable() {
       >
         {selectedProduct && (
           <Box display="flex" flexDirection="column" gap={2}>
-            <Box display="flex" gap={2}>
-              {' '}
-              <ModernInput
-                label="Product Name"
-                value={get(selectedProduct, 'product_name', '')}
-                disabled
-              />
-              <ModernInput
-                label="Description"
-                value={get(selectedProduct, 'product_description', '')}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Amount"
-                value={get(selectedProduct, 'product_amount', '')}
-                disabled
-              />
-              <ModernInput
-                label="Status"
-                value={
-                  get(selectedProduct, 'status', 0) === 1
+            <Box
+              display="flex"
+              flexDirection="row"
+              p={2}
+              border="1px solid #e0e0e0"
+              borderRadius="8px"
+              bgcolor="#fafafa"
+              width="100%"
+              flexWrap="wrap"
+              rowGap={1}
+            >
+              {/* Product Name */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Product Name:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedProduct, 'product_name', '')}
+                </Typography>
+              </Box>
+
+              {/* Description */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Description:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedProduct, 'product_description', '')}
+                </Typography>
+              </Box>
+
+              {/* Amount */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Amount:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedProduct, 'product_amount', '')}
+                </Typography>
+              </Box>
+
+              {/* Status */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Status:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedProduct, 'status', 0) === 1
                     ? 'Active'
-                    : 'Inactive'
-                }
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Created Date"
-                value={get(selectedProduct, 'created_date', '')}
-                disabled
-              />
-              <ModernInput
-                label="Updated Date"
-                value={get(selectedProduct, 'updated_date', '')}
-                disabled
-              />
+                    : 'Inactive'}
+                </Typography>
+              </Box>
+
+              {/* Created Date */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Created Date:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedProduct, 'created_date', '')}
+                </Typography>
+              </Box>
+
+              {/* Updated Date */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Updated Date:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedProduct, 'updated_date', '')}
+                </Typography>
+              </Box>
             </Box>
           </Box>
         )}

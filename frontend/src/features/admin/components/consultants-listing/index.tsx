@@ -486,6 +486,7 @@ function ConsultantTable() {
       </GenericModal>
 
       {/* View Modal */}
+      {/* View Modal */}
       <GenericModal
         isOpen={isViewMode}
         onClose={() => {
@@ -500,98 +501,186 @@ function ConsultantTable() {
       >
         {selectedConsultant && (
           <Box display="flex" flexDirection="column" gap={2}>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Name"
-                value={get(selectedConsultant, 'name', '')}
-                disabled
-              />
-              <ModernInput
-                label="Email"
-                value={get(selectedConsultant, 'email', '')}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Mobile"
-                value={get(selectedConsultant, 'mobile', '')}
-                disabled
-              />
-              {/* Country as text */}
-              <ModernInput
-                label="Country"
-                value={get(selectedConsultant, 'country', '')}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              {/* Time Zone as text */}
-              <ModernInput
-                label="Time Zone"
-                value={get(selectedConsultant, 'time_zone', '')}
-                disabled
-              />
-              <ModernInput
-                label="Address"
-                value={get(selectedConsultant, 'address', '')}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Speciality"
-                value={get(selectedConsultant, 'speciality', '')}
-                disabled
-              />
-              <ModernInput
-                label="License Number"
-                value={get(selectedConsultant, 'license_number', '')}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  label="License Expiration"
-                  value={
-                    get(selectedConsultant, 'license_expiration')
-                      ? dayjs(get(selectedConsultant, 'license_expiration'))
-                      : null
-                  }
-                  disabled
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                    },
-                  }}
-                />
-              </LocalizationProvider>
-              <ModernInput
-                label="Rate per Consult"
-                value={get(
-                  selectedConsultant,
-                  'contracted_rate_per_consult',
-                  ''
-                )}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Status"
-                value={
-                  get(selectedConsultant, 'status', 0) === 1
+            <Box
+              display="flex"
+              flexDirection="row"
+              p={2}
+              border="1px solid #e0e0e0"
+              borderRadius="8px"
+              bgcolor="#fafafa"
+              width="100%"
+              flexWrap="wrap"
+              rowGap={1}
+            >
+              {/* Name */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Name:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedConsultant, 'name', '')}
+                </Typography>
+              </Box>
+
+              {/* Email */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Email:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedConsultant, 'email', '')}
+                </Typography>
+              </Box>
+
+              {/* Mobile */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Mobile:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedConsultant, 'mobile', '')}
+                </Typography>
+              </Box>
+
+              {/* Country */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Country:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedConsultant, 'country', '')}
+                </Typography>
+              </Box>
+
+              {/* Time Zone */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Time Zone:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedConsultant, 'time_zone', '')}
+                </Typography>
+              </Box>
+
+              {/* Address */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Address:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedConsultant, 'address', '')}
+                </Typography>
+              </Box>
+
+              {/* Speciality */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Speciality:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedConsultant, 'speciality', '')}
+                </Typography>
+              </Box>
+
+              {/* License Number */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  License Number:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedConsultant, 'license_number', '')}
+                </Typography>
+              </Box>
+
+              {/* License Expiration */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  License Expiration:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedConsultant, 'license_expiration', '')}
+                </Typography>
+              </Box>
+
+              {/* Rate per Consult */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Rate per Consult:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedConsultant, 'contracted_rate_per_consult', '')}
+                </Typography>
+              </Box>
+
+              {/* Status */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Status:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedConsultant, 'status', 0) === 1
                     ? 'Active'
-                    : 'Inactive'
-                }
-                disabled
-              />
-              <ModernInput
-                label="Created Date"
-                value={get(selectedConsultant, 'created_date', '')}
-                disabled
-              />
+                    : 'Inactive'}
+                </Typography>
+              </Box>
+
+              {/* Created Date */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Created Date:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedConsultant, 'created_date', '')}
+                </Typography>
+              </Box>
             </Box>
           </Box>
         )}

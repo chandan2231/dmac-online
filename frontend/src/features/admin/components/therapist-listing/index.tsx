@@ -525,98 +525,186 @@ function UserTable() {
       >
         {selectedTherapist && (
           <Box display="flex" flexDirection="column" gap={2}>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Name"
-                value={get(selectedTherapist, 'name', '')}
-                disabled
-              />
-              <ModernInput
-                label="Email"
-                value={get(selectedTherapist, 'email', '')}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Mobile"
-                value={get(selectedTherapist, 'mobile', '')}
-                disabled
-              />
-              {/* Country as text */}
-              <ModernInput
-                label="Country"
-                value={get(selectedTherapist, 'country', '')}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              {/* Time Zone as text */}
-              <ModernInput
-                label="Time Zone"
-                value={get(selectedTherapist, 'time_zone', '')}
-                disabled
-              />
-              <ModernInput
-                label="Address"
-                value={get(selectedTherapist, 'address', '')}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Speciality"
-                value={get(selectedTherapist, 'speciality', '')}
-                disabled
-              />
-              <ModernInput
-                label="License Number"
-                value={get(selectedTherapist, 'license_number', '')}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  label="License Expiration"
-                  value={
-                    get(selectedTherapist, 'license_expiration')
-                      ? dayjs(get(selectedTherapist, 'license_expiration'))
-                      : null
-                  }
-                  disabled
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                    },
-                  }}
-                />
-              </LocalizationProvider>
-              <ModernInput
-                label="Rate per Consult"
-                value={get(
-                  selectedTherapist,
-                  'contracted_rate_per_consult',
-                  ''
-                )}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Status"
-                value={
-                  get(selectedTherapist, 'status', 0) === 1
+            <Box
+              display="flex"
+              flexDirection="row"
+              p={2}
+              border="1px solid #e0e0e0"
+              borderRadius="8px"
+              bgcolor="#fafafa"
+              width="100%"
+              flexWrap="wrap"
+              rowGap={1}
+            >
+              {/* Name */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Name:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'name', '')}
+                </Typography>
+              </Box>
+
+              {/* Email */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Email:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'email', '')}
+                </Typography>
+              </Box>
+
+              {/* Mobile */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Mobile:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'mobile', '')}
+                </Typography>
+              </Box>
+
+              {/* Country */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Country:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'country', '')}
+                </Typography>
+              </Box>
+
+              {/* Time Zone */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Time Zone:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'time_zone', '')}
+                </Typography>
+              </Box>
+
+              {/* Address */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Address:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'address', '')}
+                </Typography>
+              </Box>
+
+              {/* Speciality */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Speciality:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'speciality', '')}
+                </Typography>
+              </Box>
+
+              {/* License Number */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  License Number:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'license_number', '')}
+                </Typography>
+              </Box>
+
+              {/* License Expiration */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  License Expiration:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'license_expiration', '')}
+                </Typography>
+              </Box>
+
+              {/* Rate per Consult */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Rate per Consult:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'contracted_rate_per_consult', '')}
+                </Typography>
+              </Box>
+
+              {/* Status */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Status:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'status', 0) === 1
                     ? 'Active'
-                    : 'Inactive'
-                }
-                disabled
-              />
-              <ModernInput
-                label="Created Date"
-                value={get(selectedTherapist, 'created_date', '')}
-                disabled
-              />
+                    : 'Inactive'}
+                </Typography>
+              </Box>
+
+              {/* Created Date */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Created Date:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'created_date', '')}
+                </Typography>
+              </Box>
             </Box>
           </Box>
         )}

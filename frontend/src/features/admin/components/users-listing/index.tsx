@@ -238,63 +238,142 @@ function UsersTable() {
       >
         {selectedUser && (
           <Box display="flex" flexDirection="column" gap={2}>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Name"
-                value={get(selectedUser, 'name', '')}
-                disabled
-              />
-              <ModernInput
-                label="Email"
-                value={get(selectedUser, 'email', '')}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Mobile"
-                value={get(selectedUser, 'mobile', '')}
-                disabled
-              />
-              <ModernInput
-                label="Language"
-                value={get(selectedUser, 'language_name', '')}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="State"
-                value={get(selectedUser, 'state', '')}
-                disabled
-              />
-              <ModernInput
-                label="Zip Code"
-                value={get(selectedUser, 'zip_code', '')}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Country"
-                value={get(selectedUser, 'country', '')}
-                disabled
-              />
-              <ModernInput
-                label="Status"
-                value={
-                  get(selectedUser, 'status', 0) === 1 ? 'Active' : 'Inactive'
-                }
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Created Date"
-                value={get(selectedUser, 'created_date', '')}
-                disabled
-              />
-              <Box width="100%"></Box>
+            <Box
+              display="flex"
+              flexDirection="row"
+              p={2}
+              border="1px solid #e0e0e0"
+              borderRadius="8px"
+              bgcolor="#fafafa"
+              width="100%"
+              flexWrap="wrap"
+              rowGap={1}
+            >
+              {/* User Name */}
+              <Box display="flex" alignItems="center" gap={1} width={'50%'}>
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={100}
+                >
+                  User:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedUser, 'name', '')}
+                </Typography>
+              </Box>
+
+              {/* Email */}
+              <Box display="flex" alignItems="center" gap={1} width={'50%'}>
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={100}
+                >
+                  Email:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedUser, 'email', '')}
+                </Typography>
+              </Box>
+
+              {/* Mobile */}
+              <Box display="flex" alignItems="center" gap={1} width={'50%'}>
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={100}
+                >
+                  Mobile:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedUser, 'mobile', '')}
+                </Typography>
+              </Box>
+
+              {/* Language */}
+              <Box display="flex" alignItems="center" gap={1} width={'50%'}>
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={100}
+                >
+                  Language:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedUser, 'language_name', '')}
+                </Typography>
+              </Box>
+
+              {/* State */}
+              <Box display="flex" alignItems="center" gap={1} width={'50%'}>
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={100}
+                >
+                  State:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedUser, 'state', '')}
+                </Typography>
+              </Box>
+
+              {/* Zip Code */}
+              <Box display="flex" alignItems="center" gap={1} width={'50%'}>
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={100}
+                >
+                  Zip Code:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedUser, 'zip_code', '')}
+                </Typography>
+              </Box>
+
+              {/* Country */}
+              <Box display="flex" alignItems="center" gap={1} width={'50%'}>
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={100}
+                >
+                  Country:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedUser, 'country', '')}
+                </Typography>
+              </Box>
+
+              {/* Status */}
+              <Box display="flex" alignItems="center" gap={1} width={'50%'}>
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={100}
+                >
+                  Status:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedUser, 'status', 0) === 1 ? 'Active' : 'Inactive'}
+                </Typography>
+              </Box>
+
+              {/* Created Date */}
+              <Box display="flex" alignItems="center" gap={1} width={'50%'}>
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={100}
+                >
+                  Created Date:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedUser, 'created_date', '')}
+                </Typography>
+              </Box>
             </Box>
           </Box>
         )}

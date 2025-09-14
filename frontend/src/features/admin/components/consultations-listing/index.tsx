@@ -12,7 +12,6 @@ import GenericModal from '../../../../components/modal';
 import ModernSelect, { type IOption } from '../../../../components/select';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 import ModernSwitch from '../../../../components/switch';
-import ModernInput from '../../../../components/input';
 
 function ConsultationsTable() {
   const [consultantFilter, setConsultantFilter] =
@@ -182,103 +181,231 @@ function ConsultationsTable() {
       >
         {selectedConsultation && (
           <Box display="flex" flexDirection="column" gap={2}>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Consultation ID"
-                value={selectedConsultation.consultation_id || ''}
-                disabled
-              />
-              <ModernInput
-                label="User Name"
-                value={selectedConsultation.user_name || ''}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="User Email"
-                value={selectedConsultation.user_email || ''}
-                disabled
-              />
-              <ModernInput
-                label="Consultant Name"
-                value={selectedConsultation.consultant_name || ''}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Consultant Email"
-                value={selectedConsultation.consultant_email || ''}
-                disabled
-              />
-              <ModernInput
-                label="Product Name"
-                value={selectedConsultation.product_name || ''}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Product Description"
-                value={selectedConsultation.product_description || ''}
-                disabled
-              />
-              <ModernInput
-                label="Time Slot"
-                value={selectedConsultation.time_slot || ''}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Consultation Date"
-                value={selectedConsultation.consultation_date || ''}
-                disabled
-              />
-              <ModernInput
-                label="Time Zone"
-                value={selectedConsultation.time_zone || ''}
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Country"
-                value={selectedConsultation.consultation_country || ''}
-                disabled
-              />
-              <ModernInput
-                label="Status"
-                value={
-                  selectedConsultation.consultation_status === 1
-                    ? 'Active'
-                    : 'Inactive'
-                }
-                disabled
-              />
-            </Box>
-            {selectedConsultation.payment_date && (
-              <Box display="flex" gap={2}>
-                <ModernInput
-                  label="Payment Date"
-                  value={selectedConsultation.payment_date || ''}
-                  disabled
-                />
-                <ModernInput
-                  label="Consultation Notes"
-                  value={selectedConsultation.consultation_notes || ''}
-                  disabled
-                />
+            <Box
+              display="flex"
+              flexDirection="row"
+              p={2}
+              border="1px solid #e0e0e0"
+              borderRadius="8px"
+              bgcolor="#fafafa"
+              width="100%"
+              flexWrap="wrap"
+              rowGap={1}
+            >
+              {/* Consultation ID */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={140}
+                >
+                  Consultation ID:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {selectedConsultation.consultation_id || ''}
+                </Typography>
               </Box>
-            )}
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Created Date"
-                value={selectedConsultation.created_date || ''}
-                disabled
-              />
-              <Box width="100%"></Box>
+
+              {/* User Name */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={140}
+                >
+                  User Name:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {selectedConsultation.user_name || ''}
+                </Typography>
+              </Box>
+
+              {/* User Email */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={140}
+                >
+                  User Email:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {selectedConsultation.user_email || ''}
+                </Typography>
+              </Box>
+
+              {/* Consultant Name */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={140}
+                >
+                  Consultant Name:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {selectedConsultation.consultant_name || ''}
+                </Typography>
+              </Box>
+
+              {/* Consultant Email */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={140}
+                >
+                  Consultant Email:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {selectedConsultation.consultant_email || ''}
+                </Typography>
+              </Box>
+
+              {/* Product Name */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={140}
+                >
+                  Product Name:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {selectedConsultation.product_name || ''}
+                </Typography>
+              </Box>
+
+              {/* Product Description */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={140}
+                >
+                  Product Description:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {selectedConsultation.product_description || ''}
+                </Typography>
+              </Box>
+
+              {/* Time Slot */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={140}
+                >
+                  Time Slot:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {selectedConsultation.time_slot || ''}
+                </Typography>
+              </Box>
+
+              {/* Consultation Date */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={140}
+                >
+                  Consultation Date:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {selectedConsultation.consultation_date || ''}
+                </Typography>
+              </Box>
+
+              {/* Time Zone */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={140}
+                >
+                  Time Zone:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {selectedConsultation.time_zone || ''}
+                </Typography>
+              </Box>
+
+              {/* Country */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={140}
+                >
+                  Country:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {selectedConsultation.consultation_country || ''}
+                </Typography>
+              </Box>
+
+              {/* Status */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={140}
+                >
+                  Status:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {selectedConsultation.consultation_status === 1
+                    ? 'Active'
+                    : 'Inactive'}
+                </Typography>
+              </Box>
+
+              {/* Payment Date (if exists) */}
+              {selectedConsultation.payment_date && (
+                <>
+                  <Box display="flex" alignItems="center" gap={1} width="50%">
+                    <Typography
+                      variant="body2"
+                      color="textSecondary"
+                      minWidth={140}
+                    >
+                      Payment Date:
+                    </Typography>
+                    <Typography variant="body1" fontWeight="600">
+                      {selectedConsultation.payment_date || ''}
+                    </Typography>
+                  </Box>
+
+                  <Box display="flex" alignItems="center" gap={1} width="50%">
+                    <Typography
+                      variant="body2"
+                      color="textSecondary"
+                      minWidth={140}
+                    >
+                      Consultation Notes:
+                    </Typography>
+                    <Typography variant="body1" fontWeight="600">
+                      {selectedConsultation.consultation_notes || ''}
+                    </Typography>
+                  </Box>
+                </>
+              )}
+
+              {/* Created Date */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={140}
+                >
+                  Created Date:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {selectedConsultation.created_date || ''}
+                </Typography>
+              </Box>
             </Box>
           </Box>
         )}

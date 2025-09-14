@@ -8,7 +8,6 @@ import type { ITransaction, TransactionFilter } from '../../admin.interface';
 import { get } from 'lodash';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import GenericModal from '../../../../components/modal';
-import ModernInput from '../../../../components/input';
 
 function TransactionsTable() {
   const [filter] = useState<TransactionFilter>('');
@@ -122,12 +121,13 @@ function TransactionsTable() {
       </Menu>
 
       {/* View Modal */}
+      {/* View Modal */}
       <GenericModal
         isOpen={isViewModalOpen}
         onClose={handleCloseViewModal}
         title={`Transaction Details${
           selectedTransaction
-            ? ` - ${get(selectedTransaction, 'product_name') || ''}`
+            ? ` - ${get(selectedTransaction, 'product_name', '')}`
             : ''
         }`}
         hideCancelButton
@@ -135,70 +135,142 @@ function TransactionsTable() {
       >
         {selectedTransaction && (
           <Box display="flex" flexDirection="column" gap={2}>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="User Name"
-                value={selectedTransaction.name}
-                fullWidth
-                disabled
-              />
-              <ModernInput
-                label="User Email"
-                value={selectedTransaction.email}
-                fullWidth
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Product Name"
-                value={get(selectedTransaction, 'product_name') || ''}
-                fullWidth
-                disabled
-              />
-              <ModernInput
-                label="Product Description"
-                value={get(selectedTransaction, 'product_description') || ''}
-                fullWidth
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Amount"
-                value={selectedTransaction.amount.toString()}
-                fullWidth
-                disabled
-              />
-              <ModernInput
-                label="Currency"
-                value={selectedTransaction.currency}
-                fullWidth
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Payment Type"
-                value={selectedTransaction.payment_type}
-                fullWidth
-                disabled
-              />
-              <ModernInput
-                label="Status"
-                value={selectedTransaction.status}
-                fullWidth
-                disabled
-              />
-            </Box>
-            <Box display="flex" gap={2}>
-              <ModernInput
-                label="Created Date"
-                value={selectedTransaction.created_date}
-                fullWidth
-                disabled
-              />
-              <Box width="100%"></Box>
+            <Box
+              display="flex"
+              flexDirection="row"
+              p={2}
+              border="1px solid #e0e0e0"
+              borderRadius="8px"
+              bgcolor="#fafafa"
+              width="100%"
+              flexWrap="wrap"
+              rowGap={1}
+            >
+              {/* User Name */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={130}
+                >
+                  User Name:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTransaction, 'name', '')}
+                </Typography>
+              </Box>
+
+              {/* User Email */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={130}
+                >
+                  User Email:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTransaction, 'email', '')}
+                </Typography>
+              </Box>
+
+              {/* Product Name */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={130}
+                >
+                  Product Name:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTransaction, 'product_name', '')}
+                </Typography>
+              </Box>
+
+              {/* Product Description */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={130}
+                >
+                  Product Description:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTransaction, 'product_description', '')}
+                </Typography>
+              </Box>
+
+              {/* Amount */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={130}
+                >
+                  Amount:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTransaction, 'amount', '')}
+                </Typography>
+              </Box>
+
+              {/* Currency */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={130}
+                >
+                  Currency:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTransaction, 'currency', '')}
+                </Typography>
+              </Box>
+
+              {/* Payment Type */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={130}
+                >
+                  Payment Type:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTransaction, 'payment_type', '')}
+                </Typography>
+              </Box>
+
+              {/* Status */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={130}
+                >
+                  Status:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTransaction, 'status', '')}
+                </Typography>
+              </Box>
+
+              {/* Created Date */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={130}
+                >
+                  Created Date:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTransaction, 'created_date', '')}
+                </Typography>
+              </Box>
             </Box>
           </Box>
         )}
