@@ -1,55 +1,76 @@
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/GridLegacy';
 import Container from '@mui/material/Container';
 import LandingPageTypography from './LandingPageTypography';
 import type { Theme } from '@emotion/react';
-import type { SxProps } from '@mui/material';
+import { type SxProps } from '@mui/material';
+import CustomLoader from '../../../components/loader';
+import { useGetProductListing } from '../../admin/hooks/useGetProductListing';
+import { get } from 'lodash';
+import type { IProduct } from '../../admin/admin.interface';
 
 const item: SxProps<Theme> = {
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   px: 5,
+  py: 5,
+  minHeight: 300,
+  borderRadius: 2,
+  bgcolor: 'white',
+  boxShadow: 3,
+  textAlign: 'center',
+  cursor: 'pointer',
+  flex: '1 1 100%',
+
+  // Hover effect
+  transition: 'transform 0.3s, box-shadow 0.3s',
+  '&:hover': {
+    transform: 'translateY(-10px)',
+    boxShadow: 6,
+  },
 };
 
-interface IProductCard {
-  title: string;
-  description: string;
-  image: string;
-}
-
-const PRODUCT_LIST: IProductCard[] = [
-  {
-    title: 'The best luxury hotels',
-    description:
-      'From the latest trendy boutique hotel to the iconic palace with XXL pool, go for a mini-vacation just a few subway stops away from your home.',
-    image: '/onepirate/productValues1.svg',
-  },
-  {
-    title: 'New experiences',
-    description:
-      'Privatize a pool, take a Japanese bath or wake up in 900m2 of garden… your Sundays will not be alike.',
-    image: '/onepirate/productValues2.svg',
-  },
-  {
-    title: 'Exclusive rates',
-    description:
-      'By registering, you will access specially negotiated rates that you will not find anywhere else.',
-    image: '/onepirate/productValues3.svg',
-  },
+const PRODUCT_LIST_IMAGE = [
+  '/onepirate/productValues1.svg',
+  '/onepirate/productValues2.svg',
+  '/onepirate/productValues3.svg',
 ];
 
-const ProductCard = ({ title, description, image }: IProductCard) => (
-  <Box sx={item}>
-    <Box component="img" src={image} alt={title} sx={{ height: 55 }} />
-    <LandingPageTypography variant="h6" sx={{ my: 5 }}>
-      {title}
-    </LandingPageTypography>
-    <LandingPageTypography variant="h5">{description}</LandingPageTypography>
-  </Box>
-);
+const ProductCard = ({ index, ...args }: IProduct & { index: number }) => {
+  const { product_name, product_description } = args;
+  return (
+    <Box sx={item}>
+      <Box
+        component="img"
+        src={
+          typeof get(PRODUCT_LIST_IMAGE, index) === 'string'
+            ? get(PRODUCT_LIST_IMAGE, index)
+            : '/onepirate/productValues1.svg'
+        }
+        alt={product_name}
+        sx={{ height: 55 }}
+      />
+      <LandingPageTypography variant="subtitle1" sx={{ my: 3 }}>
+        {product_name}
+      </LandingPageTypography>
+      <LandingPageTypography variant="subtitle2">
+        {product_description}
+      </LandingPageTypography>
+    </Box>
+  );
+};
 
 function ProductValues() {
+  const { data, isLoading, error } = useGetProductListing();
+
+  if (isLoading) {
+    return <CustomLoader />;
+  }
+
+  if (error) {
+    return null;
+  }
+
   return (
     <Box
       component="section"
@@ -62,13 +83,35 @@ function ProductValues() {
           alt="curvy lines"
           sx={{ pointerEvents: 'none', position: 'absolute', top: -180 }}
         />
-        <Grid container spacing={5}>
-          {PRODUCT_LIST.map(product => (
-            <Grid item xs={12} md={4} key={product.title}>
-              <ProductCard {...product} />
-            </Grid>
-          ))}
-        </Grid>
+
+        {/* Flex container instead of Grid */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 5, // replaces Grid spacing
+            justifyContent: 'center',
+            width: '100%',
+          }}
+        >
+          {(get(data, 'data', []) as IProduct[]).map(
+            (product: IProduct, index: number) => (
+              <Box
+                key={index}
+                sx={{
+                  flex: {
+                    xs: '1 1 100%', // full width on small
+                    md: '1 1 calc(33.333% - 40px)', // 3 per row on md+
+                  },
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}
+              >
+                <ProductCard index={index} {...product} />
+              </Box>
+            )
+          )}
+        </Box>
       </Container>
     </Box>
   );
