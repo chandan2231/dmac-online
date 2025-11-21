@@ -336,7 +336,7 @@ export const patinetRegistration = async (req, res) => {
     })
 
     // Prepare email verification message
-    const verifyLink = `${process.env.DOMAIN}verify-email/${verificationToken}`
+    const verifyLink = `${process.env.DOMAIN}patient/email/verify/${verificationToken}`
     const to = req.body.email
     const subject = 'Verify Your Email for DMAC'
     const greetingHtml = `<p>Dear ${req.body.name},</p>`
@@ -391,9 +391,9 @@ export const patientEmailVerification = (req, res) => {
         return res.status(400).json({ error: "Invalid or expired token" });
       }
 
-      // Step 2: Fetch user details using token
+      // Step 2: Fetch user details using token (include mobile & role since you return them)
       const userQuery = `
-        SELECT id, name, email
+        SELECT id, name, email, mobile, role
         FROM dmac_webapp_users
         WHERE verification_token = ?
       `;
@@ -401,7 +401,7 @@ export const patientEmailVerification = (req, res) => {
       db.query(userQuery, [token], (userErr, userRows) => {
         if (userErr) return res.status(500).json({ error: userErr.message });
 
-        if (userRows.length === 0) {
+        if (!userRows || userRows.length === 0) {
           return res.status(400).json({ error: "User not found" });
         }
 
@@ -409,12 +409,13 @@ export const patientEmailVerification = (req, res) => {
         const userId = user.id;
 
         // Step 3: JOIN to get the latest product (if any)
+        // NOTE: removed stray comma after p.product_amount which caused SQL syntax error
         const productJoinQuery = `
           SELECT 
             rup.product_id,
             p.product_name,
             p.product_description AS product_description,
-            p.product_amount,
+            p.product_amount
           FROM dmac_webapp_registered_users_product rup
           LEFT JOIN dmac_webapp_products p 
             ON rup.product_id = p.id
@@ -427,7 +428,7 @@ export const patientEmailVerification = (req, res) => {
           if (prodErr) return res.status(500).json({ error: prodErr.message });
 
           // Format product response (null if no product assigned)
-          const product = prodRows.length > 0 ? prodRows[0] : null;
+          const product = prodRows && prodRows.length > 0 ? prodRows[0] : null;
 
           return res.json({
             isSuccess: true,
@@ -439,13 +440,14 @@ export const patientEmailVerification = (req, res) => {
               mobile: user.mobile,
               role: user.role
             },
-            product: product // null allowed
+            product // null allowed
           });
         });
       });
     }
   );
 };
+
 
 export const createPatientPayment = async (req, res) => {
   const createOrderRequest = new paypal.orders.OrdersCreateRequest()

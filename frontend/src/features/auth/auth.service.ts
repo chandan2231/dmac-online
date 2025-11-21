@@ -251,7 +251,7 @@ const getEmailVerification = async (payload: { token: string }) => {
 const getPatientEmailVerification = async (payload: { token: string }) => {
   try {
     const response = await HttpService.post<{ message: string }>(
-      '/auth/email/verify',
+      '/auth/patient/email/verify',
       { token: payload.token } // send in body
     );
 
