@@ -19,13 +19,10 @@ export const usePatientEmailVerification = () => {
         const response = await AuthService.getPatientEmailVerification(payload);
         const { success, message } = response;
 
-        console.log('Email verification response:', response);
-
         if (success) {
           setMessage(message || 'Email verified successfully!');
           showToast('Email verified successfully!', 'success');
-          // push response to the state while navigating
-          navigate(ROUTES.LOGIN, { state: { response } });
+          navigate(ROUTES.PATIENT_LOGIN, { state: { response } });
         } else {
           setMessage(message || 'Email verification failed.');
           showToast(message || 'Email verification failed.', 'error');

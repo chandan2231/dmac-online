@@ -37,6 +37,7 @@ import PatientLayout from '../../layouts/PatientLayout';
 // Patient Pages
 import PatientRegisterPage from '../../pages/auth/register/patient-register';
 import PatientVerifyEmailPage from '../../pages/auth/verify-email/patient-verify-email';
+import PatientPaymentPage from '../../pages/payment/patient-payment';
 
 export const LAYOUT_MAP = {
   BaseLayout,
@@ -74,6 +75,7 @@ export const COMPONENT_MAP = {
   // Patient Pages
   PatientRegisterPage,
   PatientVerifyEmailPage,
+  PatientPaymentPage,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -129,12 +131,12 @@ export const PUBLIC_ROUTES = [
   {
     path: ROUTES.PATIENT_PAYMENT,
     layout: LAYOUT_MAP['AuthLayout'],
-    component: COMPONENT_MAP['Register'],
+    component: COMPONENT_MAP['PatientPaymentPage'],
   },
   {
     path: ROUTES.PATIENT_LOGIN,
     layout: LAYOUT_MAP['AuthLayout'],
-    component: COMPONENT_MAP['Register'],
+    component: COMPONENT_MAP['LoginPage'],
   },
 ];
 
