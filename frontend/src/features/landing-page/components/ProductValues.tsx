@@ -2,11 +2,13 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import LandingPageTypography from './LandingPageTypography';
 import type { Theme } from '@emotion/react';
-import { type SxProps } from '@mui/material';
+import { Button, type SxProps } from '@mui/material';
 import CustomLoader from '../../../components/loader';
 import { useGetProductListing } from '../../admin/hooks/useGetProductListing';
 import { get } from 'lodash';
 import type { IProduct } from '../../admin/admin.interface';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../auth/auth.interface';
 
 const item: SxProps<Theme> = {
   display: 'flex',
@@ -38,6 +40,12 @@ const PRODUCT_LIST_IMAGE = [
 
 const ProductCard = ({ index, ...args }: IProduct & { index: number }) => {
   const { product_name, product_description } = args;
+  const navigate = useNavigate();
+
+  const handleRegisterClick = (args: IProduct) => {
+    navigate(ROUTES.PATIENT_REGISTRATION, { state: { ...args } });
+  };
+
   return (
     <Box sx={item}>
       <Box
@@ -53,9 +61,15 @@ const ProductCard = ({ index, ...args }: IProduct & { index: number }) => {
       <LandingPageTypography variant="subtitle1" sx={{ my: 3 }}>
         {product_name}
       </LandingPageTypography>
-      <LandingPageTypography variant="subtitle2">
+      <LandingPageTypography variant="subtitle2" sx={{ mb: 3 }}>
         {product_description}
       </LandingPageTypography>
+
+      {/* Register Button */}
+      {/* Push User to new page */}
+      <Button variant="contained" onClick={() => handleRegisterClick(args)}>
+        Register
+      </Button>
     </Box>
   );
 };

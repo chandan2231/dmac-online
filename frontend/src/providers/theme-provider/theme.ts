@@ -8,7 +8,7 @@ const lightTheme = createTheme({
     error: { main: '#d32f2f' },
     warning: { main: '#ed6c02' },
     info: { main: '#0288d1' },
-    background: { default: '#1976d2' },
+    background: { default: '#fff' },
   },
   customBackgrounds: {
     authLayout: 'linear-gradient(to right, #ffffff, #ffffff)', // Light theme auth background

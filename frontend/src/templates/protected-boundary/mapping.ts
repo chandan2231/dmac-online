@@ -32,12 +32,17 @@ import MainLayout from '../../layouts/MainLayout';
 import AuthLayout from '../../layouts/AuthLayout';
 import ContentOnlyLayout from '../../layouts/ContentOnlyLayout';
 import BaseLayout from '../../layouts/BaseLayout';
+import PatientLayout from '../../layouts/PatientLayout';
+
+// Patient Pages
+import PatientRegister from '../../features/auth/components/register/patient-register';
 
 export const LAYOUT_MAP = {
   BaseLayout,
   MainLayout,
   AuthLayout,
   ContentOnlyLayout,
+  PatientLayout,
 };
 
 export const COMPONENT_MAP = {
@@ -64,6 +69,9 @@ export const COMPONENT_MAP = {
   TransactionsListingPageComponent,
   TherapistListingPageComponent,
   ConsultationsListingPageComponent,
+
+  // Patient Pages
+  PatientRegister,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -104,6 +112,27 @@ export const PUBLIC_ROUTES = [
     path: ROUTES.NOT_FOUND,
     layout: LAYOUT_MAP['ContentOnlyLayout'],
     component: COMPONENT_MAP['PageNotFound'],
+  },
+  // Patient Registration Routes
+  {
+    path: ROUTES.PATIENT_REGISTRATION,
+    layout: LAYOUT_MAP['PatientLayout'],
+    component: COMPONENT_MAP['PatientRegister'],
+  },
+  {
+    path: ROUTES.PATIENT_EMAIL_VERIFICATION,
+    layout: LAYOUT_MAP['AuthLayout'],
+    component: COMPONENT_MAP['Register'],
+  },
+  {
+    path: ROUTES.PATIENT_PAYMENT,
+    layout: LAYOUT_MAP['AuthLayout'],
+    component: COMPONENT_MAP['Register'],
+  },
+  {
+    path: ROUTES.PATIENT_LOGIN,
+    layout: LAYOUT_MAP['AuthLayout'],
+    component: COMPONENT_MAP['Register'],
   },
 ];
 

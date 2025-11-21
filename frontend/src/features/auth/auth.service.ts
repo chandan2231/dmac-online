@@ -17,6 +17,41 @@ import {
 import { getRoutesByRole } from '../../templates/protected-boundary/mapping';
 import HttpService from '../../services/HttpService';
 
+const patientResgistration = async (
+  payload: IRegisterPayload
+): Promise<IRegisterResponse> => {
+  store.dispatch(setLoadingTrue()); // optional: create separate registerStart()
+
+  try {
+    const response = await HttpService.post<IRegisterResponse>(
+      '/auth/patient/registration',
+      payload
+    );
+
+    const { isSuccess, message } = response.data;
+
+    store.dispatch(setLoadingFalse()); // or registerFailure
+
+    return {
+      isSuccess: isSuccess,
+      message:
+        message ||
+        (isSuccess ? 'Registration successful' : 'Registration failed'),
+    };
+  } catch (error: unknown) {
+    store.dispatch(setLoadingFalse()); // or registerFailure
+
+    const message =
+      get(error, 'response.data.message') ||
+      'An unexpected error occurred during registration';
+
+    return {
+      isSuccess: false,
+      message: message || 'Registration failed due to an error',
+    };
+  }
+};
+
 const registerUser = async (
   payload: IRegisterPayload
 ): Promise<IRegisterResponse> => {
@@ -219,6 +254,7 @@ const AuthService = {
   forgotPassword,
   resetPassword,
   getEmailVerification,
+  patientResgistration,
 };
 
 export default AuthService;

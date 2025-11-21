@@ -30,16 +30,23 @@ export const ROUTES = {
   // Public routes
   HOME: '/',
 
-  // Authenticated routes
-  LOGIN: '/login',
-  REGISTER: '/register',
-  FORGOT_PASSWORD: '/forgot-password',
+  // Patient Registration
+  PATIENT_REGISTRATION: '/patient/registration',
+  PATIENT_EMAIL_VERIFICATION: '/patient/verify-email/:token',
+  PATIENT_PAYMENT: '/patient/payment',
+  PATIENT_LOGIN: '/patient/login',
 
   // Protected routes
   RESET_PASSWORD: '/reset-password/:token',
   VERIFY_EMAIL: '/verify-email/:token',
   PROFILE: '/profile',
   QUESTIONERS: '/questioners',
+
+  // ADMIN
+  // Authenticated routes
+  LOGIN: '/login',
+  REGISTER: '/register',
+  FORGOT_PASSWORD: '/forgot-password',
 
   // Admin routes
   ADMIN_DASHBOARD: '/admin/dashboard',
