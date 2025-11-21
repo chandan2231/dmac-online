@@ -14,6 +14,7 @@ const item: SxProps<Theme> = {
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
+  justifyContent: 'space-between',
   px: 5,
   py: 5,
   minHeight: 300,
@@ -48,22 +49,24 @@ const ProductCard = ({ index, ...args }: IProduct & { index: number }) => {
 
   return (
     <Box sx={item}>
-      <Box
-        component="img"
-        src={
-          typeof get(PRODUCT_LIST_IMAGE, index) === 'string'
-            ? get(PRODUCT_LIST_IMAGE, index)
-            : '/onepirate/productValues1.svg'
-        }
-        alt={product_name}
-        sx={{ height: 55 }}
-      />
-      <LandingPageTypography variant="subtitle1" sx={{ my: 3 }}>
-        {product_name}
-      </LandingPageTypography>
-      <LandingPageTypography variant="subtitle2" sx={{ mb: 3 }}>
-        {product_description}
-      </LandingPageTypography>
+      <Box>
+        <Box
+          component="img"
+          src={
+            typeof get(PRODUCT_LIST_IMAGE, index) === 'string'
+              ? get(PRODUCT_LIST_IMAGE, index)
+              : '/onepirate/productValues1.svg'
+          }
+          alt={product_name}
+          sx={{ height: 55 }}
+        />
+        <LandingPageTypography variant="subtitle1" sx={{ my: 3 }}>
+          {product_name}
+        </LandingPageTypography>
+        <LandingPageTypography variant="subtitle2" sx={{ mb: 3 }}>
+          {product_description}
+        </LandingPageTypography>
+      </Box>
 
       {/* Register Button */}
       {/* Push User to new page */}
