@@ -32,7 +32,7 @@ export const ROUTES = {
 
   // Patient Registration
   PATIENT_REGISTRATION: '/patient/registration',
-  PATIENT_EMAIL_VERIFICATION: '/patient/verify-email/:token',
+  PATIENT_EMAIL_VERIFICATION: '/patient/email/verify/:token',
   PATIENT_PAYMENT: '/patient/payment',
   PATIENT_LOGIN: '/patient/login',
 

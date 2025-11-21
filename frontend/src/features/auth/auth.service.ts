@@ -248,6 +248,29 @@ const getEmailVerification = async (payload: { token: string }) => {
   }
 };
 
+const getPatientEmailVerification = async (payload: { token: string }) => {
+  try {
+    const response = await HttpService.post<{ message: string }>(
+      '/auth/email/verify',
+      { token: payload.token } // send in body
+    );
+
+    return {
+      success: true,
+      message: response.data.message || 'Email verified successfully',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred during email verification';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
 const AuthService = {
   loginUser,
   registerUser,
@@ -255,6 +278,7 @@ const AuthService = {
   resetPassword,
   getEmailVerification,
   patientResgistration,
+  getPatientEmailVerification,
 };
 
 export default AuthService;
