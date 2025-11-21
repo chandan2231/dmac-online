@@ -94,7 +94,7 @@ function ProductValues() {
             width: '100%',
           }}
         >
-          {(get(data, 'data', []) as IProduct[]).map(
+          {((get(data, 'data', []) as IProduct[]) ?? []).map(
             (product: IProduct, index: number) => (
               <Box
                 key={index}
