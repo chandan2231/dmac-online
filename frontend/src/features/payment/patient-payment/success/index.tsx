@@ -1,3 +1,4 @@
+import './index.css';
 import { Box, Typography } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { get } from 'lodash';
@@ -9,10 +10,55 @@ const PatientPaymentSuccess = () => {
 
   return (
     <Grid container spacing={4} sx={{ p: 4 }}>
-      <Grid item xs={12}>
-        <Typography variant="h5" mb={2} style={{ textAlign: 'center' }}>
-          Payment Successfull
-        </Typography>
+      <Grid
+        item
+        xs={12}
+        gap={4}
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+      >
+        <Box
+          component="span"
+          className="success-animation"
+          sx={{
+            display: 'block',
+            width: '150px',
+            height: '150px',
+            margin: '0 auto',
+          }}
+        >
+          <svg viewBox="0 0 400 400" style={{ width: '100%', height: '100%' }}>
+            <circle
+              fill="none"
+              stroke="#68E534"
+              strokeWidth="20"
+              cx="200"
+              cy="200"
+              r="190"
+              strokeLinecap="round"
+              transform="rotate(-90 200 200)"
+              className="circle"
+            />
+            <polyline
+              fill="none"
+              stroke="#68E534"
+              points="88,214 173,284 304,138"
+              strokeWidth="24"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="tick"
+            />
+          </svg>
+        </Box>
+        <Box>
+          <Typography
+            variant="h4"
+            style={{ textAlign: 'center', fontWeight: 'bold' }}
+          >
+            Payment Successfull
+          </Typography>
+        </Box>
       </Grid>
 
       {/* LEFT SECTION — USER DETAILS */}
@@ -21,22 +67,35 @@ const PatientPaymentSuccess = () => {
           title="User Details"
           description="Review your information"
           minHeight={'100%'}
+          descriptionVariant="h6"
         >
           <Box display="flex" flexDirection="column">
-            <Typography variant="h6" fontWeight="bold">
-              Name:{' '}
-              {state ? get(state, ['stateProp', 'user', 'name'], '') : 'N/A'}
-            </Typography>
+            <Box display="flex" flexDirection="row" alignItems="center" gap={1}>
+              <Typography variant="h6" sx={{ color: 'text.secondary' }}>
+                Name:
+              </Typography>
+              <Typography variant="h6" fontWeight="bold">
+                {state ? get(state, ['state', 'user', 'name'], '') : 'N/A'}
+              </Typography>
+            </Box>
 
-            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-              Email:{' '}
-              {state ? get(state, ['stateProp', 'user', 'email'], '') : 'N/A'}
-            </Typography>
+            <Box display="flex" flexDirection="row" alignItems="center" gap={1}>
+              <Typography variant="h6" sx={{ color: 'text.secondary' }}>
+                Email:{' '}
+              </Typography>
+              <Typography variant="h6" fontWeight="bold">
+                {state ? get(state, ['state', 'user', 'email'], '') : 'N/A'}
+              </Typography>
+            </Box>
 
-            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-              Mobile:{' '}
-              {state ? get(state, ['stateProp', 'user', 'mobile'], '') : 'N/A'}
-            </Typography>
+            <Box display="flex" flexDirection="row" alignItems="center" gap={1}>
+              <Typography variant="h6" sx={{ color: 'text.secondary' }}>
+                Mobile:{' '}
+              </Typography>
+              <Typography variant="h6" fontWeight="bold">
+                {state ? get(state, ['state', 'user', 'mobile'], '') : 'N/A'}
+              </Typography>
+            </Box>
           </Box>
         </MorenCard>
       </Grid>
@@ -47,32 +106,41 @@ const PatientPaymentSuccess = () => {
           title="Product Details"
           description="Review your selected product"
           minHeight={'100%'}
+          descriptionVariant="h6"
         >
           <Box display="flex" flexDirection="column">
-            <Typography variant="h6" fontWeight="bold">
-              Product Name:{' '}
-              {state
-                ? get(state, ['stateProp', 'product', 'product_name'], '')
-                : ''}
-            </Typography>
+            <Box display="flex" flexDirection="row" alignItems="center" gap={1}>
+              <Typography variant="h6" sx={{ color: 'text.secondary' }}>
+                Product Name:{' '}
+              </Typography>
+              <Typography variant="h6" fontWeight="bold">
+                {state
+                  ? get(state, ['state', 'product', 'product_name'], '')
+                  : ''}{' '}
+              </Typography>
+            </Box>
 
-            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-              Product Description:{' '}
-              {state
-                ? get(
-                    state,
-                    ['stateProp', 'product', 'product_description'],
-                    ''
-                  )
-                : ''}
-            </Typography>
+            <Box display="flex" flexDirection="row" alignItems="center" gap={1}>
+              <Typography variant="h6" sx={{ color: 'text.secondary' }}>
+                Product Description:{' '}
+              </Typography>
+              <Typography variant="h6" fontWeight="bold">
+                {state
+                  ? get(state, ['state', 'product', 'product_description'], '')
+                  : ''}{' '}
+              </Typography>
+            </Box>
 
-            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-              Product Amount: $
-              {state
-                ? get(state, ['stateProp', 'product', 'product_amount'], '')
-                : ''}
-            </Typography>
+            <Box display="flex" flexDirection="row" alignItems="center" gap={1}>
+              <Typography variant="h6" sx={{ color: 'text.secondary' }}>
+                Product Amount: $
+              </Typography>
+              <Typography variant="h6" fontWeight="bold">
+                {state
+                  ? get(state, ['state', 'product', 'product_amount'], '')
+                  : ''}{' '}
+              </Typography>
+            </Box>
           </Box>
         </MorenCard>
       </Grid>

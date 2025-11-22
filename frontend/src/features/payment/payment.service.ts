@@ -12,7 +12,7 @@ const createPayment = async (
     const response = await HttpService.post('/auth/patient/createPayment', {
       amount,
     });
-    console.log('responseresponseresponse', response)
+    console.log('createPayment -->', response);
     return {
       success: true,
       approvalUrl: get(response, ['data', 'approvalUrl']),
@@ -20,8 +20,8 @@ const createPayment = async (
       message: 'Payment created successfully',
     };
   } catch (error: unknown) {
-    console.log('errorerror', error)
-    const message ='An unexpected error occurred while creating payment';
+    console.log('createPayment error -->', error);
+    const message = 'An unexpected error occurred while creating payment';
     return {
       success: false,
       message,
@@ -31,7 +31,11 @@ const createPayment = async (
 
 const capturePayment = async (payload: CapturePaymentPayload) => {
   try {
-    const response = await HttpService.post('/auth/patient/capturePayment', payload);
+    const response = await HttpService.post(
+      '/auth/patient/capturePayment',
+      payload
+    );
+    console.log('capturePayment -->', response);
     return response;
   } catch (error) {
     console.error('Error capturing payment:', error);
@@ -42,6 +46,7 @@ const capturePayment = async (payload: CapturePaymentPayload) => {
 const cancelPayment = async () => {
   try {
     const response = await HttpService.post('/auth/patient/cancelPayment', {});
+    console.log('cancelPayment -->', response);
     return response;
   } catch (error) {
     console.error('Error cancelling payment:', error);

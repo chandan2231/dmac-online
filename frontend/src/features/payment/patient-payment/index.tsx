@@ -77,7 +77,7 @@ const PatientPayment = () => {
 
             if (response) {
               navigate(ROUTES.PATIENT_PAYMENT_SUCCESS, {
-                state: { ...response, stateProp: state },
+                state,
               });
             }
           },
@@ -85,9 +85,7 @@ const PatientPayment = () => {
           onCancel: async () => {
             await PaymentService.cancelPayment();
             navigate(ROUTES.PATIENT_PAYMENT_CANCELLED, {
-              state: {
-                stateProp: state,
-              },
+              state,
             });
           },
 

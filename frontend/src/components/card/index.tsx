@@ -1,5 +1,14 @@
 import React from 'react';
-import { Card, CardContent, CardMedia, Typography, Box } from '@mui/material';
+import type { OverridableStringUnion } from '@mui/types';
+import {
+  Card,
+  CardContent,
+  CardMedia,
+  Typography,
+  Box,
+  type TypographyVariant,
+  type TypographyPropsVariantOverrides,
+} from '@mui/material';
 
 type MorenCardProps = {
   title: string;
@@ -9,6 +18,12 @@ type MorenCardProps = {
   children?: React.ReactNode;
   maxHeight?: number | string;
   minHeight?: number | string;
+  descriptionVariant?:
+    | OverridableStringUnion<
+        'inherit' | TypographyVariant,
+        TypographyPropsVariantOverrides
+      >
+    | undefined;
 };
 
 const MorenCard: React.FC<MorenCardProps> = ({
@@ -19,6 +34,7 @@ const MorenCard: React.FC<MorenCardProps> = ({
   maxHeight = '100%',
   minHeight = 0,
   children,
+  descriptionVariant = 'body2',
 }) => {
   return (
     <Card
@@ -46,7 +62,7 @@ const MorenCard: React.FC<MorenCardProps> = ({
             {title}
           </Typography>
           {description && (
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant={descriptionVariant} color="text.secondary">
               {description}
             </Typography>
           )}
