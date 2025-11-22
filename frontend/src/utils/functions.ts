@@ -1,5 +1,9 @@
 import { get } from 'lodash';
-import type { IUser, IUserRoute } from '../features/auth/auth.interface';
+import {
+  ROUTES,
+  type IUser,
+  type IUserRoute,
+} from '../features/auth/auth.interface';
 import {
   LOCAL_STORAGE_KEYS,
   ROLES_ALLOWED_TO_CHANGE_LANGUAGE,
@@ -93,6 +97,14 @@ const canWeShowChangeLanguageOption = (user: IUser | null) => {
   return ROLES_ALLOWED_TO_CHANGE_LANGUAGE.includes(userRole);
 };
 
+const navigateUserTo = (user: IUser | null) => {
+  const role = get(user, ['role'], 'USER');
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+    return ROUTES.ADMIN_DASHBOARD;
+  }
+  return ROUTES.HOME;
+};
+
 export {
   getCurrentYear,
   getCurrentMonth,
@@ -105,4 +117,5 @@ export {
   convertLanguagesListToOptions,
   getLanguageText,
   canWeShowChangeLanguageOption,
+  navigateUserTo,
 };

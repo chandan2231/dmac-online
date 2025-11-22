@@ -151,6 +151,72 @@ const loginUser = async (payload: ILoginPayload): Promise<ILoginResponse> => {
   }
 };
 
+const patientLogin = async (
+  payload: ILoginPayload
+): Promise<ILoginResponse> => {
+  store.dispatch(setLoadingTrue());
+
+  try {
+    const response = await HttpService.post<ILoginResponse>(
+      '/auth/patient/login',
+      payload
+    );
+
+    const user = get(response, ['data', 'user'], null) as IUser | null;
+    const token = get(response, ['data', 'user', 'token'], null) as
+      | string
+      | null;
+    const allowedRoutes = getRoutesByRole(
+      get(response, ['data', 'user', 'role'], 'USER') as UserRole
+    );
+
+    if (token && user && allowedRoutes) {
+      const updatedUser = {
+        ...user,
+        token: token,
+        role: get(response, ['data', 'user', 'role'], 'USER') as UserRole,
+      };
+      const successPayload = {
+        user: updatedUser,
+        token,
+        allowedRoutes,
+      };
+
+      store.dispatch(loginSuccess(successPayload));
+
+      return {
+        user,
+        token,
+        allowedRoutes,
+        success: true,
+        message: 'Login successful',
+      };
+    }
+
+    store.dispatch(setLoadingFalse());
+
+    return {
+      user: null,
+      token: null,
+      allowedRoutes: null,
+      success: false,
+      message: get(response, ['data', 'error'], 'Login failed'),
+    };
+  } catch (error: unknown) {
+    store.dispatch(loginFailure());
+
+    const message = 'An unexpected error occurred during login';
+
+    return {
+      user: null,
+      token: null,
+      allowedRoutes: null,
+      success: false,
+      message: get(error as Error, ['message'], message),
+    };
+  }
+};
+
 const forgotPassword = async (payload: { email: string }) => {
   store.dispatch(setLoadingTrue());
 
@@ -275,6 +341,7 @@ const getPatientEmailVerification = async (payload: { token: string }) => {
 
 const AuthService = {
   loginUser,
+  patientLogin,
   registerUser,
   forgotPassword,
   resetPassword,

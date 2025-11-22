@@ -2,10 +2,15 @@ import * as Yup from 'yup';
 import { Box } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useState } from 'react';
+import { useToast } from '../../../../providers/toast-provider';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../../../store';
+import { useNavigate } from 'react-router-dom';
+import { navigateUserTo } from '../../../../utils/functions';
 import MorenCard from '../../../../components/card';
 import ModernInput from '../../../../components/input';
 import MorenButton from '../../../../components/button';
+import AuthService from '../../auth.service';
 
 type FormValues = {
   email: string;
@@ -20,7 +25,10 @@ const schema = Yup.object({
 });
 
 const PatientLogin = () => {
-  const [loading, setLoading] = useState(false);
+  const naivgate = useNavigate();
+  const { showToast } = useToast();
+  const { loading } = useSelector((state: RootState) => state.auth);
+
   const {
     register,
     handleSubmit,
@@ -29,7 +37,19 @@ const PatientLogin = () => {
     resolver: yupResolver(schema),
   });
 
-  const onSubmit = async (data: FormValues) => {};
+  const handleNavigation = (path: string) => {
+    naivgate(path);
+  };
+
+  const onSubmit = async (data: FormValues) => {
+    const { success, message, user } = await AuthService.patientLogin(data);
+    if (!success) {
+      return showToast(message, 'error');
+    }
+
+    showToast(message, 'success');
+    handleNavigation(navigateUserTo(user));
+  };
 
   return (
     <Box

@@ -4,9 +4,10 @@ import { Box } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES, type IUser } from '../../auth.interface.ts';
+import { ROUTES } from '../../auth.interface.ts';
 import { useSelector } from 'react-redux';
 import { useToast } from '../../../../providers/toast-provider';
+import { navigateUserTo } from '../../../../utils/functions.ts';
 import MorenButton from '../../../../components/button';
 import ModernInput from '../../../../components/input';
 import MorenCard from '../../../../components/card/index.tsx';
@@ -16,14 +17,6 @@ import CustomLoader from '../../../../components/loader/index.tsx';
 type FormValues = {
   email: string;
   password: string;
-};
-
-const navigateUserTo = (user: IUser | null) => {
-  const role = user?.role || 'USER';
-  if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
-    return ROUTES.ADMIN_DASHBOARD;
-  }
-  return ROUTES.HOME;
 };
 
 const schema = Yup.object({
