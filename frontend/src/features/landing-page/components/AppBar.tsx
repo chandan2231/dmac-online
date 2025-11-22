@@ -3,8 +3,16 @@ import Link from '@mui/material/Link';
 import LandingPageToolbar from './LandingPageToolbar';
 import LandingPageAppBar from './LandingPageAppBar';
 import { ROUTES } from '../../auth/auth.interface';
+import { Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 function AppAppBar() {
+  const navigate = useNavigate();
+
+  const handleNavigateToPatientLogin = () => {
+    navigate(ROUTES.PATIENT_LOGIN);
+  };
+
   return (
     <div>
       <LandingPageAppBar
@@ -23,9 +31,14 @@ function AppAppBar() {
           >
             {'DMAC'}
           </Link>
-          <Box
-            sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}
-          ></Box>
+          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button
+              variant="contained"
+              onClick={() => handleNavigateToPatientLogin()}
+            >
+              Login
+            </Button>
+          </Box>
         </LandingPageToolbar>
       </LandingPageAppBar>
       <LandingPageToolbar />
