@@ -7,7 +7,6 @@ import MorenCard from '../../../../components/card';
 
 const PatientPaymentSuccess = () => {
   const { state } = useLocation();
-  console.log('Success State:', state);
 
   return (
     <Grid container spacing={4} sx={{ p: 4 }}>
