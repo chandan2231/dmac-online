@@ -91,7 +91,7 @@ const PatientPaymentCancelled = () => {
                 Name:
               </Typography>
               <Typography variant="h6" fontWeight="bold">
-                {state ? get(state, ['state', 'user', 'name'], '') : 'N/A'}
+                {state ? get(state, ['user', 'name'], '') : 'N/A'}
               </Typography>
             </Box>
 
@@ -100,7 +100,7 @@ const PatientPaymentCancelled = () => {
                 Email:{' '}
               </Typography>
               <Typography variant="h6" fontWeight="bold">
-                {state ? get(state, ['state', 'user', 'email'], '') : 'N/A'}
+                {state ? get(state, ['user', 'email'], '') : 'N/A'}
               </Typography>
             </Box>
 
@@ -109,7 +109,7 @@ const PatientPaymentCancelled = () => {
                 Mobile:{' '}
               </Typography>
               <Typography variant="h6" fontWeight="bold">
-                {state ? get(state, ['state', 'user', 'mobile'], '') : 'N/A'}
+                {state ? get(state, ['user', 'mobile'], '') : 'N/A'}
               </Typography>
             </Box>
           </Box>
@@ -130,9 +130,7 @@ const PatientPaymentCancelled = () => {
                 Product Name:{' '}
               </Typography>
               <Typography variant="h6" fontWeight="bold">
-                {state
-                  ? get(state, ['state', 'product', 'product_name'], '')
-                  : ''}{' '}
+                {state ? get(state, ['product', 'product_name'], '') : ''}{' '}
               </Typography>
             </Box>
 
@@ -142,7 +140,7 @@ const PatientPaymentCancelled = () => {
               </Typography>
               <Typography variant="h6" fontWeight="bold">
                 {state
-                  ? get(state, ['state', 'product', 'product_description'], '')
+                  ? get(state, ['product', 'product_description'], '')
                   : ''}{' '}
               </Typography>
             </Box>
@@ -153,7 +151,7 @@ const PatientPaymentCancelled = () => {
               </Typography>
               <Typography variant="h6" fontWeight="bold">
                 {state
-                  ? get(state, ['state', 'product', 'product_amount'], '')
+                  ? get(state, ['product', 'product_amount'], '')
                   : ''}{' '}
               </Typography>
             </Box>
