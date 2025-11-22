@@ -160,7 +160,7 @@ export const PUBLIC_ROUTES = [
 
 // For protected routes, we can define them here
 // This is just a placeholder for now, as the actual routes will be dynamically rendered based on the backend configuration
-// These routes are for Development purposes only
+// These routes are for Patient
 const USER_ROUTES: IUserRoute[] = [
   {
     path: ROUTES.HOME,
