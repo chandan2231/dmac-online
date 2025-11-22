@@ -34,7 +34,7 @@ const createPayment = async (
 const capturePayment = async (payload: CapturePaymentPayload) => {
   try {
     const response = await HttpService.post('/payment/capturePayment', payload);
-    return response.data;
+    return response;
   } catch (error) {
     console.error('Error capturing payment:', error);
     throw error;
@@ -49,7 +49,7 @@ const capturePaymentAdditionClinicSite = async (
       '/payment/capturePaymentAdditionClinicSite',
       payload
     );
-    return response.data;
+    return response;
   } catch (error) {
     console.error('Error capturing payment for additional site:', error);
     throw error;
@@ -59,21 +59,9 @@ const capturePaymentAdditionClinicSite = async (
 const cancelPayment = async () => {
   try {
     const response = await HttpService.post('/payment/cancelPayment', {});
-    return response.data;
+    return response;
   } catch (error) {
     console.error('Error cancelling payment:', error);
-    throw error;
-  }
-};
-
-const getPaymentAmountInfo = async (paymentType: string) => {
-  try {
-    const response = await HttpService.get(
-      `/payment/amount-info?paymentType=${paymentType}`
-    );
-    return response.data;
-  } catch (error) {
-    console.error('Error getting payment amount info:', error);
     throw error;
   }
 };
@@ -83,7 +71,6 @@ const PaymentService = {
   capturePayment,
   capturePaymentAdditionClinicSite,
   cancelPayment,
-  getPaymentAmountInfo,
 };
 
 export default PaymentService;

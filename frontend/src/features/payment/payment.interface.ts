@@ -10,8 +10,6 @@ export interface CapturePaymentPayload {
   payerId: string;
   currencyCode: string;
   amount: number;
-  protocolId: string;
-  researchType: string;
   userId: string;
 }
 

@@ -1,96 +1,29 @@
 import { get } from 'lodash';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useCreatePayment } from '../hooks/useCreatePayment';
 import Grid from '@mui/material/GridLegacy';
 import MorenCard from '../../../components/card';
-import PaymentService from '../payment.service';
 import Loader from '../../../components/loader';
-
-declare global {
-  interface Window {
-    paypal: any;
-  }
-}
 
 const PatientPayment = () => {
   const { state } = useLocation();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
+  const { loading, paymentSuccess, paymentCancelled } = useCreatePayment(state);
 
-  useEffect(() => {
-    const userDetails = JSON.parse(localStorage.getItem('user') || '{}');
-    if (userDetails?.id) {
-      setUser(userDetails);
-    }
-  }, []);
+  if (loading) {
+    return <Loader />;
+  }
 
-  useEffect(() => {
-    if (state?.product?.product_amount) {
-      setLoading(true);
-      const script = document.createElement('script');
-      script.src = `https://www.paypal.com/sdk/js?client-id=AUJ2ExPRI7HOoaNHIxWP-3wngxA-Bk_Bxew7RpIUxlLBkJDEyCiSBruQntP3BCYxP3rxMxlm6UZg0zMs&components=buttons`;
-      script.onload = () => {
-        setLoading(false);
-        window.paypal
-          .Buttons({
-            createOrder: async () => {
-              const res = await PaymentService.createPayment(
-                get(state, ['product', 'product_amount'], 0)
-              );
-              if (res.orderId) {
-                return res.orderId;
-              }
-              return '';
-            },
-            onApprove: async (data: any) => {
-              const { orderID, payerID } = data;
-              const payload = {
-                orderId: orderID,
-                payerId: payerID,
-                currencyCode: 'USD',
-                amount: get(state, ['product', 'product_amount'], 0),
-                protocolId: get(state, ['product', 'product_id'], ''),
-                researchType: get(
-                  state,
-                  ['product', 'product_description'],
-                  ''
-                ),
-                userId: get(user, 'id', ''),
-              };
-              const response = await PaymentService.capturePayment(payload);
-              if (response) {
-                navigate('/payment-success', {
-                  state: {
-                    details: state.product,
-                    amount: get(state, ['product', 'product_amount'], 0),
-                  },
-                });
-              }
-            },
-            onCancel: async () => {
-              await PaymentService.cancelPayment();
-              navigate('/payment-cancelled', {
-                state: {
-                  details: state.product,
-                  amount: get(state, ['product', 'product_amount'], 0),
-                },
-              });
-            },
-            onError: (err: any) => {
-              console.error('PayPal Checkout onError', err);
-            },
-          })
-          .render('#paypal-button-container');
-      };
-      document.body.appendChild(script);
-    }
-  }, [state, user, navigate]);
+  if (paymentSuccess) {
+    return <div>Payment Success</div>;
+  }
+
+  if (paymentCancelled) {
+    return <div>Payment Cancelled</div>;
+  }
 
   return (
     <Grid container spacing={4} sx={{ p: 4 }}>
-      {loading && <Loader />}
       {/* LEFT SECTION — USER DETAILS */}
       <Grid item xs={12} md={6}>
         <MorenCard
