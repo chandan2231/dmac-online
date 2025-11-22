@@ -55,10 +55,14 @@ const PatientPaymentSuccess = () => {
           <Typography
             variant="h4"
             style={{ textAlign: 'center', fontWeight: 'bold' }}
+            mb={4}
           >
             Payment Successfull
           </Typography>
-          <Typography variant="h6" style={{ textAlign: 'center' }}>
+          <Typography
+            variant="h6"
+            style={{ textAlign: 'center', fontWeight: 'bold' }}
+          >
             Transaction ID: {get(state, ['orderID'], 'N/A')}
           </Typography>
         </Box>
