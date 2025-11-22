@@ -35,6 +35,8 @@ export const ROUTES = {
   PATIENT_EMAIL_VERIFICATION: '/patient/email/verify/:token',
   PATIENT_PAYMENT: '/patient/payment',
   PATIENT_LOGIN: '/patient/login',
+  PATIENT_PAYMENT_SUCCESS: '/patient/payment/success',
+  PATIENT_PAYMENT_CANCELLED: '/patient/payment/cancelled',
 
   // Protected routes
   RESET_PASSWORD: '/reset-password/:token',
