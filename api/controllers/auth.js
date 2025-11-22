@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken'
 import sendEmail from '../emailService.js'
 import { v4 as uuidv4 } from 'uuid'
 import { createHash } from 'crypto'
+import { client } from '../paypalConfig.js'
+import paypal from '@paypal/checkout-server-sdk'
 
 export const emailVerification = (req, res) => {
   const { token } = req.body
@@ -468,10 +470,14 @@ export const createPatientPayment = async (req, res) => {
   })
   try {
     const order = await client().execute(createOrderRequest)
+    const orderId = order.result.id;
     const approvalUrl = order.result.links.find(
       (link) => link.rel === 'approve'
     ).href
-    res.json({ approvalUrl })
+    res.json({
+      orderId,        // 🔥 required by frontend
+      approvalUrl     // optional
+    });
   } catch (error) {
     console.error(error)
     res.status(500).send('Error creating PayPal order')
@@ -485,7 +491,10 @@ export const capturePatientPayment = async (req, res) => {
     amount,
     currencyCode,
     productId,
-    userId
+    userId,
+    userName,
+    userEmail,
+    productName
   } = req.body
   const datetime = new Date()
 
@@ -563,7 +572,7 @@ export const capturePatientPayment = async (req, res) => {
       const text = emailBody
       const html = emailBody
       // Send email to the user
-      await sendEmail(user.email, emailSubject, text, html)
+      await sendEmail(userEmail, emailSubject, text, html)
     }
 
     // Respond back with the capture result
