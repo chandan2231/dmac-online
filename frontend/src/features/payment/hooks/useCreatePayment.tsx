@@ -64,13 +64,19 @@ export const useCreatePayment = (state: string) => {
             const response = await PaymentService.capturePayment(payload);
 
             if (response) {
-              navigate(ROUTES.PATIENT_PAYMENT_SUCCESS);
+              navigate(ROUTES.PATIENT_PAYMENT_SUCCESS, {
+                state: { ...response, stateProp: state },
+              });
             }
           },
 
           onCancel: async () => {
             await PaymentService.cancelPayment();
-            navigate(ROUTES.PATIENT_PAYMENT_CANCELLED);
+            navigate(ROUTES.PATIENT_PAYMENT_CANCELLED, {
+              state: {
+                stateProp: state,
+              },
+            });
           },
 
           onError: (err: unknown) => {
