@@ -88,11 +88,13 @@ export type ComponentKey = keyof typeof COMPONENT_MAP;
 
 // Here we define the public routes that do not require authentication
 export const PUBLIC_ROUTES = [
+  // Landing Page
   {
     path: ROUTES.HOME,
     layout: LAYOUT_MAP['BaseLayout'],
     component: COMPONENT_MAP['LandingPageComponent'],
   },
+  // Admin, Therapist, Super Admin and Expert Login and Registration Routes
   {
     path: ROUTES.LOGIN,
     layout: LAYOUT_MAP['AuthLayout'],
