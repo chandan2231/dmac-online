@@ -136,7 +136,7 @@ export const PUBLIC_ROUTES = [
   },
   {
     path: ROUTES.PATIENT_PAYMENT,
-    layout: LAYOUT_MAP['AuthLayout'],
+    layout: LAYOUT_MAP['PatientLayout'],
     component: COMPONENT_MAP['PatientPaymentPage'],
   },
   {
