@@ -462,8 +462,8 @@ export const createPatientPayment = async (req, res) => {
       }
     ],
     application_context: {
-      return_url: 'https://app.irbhub.org/success',
-      cancel_url: 'https://app.irbhub.org/cancel'
+      return_url: process.env.PAYPAL_RETURN_URL,
+      cancel_url: process.env.PAYPAL_CANCEL_URL
     }
   })
   try {
@@ -484,10 +484,10 @@ export const capturePatientPayment = async (req, res) => {
     payerId,
     amount,
     currencyCode,
-    protocolId,
-    researchType,
+    productId,
     userId
   } = req.body
+  const datetime = new Date()
 
   const captureOrderRequest = new paypal.orders.OrdersCaptureRequest(orderId)
   captureOrderRequest.requestBody({
@@ -504,14 +504,14 @@ export const capturePatientPayment = async (req, res) => {
       amount: amount,
       currency: currencyCode,
       status: captureResult.result.status,
-      protocol_id: protocolId,
-      user_id: req.user.userId,
+      product_id: productId,
+      user_id: userId,
       payment_type: 'paypal'
     }
 
-    // Insert payment data into the transactions table
+    // Insert payment data into the dmac_webapp_users_transaction table
     await new Promise((resolve, reject) => {
-      db.query('INSERT INTO transactions SET ?', paymentData, (err, result) => {
+      db.query('INSERT INTO dmac_webapp_users_transaction SET ?', paymentData, (err, result) => {
         if (err) {
           console.error('Error storing payment in database:', err)
           return reject('Error storing payment in database')
@@ -523,131 +523,47 @@ export const capturePatientPayment = async (req, res) => {
     // Update protocol status
     await new Promise((resolve, reject) => {
       const updateQuery =
-        'UPDATE protocols SET status = ?, allow_edit = ? WHERE protocol_id = ?'
-      const updateValues = [2, 1, protocolId]
+        'UPDATE dmac_webapp_users SET patient_payment = ?, patient_payment_date = ? WHERE id = ?'
+      const updateValues = [1, datetime.toISOString().slice(0, 10), userId]
       db.query(updateQuery, updateValues, (err, result) => {
         if (err) {
-          console.error('Error updating protocol status:', err)
-          return reject('Error updating protocol status')
+          console.error('Error updating payment status:', err)
+          return reject('Error updating payment status')
         }
         resolve(result)
       })
     })
+    
+    // Fetch user details
+    if (userId) {
+      // Prepare email content
+      const transactionDate = new Date().toLocaleDateString() // MM/DD/YYYY
+      const transactionTime = new Date().toLocaleTimeString() // HH:MM AM/PM
 
-    // Handle Multi-Site Sponsor logic
-    if (researchType === 'Multi-Site Sponsor') {
-      await handleMultiSiteProtocols(protocolId)
+      const emailSubject = 'Payment Submission Confirmation & Payment Approval & Processing Receipt'
+      let emailBody = `
+        <p>Dear ${userName},</p>
+        <h3>Receipt of Payment</h3>
+        <table>
+          <tr><td><strong>Merchant Name:</strong></td><td>DMAC.COM</td></tr>
+          <tr><td><strong>Merchant Address:</strong></td><td>DMAC.COM DBA Young Scientist Of America 501C3, 3010 Legacy Dr. Frisco.Tx-75034</td></tr>
+          <tr><td><strong>Transaction Date:</strong></td><td>${transactionDate}</td></tr>
+          <tr><td><strong>Transaction Time:</strong></td><td>${transactionTime}</td></tr>
+          <tr><td><strong>Customer Name:</strong></td><td>${userName}</td></tr>
+          <tr><td><strong>Customer Email Address:</strong></td><td>${userEmail}</td></tr>
+          <tr><td><strong>Payment Method:</strong></td><td>Credit Card (Last 4 digits: XXXX)</td></tr>
+          <tr><td><strong>Description of Goods/Services:</strong></td><td>[Commercial Approval of Product # ${productName}] - $${amount}</td></tr>
+        </table>
 
-      // Fetch user details
-      const user = await getUserInfo(userId)
-
-      if (user) {
-        // Fetch all protocols related to the parent protocol_id
-        const protocolDetails = await new Promise((resolve, reject) => {
-          db.query(
-            'SELECT protocol_id, varification_code FROM protocols WHERE parent_protocol_id = ?',
-            [protocolId],
-            (err, result) => {
-              if (err) {
-                console.error('Error fetching protocol details:', err)
-                return reject('Error fetching protocol details')
-              }
-              resolve(result) // This will return an array of protocols with their verification codes
-            }
-          )
-        })
-        // Prepare email content
-        const transactionDate = new Date().toLocaleDateString() // MM/DD/YYYY
-        const transactionTime = new Date().toLocaleTimeString() // HH:MM AM/PM
-
-        const emailSubject =
-          'Protocol Submission Confirmation & Protocol Approval & Processing Receipt'
-        let emailBody = `
-          <p>Dear ${user.name},</p>
-          <p>You have successfully submitted your protocol ID # ${protocolId}.</p>
-          <p>You will be contacted within 7 days for any further information needed for the approval process.</p>
-
-          <h3>Receipt of Payment</h3>
-          <table>
-            <tr><td><strong>Merchant Name:</strong></td><td>IRB-HUB.COM</td></tr>
-            <tr><td><strong>Merchant Address:</strong></td><td>IBR-HUB.COM DBA Young Scientist Of America 501C3, 3010 Legacy Dr. Frisco.Tx-75034</td></tr>
-            <tr><td><strong>Transaction Date:</strong></td><td>${transactionDate}</td></tr>
-            <tr><td><strong>Transaction Time:</strong></td><td>${transactionTime}</td></tr>
-            <tr><td><strong>Customer Name:</strong></td><td>${user.name}</td></tr>
-            <tr><td><strong>Customer Email Address:</strong></td><td>${user.email}</td></tr>
-            <tr><td><strong>Payment Method:</strong></td><td>Credit Card (Last 4 digits: XXXX)</td></tr>
-            <tr><td><strong>Description of Goods/Services:</strong></td><td>[Commercial Approval of Protocol ID # ${protocolId}] - $${amount}</td></tr>
-          </table>
-
-          <p>No service tax is collected due to Tax Exempt Status.</p>
-          <p>Please Note: The above payment is non-refundable.</p>
-          <p>If you have any questions about your submission or this invoice, please contact us via email.</p>
-
-          <h3>Protocol IDs and Verification Codes</h3>
-          <table border="1" cellpadding="5">
-            <tr><th>Protocol ID</th><th>Verification Code</th></tr>
-        `
-
-        // Add each protocol's protocol_id and verification code to the email body
-        protocolDetails.forEach((protocol) => {
-          emailBody += `
-            <tr>
-              <td>${protocol.protocol_id}</td>
-              <td>${protocol.varification_code}</td>
-            </tr>
-          `
-        })
-
-        emailBody += `
-          </table>
-          <p>We have generated 5 clinical site registration access code 
-            Please provide one Access code to every  clinical research site for registration.</p>
-          <p>If you wish to have more clinical research sites please go to your protocol number on the right the three dots select and add clinical sites.</p>
-          <p> It will direct you to the payment portal to add more clinical sites.</p>
-          <p>Regards,<br/>Admin<br/>IRB-HUB.COM</p>
-        `
-        const text = emailBody
-        const html = emailBody
-        // Send email to the user
-        await sendEmail(user.email, emailSubject, text, html)
-      }
-    } else {
-      // Fetch user details
-      const user = await getUserInfo(userId)
-      if (user) {
-        // Prepare email content
-        const transactionDate = new Date().toLocaleDateString() // MM/DD/YYYY
-        const transactionTime = new Date().toLocaleTimeString() // HH:MM AM/PM
-
-        const emailSubject =
-          'Protocol Submission Confirmation & Protocol Approval & Processing Receipt'
-        let emailBody = `
-          <p>Dear ${user.name},</p>
-          <p>You have successfully submitted your protocol ID # ${protocolId}.</p>
-          <p>You will be contacted within 7 days for any further information needed for the approval process.</p>
-
-          <h3>Receipt of Payment</h3>
-          <table>
-            <tr><td><strong>Merchant Name:</strong></td><td>IRB-HUB.COM</td></tr>
-            <tr><td><strong>Merchant Address:</strong></td><td>IBR-HUB.COM DBA Young Scientist Of America 501C3, 3010 Legacy Dr. Frisco.Tx-75034</td></tr>
-            <tr><td><strong>Transaction Date:</strong></td><td>${transactionDate}</td></tr>
-            <tr><td><strong>Transaction Time:</strong></td><td>${transactionTime}</td></tr>
-            <tr><td><strong>Customer Name:</strong></td><td>${user.name}</td></tr>
-            <tr><td><strong>Customer Email Address:</strong></td><td>${user.email}</td></tr>
-            <tr><td><strong>Payment Method:</strong></td><td>Credit Card (Last 4 digits: XXXX)</td></tr>
-            <tr><td><strong>Description of Goods/Services:</strong></td><td>[Commercial Approval of Protocol ID # ${protocolId}] - $${amount}</td></tr>
-          </table>
-
-          <p>No service tax is collected due to Tax Exempt Status.</p>
-          <p>Please Note: The above payment is non-refundable.</p>
-          <p>If you have any questions about your submission or this invoice, please contact us via email.</p>
-          <p>Regards,<br/>Admin<br/>IRB-HUB.COM</p>
-        `
-        const text = emailBody
-        const html = emailBody
-        // Send email to the user
-        await sendEmail(user.email, emailSubject, text, html)
-      }
+        <p>No service tax is collected due to Tax Exempt Status.</p>
+        <p>Please Note: The above payment is non-refundable.</p>
+        <p>If you have any questions about your submission or this invoice, please contact us via email.</p>
+        <p>Regards,<br/>Admin<br/>DMAC.COM</p>
+      `
+      const text = emailBody
+      const html = emailBody
+      // Send email to the user
+      await sendEmail(user.email, emailSubject, text, html)
     }
 
     // Respond back with the capture result
