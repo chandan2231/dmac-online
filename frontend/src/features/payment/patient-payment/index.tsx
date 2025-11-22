@@ -76,8 +76,12 @@ const PatientPayment = () => {
             const response = await PaymentService.capturePayment(payload);
 
             if (response) {
+              const locationState = {
+                ...state,
+                orderID,
+              };
               navigate(ROUTES.PATIENT_PAYMENT_SUCCESS, {
-                state,
+                state: locationState,
               });
             }
           },

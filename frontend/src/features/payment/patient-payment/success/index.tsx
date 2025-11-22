@@ -7,6 +7,7 @@ import MorenCard from '../../../../components/card';
 
 const PatientPaymentSuccess = () => {
   const { state } = useLocation();
+  console.log('Success State:', state);
 
   return (
     <Grid container spacing={4} sx={{ p: 4 }}>
@@ -58,6 +59,9 @@ const PatientPaymentSuccess = () => {
           >
             Payment Successfull
           </Typography>
+          <Typography variant="h6" style={{ textAlign: 'center' }}>
+            Transaction ID: {get(state, ['orderID'], 'N/A')}
+          </Typography>
         </Box>
       </Grid>
 
@@ -75,7 +79,7 @@ const PatientPaymentSuccess = () => {
                 Name:
               </Typography>
               <Typography variant="h6" fontWeight="bold">
-                {state ? get(state, ['state', 'user', 'name'], '') : 'N/A'}
+                {state ? get(state, ['user', 'name'], '') : 'N/A'}
               </Typography>
             </Box>
 
@@ -84,7 +88,7 @@ const PatientPaymentSuccess = () => {
                 Email:{' '}
               </Typography>
               <Typography variant="h6" fontWeight="bold">
-                {state ? get(state, ['state', 'user', 'email'], '') : 'N/A'}
+                {state ? get(state, ['user', 'email'], '') : 'N/A'}
               </Typography>
             </Box>
 
@@ -93,7 +97,7 @@ const PatientPaymentSuccess = () => {
                 Mobile:{' '}
               </Typography>
               <Typography variant="h6" fontWeight="bold">
-                {state ? get(state, ['state', 'user', 'mobile'], '') : 'N/A'}
+                {state ? get(state, ['user', 'mobile'], '') : 'N/A'}
               </Typography>
             </Box>
           </Box>
@@ -114,9 +118,7 @@ const PatientPaymentSuccess = () => {
                 Product Name:{' '}
               </Typography>
               <Typography variant="h6" fontWeight="bold">
-                {state
-                  ? get(state, ['state', 'product', 'product_name'], '')
-                  : ''}{' '}
+                {state ? get(state, ['product', 'product_name'], '') : ''}{' '}
               </Typography>
             </Box>
 
@@ -126,7 +128,7 @@ const PatientPaymentSuccess = () => {
               </Typography>
               <Typography variant="h6" fontWeight="bold">
                 {state
-                  ? get(state, ['state', 'product', 'product_description'], '')
+                  ? get(state, ['product', 'product_description'], '')
                   : ''}{' '}
               </Typography>
             </Box>
@@ -137,7 +139,7 @@ const PatientPaymentSuccess = () => {
               </Typography>
               <Typography variant="h6" fontWeight="bold">
                 {state
-                  ? get(state, ['state', 'product', 'product_amount'], '')
+                  ? get(state, ['product', 'product_amount'], '')
                   : ''}{' '}
               </Typography>
             </Box>
