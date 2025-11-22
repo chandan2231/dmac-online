@@ -15,6 +15,7 @@ export const useCreatePayment = (state: string) => {
     const productId = get(state, ['product', 'product_id']);
     const userId = get(state, ['user', 'id']);
     const userName = get(state, ['user', 'name']);
+    const userEmail = get(state, ['user', 'email']);
     const productName = get(state, ['product', 'product_name']);
 
     // --- VALIDATION ---
@@ -64,6 +65,7 @@ export const useCreatePayment = (state: string) => {
               productId: productId,
               userName: userName,
               productName: productName,
+              userEmail: userEmail,
             };
 
             const response = await PaymentService.capturePayment(payload);
