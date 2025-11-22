@@ -1,7 +1,6 @@
 import { get } from 'lodash';
 import HttpService from '../../services/HttpService';
 import type {
-  CapturePaymentAdditionClinicSitePayload,
   CapturePaymentPayload,
   CreatePaymentResponse,
 } from './payment.interface';
@@ -10,7 +9,7 @@ const createPayment = async (
   amount: number
 ): Promise<CreatePaymentResponse> => {
   try {
-    const response = await HttpService.post('/payment/createPayment', {
+    const response = await HttpService.post('/patient/createPayment', {
       amount,
     });
     return {
@@ -33,7 +32,7 @@ const createPayment = async (
 
 const capturePayment = async (payload: CapturePaymentPayload) => {
   try {
-    const response = await HttpService.post('/payment/capturePayment', payload);
+    const response = await HttpService.post('/patient/capturePayment', payload);
     return response;
   } catch (error) {
     console.error('Error capturing payment:', error);
@@ -41,24 +40,9 @@ const capturePayment = async (payload: CapturePaymentPayload) => {
   }
 };
 
-const capturePaymentAdditionClinicSite = async (
-  payload: CapturePaymentAdditionClinicSitePayload
-) => {
-  try {
-    const response = await HttpService.post(
-      '/payment/capturePaymentAdditionClinicSite',
-      payload
-    );
-    return response;
-  } catch (error) {
-    console.error('Error capturing payment for additional site:', error);
-    throw error;
-  }
-};
-
 const cancelPayment = async () => {
   try {
-    const response = await HttpService.post('/payment/cancelPayment', {});
+    const response = await HttpService.post('/patient/cancelPayment', {});
     return response;
   } catch (error) {
     console.error('Error cancelling payment:', error);
@@ -69,7 +53,6 @@ const cancelPayment = async () => {
 const PaymentService = {
   createPayment,
   capturePayment,
-  capturePaymentAdditionClinicSite,
   cancelPayment,
 };
 

@@ -12,8 +12,3 @@ export interface CapturePaymentPayload {
   amount: number;
   userId: string;
 }
-
-export interface CapturePaymentAdditionClinicSitePayload
-  extends CapturePaymentPayload {
-  protocolCount: number;
-}
