@@ -8,18 +8,10 @@ import Loader from '../../../components/loader';
 
 const PatientPayment = () => {
   const { state } = useLocation();
-  const { loading, paymentSuccess, paymentCancelled } = useCreatePayment(state);
+  const { loading } = useCreatePayment(state);
 
   if (loading) {
     return <Loader />;
-  }
-
-  if (paymentSuccess) {
-    return <div>Payment Success</div>;
-  }
-
-  if (paymentCancelled) {
-    return <div>Payment Cancelled</div>;
   }
 
   return (

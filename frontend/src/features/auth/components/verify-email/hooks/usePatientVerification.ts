@@ -22,7 +22,7 @@ export const usePatientEmailVerification = () => {
         if (success) {
           setMessage(message || 'Email verified successfully!');
           showToast('Email verified successfully!', 'success');
-          navigate(ROUTES.PATIENT_LOGIN, { state: { ...response } });
+          navigate(ROUTES.PATIENT_PAYMENT, { state: { ...response } });
         } else {
           setMessage(message || 'Email verification failed.');
           showToast(message || 'Email verification failed.', 'error');
