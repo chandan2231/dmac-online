@@ -1,100 +1,46 @@
 import { get } from 'lodash';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import PaymentService from '../payment.service';
-import { ROUTES } from '../../auth/auth.interface';
 
-export const useCreatePayment = (state: string) => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+export const useCreatePayment = (state: unknown) => {
+  const [loading, setLoading] = useState(true);
+  const [scriptReady, setScriptReady] = useState(false);
 
   useEffect(() => {
-    if (!state) return;
+    if (!state) {
+      setLoading(false);
+      return;
+    }
 
     const productAmount = get(state, ['product', 'product_amount']);
     const productId = get(state, ['product', 'product_id']);
     const userId = get(state, ['user', 'id']);
     const userName = get(state, ['user', 'name']);
-    const userEmail = get(state, ['user', 'email']);
     const productName = get(state, ['product', 'product_name']);
 
-    // --- VALIDATION ---
     const valid =
       productAmount && productId && userId && userName && productName;
-    if (!valid) return;
-
-    setLoading(true);
-
-    // --- PAYPAL SCRIPT ---
-    const PAYPAL_ENV = import.meta.env.VITE_PAYPAL_ENV;
-    const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
-    const clientId = PAYPAL_ENV === 'sandbox' ? PAYPAL_CLIENT_ID : '';
-
-    const script = document.createElement('script');
-    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons`;
-    script.onload = () => {
+    if (!valid) {
       setLoading(false);
+      return;
+    }
 
-      window.paypal
-        .Buttons({
-          createOrder: async () => {
-            try {
-              const response =
-                await PaymentService.createPayment(productAmount);
-              if (response?.orderId) {
-                return response.orderId; // Use backend orderId
-              } else {
-                throw new Error('Order ID not found in backend response.');
-              }
-            } catch (error) {
-              console.error('Error creating PayPal order:', error);
-            }
-          },
+    // --- LOAD PAYPAL SCRIPT ONLY ONCE ---
+    if (!document.getElementById('paypal-sdk')) {
+      const script = document.createElement('script');
+      script.id = 'paypal-sdk';
+      script.src = `https://www.paypal.com/sdk/js?client-id=${
+        import.meta.env.VITE_PAYPAL_CLIENT_ID
+      }&components=buttons`;
 
-          onApprove: async (data: unknown) => {
-            const { orderID, payerID } = data as {
-              orderID: string;
-              payerID: string;
-            };
-            const payload = {
-              orderId: orderID,
-              payerId: payerID,
-              currencyCode: 'USD',
-              amount: productAmount,
-              userId: userId,
-              productId: productId,
-              userName: userName,
-              productName: productName,
-              userEmail: userEmail,
-            };
+      script.onload = () => setScriptReady(true);
 
-            const response = await PaymentService.capturePayment(payload);
+      document.body.appendChild(script);
+    } else {
+      setScriptReady(true);
+    }
 
-            if (response) {
-              navigate(ROUTES.PATIENT_PAYMENT_SUCCESS, {
-                state: { ...response, stateProp: state },
-              });
-            }
-          },
+    setLoading(false);
+  }, [state]);
 
-          onCancel: async () => {
-            await PaymentService.cancelPayment();
-            navigate(ROUTES.PATIENT_PAYMENT_CANCELLED, {
-              state: {
-                stateProp: state,
-              },
-            });
-          },
-
-          onError: (err: unknown) => {
-            console.error('PayPal Checkout Error:', err);
-          },
-        })
-        .render('#paypal-button-container');
-    };
-
-    document.body.appendChild(script);
-  }, [navigate, state]);
-
-  return { loading };
+  return { loading, scriptReady };
 };
