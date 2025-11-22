@@ -1,8 +1,7 @@
 import { get } from 'lodash';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
-import { useCreatePayment } from '../hooks/useCreatePayment';
 import { ROUTES } from '../../auth/auth.interface';
 import PaymentService from '../payment.service';
 import Grid from '@mui/material/GridLegacy';
@@ -12,14 +11,10 @@ import Loader from '../../../components/loader';
 const PatientPayment = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const { loading, scriptReady } = useCreatePayment(state);
+  const [loading, setLoading] = useState(false);
 
-  // --- RENDER PAYPAL BUTTONS WHEN SCRIPT + DOM ARE READY ---
   useEffect(() => {
-    if (!scriptReady) return;
-
-    const container = document.getElementById('paypal-button-container');
-    if (!container) return;
+    if (!state) return;
 
     const productAmount = get(state, ['product', 'product_amount']);
     const productId = get(state, ['product', 'product_id']);
@@ -28,58 +23,83 @@ const PatientPayment = () => {
     const userEmail = get(state, ['user', 'email']);
     const productName = get(state, ['product', 'product_name']);
 
-    window.paypal
-      .Buttons({
-        createOrder: async () => {
-          try {
-            const response = await PaymentService.createPayment(productAmount);
-            if (response?.orderId) {
-              return response.orderId; // Use backend orderId
-            } else {
-              throw new Error('Order ID not found in backend response.');
+    // --- VALIDATION ---
+    const valid =
+      productAmount && productId && userId && userName && productName;
+    if (!valid) return;
+
+    setLoading(true);
+
+    // --- PAYPAL SCRIPT ---
+    const PAYPAL_ENV = import.meta.env.VITE_PAYPAL_ENV;
+    const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+    const clientId = PAYPAL_ENV === 'sandbox' ? PAYPAL_CLIENT_ID : '';
+
+    const script = document.createElement('script');
+    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons`;
+    script.onload = () => {
+      setLoading(false);
+
+      window.paypal
+        .Buttons({
+          createOrder: async () => {
+            try {
+              const response =
+                await PaymentService.createPayment(productAmount);
+              if (response?.orderId) {
+                return response.orderId; // Use backend orderId
+              } else {
+                throw new Error('Order ID not found in backend response.');
+              }
+            } catch (error) {
+              console.error('Error creating PayPal order:', error);
             }
-          } catch (error) {
-            console.error('Error creating PayPal order:', error);
-          }
-        },
+          },
 
-        onApprove: async (data: unknown) => {
-          const { orderID, payerID } = data as {
-            orderID: string;
-            payerID: string;
-          };
-          const payload = {
-            orderId: orderID,
-            payerId: payerID,
-            currencyCode: 'USD',
-            amount: productAmount,
-            userId: userId,
-            productId: productId,
-            userName: userName,
-            productName: productName,
-            userEmail: userEmail,
-          };
+          onApprove: async (data: unknown) => {
+            const { orderID, payerID } = data as {
+              orderID: string;
+              payerID: string;
+            };
+            const payload = {
+              orderId: orderID,
+              payerId: payerID,
+              currencyCode: 'USD',
+              amount: productAmount,
+              userId: userId,
+              productId: productId,
+              userName: userName,
+              productName: productName,
+              userEmail: userEmail,
+            };
 
-          const response = await PaymentService.capturePayment(payload);
+            const response = await PaymentService.capturePayment(payload);
 
-          navigate(ROUTES.PATIENT_PAYMENT_SUCCESS, {
-            state: { ...response, stateProp: state },
-          });
-        },
+            if (response) {
+              navigate(ROUTES.PATIENT_PAYMENT_SUCCESS, {
+                state: { ...response, stateProp: state },
+              });
+            }
+          },
 
-        onCancel: async () => {
-          await PaymentService.cancelPayment();
-          navigate(ROUTES.PATIENT_PAYMENT_CANCELLED, {
-            state: { stateProp: state },
-          });
-        },
+          onCancel: async () => {
+            await PaymentService.cancelPayment();
+            navigate(ROUTES.PATIENT_PAYMENT_CANCELLED, {
+              state: {
+                stateProp: state,
+              },
+            });
+          },
 
-        onError: (err: unknown) => {
-          console.error('PayPal Checkout Error:', err);
-        },
-      })
-      .render('#paypal-button-container');
-  }, [scriptReady, state, navigate]);
+          onError: (err: unknown) => {
+            console.error('PayPal Checkout Error:', err);
+          },
+        })
+        .render('#paypal-button-container');
+    };
+
+    document.body.appendChild(script);
+  }, [navigate, state]);
 
   // --- Loader until script + data are ready ---
   if (loading) {
