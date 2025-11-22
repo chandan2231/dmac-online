@@ -15,9 +15,11 @@ export const useCreatePayment = (state: string) => {
     const productId = get(state, ['product', 'product_id']);
     const userId = get(state, ['user', 'id']);
     const userName = get(state, ['user', 'name']);
+    const productName = get(state, ['product', 'product_name']);
 
     // --- VALIDATION ---
-    const valid = productAmount && productId && userId && userName;
+    const valid =
+      productAmount && productId && userId && userName && productName;
     if (!valid) return;
 
     setLoading(true);
@@ -61,6 +63,7 @@ export const useCreatePayment = (state: string) => {
               userId: userId,
               productId: productId,
               userName: userName,
+              productName: productName,
             };
 
             const response = await PaymentService.capturePayment(payload);
