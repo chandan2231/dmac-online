@@ -1,4 +1,4 @@
-import Profile from '../../../features/profile';
+import Profile from '../../../features/patient/profile';
 
 const ProfilePage = () => {
   return <Profile />;

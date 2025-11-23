@@ -1,14 +1,14 @@
 import '../index.css';
 import { Box } from '@mui/material';
 import { get } from 'lodash';
-import MorenButton from '../../../components/button';
+import MorenButton from '../../../../components/button';
 import { useSelector } from 'react-redux';
-import type { RootState } from '../../../store';
+import type { RootState } from '../../../../store';
 import { useGetDisclaimerPageDetails } from '../hooks/useGetDisclaimerPageDetails';
-import CustomLoader from '../../../components/loader';
+import CustomLoader from '../../../../components/loader';
 import { useState } from 'react';
 import { useGetReadDisclaimer } from '../hooks/useGetReadDisclaimer';
-import GenericModal from '../../../components/modal';
+import GenericModal from '../../../../components/modal';
 
 type IDisclaimerProps = {
   setIsDisclaimerAccepted: (value: boolean) => void;

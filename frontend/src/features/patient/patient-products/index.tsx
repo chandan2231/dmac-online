@@ -86,7 +86,9 @@ const ProductCard = ({ ...args }: IProduct & { index: number }) => {
 };
 
 const PatientProducts = () => {
+  const { user } = useSelector((state: RootState) => state.auth);
   const { data, isLoading, error } = useGetProductListing();
+
 
   if (isLoading) {
     return <CustomLoader />;

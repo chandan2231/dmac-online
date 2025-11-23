@@ -8,15 +8,15 @@ import {
 import LoginPage from '../../pages/auth/login';
 import Register from '../../pages/auth/register';
 import ForgotPassword from '../../pages/auth/forgot-password';
-import AuthRedirectHomePage from '../../pages/user/home';
+import AuthRedirectHomePage from '../../pages/patient/home';
 import PageNotFound from '../../pages/not-found';
 import LandingPageComponent from '../../pages/landing-page';
 
 // Protected Pages
 import ResetPassword from '../../pages/auth/reset-password';
 import VerifyEmail from '../../pages/auth/verify-email';
-import ProfilePage from '../../pages/user/profile';
-import QuestionersPage from '../../pages/user/questioners';
+import ProfilePage from '../../pages/patient/profile';
+import QuestionersPage from '../../pages/patient/questioners';
 
 // Admin Pages
 import DashboardPageComponent from '../../pages/admin/dashboard';
@@ -41,7 +41,7 @@ import PatientPaymentPage from '../../pages/payment/patient-payment';
 import PatientLoginPage from '../../pages/auth/login/patient-login';
 import PatientPaymentSuccessPage from '../../pages/payment/patient-payment-success';
 import PatientPaymentCancelledPage from '../../pages/payment/patient-payment-cancel';
-import PatientProductsPage from '../../pages/user/patient-products';
+import PatientProductsPage from '../../pages/patient/patient-products';
 
 export const LAYOUT_MAP = {
   BaseLayout,
