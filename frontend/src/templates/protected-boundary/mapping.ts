@@ -41,7 +41,7 @@ import PatientPaymentPage from '../../pages/payment/patient-payment';
 import PatientLoginPage from '../../pages/auth/login/patient-login';
 import PatientPaymentSuccessPage from '../../pages/payment/patient-payment-success';
 import PatientPaymentCancelledPage from '../../pages/payment/patient-payment-cancel';
-import PatientProductsPage from '../../pages/patient/patient-products';
+import PatientProductsPage from '../../pages/user/patient-products';
 
 export const LAYOUT_MAP = {
   BaseLayout,

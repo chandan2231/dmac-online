@@ -1,17 +1,21 @@
 import { get } from 'lodash';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
 import { ROUTES } from '../../auth/auth.interface';
 import PaymentService from '../payment.service';
-import Grid from '@mui/material/GridLegacy';
 import MorenCard from '../../../components/card';
 import Loader from '../../../components/loader';
 
 const PatientPayment = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
+
   const [loading, setLoading] = useState(false);
+
+  /** PayPal container reference */
+  const paypalRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!state) return;
@@ -23,37 +27,31 @@ const PatientPayment = () => {
     const userEmail = get(state, ['user', 'email']);
     const productName = get(state, ['product', 'product_name']);
 
-    // --- VALIDATION ---
     const valid =
       productAmount && productId && userId && userName && productName;
+
     if (!valid) return;
+    if (!paypalRef.current) return;
 
-    setLoading(true);
-
-    // --- PAYPAL SCRIPT ---
     const PAYPAL_ENV = import.meta.env.VITE_PAYPAL_ENV;
     const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
     const clientId = PAYPAL_ENV === 'sandbox' ? PAYPAL_CLIENT_ID : '';
 
-    const script = document.createElement('script');
-    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons`;
-    script.onload = () => {
-      setLoading(false);
+    /** Function to render PayPal Buttons */
+    const renderPayPalButtons = () => {
+      if (!window.paypal || !paypalRef.current) return;
+
+      // Prevent multiple renders
+      if (paypalRef.current.children.length > 0) return;
+
+      // Clean container
+      paypalRef.current.innerHTML = '';
 
       window.paypal
         .Buttons({
           createOrder: async () => {
-            try {
-              const response =
-                await PaymentService.createPayment(productAmount);
-              if (response?.orderId) {
-                return response.orderId; // Use backend orderId
-              } else {
-                throw new Error('Order ID not found in backend response.');
-              }
-            } catch (error) {
-              console.error('Error creating PayPal order:', error);
-            }
+            const response = await PaymentService.createPayment(productAmount);
+            return response?.orderId;
           },
 
           onApprove: async (data: unknown) => {
@@ -66,51 +64,58 @@ const PatientPayment = () => {
               payerId: payerID,
               currencyCode: 'USD',
               amount: productAmount,
-              userId: userId,
-              productId: productId,
-              userName: userName,
-              productName: productName,
-              userEmail: userEmail,
+              userId,
+              productId,
+              userName,
+              productName,
+              userEmail,
             };
 
-            const response = await PaymentService.capturePayment(payload);
-
-            if (response) {
-              const locationState = {
-                ...state,
-                orderID,
-              };
+            const result = await PaymentService.capturePayment(payload);
+            if (result) {
               navigate(ROUTES.PATIENT_PAYMENT_SUCCESS, {
-                state: locationState,
+                state: { ...state, orderID: orderID },
               });
             }
           },
 
           onCancel: async () => {
             await PaymentService.cancelPayment();
-            navigate(ROUTES.PATIENT_PAYMENT_CANCELLED, {
-              state,
-            });
+            navigate(ROUTES.PATIENT_PAYMENT_CANCELLED, { state });
           },
 
           onError: (err: unknown) => {
-            console.error('PayPal Checkout Error:', err);
+            console.error('PayPal Error:', err);
           },
         })
-        .render('#paypal-button-container');
+        .render(paypalRef.current);
     };
 
-    document.body.appendChild(script);
-  }, [navigate, state]);
+    setLoading(true);
 
-  // --- Loader until script + data are ready ---
-  if (loading) {
-    return <Loader />;
-  }
+    /** Load PayPal SDK only once */
+    const existingScript = document.getElementById('paypal-sdk');
+
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.id = 'paypal-sdk';
+      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons`;
+      script.onload = () => {
+        setLoading(false);
+        renderPayPalButtons();
+      };
+      document.body.appendChild(script);
+    } else {
+      setLoading(false);
+      renderPayPalButtons();
+    }
+  }, [state, navigate]);
+
+  if (loading) return <Loader />;
 
   return (
     <Grid container spacing={4} sx={{ p: 4 }}>
-      {/* LEFT SECTION — USER DETAILS */}
+      {/* LEFT SECTION */}
       <Grid item xs={12} md={6}>
         <MorenCard
           title="User Details"
@@ -122,18 +127,18 @@ const PatientPayment = () => {
               Name: {get(state, ['user', 'name'], 'N/A')}
             </Typography>
 
-            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+            <Typography sx={{ color: 'text.secondary' }}>
               Email: {get(state, ['user', 'email'], 'N/A')}
             </Typography>
 
-            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+            <Typography sx={{ color: 'text.secondary' }}>
               Mobile: {get(state, ['user', 'mobile'], 'N/A')}
             </Typography>
           </Box>
         </MorenCard>
       </Grid>
 
-      {/* RIGHT SECTION — PRODUCT DETAILS */}
+      {/* RIGHT SECTION */}
       <Grid item xs={12} md={6}>
         <MorenCard
           title="Product Details"
@@ -144,14 +149,11 @@ const PatientPayment = () => {
             <Typography variant="h6" fontWeight="bold">
               Product Name: {get(state, ['product', 'product_name'], '')}
             </Typography>
-
-            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-              Product Description:{' '}
-              {get(state, ['product', 'product_description'], '')}
+            <Typography sx={{ color: 'text.secondary' }}>
+              Description: {get(state, ['product', 'product_description'], '')}
             </Typography>
-
-            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-              Product Amount: ${get(state, ['product', 'product_amount'], '')}
+            <Typography sx={{ color: 'text.secondary' }}>
+              Amount: ${get(state, ['product', 'product_amount'], '')}
             </Typography>
           </Box>
         </MorenCard>
@@ -163,7 +165,7 @@ const PatientPayment = () => {
         xs={12}
         sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}
       >
-        <div id="paypal-button-container" style={{ width: '300px' }}></div>
+        <div ref={paypalRef} style={{ width: '300px' }} />
       </Grid>
     </Grid>
   );
