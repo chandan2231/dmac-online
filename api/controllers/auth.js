@@ -560,95 +560,132 @@ export const capturePatientPayment = async (req, res) => {
     userEmail,
     productName
   } = req.body
+
   const datetime = new Date()
+  const transactionDate = new Date().toLocaleDateString()
+  const transactionTime = new Date().toLocaleTimeString()
 
   const captureOrderRequest = new paypal.orders.OrdersCaptureRequest(orderId)
   captureOrderRequest.requestBody({
-    payer_id: payerId // Ensure payer_id is included in the capture request
+    payer_id: payerId
   })
 
   try {
+    /** 🔹 Attempt to capture payment */
     const captureResult = await client().execute(captureOrderRequest)
+    const paymentStatus = captureResult.result.status
 
-    // Store payment details in the database
+    /** 🔹 Save transaction in DB */
     const paymentData = {
       payment_id: captureResult.result.id,
       payer_id: payerId,
-      amount: amount,
+      amount,
       currency: currencyCode,
-      status: captureResult.result.status,
+      status: paymentStatus,
       product_id: productId,
       user_id: userId,
-      payment_type: 'paypal'
+      payment_type: "paypal"
     }
 
-    // Insert payment data into the dmac_webapp_users_transaction table
     await new Promise((resolve, reject) => {
       db.query('INSERT INTO dmac_webapp_users_transaction SET ?', paymentData, (err, result) => {
-        if (err) {
-          console.error('Error storing payment in database:', err)
-          return reject('Error storing payment in database')
-        }
+        if (err) return reject(err)
         resolve(result)
       })
     })
 
-    // Update protocol status
-    await new Promise((resolve, reject) => {
-      const updateQuery =
-        'UPDATE dmac_webapp_users SET patient_payment = ?, patient_payment_date = ? WHERE id = ?'
-      const updateValues = [1, datetime.toISOString().slice(0, 10), userId]
-      db.query(updateQuery, updateValues, (err, result) => {
-        if (err) {
-          console.error('Error updating payment status:', err)
-          return reject('Error updating payment status')
-        }
-        resolve(result)
+    /** 🔹 If success — update user & send success email */
+    if (paymentStatus === "COMPLETED") {
+      await new Promise((resolve, reject) => {
+        const updateQuery = `
+          UPDATE dmac_webapp_users 
+          SET patient_payment = ?, patient_payment_date = ? 
+          WHERE id = ?
+        `
+        db.query(updateQuery, [1, datetime.toISOString().slice(0, 10), userId], (err, result) => {
+          if (err) return reject(err)
+          resolve(result)
+        })
       })
-    })
-    
-    // Fetch user details
-    if (userId) {
-      // Prepare email content
-      const transactionDate = new Date().toLocaleDateString() // MM/DD/YYYY
-      const transactionTime = new Date().toLocaleTimeString() // HH:MM AM/PM
 
-      const emailSubject = 'Payment Submission Confirmation & Payment Approval & Processing Receipt'
-      let emailBody = `
-        <p>Dear ${userName},</p>
-        <h3>Receipt of Payment</h3>
-        <table>
-          <tr><td><strong>Merchant Name:</strong></td><td>DMAC.COM</td></tr>
-          <tr><td><strong>Merchant Address:</strong></td><td>DMAC.COM DBA Young Scientist Of America 501C3, 3010 Legacy Dr. Frisco.Tx-75034</td></tr>
-          <tr><td><strong>Transaction Date:</strong></td><td>${transactionDate}</td></tr>
-          <tr><td><strong>Transaction Time:</strong></td><td>${transactionTime}</td></tr>
-          <tr><td><strong>Customer Name:</strong></td><td>${userName}</td></tr>
-          <tr><td><strong>Customer Email Address:</strong></td><td>${userEmail}</td></tr>
-          <tr><td><strong>Payment Method:</strong></td><td>Credit Card (Last 4 digits: XXXX)</td></tr>
-          <tr><td><strong>Description of Goods/Services:</strong></td><td>[Commercial Approval of Product # ${productName}] - $${amount}</td></tr>
-        </table>
-
-        <p>No service tax is collected due to Tax Exempt Status.</p>
-        <p>Please Note: The above payment is non-refundable.</p>
-        <p>If you have any questions about your submission or this invoice, please contact us via email.</p>
-        <p>Regards,<br/>Admin<br/>DMAC.COM</p>
+      const subject = "Payment Receipt — Payment Approved"
+      const html = `
+      <p>Dear ${userName},</p>
+      <h3>Receipt of Successful Payment</h3>
+      <table>
+        <tr><td><strong>Status:</strong></td><td>SUCCESS</td></tr>
+        <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
+        <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
+        <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
+        <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
+      </table>
+      <p>No service tax due to Tax Exempt Status.</p>
+      <p>Please note: The above payment is non-refundable.</p>
+      <p>Regards,<br/>Admin<br/>DMAC.COM</p>
       `
-      const text = emailBody
-      const html = emailBody
-      // Send email to the user
-      await sendEmail(userEmail, emailSubject, text, html)
+      await sendEmail(userEmail, subject, html, html)
+
+      return res.json({
+        message: "Payment captured successfully",
+        captureResult
+      })
     }
 
-    // Respond back with the capture result
-    return res.json({
-      message: 'Payment captured successfully',
-      captureResult
-    })
+    /** 🔹 If PayPal capture doesn't return COMPLETED */
+    throw new Error("PAYMENT_NOT_COMPLETED")
+
   } catch (error) {
-    console.error('Error during payment capture process:', error)
-    return res.status(500).send('Error during payment capture process')
+    console.error("PayPal CAPTURE ERROR:", error)
+
+    // Extract safe message from PayPal error if available
+    const failReason = error?.result?.message || error?.message || "Payment failed"
+
+    /** 🔹 Insert failed transaction record */
+    const failedPaymentData = {
+      payment_id: orderId,
+      payer_id: payerId || null,
+      amount,
+      currency: currencyCode,
+      status: "FAILED",
+      product_id: productId,
+      user_id: userId,
+      payment_type: "paypal",
+      failure_reason: failReason
+    }
+
+    await new Promise(resolve => {
+      db.query('INSERT INTO dmac_webapp_users_transaction SET ?', failedPaymentData, () => {
+        resolve()
+      })
+    })
+
+    /** 🔹 Send failure email to the user */
+    if (userEmail) {
+      const subject = "Payment Receipt — Payment Failed"
+      const html = `
+      <p>Dear ${userName},</p>
+      <h3>Payment Failed</h3>
+      <table>
+        <tr><td><strong>Status:</strong></td><td>FAILED</td></tr>
+        <tr><td><strong>Failure Reason:</strong></td><td>${failReason}</td></tr>
+        <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
+        <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
+        <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
+        <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
+      </table>
+      <p>Please retry the payment. If you need assistance, reply to this email.</p>
+      <p>Regards,<br/>Admin<br/>DMAC.COM</p>
+      `
+      await sendEmail(userEmail, subject, html, html)
+    }
+
+    return res.status(400).json({
+      message: "Payment failed",
+      reason: failReason
+    })
   }
 }
+
 
 export const successPatientPayment = (req, res) => {
   let result = {}
