@@ -11,7 +11,8 @@ import {
   createPatientPayment,
   capturePatientPayment,
   successPatientPayment,
-  canclePatientPayment
+  canclePatientPayment,
+  patientLogin
 } from '../controllers/auth.js'
 const router = express.Router()
 router.post('/login', login)
@@ -24,6 +25,7 @@ router.post('/email/verify/', emailVerification)
 // Customers registration and login journey
 router.post('/patient/registration', patinetRegistration)
 router.post('/patient/email/verify/', patientEmailVerification)
+router.post('/patient/login', patientLogin)
 router.post('/patient/createPayment', createPatientPayment)
 router.post('/patient/capturePayment', capturePatientPayment)
 router.post('/patient/successPayment', successPatientPayment)

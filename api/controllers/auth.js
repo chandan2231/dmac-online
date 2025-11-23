@@ -451,6 +451,69 @@ export const patientEmailVerification = (req, res) => {
 };
 
 
+export const patientLogin = (req, res) => {
+  const query = `
+    SELECT 
+      u.*,
+      l.code AS language_code
+    FROM dmac_webapp_users u
+    LEFT JOIN dmac_webapp_language l
+      ON l.id = u.language
+    WHERE u.email = ? 
+      AND u.status = ?;
+  `
+  db.query(query, [req.body.email, 1], (err, data) => {
+    if (err) {
+      console.error('Database Error:', err)
+      return res.status(500).json({ error: 'Internal Server Error' })
+    }
+
+    if (data.length === 0) {
+      return res
+        .status(200)
+        .json({ error: 'Email not found! Try with a valid email.' })
+    }
+
+    const user = data[0]
+    const isPasswordValid = bcrypt.compareSync(req.body.password, user.password)
+
+    if (!isPasswordValid) {
+      return res.status(200).json({ error: 'Wrong password!' })
+    }
+
+    if (!user.verified) {
+      return res.status(200).json({ error: 'Please verify your email first.' })
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, userType: user.user_type },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: '1h'
+      }
+    )
+
+    const { password, ...otherUserData } = user
+
+    const usersData = {
+      name: user.name,
+      email: user.email,
+      id: user.id,
+      token: token,
+      language: user.language,
+      phone: user.mobile,
+      languageCode: user.language_code,
+      role: user.role
+    }
+
+    res.status(200).json({
+      message: 'Login successful',
+      user: usersData
+    })
+  })
+}
+
+
 export const createPatientPayment = async (req, res) => {
   const createOrderRequest = new paypal.orders.OrdersCreateRequest()
   createOrderRequest.requestBody({
@@ -475,8 +538,8 @@ export const createPatientPayment = async (req, res) => {
       (link) => link.rel === 'approve'
     ).href
     res.json({
-      orderId,        // 🔥 required by frontend
-      approvalUrl     // optional
+      orderId,
+      approvalUrl
     });
   } catch (error) {
     console.error(error)
