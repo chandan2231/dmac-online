@@ -13,7 +13,8 @@ export type LayoutType =
   | 'MainLayout'
   | 'AuthLayout'
   | 'ContentOnlyLayout'
-  | 'BaseLayout';
+  | 'BaseLayout'
+  | 'PatientLayout';
 
 export interface IUser {
   id: string;
@@ -38,6 +39,7 @@ export const ROUTES = {
   PATIENT_LOGIN: '/patient/login',
   PATIENT_PAYMENT_SUCCESS: '/patient/payment/success',
   PATIENT_PAYMENT_CANCELLED: '/patient/payment/cancelled',
+  PATIENT_PRODUCTS: '/patient/products',
 
   // Protected routes
   RESET_PASSWORD: '/reset-password/:token',

@@ -1,10 +1,10 @@
 import { useSelector } from 'react-redux';
-import type { RootState } from '../../../store';
+import type { RootState } from '../../../../store';
 import { get } from 'lodash';
 import { useGetFalsePositivePageDetails } from '../hooks/useGetFalsePositiveDetails';
 import { Box } from '@mui/material';
-import CustomLoader from '../../../components/loader';
-import MorenButton from '../../../components/button';
+import CustomLoader from '../../../../components/loader';
+import MorenButton from '../../../../components/button';
 
 type IFalsePositiveProps = {
   setFalsePositive: (value: boolean) => void;

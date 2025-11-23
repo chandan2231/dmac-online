@@ -5,7 +5,7 @@ import type {
   IFalsePositiveInfo,
   IQuestionDetails,
 } from './questioners.interface';
-import HttpService from '../../services/HttpService';
+import HttpService from '../../../services/HttpService';
 
 const getQuestions = async (
   sequenceNumber: number,
