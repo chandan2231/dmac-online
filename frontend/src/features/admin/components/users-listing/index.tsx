@@ -111,8 +111,8 @@ function UsersTable() {
   };
 
   const columns: GridColDef<IUser>[] = [
-    { field: 'name', headerName: 'Name', flex: 1 },
-    { field: 'email', headerName: 'Email', flex: 1 },
+    { field: 'name', headerName: 'Name', width: 150 },
+    { field: 'email', headerName: 'Email',width: 300 },
     { field: 'mobile', headerName: 'Mobile', width: 140 },
     { field: 'language_name', headerName: 'Language', width: 120 },
     { field: 'state', headerName: 'State', width: 140 },
@@ -122,7 +122,7 @@ function UsersTable() {
     {
       field: 'status',
       headerName: 'Status',
-      width: 150,
+      width: 100,
       renderCell: params => {
         const isActive = params.row.status === 1;
         return (
@@ -141,7 +141,7 @@ function UsersTable() {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 100,
+      width: 80,
       sortable: false,
       filterable: false,
       renderCell: params => (

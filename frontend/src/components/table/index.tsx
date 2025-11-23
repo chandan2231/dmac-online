@@ -55,7 +55,7 @@ export function GenericTable<T extends { id: string | number }>({
           maxHeight: maxHeight, // Adjust based on your layout
           minHeight: minHeight, // Adjust based on your layout
           '.MuiDataGrid-columnHeaderTitle': {
-            color: '#ffffff',
+            color: '#000000',
           },
           '& .MuiDataGrid-row:hover': {
             backgroundColor: '#eee',
