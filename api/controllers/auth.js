@@ -503,7 +503,8 @@ export const patientLogin = (req, res) => {
       language: user.language,
       phone: user.mobile,
       languageCode: user.language_code,
-      role: user.role
+      role: user.role,
+      patient_payment: user.patient_payment
     }
 
     res.status(200).json({
