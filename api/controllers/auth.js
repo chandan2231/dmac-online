@@ -754,7 +754,7 @@ export const getPatientProductByUserId = async (req, res) => {
     return res.status(200).json({
       status: 200,
       purchased: true,
-      product: result[0],
+      product: result,
       message: "Purchased Product"
     });
   });

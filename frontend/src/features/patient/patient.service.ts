@@ -8,20 +8,10 @@ const getSubscribedProduct = async (user: IUser | null) => {
     const response = await HttpService.post(`auth/patient/getProductByUserId`, {
       userId,
     });
-    return {
-      success: true,
-      message: 'Subscribed products fetched successfully',
-      productsList: get(response, ['data', 'product'], []),
-    };
+    return get(response, ['data', 'product'], []);
   } catch (error: unknown) {
     console.error('Error fetching subscribed products:', error);
-    const errorMessage =
-      'Failed to fetch subscribed products. Please try again later.';
-    return {
-      success: false,
-      message: errorMessage,
-      productsList: null,
-    };
+    return null;
   }
 };
 

@@ -139,31 +139,153 @@ const PatientProducts = () => {
     subscribedProducts.length > 0 &&
     Array.isArray(get(data, 'data'))
   ) {
-    const firstSubscribedProduct = subscribedProducts[0];
-    const filteredProduct = (get(data, 'data', []) as IProduct[]).filter(
-      (product: IProduct) =>
-        String(get(firstSubscribedProduct, [0, 'id'])) ===
-        String(get(product, 'id'))
-    );
-
     return (
       <Box
         sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'start',
+          justifyContent: 'start',
+          width: '100%',
           height: '100%',
+          gap: 4,
           p: 4,
         }}
       >
-        <Box
+        <Typography
           sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            width: '100%',
-            gap: 2,
+            fontWeight: 'bold',
           }}
+          variant="h5"
         >
-          {filteredProduct.map((product: IProduct, index: number) => (
-            <ProductCard key={index} index={index} {...product} hideButton />
-          ))}
+          Subscribed Product Details
+        </Typography>
+        <Box>
+          {subscribedProducts.map(
+            (
+              product: IProduct & {
+                payment_id: string;
+                status: string;
+                payment_date: string;
+              },
+              index: number
+            ) => {
+              const {
+                product_description,
+                product_name,
+                product_amount,
+                payment_id,
+                payment_date,
+                status,
+              } = product;
+              return (
+                <Card key={index}>
+                  <CardContent
+                    sx={{
+                      width: '100%',
+                      display: 'flex',
+                      justifyContent: 'start',
+                      flexDirection: 'column',
+                      alignItems: 'start',
+                      gap: 1,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        gap: 1,
+                      }}
+                    >
+                      <Typography variant="body2">Product Name:</Typography>
+                      <Typography
+                        gutterBottom
+                        sx={{ color: 'text.secondary', fontSize: 14 }}
+                      >
+                        {product_name}
+                      </Typography>
+                    </Box>
+
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        gap: 1,
+                      }}
+                    >
+                      <Typography variant="body2">
+                        Product Description:
+                      </Typography>
+                      <Typography
+                        gutterBottom
+                        sx={{ color: 'text.secondary', fontSize: 14 }}
+                      >
+                        {product_description}
+                      </Typography>
+                    </Box>
+
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        gap: 1,
+                      }}
+                    >
+                      <Typography variant="body2">Product Amount:</Typography>
+                      <Typography
+                        gutterBottom
+                        sx={{ color: 'text.secondary', fontSize: 14 }}
+                      >
+                        ${product_amount}
+                      </Typography>
+                    </Box>
+
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        gap: 1,
+                      }}
+                    >
+                      <Typography variant="body2">Transaction ID:</Typography>
+                      <Typography
+                        gutterBottom
+                        sx={{ color: 'text.secondary', fontSize: 14 }}
+                      >
+                        {payment_id}
+                      </Typography>
+                    </Box>
+
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        gap: 1,
+                      }}
+                    >
+                      <Typography variant="body2">Payment Date:</Typography>
+                      <Typography
+                        gutterBottom
+                        sx={{ color: 'text.secondary', fontSize: 14 }}
+                      >
+                        {payment_date}
+                      </Typography>
+                    </Box>
+
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        gap: 1,
+                      }}
+                    >
+                      <Typography variant="body2">Paymen Status:</Typography>
+                      <Typography
+                        gutterBottom
+                        sx={{ color: 'text.secondary', fontSize: 14 }}
+                      >
+                        {status}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              );
+            }
+          )}
         </Box>
       </Box>
     );
