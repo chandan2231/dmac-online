@@ -6,12 +6,12 @@ const getSubscribedProduct = async (user: IUser | null) => {
   try {
     const userId = get(user, 'id');
     const response = await HttpService.post(`auth/patient/getProductByUserId`, {
-      user_id: userId,
+      userId,
     });
     return {
       success: true,
       message: 'Subscribed products fetched successfully',
-      data: get(response, 'data', []),
+      productsList: get(response, ['data', 'product'], []),
     };
   } catch (error: unknown) {
     console.error('Error fetching subscribed products:', error);
@@ -20,7 +20,7 @@ const getSubscribedProduct = async (user: IUser | null) => {
     return {
       success: false,
       message: errorMessage,
-      data: null,
+      productsList: null,
     };
   }
 };

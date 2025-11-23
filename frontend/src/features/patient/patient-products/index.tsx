@@ -17,6 +17,7 @@ import { useGetSubscribedProduct } from '../hooks/useGetSubscribedProduct';
 import CustomLoader from '../../../components/loader';
 
 const ProductCard = ({
+  hideButton = false,
   ...args
 }: IProduct & { index: number; hideButton?: boolean }) => {
   const navigate = useNavigate();
@@ -72,18 +73,20 @@ const ProductCard = ({
           {product_name}
         </Typography>
       </CardContent>
-      <CardActions sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-        <Button
-          size="small"
-          variant="contained"
-          onClick={() => handleBuyClick()}
-          sx={{
-            width: 100,
-          }}
-        >
-          BUY
-        </Button>
-      </CardActions>
+      {!hideButton && (
+        <CardActions sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <Button
+            size="small"
+            variant="contained"
+            onClick={() => handleBuyClick()}
+            sx={{
+              width: 100,
+            }}
+          >
+            BUY
+          </Button>
+        </CardActions>
+      )}
     </Card>
   );
 };
@@ -136,6 +139,13 @@ const PatientProducts = () => {
     subscribedProducts.length > 0 &&
     Array.isArray(get(data, 'data'))
   ) {
+    const firstSubscribedProduct = subscribedProducts[0];
+    const filteredProduct = (get(data, 'data', []) as IProduct[]).filter(
+      (product: IProduct) =>
+        String(get(firstSubscribedProduct, [0, 'id'])) ===
+        String(get(product, 'id'))
+    );
+
     return (
       <Box
         sx={{
@@ -151,11 +161,9 @@ const PatientProducts = () => {
             gap: 2,
           }}
         >
-          {((get(data, 'data', []) as IProduct[]) ?? []).map(
-            (product: IProduct, index: number) => (
-              <ProductCard key={index} index={index} {...product} />
-            )
-          )}
+          {filteredProduct.map((product: IProduct, index: number) => (
+            <ProductCard key={index} index={index} {...product} hideButton />
+          ))}
         </Box>
       </Box>
     );
