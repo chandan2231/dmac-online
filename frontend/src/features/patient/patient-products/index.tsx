@@ -13,9 +13,12 @@ import { ROUTES } from '../../auth/auth.interface';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
+import { useGetSubscribedProduct } from '../hooks/useGetSubscribedProduct';
 import CustomLoader from '../../../components/loader';
 
-const ProductCard = ({ ...args }: IProduct & { index: number }) => {
+const ProductCard = ({
+  ...args
+}: IProduct & { index: number; hideButton?: boolean }) => {
   const navigate = useNavigate();
   const { user: userDetails } = useSelector((state: RootState) => state.auth);
   const {
@@ -88,39 +91,77 @@ const ProductCard = ({ ...args }: IProduct & { index: number }) => {
 const PatientProducts = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const { data, isLoading, error } = useGetProductListing();
+  const {
+    data: subscribedProducts,
+    isLoading: isSubscribedProductsLoading,
+    error: subscribedProductsError,
+  } = useGetSubscribedProduct(user);
 
-
-  if (isLoading) {
+  if (isLoading || isSubscribedProductsLoading) {
     return <CustomLoader />;
   }
 
-  if (error) {
+  if (error || subscribedProductsError) {
     return null;
   }
 
-  return (
-    <Box
-      sx={{
-        height: '100%',
-        p: 4,
-      }}
-    >
+  if (Array.isArray(subscribedProducts) && subscribedProducts.length === 0) {
+    return (
       <Box
         sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          width: '100%',
-          gap: 2,
+          height: '100%',
+          p: 4,
         }}
       >
-        {((get(data, 'data', []) as IProduct[]) ?? []).map(
-          (product: IProduct, index: number) => (
-            <ProductCard key={index} index={index} {...product} />
-          )
-        )}
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            width: '100%',
+            gap: 2,
+          }}
+        >
+          {((get(data, 'data', []) as IProduct[]) ?? []).map(
+            (product: IProduct, index: number) => (
+              <ProductCard key={index} index={index} {...product} />
+            )
+          )}
+        </Box>
       </Box>
-    </Box>
-  );
+    );
+  }
+
+  if (
+    Array.isArray(subscribedProducts) &&
+    subscribedProducts.length > 0 &&
+    Array.isArray(get(data, 'data', []))
+  ) {
+    return (
+      <Box
+        sx={{
+          height: '100%',
+          p: 4,
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            width: '100%',
+            gap: 2,
+          }}
+        >
+          {((get(data, 'data', []) as IProduct[]) ?? []).map(
+            (product: IProduct, index: number) => (
+              <ProductCard key={index} index={index} {...product} />
+            )
+          )}
+        </Box>
+      </Box>
+    );
+  }
+
+  return null;
 };
 
 export default PatientProducts;
