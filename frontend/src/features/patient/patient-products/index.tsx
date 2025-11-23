@@ -35,6 +35,7 @@ const ProductCard = ({ ...args }: IProduct & { index: number }) => {
     product_amount,
     product_id,
     product_name,
+    product_description,
   };
 
   const stateData = {

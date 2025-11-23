@@ -136,7 +136,7 @@ const PatientPaymentSuccess = () => {
               </Typography>
             </Box>
 
-            <Box display="flex" flexDirection="row" alignItems="center" gap={1}>
+            <Box display="flex" flexDirection="row" alignItems="center">
               <Typography variant="h6" sx={{ color: 'text.secondary' }}>
                 Product Amount: $
               </Typography>
