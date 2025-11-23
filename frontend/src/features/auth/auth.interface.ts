@@ -24,6 +24,7 @@ export interface IUser {
   language: string;
   phone: string;
   languageCode: LanguageCode;
+  isPaymentDone: boolean | null;
 }
 
 export const ROUTES = {

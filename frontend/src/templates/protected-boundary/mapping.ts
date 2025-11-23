@@ -164,7 +164,7 @@ export const PUBLIC_ROUTES = [
 const USER_ROUTES: IUserRoute[] = [
   {
     path: ROUTES.HOME,
-    layout: 'ContentOnlyLayout',
+    layout: 'MainLayout',
     component: 'AuthRedirectHomePage',
     // This route will be shown in the sidebar
     showInSidebar: true,
@@ -192,7 +192,7 @@ const USER_ROUTES: IUserRoute[] = [
   },
   {
     path: ROUTES.PROFILE,
-    layout: 'ContentOnlyLayout',
+    layout: 'MainLayout',
     component: 'ProfilePage',
     showInSidebar: true,
     sideBarTitle: 'Profile',
@@ -201,10 +201,10 @@ const USER_ROUTES: IUserRoute[] = [
   },
   {
     path: ROUTES.QUESTIONERS,
-    layout: 'ContentOnlyLayout',
+    layout: 'MainLayout',
     component: 'QuestionersPage',
-    showInSidebar: false,
-    sideBarTitle: null,
+    showInSidebar: true,
+    sideBarTitle: 'Questioners',
     sideBarIcon: null,
     isAChildOf: null,
   },

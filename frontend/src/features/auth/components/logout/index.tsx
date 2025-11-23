@@ -7,6 +7,7 @@ import { logout } from '../../auth.slice';
 import { purgeLocalStorage } from '../../../../utils/functions';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../auth.interface';
+import { get } from 'lodash';
 import LogoutIcon from '@mui/icons-material/Logout';
 import GenericModal from '../../../../components/modal';
 
@@ -14,14 +15,19 @@ export default function LogoutFeature() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isLogoutModalOpen } = useSelector((state: RootState) => state.logout);
+  const { user } = useSelector((state: RootState) => state.auth);
 
   const handleLogout = () => {
     dispatch(closeLogoutModal());
     purgeLocalStorage();
     dispatch(logout());
 
+    if (get(user, ['role']) === 'USER') {
+      return navigate(ROUTES.PATIENT_LOGIN);
+    }
+
     // Navigate to the Login page
-    navigate(ROUTES.LOGIN);
+    return navigate(ROUTES.LOGIN);
   };
 
   const handleOpenModal = () => {

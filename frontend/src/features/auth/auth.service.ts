@@ -169,12 +169,18 @@ const patientLogin = async (
     const allowedRoutes = getRoutesByRole(
       get(response, ['data', 'user', 'role'], 'USER') as UserRole
     );
+    const role = get(response, ['data', 'user', 'role'], 'USER') as UserRole;
+    const isPaymentDone =
+      role === 'USER'
+        ? Boolean(Number(get(user, ['patient_payment'], 0)))
+        : null;
 
     if (token && user && allowedRoutes) {
       const updatedUser = {
         ...user,
         token: token,
-        role: get(response, ['data', 'user', 'role'], 'USER') as UserRole,
+        role: role,
+        isPaymentDone,
       };
       const successPayload = {
         user: updatedUser,
