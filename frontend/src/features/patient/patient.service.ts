@@ -5,9 +5,9 @@ import type { IUser } from '../auth/auth.interface';
 const getSubscribedProduct = async (user: IUser | null) => {
   try {
     const userId = get(user, 'id');
-    const response = await HttpService.get(
-      `/patient/subscribed-products/${userId}`
-    );
+    const response = await HttpService.post(`auth/patient/getProductByUserId`, {
+      user_id: userId,
+    });
     return {
       success: true,
       message: 'Subscribed products fetched successfully',

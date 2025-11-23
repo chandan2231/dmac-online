@@ -134,7 +134,7 @@ const PatientProducts = () => {
   if (
     Array.isArray(subscribedProducts) &&
     subscribedProducts.length > 0 &&
-    Array.isArray(get(data, 'data', []))
+    Array.isArray(get(data, 'data'))
   ) {
     return (
       <Box
