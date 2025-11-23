@@ -41,6 +41,7 @@ import PatientPaymentPage from '../../pages/payment/patient-payment';
 import PatientLoginPage from '../../pages/auth/login/patient-login';
 import PatientPaymentSuccessPage from '../../pages/payment/patient-payment-success';
 import PatientPaymentCancelledPage from '../../pages/payment/patient-payment-cancel';
+import PatientProductsPage from '../../pages/patient/patient-products';
 
 export const LAYOUT_MAP = {
   BaseLayout,
@@ -82,6 +83,7 @@ export const COMPONENT_MAP = {
   PatientLoginPage,
   PatientPaymentSuccessPage,
   PatientPaymentCancelledPage,
+  PatientProductsPage,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -219,6 +221,45 @@ const USER_ROUTES: IUserRoute[] = [
   },
 ];
 
+const USER_ROUTES_IF_PAYMENT_PENDING: IUserRoute[] = [
+  {
+    path: ROUTES.PATIENT_PRODUCTS,
+    layout: 'MainLayout',
+    component: 'PatientProductsPage',
+    showInSidebar: true,
+    sideBarTitle: 'Products',
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PATIENT_PAYMENT,
+    layout: 'MainLayout',
+    component: 'PatientPaymentPage',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PATIENT_PAYMENT_SUCCESS,
+    layout: 'MainLayout',
+    component: 'PatientPaymentSuccessPage',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PATIENT_PAYMENT_CANCELLED,
+    layout: 'MainLayout',
+    component: 'PatientPaymentCancelledPage',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+];
+
 const ADMIN_ROUTES: IUserRoute[] = [
   {
     path: ROUTES.ADMIN_DASHBOARD,
@@ -322,8 +363,14 @@ const GUEST_USER_ROUTES: IUserRoute[] = [
   },
 ];
 
-export const getRoutesByRole = (role: UserRole): IUserRoute[] => {
-  if (role === 'USER') {
+export const getRoutesByRole = (
+  role: UserRole,
+  isPaymentDone: boolean | null = null
+): IUserRoute[] => {
+  if (role === 'USER' && isPaymentDone === false) {
+    return [...USER_ROUTES, ...USER_ROUTES_IF_PAYMENT_PENDING];
+  }
+  if (role === 'USER' && isPaymentDone === true) {
     return USER_ROUTES;
   }
   if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
