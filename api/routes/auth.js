@@ -12,7 +12,8 @@ import {
   capturePatientPayment,
   successPatientPayment,
   canclePatientPayment,
-  patientLogin
+  patientLogin,
+  getPatientProductByUserId
 } from '../controllers/auth.js'
 const router = express.Router()
 router.post('/login', login)
@@ -30,5 +31,6 @@ router.post('/patient/createPayment', createPatientPayment)
 router.post('/patient/capturePayment', capturePatientPayment)
 router.post('/patient/successPayment', successPatientPayment)
 router.post('/patient/cancelPayment', canclePatientPayment)
+router.post('/patient/getProductByUserId', getPatientProductByUserId)
 
 export default router

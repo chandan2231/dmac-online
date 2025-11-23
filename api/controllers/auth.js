@@ -701,4 +701,63 @@ export const canclePatientPayment = (req, res) => {
   return res.json(result)
 }
 
+export const getPatientProductByUserId = async (req, res) => {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res.status(400).json({
+      status: 400,
+      message: "User ID is required"
+    });
+  }
+
+  const query = `
+    SELECT 
+      t.payment_id,
+      t.amount,
+      t.currency,
+      t.status,
+      t.payment_type,
+      t.payment_date,
+      p.id AS product_id,
+      p.product_name,
+      p.product_description,
+      p.product_amount,
+    FROM dmac_webapp_users_transaction t
+    INNER JOIN dmac_webapp_products p
+      ON t.product_id = p.id
+    WHERE t.user_id = ?
+      AND t.status = 'COMPLETED'
+    ORDER BY t.payment_date DESC
+    LIMIT 1
+  `;
+
+  db.query(query, [userId], (err, result) => {
+    if (err) {
+      console.error("DB Error:", err);
+      return res.status(500).json({
+        status: 500,
+        message: "Database error"
+      });
+    }
+
+    if (result.length === 0) {
+      return res.status(200).json({
+        status: 200,
+        purchased: false,
+        message: "No purchased products found for this user"
+      });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      purchased: true,
+      product: result[0]
+    });
+  });
+};
+
+
+
+
 
