@@ -702,8 +702,7 @@ export const canclePatientPayment = (req, res) => {
 }
 
 export const getPatientProductByUserId = async (req, res) => {
-  const { userId } = req.body;
-
+  const { userId } = req.body; 
   if (!userId) {
     return res.status(400).json({
       status: 400,
@@ -712,23 +711,25 @@ export const getPatientProductByUserId = async (req, res) => {
   }
 
   const query = `
-    SELECT 
+    SELECT
+      t.id,
+      t.product_id,
       t.payment_id,
       t.amount,
       t.currency,
       t.status,
       t.payment_type,
-      t.payment_date,
-      p.id AS product_id,
+      t.created_date AS payment_date,
+      p.id,
       p.product_name,
       p.product_description,
-      p.product_amount,
+      p.product_amount
     FROM dmac_webapp_users_transaction t
     INNER JOIN dmac_webapp_products p
       ON t.product_id = p.id
     WHERE t.user_id = ?
       AND t.status = 'COMPLETED'
-    ORDER BY t.payment_date DESC
+    ORDER BY t.created_date DESC
     LIMIT 1
   `;
 
@@ -745,6 +746,7 @@ export const getPatientProductByUserId = async (req, res) => {
       return res.status(200).json({
         status: 200,
         purchased: false,
+        product: [],
         message: "No purchased products found for this user"
       });
     }
@@ -752,10 +754,12 @@ export const getPatientProductByUserId = async (req, res) => {
     return res.status(200).json({
       status: 200,
       purchased: true,
-      product: result[0]
+      product: result[0],
+      message: "Purchased Product"
     });
   });
 };
+
 
 
 
