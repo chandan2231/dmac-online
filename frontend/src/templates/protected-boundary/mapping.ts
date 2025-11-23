@@ -219,9 +219,7 @@ const USER_ROUTES: IUserRoute[] = [
     sideBarIcon: null,
     isAChildOf: null,
   },
-];
-
-const USER_ROUTES_IF_PAYMENT_PENDING: IUserRoute[] = [
+  // Payment Related Routes
   {
     path: ROUTES.PATIENT_PRODUCTS,
     layout: 'MainLayout',
@@ -363,14 +361,8 @@ const GUEST_USER_ROUTES: IUserRoute[] = [
   },
 ];
 
-export const getRoutesByRole = (
-  role: UserRole,
-  isPaymentDone: boolean | null = null
-): IUserRoute[] => {
-  if (role === 'USER' && isPaymentDone === false) {
-    return [...USER_ROUTES, ...USER_ROUTES_IF_PAYMENT_PENDING];
-  }
-  if (role === 'USER' && isPaymentDone === true) {
+export const getRoutesByRole = (role: UserRole): IUserRoute[] => {
+  if (role === 'USER') {
     return USER_ROUTES;
   }
   if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
