@@ -302,7 +302,6 @@ function ProductsTable() {
             : ''
         }`}
         hideCancelButton
-        maxWidth="md"
       >
         {selectedProduct && (
           <Box display="flex" flexDirection="column" gap={2}>

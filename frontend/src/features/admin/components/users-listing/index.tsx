@@ -112,7 +112,7 @@ function UsersTable() {
 
   const columns: GridColDef<IUser>[] = [
     { field: 'name', headerName: 'Name', width: 150 },
-    { field: 'email', headerName: 'Email',width: 300 },
+    { field: 'email', headerName: 'Email', width: 300 },
     { field: 'mobile', headerName: 'Mobile', width: 140 },
     { field: 'language_name', headerName: 'Language', width: 120 },
     { field: 'state', headerName: 'State', width: 140 },
@@ -234,7 +234,6 @@ function UsersTable() {
         onClose={handleCloseViewModal}
         title={`User Details${selectedUser ? ` - ${selectedUser.name}` : ''}`}
         hideCancelButton
-        maxWidth="md"
       >
         {selectedUser && (
           <Box display="flex" flexDirection="column" gap={2}>

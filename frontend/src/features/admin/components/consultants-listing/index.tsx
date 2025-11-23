@@ -497,7 +497,6 @@ function ConsultantTable() {
           selectedConsultant ? ` - ${get(selectedConsultant, 'name', '')}` : ''
         }`}
         hideCancelButton
-        maxWidth="md"
       >
         {selectedConsultant && (
           <Box display="flex" flexDirection="column" gap={2}>

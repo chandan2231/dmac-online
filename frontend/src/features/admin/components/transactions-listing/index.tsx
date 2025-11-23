@@ -131,7 +131,6 @@ function TransactionsTable() {
             : ''
         }`}
         hideCancelButton
-        maxWidth="md"
       >
         {selectedTransaction && (
           <Box display="flex" flexDirection="column" gap={2}>

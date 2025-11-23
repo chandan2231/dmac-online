@@ -177,7 +177,6 @@ function ConsultationsTable() {
         title="Consultation Details"
         submitButtonText="Close"
         hideCancelButton
-        maxWidth="md"
       >
         {selectedConsultation && (
           <Box display="flex" flexDirection="column" gap={2}>
