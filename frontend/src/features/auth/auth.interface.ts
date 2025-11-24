@@ -32,28 +32,29 @@ export const ROUTES = {
   // Public routes
   HOME: '/',
 
-  // Patient Registration
+  // USER Authenticated routes
+  PATIENT_LOGIN: '/patient/login',
   PATIENT_REGISTRATION: '/patient/registration',
   PATIENT_EMAIL_VERIFICATION: '/patient/email/verify/:token',
+
+  // USER Payment routes
   PATIENT_PAYMENT: '/patient/payment',
-  PATIENT_LOGIN: '/patient/login',
   PATIENT_PAYMENT_SUCCESS: '/patient/payment/success',
   PATIENT_PAYMENT_CANCELLED: '/patient/payment/cancelled',
-  PATIENT_PRODUCTS: '/patient/products',
 
-  // Protected routes
-  RESET_PASSWORD: '/reset-password/:token',
-  VERIFY_EMAIL: '/verify-email/:token',
+  // USER Protected routes
   PROFILE: '/profile',
   QUESTIONERS: '/questioners',
+  PATIENT_PRODUCTS: '/patient/products',
 
-  // ADMIN
-  // Authenticated routes
+  // ADMIN, SUPER_ADMIN, THERAPIST Authenticated routes
   LOGIN: '/login',
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',
+  VERIFY_EMAIL: '/verify-email/:token',
+  RESET_PASSWORD: '/reset-password/:token',
 
-  // Admin routes
+  // ADMIN, SUPER_ADMIN, THERAPIST Protected routes
   ADMIN_DASHBOARD: '/admin/dashboard',
   USERS_LISTING: '/admin/users',
   TRANSACTIONS: '/admin/transactions',
