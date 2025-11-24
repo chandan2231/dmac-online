@@ -1,9 +1,9 @@
 import { Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../auth/auth.interface';
+import { ROUTES } from '../../auth/auth.interface';
 import { get } from 'lodash';
-import { useLanguageConstants } from '../../providers/language-constant-provider/hooks/useLanguageConstants';
-import MorenButton from '../../components/button';
+import { useLanguageConstants } from '../../../providers/language-constant-provider/hooks/useLanguageConstants';
+import MorenButton from '../../../components/button';
 
 const Home = () => {
   const navigate = useNavigate();

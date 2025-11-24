@@ -1,4 +1,4 @@
-import Home from '../../../features/home';
+import Home from '../../../features/patient/home';
 import withAuthRedirect from '../../../middlewares/withAuthRedirect';
 
 const HomePage = () => {
