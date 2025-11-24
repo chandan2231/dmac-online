@@ -1,3 +1,5 @@
+import type { IUser } from '../auth/auth.interface';
+
 export const QUERY_KEYS_FOR_ADMIN = {
   GET_PRODUCT_LISTING: 'getProductListing',
   GET_USER_LISTING: 'getUserListing',
@@ -24,10 +26,8 @@ export interface IUpdateProductPayload {
   product_amount: number;
 }
 
-export interface IUser {
+export interface IUserDetails extends Omit<IUser, 'id' | 'role'> {
   id: number;
-  name: string;
-  email: string;
   mobile: string;
   password?: string;
   country: string;

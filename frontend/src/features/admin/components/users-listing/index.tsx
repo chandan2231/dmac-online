@@ -8,7 +8,7 @@ import GenericModal from '../../../../components/modal';
 import ModernInput from '../../../../components/input';
 import MorenButton from '../../../../components/button';
 import { useGetUsersListing } from '../../hooks/useGetUsersListing';
-import type { IUser } from '../../admin.interface';
+import type { IUserDetails } from '../../admin.interface';
 import { get } from 'lodash';
 import AdminService from '../../admin.service';
 import CustomLoader from '../../../../components/loader';
@@ -32,7 +32,7 @@ function UsersTable() {
 
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
+  const [selectedUser, setSelectedUser] = useState<IUserDetails | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const { showToast } = useToast();
@@ -63,7 +63,7 @@ function UsersTable() {
     resolver: yupResolver(schema),
   });
 
-  const handleOpenPasswordModal = (user: IUser) => {
+  const handleOpenPasswordModal = (user: IUserDetails) => {
     setSelectedUser(user);
     reset({ password: '' });
     setIsPasswordModalOpen(true);
@@ -100,7 +100,7 @@ function UsersTable() {
     setAnchorEl(null);
   };
 
-  const handleOpenViewModal = (user: IUser) => {
+  const handleOpenViewModal = (user: IUserDetails) => {
     setSelectedUser(user);
     setIsViewModalOpen(true);
   };
@@ -110,7 +110,7 @@ function UsersTable() {
     setSelectedUser(null);
   };
 
-  const columns: GridColDef<IUser>[] = [
+  const columns: GridColDef<IUserDetails>[] = [
     { field: 'name', headerName: 'Name', width: 150 },
     { field: 'email', headerName: 'Email', width: 300 },
     { field: 'mobile', headerName: 'Mobile', width: 140 },
@@ -184,7 +184,7 @@ function UsersTable() {
   return (
     <>
       <GenericTable
-        rows={get(data, 'data', []) as IUser[]}
+        rows={get(data, 'data', []) as IUserDetails[]}
         columns={columns}
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}

@@ -2,7 +2,7 @@ import { get } from 'lodash';
 import type {
   IProduct,
   IUpdateProductPayload,
-  IUser,
+  IUserDetails,
   IChangeUserPasswordPayload,
   ITransaction,
   TransactionFilter,
@@ -121,13 +121,13 @@ const getUsersListing = async (
   role: string
 ): Promise<{
   success: boolean;
-  data: IUser[] | null;
+  data: IUserDetails[] | null;
   message: string;
 }> => {
   try {
     const response = await HttpService.post('/admin/users/list', { role });
 
-    const users = (get(response, 'data', []) as IUser[]).map(item => ({
+    const users = (get(response, 'data', []) as IUserDetails[]).map(item => ({
       ...item,
       created_date: moment(get(item, 'created_date')).format('YYYY-MM-DD'),
       updated_date: moment(get(item, 'updated_date')).format('YYYY-MM-DD'),
