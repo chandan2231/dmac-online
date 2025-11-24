@@ -3,8 +3,6 @@ import React from 'react';
 import Button, { type ButtonProps } from '@mui/material/Button';
 import { styled } from '@mui/material/styles';
 
-interface MorenButtonProps extends ButtonProps {}
-
 // Customize styles to reflect Moren UI look
 const StyledButton = styled(Button)(({ theme }) => ({
   borderRadius: theme.morenButton?.borderRadius || '999px',
@@ -37,7 +35,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const MorenButton = React.forwardRef<HTMLButtonElement, MorenButtonProps>(
+const MorenButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (props, ref) => {
     return <StyledButton ref={ref} {...props} />;
   }

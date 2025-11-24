@@ -34,3 +34,6 @@ dist-ssr
 
 # Prettier config is intentionally NOT ignored
 # (Do NOT add .prettierrc or .prettierignore here)
+
+*storybook.log
+storybook-static
