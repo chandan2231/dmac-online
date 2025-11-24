@@ -26,7 +26,7 @@ export interface IUpdateProductPayload {
   product_amount: number;
 }
 
-export interface IUserDetails extends Omit<IUser, 'id' | 'role'> {
+export interface IUserDetails extends Omit<IUser, 'id'> {
   id: number;
   mobile: string;
   password?: string;
@@ -35,7 +35,6 @@ export interface IUserDetails extends Omit<IUser, 'id' | 'role'> {
   zip_code: string;
   language: string; // comes as string id like '1'
   language_name: string; // human-readable language label (if provided)
-  role: string; // e.g., 'USER'
   time_zone: string;
   address: string;
   speciality: string;
