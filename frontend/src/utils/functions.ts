@@ -1,15 +1,12 @@
 import { get } from 'lodash';
-import {
-  ROUTES,
-  type IUser,
-  type IUserRoute,
-} from '../features/auth/auth.interface';
+import { type IUser } from '../features/auth/auth.interface';
 import {
   LOCAL_STORAGE_KEYS,
   ROLES_ALLOWED_TO_CHANGE_LANGUAGE,
 } from './constants';
 import type { ILanguage, ILanguageConstants } from '../i18n/language.interface';
 import type { IOption } from '../components/select';
+import { ROUTES, type IAllowedRoutes } from '../router/router';
 
 const getCurrentYear = (): number => {
   return new Date().getFullYear();
@@ -49,7 +46,7 @@ const setLocalStorageItem = (
 
 const getNestedRoutes = (
   path: string | null,
-  allowedRoutes: IUserRoute[] | null
+  allowedRoutes: IAllowedRoutes[] | null
 ) => {
   if (!allowedRoutes) {
     return [];
@@ -60,7 +57,7 @@ const getNestedRoutes = (
     .map(route => get(route, ['path'], null));
 };
 
-const getSidebarOptions = (allowedRoutes: IUserRoute[] | null) => {
+const getSidebarOptions = (allowedRoutes: IAllowedRoutes[] | null) => {
   if (!allowedRoutes) {
     return [];
   }

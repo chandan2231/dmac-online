@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../../../providers/toast-provider/index.tsx';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { ROUTES } from '../../auth.interface.ts';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../store/index.ts';
 import ModernSelect, {
@@ -14,6 +13,7 @@ import ModernSelect, {
 import { COUNTRIES_LIST } from '../../../../utils/constants.ts';
 import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages.ts';
 import { convertLanguagesListToOptions } from '../../../../utils/functions.ts';
+import { ROUTES } from '../../../../router/router.ts';
 import MorenCard from '../../../../components/card/index.tsx';
 import ModernInput from '../../../../components/input/index.tsx';
 import MorenButton from '../../../../components/button/index.tsx';

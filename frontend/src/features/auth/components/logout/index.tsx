@@ -6,8 +6,8 @@ import { closeLogoutModal, openLogoutModal } from './logout.slice';
 import { logout } from '../../auth.slice';
 import { purgeLocalStorage } from '../../../../utils/functions';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../auth.interface';
 import { get } from 'lodash';
+import { ROUTES } from '../../../../router/router';
 import LogoutIcon from '@mui/icons-material/Logout';
 import GenericModal from '../../../../components/modal';
 

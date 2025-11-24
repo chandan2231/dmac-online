@@ -1,7 +1,7 @@
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { type IAuthState } from '../../features/auth/auth.interface';
-import { COMPONENT_MAP, LAYOUT_MAP } from './mapping';
+import { COMPONENT_MAP, LAYOUT_MAP } from '../../router/router';
 import PageNotFound from '../../pages/not-found';
 
 interface IProtectedBoundaryProps {

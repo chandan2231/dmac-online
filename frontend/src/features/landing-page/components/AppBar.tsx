@@ -2,9 +2,9 @@ import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import LandingPageToolbar from './LandingPageToolbar';
 import LandingPageAppBar from './LandingPageAppBar';
-import { ROUTES } from '../../auth/auth.interface';
 import { Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../router/router';
 
 function AppAppBar() {
   const navigate = useNavigate();

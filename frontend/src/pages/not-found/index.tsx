@@ -1,10 +1,10 @@
 import { Box, Typography, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../features/auth/auth.interface';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import PageNotFoundImage from '../../assets/404/404.jpg';
 import useTimer from '../../hooks/useTimer';
+import { ROUTES } from '../../router/router';
 
 const PageNotFound = () => {
   const navigate = useNavigate();

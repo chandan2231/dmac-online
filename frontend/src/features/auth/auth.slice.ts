@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { IAuthState, IUser, IUserRoute } from './auth.interface';
+import type { IAuthState, IUser } from './auth.interface';
 import type { IUpdateLanguageDetails } from '../../i18n/language.interface';
+import type { IAllowedRoutes } from '../../router/router';
 
 const initialState: IAuthState = {
   user: null,
@@ -28,7 +29,7 @@ const authSlice = createSlice({
       action: PayloadAction<{
         user: IUser;
         token: string;
-        allowedRoutes: IUserRoute[];
+        allowedRoutes: IAllowedRoutes[];
       }>
     ) => {
       state.user = action.payload.user;

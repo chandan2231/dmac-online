@@ -14,7 +14,7 @@ import {
   setLoadingFalse,
   setLoadingTrue,
 } from './auth.slice';
-import { getRoutesByRole } from '../../templates/protected-boundary/mapping';
+import { getRoutesByRole } from '../../router/router';
 import HttpService from '../../services/HttpService';
 
 const patientResgistration = async (

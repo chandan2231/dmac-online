@@ -9,12 +9,12 @@ import {
   Typography,
 } from '@mui/material';
 import { useGetProductListing } from '../../admin/hooks/useGetProductListing';
-import { ROUTES } from '../../auth/auth.interface';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import { useGetSubscribedProduct } from '../hooks/useGetSubscribedProduct';
 import CustomLoader from '../../../components/loader';
+import { ROUTES } from '../../../router/router';
 
 const ProductCard = ({
   hideButton = false,

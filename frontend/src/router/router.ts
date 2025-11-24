@@ -1,47 +1,44 @@
-import {
-  ROUTES,
-  type IUserRoute,
-  type UserRole,
-} from '../../features/auth/auth.interface';
+import { type UserRole } from '../features/auth/auth.interface';
+import type { MapperObjectKey } from '../components/sidebar/mapped-icons';
 
 // Public Pages
-import LoginPage from '../../pages/auth/login';
-import Register from '../../pages/auth/register';
-import ForgotPassword from '../../pages/auth/forgot-password';
-import AuthRedirectHomePage from '../../pages/patient/home';
-import PageNotFound from '../../pages/not-found';
-import LandingPageComponent from '../../pages/landing-page';
+import LoginPage from '../pages/auth/login';
+import Register from '../pages/auth/register';
+import ForgotPassword from '../pages/auth/forgot-password';
+import AuthRedirectHomePage from '../pages/patient/home';
+import PageNotFound from '../pages/not-found';
+import LandingPageComponent from '../pages/landing-page';
 
 // Protected Pages
-import ResetPassword from '../../pages/auth/reset-password';
-import VerifyEmail from '../../pages/auth/verify-email';
-import ProfilePage from '../../pages/patient/profile';
-import QuestionersPage from '../../pages/patient/questioners';
+import ResetPassword from '../pages/auth/reset-password';
+import VerifyEmail from '../pages/auth/verify-email';
+import ProfilePage from '../pages/patient/profile';
+import QuestionersPage from '../pages/patient/questioners';
 
 // Admin Pages
-import DashboardPageComponent from '../../pages/admin/dashboard';
-import UsersListingPageComponent from '../../pages/admin/users-listing';
-import ProductsListingPageComponent from '../../pages/admin/products-listing';
-import ConsultantsListingPageComponent from '../../pages/admin/consultants-listing';
-import TransactionsListingPageComponent from '../../pages/admin/transactions-listing';
-import TherapistListingPageComponent from '../../pages/admin/tharapist-listing';
-import ConsultationsListingPageComponent from '../../pages/admin/consultations-listing';
+import DashboardPageComponent from '../pages/admin/dashboard';
+import UsersListingPageComponent from '../pages/admin/users-listing';
+import ProductsListingPageComponent from '../pages/admin/products-listing';
+import ConsultantsListingPageComponent from '../pages/admin/consultants-listing';
+import TransactionsListingPageComponent from '../pages/admin/transactions-listing';
+import TherapistListingPageComponent from '../pages/admin/tharapist-listing';
+import ConsultationsListingPageComponent from '../pages/admin/consultations-listing';
 
 // Layouts
-import MainLayout from '../../layouts/MainLayout';
-import AuthLayout from '../../layouts/AuthLayout';
-import ContentOnlyLayout from '../../layouts/ContentOnlyLayout';
-import BaseLayout from '../../layouts/BaseLayout';
-import PatientLayout from '../../layouts/PatientLayout';
+import MainLayout from '../layouts/MainLayout';
+import AuthLayout from '../layouts/AuthLayout';
+import ContentOnlyLayout from '../layouts/ContentOnlyLayout';
+import BaseLayout from '../layouts/BaseLayout';
+import PatientLayout from '../layouts/PatientLayout';
 
 // Patient Pages
-import PatientRegisterPage from '../../pages/auth/register/patient-register';
-import PatientVerifyEmailPage from '../../pages/auth/verify-email/patient-verify-email';
-import PatientPaymentPage from '../../pages/payment/patient-payment';
-import PatientLoginPage from '../../pages/auth/login/patient-login';
-import PatientPaymentSuccessPage from '../../pages/payment/patient-payment-success';
-import PatientPaymentCancelledPage from '../../pages/payment/patient-payment-cancel';
-import PatientProductsPage from '../../pages/patient/patient-products';
+import PatientRegisterPage from '../pages/auth/register/patient-register';
+import PatientVerifyEmailPage from '../pages/auth/verify-email/patient-verify-email';
+import PatientPaymentPage from '../pages/payment/patient-payment';
+import PatientLoginPage from '../pages/auth/login/patient-login';
+import PatientPaymentSuccessPage from '../pages/payment/patient-payment-success';
+import PatientPaymentCancelledPage from '../pages/payment/patient-payment-cancel';
+import PatientProductsPage from '../pages/patient/patient-products';
 
 export const LAYOUT_MAP = {
   BaseLayout,
@@ -50,6 +47,8 @@ export const LAYOUT_MAP = {
   ContentOnlyLayout,
   PatientLayout,
 };
+
+export type LayoutType = keyof typeof LAYOUT_MAP;
 
 export const COMPONENT_MAP = {
   // These are the public components that can be accessed without authentication
@@ -87,6 +86,58 @@ export const COMPONENT_MAP = {
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
+
+export const ROUTES = {
+  // Public routes
+  HOME: '/',
+
+  // USER Authenticated routes
+  PATIENT_LOGIN: '/patient/login',
+  PATIENT_REGISTRATION: '/patient/registration',
+  PATIENT_EMAIL_VERIFICATION: '/patient/email/verify/:token',
+
+  // USER Payment routes
+  PATIENT_PAYMENT: '/patient/payment',
+  PATIENT_PAYMENT_SUCCESS: '/patient/payment/success',
+  PATIENT_PAYMENT_CANCELLED: '/patient/payment/cancelled',
+
+  // USER Protected routes
+  PROFILE: '/profile',
+  QUESTIONERS: '/questioners',
+  PATIENT_PRODUCTS: '/patient/products',
+
+  // ADMIN, SUPER_ADMIN, THERAPIST Authenticated routes
+  LOGIN: '/login',
+  REGISTER: '/register',
+  FORGOT_PASSWORD: '/forgot-password',
+  VERIFY_EMAIL: '/verify-email/:token',
+  RESET_PASSWORD: '/reset-password/:token',
+
+  // ADMIN, SUPER_ADMIN, THERAPIST Protected routes
+  ADMIN_DASHBOARD: '/admin/dashboard',
+  USERS_LISTING: '/admin/users',
+  TRANSACTIONS: '/admin/transactions',
+  CONSULTANTS: '/admin/consultants',
+  PRODUCTS: '/admin/products',
+  THERAPISTS: '/admin/therapists',
+  CONSULTATIONS: '/admin/consultations',
+
+  // Not Found
+  NOT_FOUND: '*',
+} as const;
+
+export type ROUTES = (typeof ROUTES)[keyof typeof ROUTES];
+
+export interface IAllowedRoutes {
+  path: ROUTES;
+  layout: LayoutType;
+  component: ComponentKey;
+  // additional properties can be added as needed
+  showInSidebar: boolean;
+  sideBarIcon: MapperObjectKey | null;
+  sideBarTitle: string | null;
+  isAChildOf: ROUTES | null;
+}
 
 // Here we define the public routes that do not require authentication
 export const PUBLIC_ROUTES = [
@@ -163,7 +214,7 @@ export const PUBLIC_ROUTES = [
 // For protected routes, we can define them here
 // This is just a placeholder for now, as the actual routes will be dynamically rendered based on the backend configuration
 // These routes are for Patient
-const USER_ROUTES: IUserRoute[] = [
+const USER_ROUTES: IAllowedRoutes[] = [
   {
     path: ROUTES.HOME,
     layout: 'MainLayout',
@@ -258,7 +309,7 @@ const USER_ROUTES: IUserRoute[] = [
   },
 ];
 
-const ADMIN_ROUTES: IUserRoute[] = [
+const ADMIN_ROUTES: IAllowedRoutes[] = [
   {
     path: ROUTES.ADMIN_DASHBOARD,
     layout: 'MainLayout',
@@ -340,7 +391,7 @@ const ADMIN_ROUTES: IUserRoute[] = [
   },
 ];
 
-const GUEST_USER_ROUTES: IUserRoute[] = [
+const GUEST_USER_ROUTES: IAllowedRoutes[] = [
   {
     path: ROUTES.HOME,
     layout: 'ContentOnlyLayout',
@@ -361,7 +412,7 @@ const GUEST_USER_ROUTES: IUserRoute[] = [
   },
 ];
 
-export const getRoutesByRole = (role: UserRole): IUserRoute[] => {
+export const getRoutesByRole = (role: UserRole): IAllowedRoutes[] => {
   if (role === 'USER') {
     return USER_ROUTES;
   }

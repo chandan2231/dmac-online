@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
-import { ROUTES } from '../../auth.interface.ts';
 import { usePatientEmailVerification } from './hooks/usePatientVerification.ts';
+import { ROUTES } from '../../../../router/router.ts';
 import MorenCard from '../../../../components/card/index.tsx';
 import MorenButton from '../../../../components/button/index.tsx';
 import CustomLoader from '../../../../components/loader/index.tsx';

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { purgeLocalStorage } from '../utils/functions';
 import { persistor, store } from '../store';
 import { get } from 'lodash';
-import { ROUTES } from '../features/auth/auth.interface';
+import { ROUTES } from '../router/router';
 
 const TIMEOUT = 30000;
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;

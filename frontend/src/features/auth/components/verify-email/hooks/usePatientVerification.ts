@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '../../../../../providers/toast-provider';
-import { ROUTES } from '../../../auth.interface';
+import { ROUTES } from '../../../../../router/router';
 import AuthService from '../../../auth.service';
 
 export const usePatientEmailVerification = () => {

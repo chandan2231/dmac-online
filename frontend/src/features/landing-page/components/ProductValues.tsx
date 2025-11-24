@@ -8,7 +8,7 @@ import { useGetProductListing } from '../../admin/hooks/useGetProductListing';
 import { get } from 'lodash';
 import type { IProduct } from '../../admin/admin.interface';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../auth/auth.interface';
+import { ROUTES } from '../../../router/router';
 
 const item: SxProps<Theme> = {
   display: 'flex',

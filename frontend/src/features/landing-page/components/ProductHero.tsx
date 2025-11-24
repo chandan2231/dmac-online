@@ -1,8 +1,8 @@
 import LandingPageTypography from './LandingPageTypography';
 import ProductHeroLayout from './ProductHeroLayout';
- 
 
-const backgroundImage = '/onepirate/memory-loss.jpg'
+const backgroundImage = '/onepirate/memory-loss.jpg';
+
 export default function ProductHero() {
   return (
     <ProductHeroLayout
@@ -23,7 +23,7 @@ export default function ProductHero() {
         align="center"
         variant="h2"
         marked="center"
-        sx={{color: '#ffffff'}}
+        sx={{ color: '#ffffff' }}
       >
         Solution to Memory Loss
       </LandingPageTypography>
@@ -33,7 +33,8 @@ export default function ProductHero() {
         variant="h5"
         sx={{ mb: 4, mt: { xs: 4, sm: 10 }, color: '#ffffff' }}
       >
-        Regain Memory 360 (RM360) is a research-backed brain workout for memory loss and cognitive decline.
+        Regain Memory 360 (RM360) is a research-backed brain workout for memory
+        loss and cognitive decline.
       </LandingPageTypography>
 
       <LandingPageTypography variant="body2" color="inherit" sx={{ mt: 2 }}>

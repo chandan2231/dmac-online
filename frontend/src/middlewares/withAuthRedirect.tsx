@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../features/auth/auth.interface';
+import { ROUTES } from '../router/router';
 
 function withAuthRedirect<P extends React.PropsWithChildren<unknown>>(
   WrappedComponent: React.ComponentType<P>

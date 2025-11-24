@@ -8,8 +8,8 @@ import { TanstackProvider } from './tanstack-provider';
 import { CookiesProvider } from 'react-cookie';
 import { BrowserRouter } from 'react-router-dom';
 import { ToastProvider } from './toast-provider';
-import { ROUTES } from '../features/auth/auth.interface';
 import { LanguageConstantProvider } from './language-constant-provider';
+import { ROUTES } from '../router/router';
 
 interface IAppProviderProps {
   children: ReactNode;

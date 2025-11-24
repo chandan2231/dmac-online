@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../../auth.interface';
+import { ROUTES } from '../../../../../router/router';
 
 export const useCountdownRedirect = (
   shouldRedirect: boolean,

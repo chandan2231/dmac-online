@@ -5,12 +5,12 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../store';
 import { get } from 'lodash';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../../auth/auth.interface';
 import { getLanguageText } from '../../../../utils/functions';
 import { useLanguageConstantContext } from '../../../../providers/language-constant-provider';
 import CustomLoader from '../../../../components/loader';
 import GenericModal from '../../../../components/modal';
 import MorenRadio from '../../../../components/radio-input';
+import { ROUTES } from '../../../../router/router';
 
 type IQuestionsProps = {
   setIsQuestionerClosed: (value: boolean) => void;
