@@ -3,8 +3,6 @@ import React from 'react';
 import Radio, { type RadioProps } from '@mui/material/Radio';
 import { styled } from '@mui/material/styles';
 
-interface MorenRadioProps extends RadioProps {}
-
 // Customize styles to reflect Moren UI look
 const StyledRadio = styled(Radio)(({ theme }) => ({
   color: theme.palette.primary.main,
@@ -25,7 +23,7 @@ const StyledRadio = styled(Radio)(({ theme }) => ({
   },
 }));
 
-const MorenRadio = React.forwardRef<HTMLButtonElement, MorenRadioProps>(
+const MorenRadio = React.forwardRef<HTMLButtonElement, RadioProps>(
   (props, ref) => {
     return <StyledRadio ref={ref} {...props} />;
   }

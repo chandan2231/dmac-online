@@ -40,9 +40,9 @@ const MorenCard: React.FC<MorenCardProps> = ({
     <Card
       sx={{
         m: 2,
-        maxWidth: maxWidth,
-        maxHeight: maxHeight,
-        minHeight: minHeight,
+        maxWidth,
+        maxHeight,
+        minHeight,
         width: '100%',
         boxShadow: 3,
       }}
