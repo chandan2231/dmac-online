@@ -5,6 +5,7 @@ import { styled } from '@mui/material/styles';
 const StyledAvatar = styled(Avatar)(({ theme }) => ({
   // Add custom styles here if needed
   // For example, default background color or border
+  backgroundColor: theme.palette.grey[300],
 }));
 
 const MorenAvatar = React.forwardRef<HTMLDivElement, AvatarProps>(

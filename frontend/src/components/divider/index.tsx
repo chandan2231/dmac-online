@@ -4,6 +4,7 @@ import { styled } from '@mui/material/styles';
 
 const StyledDivider = styled(Divider)(({ theme }) => ({
   // Add custom styles here if needed
+  backgroundColor: theme.palette.divider,
 }));
 
 const MorenDivider = React.forwardRef<HTMLHRElement, DividerProps>(
