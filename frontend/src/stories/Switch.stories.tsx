@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import MorenCheckbox from '../components/checkbox';
+import ModernSwitch from '../components/switch';
 
 const meta = {
-  title: 'Components/Checkbox',
-  component: MorenCheckbox,
+  title: 'Components/Switch',
+  component: ModernSwitch,
   parameters: {
     layout: 'centered',
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof MorenCheckbox>;
+} satisfies Meta<typeof ModernSwitch>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -25,8 +25,9 @@ export const Checked: Story = {
   },
 };
 
-export const Disabled: Story = {
+export const CustomColor: Story = {
   args: {
-    disabled: true,
+    defaultChecked: true,
+    trackColor: '#ff4081',
   },
 };

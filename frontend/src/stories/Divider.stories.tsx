@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import MorenDivider from '../components/divider';
 import MorenTypography from '../components/typography';
 

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import MorenBadge from '../components/badge';
 import MailIcon from '@mui/icons-material/Mail';
 

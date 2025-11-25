@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import MorenTooltip from '../components/tooltip';
 import Button from '../components/button';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta = {
   title: 'Components/Tooltip',
@@ -22,6 +22,10 @@ export const Default: Story = {
 };
 
 export const Positioned: Story = {
+  args: {
+    title: 'Top',
+    children: <Button>Top</Button>,
+  },
   render: () => (
     <div style={{ display: 'flex', gap: '20px' }}>
       <MorenTooltip title="Top" placement="top">
