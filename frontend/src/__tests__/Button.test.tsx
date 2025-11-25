@@ -1,6 +1,5 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import MorenButton from '../../../components/button';
+import MorenButton from '../components/button';
 
 describe('MorenButton', () => {
   test('renders button with text', () => {
