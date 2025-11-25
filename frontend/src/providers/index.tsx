@@ -10,6 +10,8 @@ import { BrowserRouter } from 'react-router-dom';
 import { ToastProvider } from './toast-provider';
 import { LanguageConstantProvider } from './language-constant-provider';
 import { ROUTES } from '../router/router';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 interface IAppProviderProps {
   children: ReactNode;
@@ -22,13 +24,15 @@ const AppProvider: React.FC<IAppProviderProps> = ({ children }) => {
         <Provider store={store}>
           <PersistGate loading={null} persistor={persistor}>
             <TanstackProvider>
-              <LanguageConstantProvider>
-                <ThemeProvider>
-                  <ToastProvider>
-                    <BrowserRouter>{children}</BrowserRouter>
-                  </ToastProvider>
-                </ThemeProvider>
-              </LanguageConstantProvider>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <LanguageConstantProvider>
+                  <ThemeProvider>
+                    <ToastProvider>
+                      <BrowserRouter>{children}</BrowserRouter>
+                    </ToastProvider>
+                  </ThemeProvider>
+                </LanguageConstantProvider>
+              </LocalizationProvider>
             </TanstackProvider>
           </PersistGate>
         </Provider>
