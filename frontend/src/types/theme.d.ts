@@ -7,29 +7,49 @@ declare module '@mui/material/styles' {
     customBackgrounds: {
       authLayout: string;
     };
-    morenButton?: {
-      height?: string;
-      borderRadius?: string;
+    morenButton: {
+      height: string;
+      borderRadius: string;
     };
-    colors?: {
-      inputBorder?: string;
-      focusBorder?: string;
-      loader?: string;
+    colors: {
+      inputBorder: string;
+      focusBorder: string;
+      loader: string;
+      errorBg: string;
+      errorText: string;
+    };
+    landingPage: {
+      primary: string;
+      secondary: string;
+      tertiary: string;
+      background: string;
+      border: string;
+      darkBg: string;
     };
   }
 
   interface ThemeOptions {
-    customBackgrounds?: {
-      authLayout?: string;
+    customBackgrounds: {
+      authLayout: string;
     };
-    morenButton?: {
-      height?: string;
-      borderRadius?: string;
+    morenButton: {
+      height: string;
+      borderRadius: string;
     };
-    colors?: {
-      inputBorder?: string;
-      focusBorder?: string;
-      loader?: string;
+    colors: {
+      inputBorder: string;
+      focusBorder: string;
+      loader: string;
+      errorBg: string;
+      errorText: string;
+    };
+    landingPage: {
+      primary: string;
+      secondary: string;
+      tertiary: string;
+      background: string;
+      border: string;
+      darkBg: string;
     };
   }
 }

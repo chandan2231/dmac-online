@@ -6,11 +6,11 @@ const backgroundImage = '/onepirate/memory-loss.jpg';
 export default function ProductHero() {
   return (
     <ProductHeroLayout
-      sxBackground={{
+      sxBackground={theme => ({
         backgroundImage: `url(${backgroundImage})`,
-        backgroundColor: '#7fc7d9', // Average color of the background image.
+        backgroundColor: theme.landingPage.secondary, // Average color of the background image.
         backgroundPosition: 'center',
-      }}
+      })}
     >
       {/* Increase the network loading priority of the background image. */}
       <img
@@ -23,7 +23,7 @@ export default function ProductHero() {
         align="center"
         variant="h2"
         marked="center"
-        sx={{ color: '#ffffff' }}
+        sx={{ color: 'common.white' }}
       >
         Solution to Memory Loss
       </LandingPageTypography>
@@ -31,7 +31,7 @@ export default function ProductHero() {
         color="inherit"
         align="center"
         variant="h5"
-        sx={{ mb: 4, mt: { xs: 4, sm: 10 }, color: '#ffffff' }}
+        sx={{ mb: 4, mt: { xs: 4, sm: 10 }, color: 'common.white' }}
       >
         Regain Memory 360 (RM360) is a research-backed brain workout for memory
         loss and cognitive decline.

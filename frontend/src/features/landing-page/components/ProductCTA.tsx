@@ -27,7 +27,7 @@ function ProductCTA() {
             sx={{
               display: 'flex',
               justifyContent: 'center',
-              bgcolor: '#ffc071',
+              bgcolor: theme => theme.landingPage.primary,
               py: 8,
               px: 3,
             }}

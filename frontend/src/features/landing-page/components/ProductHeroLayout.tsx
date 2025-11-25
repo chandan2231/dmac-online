@@ -1,6 +1,5 @@
 import * as React from 'react';
-import type { Theme } from '@emotion/react';
-import { styled, type SxProps } from '@mui/material/styles';
+import { styled, type SxProps, type Theme } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 
@@ -15,7 +14,7 @@ const ProductHeroLayoutRoot = styled('section')(({ theme }) => ({
   },
 }));
 
-const Background = styled('div')({
+const Background = styled('div')(({ theme }) => ({
   position: 'absolute',
   left: 0,
   right: 0,
@@ -24,8 +23,8 @@ const Background = styled('div')({
   backgroundSize: 'cover',
   backgroundRepeat: 'no-repeat',
   zIndex: -2,
-  backgroundColor: '#7fc7d9',
-});
+  backgroundColor: theme.landingPage.secondary,
+}));
 
 interface ProductHeroLayoutProps {
   sxBackground: SxProps<Theme>;

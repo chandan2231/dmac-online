@@ -1,8 +1,7 @@
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import LandingPageTypography from './LandingPageTypography';
-import type { Theme } from '@emotion/react';
-import { Button, type SxProps } from '@mui/material';
+import { Button, type SxProps, type Theme } from '@mui/material';
 import CustomLoader from '../../../components/loader';
 import { useGetProductListing } from '../../admin/hooks/useGetProductListing';
 import { get } from 'lodash';
@@ -91,7 +90,11 @@ function ProductValues() {
   return (
     <Box
       component="section"
-      sx={{ display: 'flex', overflow: 'hidden', bgcolor: '#fff5f8' }}
+      sx={{
+        display: 'flex',
+        overflow: 'hidden',
+        bgcolor: theme => theme.landingPage.background,
+      }}
     >
       <Container sx={{ mt: 15, mb: 30, display: 'flex', position: 'relative' }}>
         <Box

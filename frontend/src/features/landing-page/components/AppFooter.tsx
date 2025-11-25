@@ -4,6 +4,7 @@ import Grid from '@mui/material/GridLegacy';
 import Link from '@mui/material/Link';
 import Container from '@mui/material/Container';
 import { Typography } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 
 function Copyright() {
   return (
@@ -17,24 +18,28 @@ function Copyright() {
   );
 }
 
-const iconStyle = {
+const iconStyle = (theme: Theme) => ({
   width: 48,
   height: 48,
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
-  backgroundColor: '#ffc071',
+  backgroundColor: theme.landingPage.primary,
   mr: 1,
   '&:hover': {
-    bgcolor: '#ffb25e',
+    bgcolor: theme.landingPage.tertiary,
   },
-};
+});
 
 export default function AppFooter() {
   return (
     <Typography
       component="footer"
-      sx={{ display: 'flex', bgcolor: '#fff5f8', width: '100%' }}
+      sx={{
+        display: 'flex',
+        bgcolor: theme => theme.landingPage.background,
+        width: '100%',
+      }}
     >
       <Container sx={{ my: 8, display: 'flex' }}>
         <Grid container spacing={5}>

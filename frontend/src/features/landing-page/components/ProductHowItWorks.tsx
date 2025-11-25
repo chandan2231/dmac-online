@@ -3,8 +3,7 @@ import Grid from '@mui/material/GridLegacy';
 import Container from '@mui/material/Container';
 import LandingPageButton from './LandingPageButton';
 import LandingPageTypography from './LandingPageTypography';
-import type { Theme } from '@emotion/react';
-import type { SxProps } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 
 const item: SxProps<Theme> = {
   display: 'flex',
@@ -29,7 +28,11 @@ function ProductHowItWorks() {
   return (
     <Box
       component="section"
-      sx={{ display: 'flex', bgcolor: '#fff5f8', overflow: 'hidden' }}
+      sx={{
+        display: 'flex',
+        bgcolor: theme => theme.landingPage.background,
+        overflow: 'hidden',
+      }}
     >
       <Container
         sx={{

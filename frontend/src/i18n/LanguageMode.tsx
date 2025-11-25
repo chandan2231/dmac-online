@@ -21,31 +21,6 @@ import TranslateIcon from '@mui/icons-material/Translate';
 import GenericModal from '../components/modal';
 import LanguageService from './language.service';
 
-const styles = {
-  list: {
-    maxHeight: '400px',
-    overflowY: 'auto',
-    display: 'flex',
-    flexWrap: 'wrap',
-    padding: 0,
-  },
-  listItem: {
-    boxSizing: 'border-box',
-  },
-  listItemButton: {
-    borderRadius: '8px',
-    '&:hover': {
-      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-    },
-  },
-  selectedListItemButton: {
-    borderRadius: '8px',
-    backgroundColor: '#1976d2 !important',
-    color: '#fff',
-    '&:hover': { backgroundColor: 'primary.dark' },
-  },
-};
-
 export default function LanguageMode() {
   const { showToast } = useToast();
   const dispatch = useDispatch();
@@ -117,21 +92,41 @@ export default function LanguageMode() {
         hideSubmitButton
         cancelButtonText="Close"
       >
-        <List sx={styles.list}>
+        <List
+          sx={{
+            maxHeight: '400px',
+            overflowY: 'auto',
+            display: 'flex',
+            flexWrap: 'wrap',
+            padding: 0,
+          }}
+        >
           {get(listingResponse, ['data'], []).map((language, index) => {
             const currentLang = String(get(user, ['language'], ''));
             const languageId = String(get(language, ['id'], ''));
             const selectedLang = currentLang === languageId;
             return (
-              <ListItem key={index} sx={styles.listItem} disablePadding>
+              <ListItem
+                key={index}
+                sx={{ boxSizing: 'border-box' }}
+                disablePadding
+              >
                 <ListItemButton
                   selected={selectedLang}
                   onClick={() => handleSelect(language)}
-                  sx={
-                    selectedLang
-                      ? styles.selectedListItemButton
-                      : styles.listItemButton
-                  }
+                  sx={theme => ({
+                    borderRadius: '8px',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                    },
+                    ...(selectedLang && {
+                      backgroundColor: `${theme.palette.primary.main} !important`,
+                      color: theme.palette.common.white,
+                      '&:hover': {
+                        backgroundColor: theme.palette.primary.dark,
+                      },
+                    }),
+                  })}
                 >
                   {get(language, ['language'], '')}
                 </ListItemButton>

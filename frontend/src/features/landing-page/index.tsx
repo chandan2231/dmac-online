@@ -14,7 +14,7 @@ const LandingPage = () => {
     <React.Fragment>
       <AppAppBar />
       <ProductHero />
-      <Box sx={{ bgcolor: '#fff' }}>
+      <Box sx={{ bgcolor: 'background.default' }}>
         <ProductValues />
         <ProductCategories />
         <ProductHowItWorks />

@@ -10,7 +10,7 @@ const ImageBackdrop = styled('div')(({ theme }) => ({
   right: 0,
   top: 0,
   bottom: 0,
-  background: '#000',
+  background: theme.palette.common.black,
   opacity: 0.5,
   transition: theme.transitions.create('opacity'),
 }));

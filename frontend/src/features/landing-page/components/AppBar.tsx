@@ -18,7 +18,7 @@ function AppAppBar() {
       <LandingPageAppBar
         position="fixed"
         sx={{
-          backgroundColor: '#28282a',
+          backgroundColor: theme => theme.landingPage.darkBg,
         }}
       >
         <LandingPageToolbar sx={{ justifyContent: 'space-between' }}>
