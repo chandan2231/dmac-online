@@ -1,21 +1,22 @@
+import * as Yup from 'yup';
+import dayjs from 'dayjs';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import CustomLoader from '../../../../components/loader';
+import AdminService from '../../admin.service';
+import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
+import GenericModal from '../../../../components/modal';
+import MorenButton from '../../../../components/button';
+import ModernInput from '../../../../components/input';
+import ModernSwitch from '../../../../components/switch';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 import { GenericTable } from '../../../../components/table';
-import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
-import GenericModal from '../../../../components/modal';
-import ModernInput from '../../../../components/input';
 import ModernSelect, { type IOption } from '../../../../components/select';
-import MorenButton from '../../../../components/button';
-import * as Yup from 'yup';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import {
-  COUNTRIES_LIST,
-  TIMEZONES_BY_COUNTRY,
-} from '../../../../utils/constants';
-import ModernSwitch from '../../../../components/switch';
+import { COUNTRIES_LIST } from '../../../../utils/constants';
 import { useGetConsultantsListing } from '../../hooks/useGetConsultantsListing';
 import type {
   ConsultantState,
@@ -23,14 +24,10 @@ import type {
   ICreateConsultantPayload,
 } from '../../admin.interface';
 import { get } from 'lodash';
-import CustomLoader from '../../../../components/loader';
-import AdminService from '../../admin.service';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import dayjs from 'dayjs';
 import { useToast } from '../../../../providers/toast-provider';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 
 /* -------------------- SCHEMAS -------------------- */
@@ -46,12 +43,12 @@ const editConsultantSchema = Yup.object({
   mobile: Yup.string().required('Mobile is required'),
   email: Yup.string().email('Invalid email').required('Email is required'),
   country: Yup.string().required('Country is required'),
-  time_zone: Yup.string().required('Time zone is required'),
   address: Yup.string().required('Address is required'),
   speciality: Yup.string().required('Speciality is required'),
   license_number: Yup.string().required('License number is required'),
   license_expiration: Yup.string().required('License expiration is required'),
   contracted_rate_per_consult: Yup.string().required('Rate is required'),
+  state: Yup.string().required('State is required'),
 });
 type EditConsultantFormValues = Yup.InferType<typeof editConsultantSchema>;
 
@@ -63,12 +60,7 @@ const createConsultantSchema = Yup.object({
     .min(6, 'Min 6 characters')
     .required('Password is required'),
   country: Yup.string().required('Country is required'),
-  time_zone: Yup.string().when('country', {
-    is: (country: string) =>
-      !!country && (TIMEZONES_BY_COUNTRY[country] ?? []).length > 0,
-    then: schema => schema.required('Time zone is required'),
-    otherwise: schema => schema.notRequired().default(''),
-  }),
+  state: Yup.string().required('State is required'),
   address: Yup.string().required('Address is required'),
   speciality: Yup.string().required('Speciality is required'),
   license_number: Yup.string().required('License number is required'),
@@ -90,9 +82,7 @@ function ConsultantTable() {
   const [selectedConsultant, setSelectedConsultant] =
     useState<IConsultant | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<IOption | null>(null);
-  const [selectedTimeZone, setSelectedTimeZone] = useState<IOption | null>(
-    null
-  );
+  const [selectedState, setSelectedState] = useState<IOption | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isViewMode, setIsViewMode] = useState(false);
   const { showToast } = useToast();
@@ -143,25 +133,26 @@ function ConsultantTable() {
       license_expiration: consultant.license_expiration,
       contracted_rate_per_consult: consultant.contracted_rate_per_consult,
       country: consultant.country,
-      time_zone: consultant.time_zone,
+      state: consultant.province_title,
     });
 
     const countryOpt = COUNTRIES_LIST.find(c => c.label === consultant.country);
     setSelectedCountry(countryOpt || null);
 
-    const tzOpt = countryOpt
-      ? (TIMEZONES_BY_COUNTRY[countryOpt.value] || []).find(
-          tz => tz.value === consultant.time_zone
-        )
-      : null;
-    setSelectedTimeZone(tzOpt || null);
+    const stateOpt = COUNTRIES_LIST.find(
+      c => c.label === consultant.country
+    )?.states.find(s => s.value === consultant.province_id);
 
+    setSelectedState(stateOpt || null);
     setIsEditModalOpen(true);
   };
+
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setSelectedConsultant(null);
     reset();
+    setSelectedCountry(null);
+    setSelectedState(null);
   };
 
   const handleUpdateStatus = async (id: number, status: number) => {
@@ -203,9 +194,25 @@ function ConsultantTable() {
     if (!selectedConsultant) return;
     setIsLoadingStatus(true);
 
+    const timeZone =
+      COUNTRIES_LIST.find(
+        country => country.value === selectedCountry?.value
+      )?.states.find(state => state.value === values.state)?.timeZone || '';
+
+    const payload = {
+      ...values,
+      time_zone: timeZone,
+      provinceValue: selectedState?.value || '',
+      provinceTitle: selectedState?.label || '',
+    };
+
+    // exclude `state` before sending to API
+    const { state: _state, ...sanitizedPayload } = payload;
+    console.log('sanitizedPayload', _state, sanitizedPayload);
+
     const result = await AdminService.updateConsultant({
       id: selectedConsultant.id,
-      ...(values as ICreateConsultantPayload),
+      ...sanitizedPayload,
     });
 
     if (result.success) {
@@ -398,7 +405,7 @@ function ConsultantTable() {
                 value={selectedCountry}
                 onChange={opt => {
                   setSelectedCountry(opt);
-                  setSelectedTimeZone(null);
+                  setSelectedState(null);
                   setValue('country', opt.label, { shouldValidate: true });
                 }}
                 fullWidth
@@ -411,24 +418,22 @@ function ConsultantTable() {
 
             <Box display="flex" flexDirection="column" flex={1}>
               <ModernSelect
-                label="Time Zone"
+                label="State"
                 options={
-                  selectedCountry
-                    ? TIMEZONES_BY_COUNTRY[selectedCountry.value] || []
-                    : []
+                  COUNTRIES_LIST.find(
+                    country => country.value === selectedCountry?.value
+                  )?.states || []
                 }
-                value={selectedTimeZone}
+                value={selectedState}
                 onChange={opt => {
-                  setSelectedTimeZone(opt);
-                  setValue('time_zone', opt.value, { shouldValidate: true });
+                  setSelectedState(opt);
+                  setValue('state', opt.value, { shouldValidate: true });
                 }}
                 fullWidth
                 searchable
               />
-              {errors.time_zone && (
-                <Typography color="error">
-                  {errors.time_zone.message}
-                </Typography>
+              {errors.state && (
+                <Typography color="error">{errors.state.message}</Typography>
               )}
             </Box>
           </Box>
@@ -724,9 +729,7 @@ const ConsultantsListing = () => {
   const [createConsultantModalOpen, setCreateConsultantModalOpen] =
     useState(false);
   const [selectedCountry, setSelectedCountry] = useState<IOption | null>(null);
-  const [selectedTimeZone, setSelectedTimeZone] = useState<IOption | null>(
-    null
-  );
+  const [selectedState, setSelectedState] = useState<IOption | null>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const { showToast } = useToast();
 
@@ -739,7 +742,7 @@ const ConsultantsListing = () => {
     formState: { errors },
   } = useForm({
     resolver: yupResolver(createConsultantSchema),
-    defaultValues: { time_zone: '' },
+    defaultValues: { state: '' },
   });
 
   const handleOpenCreateConsultantModal = () =>
@@ -748,21 +751,38 @@ const ConsultantsListing = () => {
     setCreateConsultantModalOpen(false);
     reset();
     setSelectedCountry(null);
-    setSelectedTimeZone(null);
+    setSelectedState(null);
   };
 
   const onSubmitCreateConsultant: SubmitHandler<
     CreateConsultantFormValues
   > = async values => {
     setIsLoadingStatus(true);
+
+    const timeZone =
+      COUNTRIES_LIST.find(
+        country => country.value === selectedCountry?.value
+      )?.states.find(state => state.value === values.state)?.timeZone || '';
+
+    const payload = {
+      ...values,
+      time_zone: timeZone,
+      provinceValue: selectedState?.value || '',
+      provinceTitle: selectedState?.label || '',
+    };
+
+    // exclude `state` before sending to API
+    const { state: _state, ...sanitizedPayload } = payload;
+    console.log('sanitizedPayload', _state, sanitizedPayload);
+
     const result = await AdminService.createConsultant({
-      ...(values as Omit<ICreateConsultantPayload, 'role'>),
+      ...(sanitizedPayload as Omit<ICreateConsultantPayload, 'role'>),
     });
 
     if (result.success) {
       setCreateConsultantModalOpen(false);
       setSelectedCountry(null);
-      setSelectedTimeZone(null);
+      setSelectedState(null);
       reset();
     } else {
       showToast(result.message, 'error');
@@ -853,7 +873,7 @@ const ConsultantsListing = () => {
                 value={selectedCountry}
                 onChange={opt => {
                   setSelectedCountry(opt);
-                  setSelectedTimeZone(null);
+                  setSelectedState(null);
                   setValue('country', opt.label, { shouldValidate: true });
                 }}
                 fullWidth
@@ -866,24 +886,22 @@ const ConsultantsListing = () => {
 
             <Box display="flex" flexDirection="column" flex={1}>
               <ModernSelect
-                label="Time Zone"
+                label="State"
                 options={
-                  selectedCountry
-                    ? TIMEZONES_BY_COUNTRY[selectedCountry.value] || []
-                    : []
+                  COUNTRIES_LIST.find(
+                    country => country.value === selectedCountry?.value
+                  )?.states || []
                 }
-                value={selectedTimeZone}
+                value={selectedState}
                 onChange={opt => {
-                  setSelectedTimeZone(opt);
-                  setValue('time_zone', opt.value, { shouldValidate: true });
+                  setSelectedState(opt);
+                  setValue('state', opt.value, { shouldValidate: true });
                 }}
                 fullWidth
                 searchable
               />
-              {errors.time_zone && (
-                <Typography color="error">
-                  {errors.time_zone.message}
-                </Typography>
+              {errors.state && (
+                <Typography color="error">{errors.state.message}</Typography>
               )}
             </Box>
           </Box>

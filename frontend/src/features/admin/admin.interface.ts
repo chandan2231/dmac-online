@@ -92,6 +92,8 @@ export type ConsultantState = IConsultant & {
   contracted_rate_per_consult: string;
   country: string;
   time_zone: string;
+  province_id: string;
+  province_title: string;
 };
 
 export interface ICreateConsultantPayload {
@@ -107,6 +109,8 @@ export interface ICreateConsultantPayload {
   license_number: string;
   license_expiration: string;
   contracted_rate_per_consult: string;
+  provinceValue: string;
+  provinceTitle: string;
 }
 
 export interface ITherapist {
@@ -127,14 +131,14 @@ export type TherapistState = ITherapist & {
   contracted_rate_per_consult: string;
   country: string;
   time_zone: string;
+  province_id: string;
+  province_title: string;
 };
 
 export interface ICreateTherapistPayload {
   name: string;
   mobile: string;
   email: string;
-  password: string;
-  role: string; // will be hard-coded as 'EXPERT'
   time_zone: string;
   country: string;
   address: string;
@@ -142,6 +146,8 @@ export interface ICreateTherapistPayload {
   license_number: string;
   license_expiration: string;
   contracted_rate_per_consult: string;
+  provinceValue: string;
+  provinceTitle: string;
 }
 
 export interface IGetUsersPayload {
