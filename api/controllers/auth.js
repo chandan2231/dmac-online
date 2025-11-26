@@ -269,6 +269,13 @@ export const logout = (req, res) => {
 // Customers registration and login journey
 export const patinetRegistration = async (req, res) => {
   try {
+    // 🔍 Check if product is selected
+    if (!product_id || product_id === "" || product_id === null) {
+      return res.status(200).json({
+        isSuccess: false,
+        message: "Please select the product."
+      });
+    }
     // Check if the email already exists
     const checkEmailQuery = 'SELECT * FROM dmac_webapp_users WHERE email = ?'
     const existingUserData = await new Promise((resolve, reject) => {
@@ -294,11 +301,11 @@ export const patinetRegistration = async (req, res) => {
     const salt = bcrypt.genSaltSync(10)
     const hashedPassword = bcrypt.hashSync(req.body.password, salt)
     const verificationToken = uuidv4()
-
+    const otherInfoJson = JSON.stringify(req.body.otherInfo ?? {});
     // Insert new user into the database
     const insertQuery = `
       INSERT INTO dmac_webapp_users 
-      (name, email, mobile, password, country, state, zip_code, language, verified, verification_token, role) 
+      (name, email, mobile, password, country, state, zip_code, language, verified, verification_token, role, time_zone, province_title, province_id, patient_meta) 
       VALUES (?)`
     const values = [
       req.body.name,
@@ -311,7 +318,11 @@ export const patinetRegistration = async (req, res) => {
       req.body.language,
       0,
       verificationToken,
-      'USER'
+      'USER',
+      req.body.timeZone,
+      req.body.provinceTitle,
+      req.body.provinceValue,
+      otherInfoJson
     ]
 
     const insertResult = await new Promise((resolve, reject) => {
