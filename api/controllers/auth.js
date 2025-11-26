@@ -270,7 +270,7 @@ export const logout = (req, res) => {
 export const patinetRegistration = async (req, res) => {
   try {
     // 🔍 Check if product is selected
-    if (!product_id || product_id === "" || product_id === null) {
+    if (!req.body.product_id || req.body.product_id === "" || req.body.product_id === null) {
       return res.status(200).json({
         isSuccess: false,
         message: "Please select the product."
