@@ -159,13 +159,15 @@ const getUserEnvironmentInfo = async () => {
   const deviceInfo = getDeviceInfo();
   const osDetails = navigator.platform;
 
-  return {
+  const userEnvironmentInfo = {
     lat,
     long,
     networkInfo,
     deviceInfo,
     osDetails,
   };
+
+  return { userEnvironmentInfo };
 };
 
 export {

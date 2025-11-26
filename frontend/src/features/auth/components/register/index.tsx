@@ -99,8 +99,7 @@ const Register = () => {
       c => c.value === countryValue
     )?.states.find(s => s.value === stateValue)?.timeZone;
 
-    const { lat, long, networkInfo, deviceInfo, osDetails } =
-      await getUserEnvironmentInfo();
+    const { userEnvironmentInfo } = await getUserEnvironmentInfo();
 
     const payload = {
       name: data.name,
@@ -112,13 +111,9 @@ const Register = () => {
       country: countryTitle,
       language: languageValue,
       stateTitle: stateTitle,
+      timeZone,
       otherInfo: {
-        deviceInfo,
-        timeZone,
-        osDetails,
-        lat,
-        long,
-        networkInfo,
+        ...userEnvironmentInfo,
       },
     };
 
