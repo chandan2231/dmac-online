@@ -112,9 +112,7 @@ const Register = () => {
       language: languageValue,
       stateTitle: stateTitle,
       timeZone,
-      otherInfo: {
-        ...userEnvironmentInfo,
-      },
+      ...userEnvironmentInfo,
     };
 
     const { isSuccess, message } = await AuthService.registerUser(payload);

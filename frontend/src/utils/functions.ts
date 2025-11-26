@@ -153,10 +153,22 @@ const getDeviceInfo = () => {
   };
 };
 
+const getIpAddress = async (): Promise<string | null> => {
+  try {
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    return get(data, ['ip'], null);
+  } catch (error) {
+    console.error('Error getting IP address', error);
+    return null;
+  }
+};
+
 const getUserEnvironmentInfo = async () => {
   const { lat, long } = await getGeolocation();
   const networkInfo = getNetworkInfo();
   const deviceInfo = getDeviceInfo();
+  const ipAddress = await getIpAddress();
   const osDetails = navigator.platform;
 
   const userEnvironmentInfo = {
@@ -165,6 +177,7 @@ const getUserEnvironmentInfo = async () => {
     networkInfo,
     deviceInfo,
     osDetails,
+    ipAddress,
   };
 
   return { userEnvironmentInfo };

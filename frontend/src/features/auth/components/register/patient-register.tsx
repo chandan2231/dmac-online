@@ -122,6 +122,10 @@ const PatientRegister = () => {
       },
     };
 
+    console.log('Registration Payload:', payload);
+
+    return;
+
     const { isSuccess, message } =
       await AuthService.patientResgistration(payload);
 
