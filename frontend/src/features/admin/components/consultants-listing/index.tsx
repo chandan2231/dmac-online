@@ -375,98 +375,117 @@ function ConsultantTable() {
           flexDirection="column"
           gap={2}
         >
-          <ModernInput
-            label="Name"
-            {...register('name')}
-            error={!!errors.name}
-            helperText={errors.name?.message}
-          />
-          <ModernInput
-            label="Mobile"
-            {...register('mobile')}
-            error={!!errors.mobile}
-            helperText={errors.mobile?.message}
-          />
-
-          <ModernSelect
-            label="Country"
-            options={COUNTRIES_LIST}
-            value={selectedCountry}
-            onChange={opt => {
-              setSelectedCountry(opt);
-              setSelectedTimeZone(null);
-              setValue('country', opt.label, { shouldValidate: true });
-            }}
-            fullWidth
-            searchable
-          />
-          {errors.country && (
-            <Typography color="error">{errors.country.message}</Typography>
-          )}
-
-          <ModernSelect
-            label="Time Zone"
-            options={
-              selectedCountry
-                ? TIMEZONES_BY_COUNTRY[selectedCountry.value] || []
-                : []
-            }
-            value={selectedTimeZone}
-            onChange={opt => {
-              setSelectedTimeZone(opt);
-              setValue('time_zone', opt.value, { shouldValidate: true });
-            }}
-            fullWidth
-            searchable
-          />
-          {errors.time_zone && (
-            <Typography color="error">{errors.time_zone.message}</Typography>
-          )}
-
-          <ModernInput
-            label="Address"
-            {...register('address')}
-            error={!!errors.address}
-            helperText={errors.address?.message}
-          />
-          <ModernInput
-            label="Speciality"
-            {...register('speciality')}
-            error={!!errors.speciality}
-            helperText={errors.speciality?.message}
-          />
-          <ModernInput
-            label="License Number"
-            {...register('license_number')}
-            error={!!errors.license_number}
-            helperText={errors.license_number?.message}
-          />
-
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Controller
-              control={control}
-              name="license_expiration"
-              render={({ field }) => (
-                <DatePicker
-                  label="License Expiration"
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={date =>
-                    setValue(
-                      'license_expiration',
-                      date ? date.format('YYYY-MM-DD') : '',
-                      { shouldValidate: true }
-                    )
-                  }
-                  slotProps={{
-                    textField: {
-                      error: !!errors.license_expiration,
-                      helperText: errors.license_expiration?.message,
-                    },
-                  }}
-                />
-              )}
+          <Box display="flex" flexDirection="row" gap={2}>
+            <ModernInput
+              label="Name"
+              {...register('name')}
+              error={!!errors.name}
+              helperText={errors.name?.message}
             />
-          </LocalizationProvider>
+            <ModernInput
+              label="Mobile"
+              {...register('mobile')}
+              error={!!errors.mobile}
+              helperText={errors.mobile?.message}
+            />
+          </Box>
+
+          <Box display="flex" flexDirection="row" gap={2}>
+            <Box display="flex" flexDirection="column" flex={1}>
+              <ModernSelect
+                label="Country"
+                options={COUNTRIES_LIST}
+                value={selectedCountry}
+                onChange={opt => {
+                  setSelectedCountry(opt);
+                  setSelectedTimeZone(null);
+                  setValue('country', opt.label, { shouldValidate: true });
+                }}
+                fullWidth
+                searchable
+              />
+              {errors.country && (
+                <Typography color="error">{errors.country.message}</Typography>
+              )}
+            </Box>
+
+            <Box display="flex" flexDirection="column" flex={1}>
+              <ModernSelect
+                label="Time Zone"
+                options={
+                  selectedCountry
+                    ? TIMEZONES_BY_COUNTRY[selectedCountry.value] || []
+                    : []
+                }
+                value={selectedTimeZone}
+                onChange={opt => {
+                  setSelectedTimeZone(opt);
+                  setValue('time_zone', opt.value, { shouldValidate: true });
+                }}
+                fullWidth
+                searchable
+              />
+              {errors.time_zone && (
+                <Typography color="error">
+                  {errors.time_zone.message}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+
+          <Box display="flex" flexDirection="row" gap={2}>
+            <ModernInput
+              label="Address"
+              {...register('address')}
+              error={!!errors.address}
+              helperText={errors.address?.message}
+            />
+            <ModernInput
+              label="Speciality"
+              {...register('speciality')}
+              error={!!errors.speciality}
+              helperText={errors.speciality?.message}
+            />
+          </Box>
+
+          <Box display="flex" flexDirection="row" gap={2}>
+            <ModernInput
+              label="License Number"
+              {...register('license_number')}
+              error={!!errors.license_number}
+              helperText={errors.license_number?.message}
+              sx={{ flex: '1' }}
+            />
+
+            <Box sx={{ flex: '1' }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Controller
+                  control={control}
+                  name="license_expiration"
+                  render={({ field }) => (
+                    <DatePicker
+                      label="License Expiration"
+                      value={field.value ? dayjs(field.value) : null}
+                      onChange={date =>
+                        setValue(
+                          'license_expiration',
+                          date ? date.format('YYYY-MM-DD') : '',
+                          { shouldValidate: true }
+                        )
+                      }
+                      slotProps={{
+                        textField: {
+                          error: !!errors.license_expiration,
+                          helperText: errors.license_expiration?.message,
+                        },
+                      }}
+                      sx={{ width: '100%' }}
+                    />
+                  )}
+                />
+              </LocalizationProvider>
+            </Box>
+          </Box>
 
           <ModernInput
             label="Rate per Consult"
@@ -791,118 +810,140 @@ const ConsultantsListing = () => {
           flexDirection="column"
           gap={2}
         >
-          <ModernInput
-            label="Name"
-            placeholder="Enter name"
-            {...register('name')}
-            error={!!errors.name}
-            helperText={errors.name?.message}
-          />
-          <ModernInput
-            label="Mobile"
-            placeholder="Enter mobile"
-            {...register('mobile')}
-            error={!!errors.mobile}
-            helperText={errors.mobile?.message}
-          />
-          <ModernInput
-            label="Email"
-            placeholder="Enter email"
-            {...register('email')}
-            error={!!errors.email}
-            helperText={errors.email?.message}
-          />
-          <ModernInput
-            label="Password"
-            type="password"
-            placeholder="Enter password"
-            {...register('password')}
-            error={!!errors.password}
-            helperText={errors.password?.message}
-          />
-
-          <ModernSelect
-            label="Country"
-            options={COUNTRIES_LIST}
-            value={selectedCountry}
-            onChange={opt => {
-              setSelectedCountry(opt);
-              setSelectedTimeZone(null);
-              setValue('country', opt.label, { shouldValidate: true });
-            }}
-            fullWidth
-            searchable
-          />
-          {errors.country && (
-            <Typography color="error">{errors.country.message}</Typography>
-          )}
-
-          <ModernSelect
-            label="Time Zone"
-            options={
-              selectedCountry
-                ? TIMEZONES_BY_COUNTRY[selectedCountry.value] || []
-                : []
-            }
-            value={selectedTimeZone}
-            onChange={opt => {
-              setSelectedTimeZone(opt);
-              setValue('time_zone', opt.value, { shouldValidate: true });
-            }}
-            fullWidth
-            searchable
-          />
-          {errors.time_zone && (
-            <Typography color="error">{errors.time_zone.message}</Typography>
-          )}
-
-          <ModernInput
-            label="Address"
-            placeholder="Enter address"
-            {...register('address')}
-            error={!!errors.address}
-            helperText={errors.address?.message}
-          />
-          <ModernInput
-            label="Speciality"
-            placeholder="Enter speciality"
-            {...register('speciality')}
-            error={!!errors.speciality}
-            helperText={errors.speciality?.message}
-          />
-          <ModernInput
-            label="License Number"
-            placeholder="Enter license number"
-            {...register('license_number')}
-            error={!!errors.license_number}
-            helperText={errors.license_number?.message}
-          />
-
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Controller
-              control={control}
-              name="license_expiration"
-              render={({ field }) => (
-                <DatePicker
-                  label="License Expiration"
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={date =>
-                    setValue(
-                      'license_expiration',
-                      date ? date.format('YYYY-MM-DD') : '',
-                      { shouldValidate: true }
-                    )
-                  }
-                  slotProps={{
-                    textField: {
-                      error: !!errors.license_expiration,
-                      helperText: errors.license_expiration?.message,
-                    },
-                  }}
-                />
-              )}
+          <Box display="flex" flexDirection="row" gap={2}>
+            <ModernInput
+              label="Name"
+              placeholder="Enter name"
+              {...register('name')}
+              error={!!errors.name}
+              helperText={errors.name?.message}
             />
-          </LocalizationProvider>
+            <ModernInput
+              label="Mobile"
+              placeholder="Enter mobile"
+              {...register('mobile')}
+              error={!!errors.mobile}
+              helperText={errors.mobile?.message}
+            />
+          </Box>
+
+          <Box display="flex" flexDirection="row" gap={2}>
+            <ModernInput
+              label="Email"
+              placeholder="Enter email"
+              {...register('email')}
+              error={!!errors.email}
+              helperText={errors.email?.message}
+            />
+            <ModernInput
+              label="Password"
+              type="password"
+              placeholder="Enter password"
+              {...register('password')}
+              error={!!errors.password}
+              helperText={errors.password?.message}
+            />
+          </Box>
+
+          <Box display="flex" flexDirection="row" gap={2}>
+            <Box display="flex" flexDirection="column" flex={1}>
+              <ModernSelect
+                label="Country"
+                options={COUNTRIES_LIST}
+                value={selectedCountry}
+                onChange={opt => {
+                  setSelectedCountry(opt);
+                  setSelectedTimeZone(null);
+                  setValue('country', opt.label, { shouldValidate: true });
+                }}
+                fullWidth
+                searchable
+              />
+              {errors.country && (
+                <Typography color="error">{errors.country.message}</Typography>
+              )}
+            </Box>
+
+            <Box display="flex" flexDirection="column" flex={1}>
+              <ModernSelect
+                label="Time Zone"
+                options={
+                  selectedCountry
+                    ? TIMEZONES_BY_COUNTRY[selectedCountry.value] || []
+                    : []
+                }
+                value={selectedTimeZone}
+                onChange={opt => {
+                  setSelectedTimeZone(opt);
+                  setValue('time_zone', opt.value, { shouldValidate: true });
+                }}
+                fullWidth
+                searchable
+              />
+              {errors.time_zone && (
+                <Typography color="error">
+                  {errors.time_zone.message}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+
+          <Box display="flex" flexDirection="row" gap={2}>
+            <ModernInput
+              label="Address"
+              placeholder="Enter address"
+              {...register('address')}
+              error={!!errors.address}
+              helperText={errors.address?.message}
+            />
+            <ModernInput
+              label="Speciality"
+              placeholder="Enter speciality"
+              {...register('speciality')}
+              error={!!errors.speciality}
+              helperText={errors.speciality?.message}
+            />
+          </Box>
+
+          <Box display="flex" flexDirection="row" gap={2}>
+            <ModernInput
+              label="License Number"
+              placeholder="Enter license number"
+              {...register('license_number')}
+              error={!!errors.license_number}
+              helperText={errors.license_number?.message}
+              sx={{ flex: '1' }}
+            />
+
+            <Box sx={{ flex: '1' }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Controller
+                  control={control}
+                  name="license_expiration"
+                  render={({ field }) => (
+                    <DatePicker
+                      label="License Expiration"
+                      value={field.value ? dayjs(field.value) : null}
+                      onChange={date =>
+                        setValue(
+                          'license_expiration',
+                          date ? date.format('YYYY-MM-DD') : '',
+                          { shouldValidate: true }
+                        )
+                      }
+                      slotProps={{
+                        textField: {
+                          error: !!errors.license_expiration,
+                          helperText: errors.license_expiration?.message,
+                        },
+                      }}
+                      sx={{ width: '100%' }}
+                    />
+                  )}
+                />
+              </LocalizationProvider>
+            </Box>
+          </Box>
 
           <ModernInput
             label="Rate per Consult"
