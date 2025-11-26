@@ -90,10 +90,10 @@ const Register = () => {
   };
 
   const onSubmit = async (data: FormValues) => {
-    const { language, country, state } = data;
+    const { language, country, state: stateDetails } = data;
     const { value: languageValue } = language;
     const { label: countryTitle, value: countryValue } = country;
-    const { label: stateTitle, value: stateValue } = state;
+    const { label: stateTitle, value: stateValue } = stateDetails;
 
     const timeZone = COUNTRIES_LIST.find(
       c => c.value === countryValue
