@@ -486,7 +486,6 @@ function ConsultantTable() {
       </GenericModal>
 
       {/* View Modal */}
-      {/* View Modal */}
       <GenericModal
         isOpen={isViewMode}
         onClose={() => {
@@ -564,6 +563,19 @@ function ConsultantTable() {
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
                   {get(selectedConsultant, 'country', '')}
+                </Typography>
+              </Box>
+
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  State:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedConsultant, 'province_title', '')}
                 </Typography>
               </Box>
 

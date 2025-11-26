@@ -116,7 +116,7 @@ const PatientRegister = () => {
       language: languageValue,
       product_id: get(state, ['id'], null),
       provinceTitle: stateTitle,
-      provinceValue: stateValue,
+      province_id: stateValue,
       timeZone,
       otherInfo: {
         ...userEnvironmentInfo,
