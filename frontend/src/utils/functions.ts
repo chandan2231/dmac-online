@@ -166,9 +166,9 @@ const getIpAddress = async (): Promise<string | null> => {
 
 const getUserEnvironmentInfo = async () => {
   const { lat, long } = await getGeolocation();
+  const ipAddress = await getIpAddress();
   const networkInfo = getNetworkInfo();
   const deviceInfo = getDeviceInfo();
-  const ipAddress = await getIpAddress();
   const osDetails = navigator.platform;
 
   const userEnvironmentInfo = {
