@@ -97,7 +97,7 @@ export const createUsersByRole = async (req, res) => {
 
     // Insert new user
     const insertQuery = `
-      INSERT INTO dmac_webapp_users (name, mobile, email, password, role, verified, verification_token, time_zone, country, address, speciality, license_number, license_expiration, contracted_rate_per_consult ) 
+      INSERT INTO dmac_webapp_users (name, mobile, email, password, role, verified, verification_token, time_zone, country, address, speciality, license_number, license_expiration, contracted_rate_per_consult, province_title, province_id ) 
       VALUES (?)`
     const values = [
       req.body.name,
@@ -107,13 +107,15 @@ export const createUsersByRole = async (req, res) => {
       req.body.role,
       0,
       verificationToken,
-      req.body.time_zone,
+      req.body.timeZone,
       req.body.country,
       req.body.address,
       req.body.speciality,
       req.body.license_number,
       req.body.license_expiration,
-      req.body.contracted_rate_per_consult
+      req.body.contracted_rate_per_consult,
+      req.body.provinceTitle,
+      req.body.provinceValue,
     ]
 
     await new Promise((resolve, reject) => {
