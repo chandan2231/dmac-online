@@ -14,6 +14,7 @@ import { COUNTRIES_LIST } from '../../../../utils/constants.ts';
 import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages.ts';
 import { convertLanguagesListToOptions } from '../../../../utils/functions.ts';
 import { ROUTES } from '../../../../router/router.ts';
+import { getUserEnvironmentInfo } from '../../../../utils/functions.ts';
 import MorenCard from '../../../../components/card/index.tsx';
 import ModernInput from '../../../../components/input/index.tsx';
 import MorenButton from '../../../../components/button/index.tsx';
@@ -30,6 +31,7 @@ type FormValues = {
   zipCode: string;
   language: IOption;
   country: IOption;
+  state: IOption;
 };
 
 const optionShape = Yup.object({
@@ -55,6 +57,7 @@ const schema = Yup.object({
     .required('Zip Code is required'),
   language: optionShape,
   country: optionShape,
+  state: optionShape,
 });
 
 const Register = () => {
@@ -74,20 +77,30 @@ const Register = () => {
     defaultValues: {
       language: { label: '', value: '' },
       country: { label: '', value: '' },
+      state: { label: '', value: '' },
     },
   });
 
   const selectedLanguage = watch('language');
   const selectedCountry = watch('country');
+  const selectedState = watch('state');
 
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
   const onSubmit = async (data: FormValues) => {
-    const { language, country } = data;
+    const { language, country, state } = data;
     const { value: languageValue } = language;
-    const { label: countryTitle } = country;
+    const { label: countryTitle, value: countryValue } = country;
+    const { label: stateTitle, value: stateValue } = state;
+
+    const timeZone = COUNTRIES_LIST.find(
+      c => c.value === countryValue
+    )?.states.find(s => s.value === stateValue)?.timeZone;
+
+    const { lat, long, networkInfo, deviceInfo, osDetails } =
+      await getUserEnvironmentInfo();
 
     const payload = {
       name: data.name,
@@ -98,6 +111,15 @@ const Register = () => {
       zipcode: data.zipCode,
       country: countryTitle,
       language: languageValue,
+      stateTitle: stateTitle,
+      otherInfo: {
+        deviceInfo,
+        timeZone,
+        osDetails,
+        lat,
+        long,
+        networkInfo,
+      },
     };
 
     const { isSuccess, message } = await AuthService.registerUser(payload);
@@ -182,15 +204,38 @@ const Register = () => {
           </Box>
         </Box>
 
-        <ModernSelect
-          value={selectedCountry}
-          onChange={option => setValue('country', option)}
-          placeholder="Select your country"
-          options={COUNTRIES_LIST}
-          error={!!errors.country}
-          helperText={errors.country?.value?.message}
-          searchable={true}
-        />
+        <Box display="flex" gap={2} flexDirection={{ xs: 'column', sm: 'row' }}>
+          <Box flex={1}>
+            <ModernSelect
+              value={selectedCountry}
+              onChange={option => {
+                setValue('country', option);
+                setValue('state', { label: '', value: '' });
+              }}
+              placeholder="Select your country"
+              options={COUNTRIES_LIST}
+              error={!!errors.country}
+              helperText={errors.country?.value?.message}
+              searchable={true}
+            />
+          </Box>
+
+          <Box flex={1}>
+            <ModernSelect
+              value={selectedState}
+              onChange={option => setValue('state', option)}
+              placeholder="Select your state"
+              options={
+                COUNTRIES_LIST.find(
+                  country => country.value === selectedCountry?.value
+                )?.states || []
+              }
+              error={!!errors.state}
+              helperText={errors.state?.value?.message}
+              searchable={true}
+            />
+          </Box>
+        </Box>
 
         <Box display="flex" gap={2} flexDirection={{ xs: 'column', sm: 'row' }}>
           <Box flex={1}>

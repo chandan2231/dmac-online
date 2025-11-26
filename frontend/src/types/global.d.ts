@@ -2,3 +2,17 @@
 interface Window<T = any> {
   paypal: T;
 }
+
+interface NetworkInformation {
+  effectiveType?: string;
+  rtt?: number;
+  downlink?: number;
+  saveData?: boolean;
+}
+
+interface NavigatorWithExtensions extends Navigator {
+  connection?: NetworkInformation;
+  mozConnection?: NetworkInformation;
+  webkitConnection?: NetworkInformation;
+  deviceMemory?: number;
+}

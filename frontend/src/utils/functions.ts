@@ -102,6 +102,72 @@ const navigateUserTo = (user: IUser | null) => {
   return ROUTES.HOME;
 };
 
+const getGeolocation = (): Promise<{
+  lat: number | null;
+  long: number | null;
+}> => {
+  return new Promise(resolve => {
+    if (!('geolocation' in navigator)) {
+      resolve({ lat: null, long: null });
+    } else {
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          resolve({
+            lat: position.coords.latitude,
+            long: position.coords.longitude,
+          });
+        },
+        error => {
+          console.error('Error getting location', error);
+          resolve({ lat: null, long: null });
+        }
+      );
+    }
+  });
+};
+
+const getNetworkInfo = () => {
+  const nav = navigator as NavigatorWithExtensions;
+  const connection =
+    nav.connection || nav.mozConnection || nav.webkitConnection;
+
+  return connection
+    ? {
+        effectiveType: connection.effectiveType,
+        rtt: connection.rtt,
+        downlink: connection.downlink,
+        saveData: connection.saveData,
+      }
+    : {};
+};
+
+const getDeviceInfo = () => {
+  const nav = navigator as NavigatorWithExtensions;
+  return {
+    userAgent: nav.userAgent,
+    platform: nav.platform,
+    vendor: nav.vendor,
+    language: nav.language,
+    deviceMemory: nav.deviceMemory,
+    hardwareConcurrency: nav.hardwareConcurrency,
+  };
+};
+
+const getUserEnvironmentInfo = async () => {
+  const { lat, long } = await getGeolocation();
+  const networkInfo = getNetworkInfo();
+  const deviceInfo = getDeviceInfo();
+  const osDetails = navigator.platform;
+
+  return {
+    lat,
+    long,
+    networkInfo,
+    deviceInfo,
+    osDetails,
+  };
+};
+
 export {
   getCurrentYear,
   getCurrentMonth,
@@ -115,4 +181,5 @@ export {
   getLanguageText,
   canWeShowChangeLanguageOption,
   navigateUserTo,
+  getUserEnvironmentInfo,
 };

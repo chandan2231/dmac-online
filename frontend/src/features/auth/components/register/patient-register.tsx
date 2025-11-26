@@ -12,7 +12,10 @@ import ModernSelect, {
 } from '../../../../components/select/index.tsx';
 import { COUNTRIES_LIST } from '../../../../utils/constants.ts';
 import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages.ts';
-import { convertLanguagesListToOptions } from '../../../../utils/functions.ts';
+import {
+  convertLanguagesListToOptions,
+  getUserEnvironmentInfo,
+} from '../../../../utils/functions.ts';
 import { ROUTES } from '../../../../router/router.ts';
 import MorenCard from '../../../../components/card/index.tsx';
 import ModernInput from '../../../../components/input/index.tsx';
@@ -31,6 +34,7 @@ type FormValues = {
   zipCode: string;
   language: IOption;
   country: IOption;
+  state: IOption;
 };
 
 const optionShape = Yup.object({
@@ -56,6 +60,7 @@ const schema = Yup.object({
     .required('Zip Code is required'),
   language: optionShape,
   country: optionShape,
+  state: optionShape,
 });
 
 const PatientRegister = () => {
@@ -76,20 +81,30 @@ const PatientRegister = () => {
     defaultValues: {
       language: { label: '', value: '' },
       country: { label: '', value: '' },
+      state: { label: '', value: '' },
     },
   });
 
   const selectedLanguage = watch('language');
   const selectedCountry = watch('country');
+  const selectedState = watch('state');
 
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
   const onSubmit = async (data: FormValues) => {
-    const { language, country } = data;
+    const { language, country, state } = data;
     const { value: languageValue } = language;
-    const { label: countryTitle } = country;
+    const { label: countryTitle, value: countryValue } = country;
+    const { label: stateTitle, value: stateValue } = state;
+
+    const timeZone = COUNTRIES_LIST.find(
+      c => c.value === countryValue
+    )?.states.find(s => s.value === stateValue)?.timeZone;
+
+    const { lat, long, networkInfo, deviceInfo, osDetails } =
+      await getUserEnvironmentInfo();
 
     const payload = {
       name: data.name,
@@ -101,6 +116,16 @@ const PatientRegister = () => {
       country: countryTitle,
       language: languageValue,
       product_id: get(state, ['id'], null),
+      stateTitle: stateTitle,
+      timeZone,
+      otherInfo: {
+        deviceInfo,
+        timeZone,
+        osDetails,
+        lat,
+        long,
+        networkInfo,
+      },
     };
 
     const { isSuccess, message } =
@@ -227,15 +252,35 @@ const PatientRegister = () => {
               </Grid>
             </Grid>
 
-            <ModernSelect
-              value={selectedCountry}
-              onChange={option => setValue('country', option)}
-              placeholder="Select your country"
-              options={COUNTRIES_LIST}
-              error={!!errors.country}
-              helperText={errors.country?.value?.message}
-              searchable
-            />
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <ModernSelect
+                  value={selectedCountry}
+                  onChange={option => setValue('country', option)}
+                  placeholder="Select your country"
+                  options={COUNTRIES_LIST}
+                  error={!!errors.country}
+                  helperText={errors.country?.value?.message}
+                  searchable
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <ModernSelect
+                  value={selectedState}
+                  onChange={option => setValue('state', option)}
+                  placeholder="Select your state"
+                  options={
+                    COUNTRIES_LIST.find(
+                      country => country.value === selectedCountry?.value
+                    )?.states || []
+                  }
+                  error={!!errors.state}
+                  helperText={errors.state?.value?.message}
+                  searchable={true}
+                />
+              </Grid>
+            </Grid>
 
             {/* Row: Area + Zip Code */}
             <Grid container spacing={2}>

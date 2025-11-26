@@ -53,4 +53,15 @@ export interface IRegisterPayload {
   email: string;
   password: string;
   mobile: string;
+  state?: string;
+  zipcode?: string;
+  country?: string;
+  language?: string;
+  stateTitle?: string;
+  timeZone?: string;
+  osDetails?: string;
+  lat?: number | null;
+  long?: number | null;
+  deviceInfo?: Record<string, unknown>;
+  networkInfo?: Record<string, unknown>;
 }
