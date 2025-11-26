@@ -111,6 +111,7 @@ const Register = () => {
       country: countryTitle,
       language: languageValue,
       stateTitle: stateTitle,
+      stateValue: stateValue,
       timeZone,
       otherInfo: {
         ...userEnvironmentInfo,
