@@ -144,17 +144,82 @@ const PatientPayment = () => {
           title="Product Details"
           description="Review your selected product"
           minHeight="100%"
+          cardStyles={{
+            position: 'relative',
+          }}
         >
           <Box display="flex" flexDirection="column">
+            <span
+              className=""
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                backgroundColor: '#bed6fb',
+                borderRadius: '99em 0 0 99em',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0.625em 0.75em',
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                color: '#425475',
+              }}
+            >
+              <span>${get(state, ['product', 'product_amount'], '')}</span>
+            </span>
             <Typography variant="h6" fontWeight="bold">
               Product Name: {get(state, ['product', 'product_name'], '')}
             </Typography>
             <Typography sx={{ color: 'text.secondary' }}>
               Description: {get(state, ['product', 'product_description'], '')}
             </Typography>
-            <Typography sx={{ color: 'text.secondary' }}>
-              Amount: ${get(state, ['product', 'product_amount'], '')}
-            </Typography>
+            {get(state, ['product', 'subscription_list'], '') && (
+              <Box mt={2}>
+                <ul>
+                  {(get(state, ['product', 'subscription_list'], '') as string)
+                    .split(',')
+                    .map((feature: string, index: number) => (
+                      <li
+                        key={index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          marginBottom: '8px',
+                        }}
+                      >
+                        <span
+                          className=""
+                          style={{
+                            backgroundColor: '#1FCAC5',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            borderRadius: '50%',
+                            width: '20px',
+                            height: '20px',
+                          }}
+                        >
+                          <svg
+                            height="24"
+                            width="24"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path d="M0 0h24v24H0z" fill="none"></path>
+                            <path
+                              fill="currentColor"
+                              d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
+                            ></path>
+                          </svg>
+                        </span>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                </ul>
+              </Box>
+            )}
           </Box>
         </MorenCard>
       </Grid>

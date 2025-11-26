@@ -24,6 +24,7 @@ type MorenCardProps = {
         TypographyPropsVariantOverrides
       >
     | undefined;
+  cardStyles?: React.CSSProperties;
 };
 
 const MorenCard: React.FC<MorenCardProps> = ({
@@ -35,6 +36,7 @@ const MorenCard: React.FC<MorenCardProps> = ({
   minHeight = 0,
   children,
   descriptionVariant = 'body2',
+  cardStyles = {},
 }) => {
   return (
     <Card
@@ -45,6 +47,7 @@ const MorenCard: React.FC<MorenCardProps> = ({
         minHeight,
         width: '100%',
         boxShadow: 3,
+        ...cardStyles,
       }}
     >
       {image && (

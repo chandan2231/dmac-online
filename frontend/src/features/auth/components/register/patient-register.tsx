@@ -172,6 +172,52 @@ const PatientRegister = () => {
                 ${state ? get(state, ['product_amount'], '') : ''}
               </Typography>
             </Box>
+
+            <div className="">
+              <ul className="">
+                {(get(state, ['subscription_list'], '') as string)
+                  .split(',')
+                  .map((feature, index) => (
+                    <li
+                      key={index}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <span
+                        className=""
+                        style={{
+                          backgroundColor: '#1FCAC5',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#fff',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                        }}
+                      >
+                        <svg
+                          height="24"
+                          width="24"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path d="M0 0h24v24H0z" fill="none"></path>
+                          <path
+                            fill="currentColor"
+                            d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
+                          ></path>
+                        </svg>
+                      </span>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
           </Box>
         </MorenCard>
       </Grid>

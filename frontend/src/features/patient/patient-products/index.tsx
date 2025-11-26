@@ -32,6 +32,7 @@ const ProductCard = ({ ...args }: IProduct) => {
     product_id,
     product_name,
     product_description,
+    subscription_list,
   };
 
   const stateData = {
