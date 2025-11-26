@@ -1,80 +1,10 @@
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
-import LandingPageTypography from './LandingPageTypography';
-import { Button, type SxProps, type Theme } from '@mui/material';
 import CustomLoader from '../../../components/loader';
 import { useGetProductListing } from '../../admin/hooks/useGetProductListing';
 import { get } from 'lodash';
 import type { IProduct } from '../../admin/admin.interface';
-import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../../router/router';
-
-const item: SxProps<Theme> = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  px: 5,
-  py: 5,
-  minHeight: 300,
-  borderRadius: 2,
-  bgcolor: 'white',
-  boxShadow: 3,
-  textAlign: 'center',
-  cursor: 'pointer',
-  flex: '1 1 100%',
-
-  // Hover effect
-  transition: 'transform 0.3s, box-shadow 0.3s',
-  '&:hover': {
-    transform: 'translateY(-10px)',
-    boxShadow: 6,
-  },
-};
-
-const PRODUCT_LIST_IMAGE = [
-  '/onepirate/productValues1.svg',
-  '/onepirate/productValues2.svg',
-  '/onepirate/productValues3.svg',
-];
-
-const ProductCard = ({ index, ...args }: IProduct & { index: number }) => {
-  const { product_name, product_description } = args;
-  const navigate = useNavigate();
-
-  const handleRegisterClick = (args: IProduct) => {
-    navigate(ROUTES.PATIENT_REGISTRATION, { state: { ...args } });
-  };
-
-  return (
-    <Box sx={item}>
-      <Box>
-        <Box
-          component="img"
-          src={
-            typeof get(PRODUCT_LIST_IMAGE, index) === 'string'
-              ? get(PRODUCT_LIST_IMAGE, index)
-              : '/onepirate/productValues1.svg'
-          }
-          alt={product_name}
-          sx={{ height: 55 }}
-        />
-        <LandingPageTypography variant="subtitle1" sx={{ my: 3 }}>
-          {product_name}
-        </LandingPageTypography>
-        <LandingPageTypography variant="subtitle2" sx={{ mb: 3 }}>
-          {product_description}
-        </LandingPageTypography>
-      </Box>
-
-      {/* Register Button */}
-      {/* Push User to new page */}
-      <Button variant="contained" onClick={() => handleRegisterClick(args)}>
-        Register
-      </Button>
-    </Box>
-  );
-};
+import ProductCard from './ProductCard';
 
 function ProductValues() {
   const { data, isLoading, error } = useGetProductListing();
@@ -97,13 +27,6 @@ function ProductValues() {
       }}
     >
       <Container sx={{ mt: 15, mb: 30, display: 'flex', position: 'relative' }}>
-        <Box
-          component="img"
-          src="/onepirate/productCurvyLines.png"
-          alt="curvy lines"
-          sx={{ pointerEvents: 'none', position: 'absolute', top: -180 }}
-        />
-
         {/* Flex container instead of Grid */}
         <Box
           sx={{
@@ -127,7 +50,7 @@ function ProductValues() {
                   justifyContent: 'center',
                 }}
               >
-                <ProductCard index={index} {...product} />
+                <ProductCard {...product} />
               </Box>
             )
           )}

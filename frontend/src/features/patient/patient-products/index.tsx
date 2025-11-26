@@ -1,31 +1,23 @@
+import './index.css';
 import { get } from 'lodash';
 import type { IProduct } from '../../admin/admin.interface';
-import {
-  Box,
-  Button,
-  Card,
-  CardActions,
-  CardContent,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 import { useGetProductListing } from '../../admin/hooks/useGetProductListing';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import { useGetSubscribedProduct } from '../hooks/useGetSubscribedProduct';
-import CustomLoader from '../../../components/loader';
 import { ROUTES } from '../../../router/router';
+import CustomLoader from '../../../components/loader';
 
-const ProductCard = ({
-  hideButton = false,
-  ...args
-}: IProduct & { index: number; hideButton?: boolean }) => {
+const ProductCard = ({ ...args }: IProduct) => {
   const navigate = useNavigate();
   const { user: userDetails } = useSelector((state: RootState) => state.auth);
   const {
     product_name,
     product_description,
     product_amount,
+    subscription_list,
     id: product_id,
   } = args;
 
@@ -52,42 +44,48 @@ const ProductCard = ({
   };
 
   return (
-    <Card
-      sx={{
-        flex: '1 1 calc(50% - 16px)',
-        maxWidth: 'calc(50% - 16px)',
+    <div
+      className="plan"
+      style={{
+        flex: '1 1 calc(33.33% - 16px)',
+        maxWidth: 'calc(33.33% - 16px)',
       }}
     >
-      <CardContent
-        sx={{
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 2,
-        }}
-      >
-        <Typography variant="body2">{product_description}</Typography>
-        <Typography gutterBottom sx={{ color: 'text.secondary', fontSize: 14 }}>
-          {product_name}
-        </Typography>
-      </CardContent>
-      {!hideButton && (
-        <CardActions sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-          <Button
-            size="small"
-            variant="contained"
-            onClick={() => handleBuyClick()}
-            sx={{
-              width: 100,
-            }}
-          >
-            BUY
+      <div className="inner">
+        <span className="pricing">
+          <span>${product_amount}</span>
+        </span>
+        <p className="title">{product_name}</p>
+        <p className="info">{product_description}</p>
+        <ul className="features">
+          {subscription_list.split(',').map((feature, index) => (
+            <li key={index}>
+              <span className="icon">
+                <svg
+                  height="24"
+                  width="24"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M0 0h24v24H0z" fill="none"></path>
+                  <path
+                    fill="currentColor"
+                    d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
+                  ></path>
+                </svg>
+              </span>
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="action">
+          <Button variant="contained" onClick={() => handleBuyClick()}>
+            Register
           </Button>
-        </CardActions>
-      )}
-    </Card>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -114,6 +112,7 @@ const PatientProducts = () => {
         sx={{
           height: '100%',
           p: 4,
+          overflowY: 'auto',
         }}
       >
         <Box
@@ -126,7 +125,7 @@ const PatientProducts = () => {
         >
           {((get(data, 'data', []) as IProduct[]) ?? []).map(
             (product: IProduct, index: number) => (
-              <ProductCard key={index} index={index} {...product} />
+              <ProductCard key={index} {...product} />
             )
           )}
         </Box>
