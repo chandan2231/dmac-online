@@ -40,6 +40,11 @@ import PatientPaymentSuccessPage from '../pages/payment/patient-payment-success'
 import PatientPaymentCancelledPage from '../pages/payment/patient-payment-cancel';
 import PatientProductsPage from '../pages/patient/patient-products';
 
+// Expert Pages
+import ConsultationListPage from '../pages/expert/consultation-list';
+import TransactionHistoryPage from '../pages/expert/transaction-history';
+import ExpertHomePage from '../pages/expert/home';
+
 export const LAYOUT_MAP = {
   BaseLayout,
   MainLayout,
@@ -83,6 +88,11 @@ export const COMPONENT_MAP = {
   PatientPaymentSuccessPage,
   PatientPaymentCancelledPage,
   PatientProductsPage,
+
+  // Expert Pages
+  ConsultationListPage,
+  TransactionHistoryPage,
+  ExpertHomePage,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -124,6 +134,10 @@ export const ROUTES = {
 
   // Not Found
   NOT_FOUND: '*',
+
+  // EXPERT Protected routes
+  EXPERT_CONSULTATIONS: '/expert/consultations',
+  EXPERT_TRANSACTIONS: '/expert/transactions',
 } as const;
 
 export type ROUTES = (typeof ROUTES)[keyof typeof ROUTES];
@@ -309,6 +323,37 @@ const USER_ROUTES: IAllowedRoutes[] = [
   },
 ];
 
+const EXPERT_ROUTES: IAllowedRoutes[] = [
+  {
+    path: ROUTES.HOME,
+    layout: 'MainLayout',
+    component: 'ExpertHomePage',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Auth With Google',
+    sideBarIcon: 'HomeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.EXPERT_CONSULTATIONS,
+    layout: 'MainLayout',
+    component: 'ConsultationListPage',
+    showInSidebar: true,
+    sideBarTitle: 'Consultations',
+    sideBarIcon: 'EventIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.EXPERT_TRANSACTIONS,
+    layout: 'MainLayout',
+    component: 'TransactionHistoryPage',
+    showInSidebar: true,
+    sideBarTitle: 'Transactions',
+    sideBarIcon: 'ReceiptLongIcon',
+    isAChildOf: null,
+  },
+];
+
 const ADMIN_ROUTES: IAllowedRoutes[] = [
   {
     path: ROUTES.ADMIN_DASHBOARD,
@@ -418,6 +463,9 @@ export const getRoutesByRole = (role: UserRole): IAllowedRoutes[] => {
   }
   if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
     return ADMIN_ROUTES;
+  }
+  if (role === 'EXPERT') {
+    return EXPERT_ROUTES;
   }
   return GUEST_USER_ROUTES;
 };
