@@ -110,7 +110,8 @@ const Register = () => {
       zipcode: data.zipCode,
       country: countryTitle,
       language: languageValue,
-      stateTitle: stateTitle,
+      provinceTitle: stateTitle,
+      provinceValue: stateValue,
       timeZone,
       otherInfo: {
         ...userEnvironmentInfo,

@@ -17,6 +17,7 @@ export interface IProduct {
   status: number;
   created_date: string; // could be Date if you want to parse
   updated_date: string;
+  subscription_list: string; // comma-separated values
 }
 
 export interface IUpdateProductPayload {
