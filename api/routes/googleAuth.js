@@ -6,7 +6,7 @@ import {
 
 const router = express.Router()
 
-router.post('/url', googleAuthUrl)
-router.post('/callback', googleCallbackUrl)
+router.get('/url', googleAuthUrl)
+router.get('/callback', googleCallbackUrl)
 
 export default router
