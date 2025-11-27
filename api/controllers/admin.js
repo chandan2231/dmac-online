@@ -107,7 +107,7 @@ export const createUsersByRole = async (req, res) => {
       req.body.role,
       0,
       verificationToken,
-      req.body.timeZone,
+      req.body.time_zone,
       req.body.country,
       req.body.address,
       req.body.speciality,
