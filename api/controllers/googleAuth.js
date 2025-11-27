@@ -57,7 +57,9 @@ export const googleCallbackUrl = async (req, res) => {
             ? process.env.FRONTEND_URL
             : process.env.FRONTEND_URL_PROD
 
-        return res.redirect(`${path}`)
+        return res.redirect(
+          `${path}?googleAuth=success&access_token=${access_token}&refresh_token=${refresh_token}`
+        )
       }
     )
   } catch (error) {
