@@ -10,10 +10,11 @@ export const googleAuthUrl = (req, res) => {
 }
 
 export const googleCallbackUrl = async (req, res) => {
-  const { code, consultant_id } = req.query;
+    const { code, state } = req.query
+    const { userId } = JSON.parse(state)
 
   // Step 1 — Validate
-  if (!code || !consultant_id) {
+  if (!code || !userId) {
     return res.status(400).json({
       status: 400,
       message: "Authorization code and consultant ID are required"
@@ -22,7 +23,8 @@ export const googleCallbackUrl = async (req, res) => {
 
   try {
     // Step 2 — Exchange Code for Tokens
-    const { tokens } = await oauth2Client.getToken(code);
+    const { tokens } = await oauth2Client.getToken(code)
+    oauth2Client.setCredentials(tokens)
     const { access_token, refresh_token } = tokens;
 
     // Step 3 — Update DB
@@ -32,7 +34,7 @@ export const googleCallbackUrl = async (req, res) => {
       WHERE id = ?
     `;
 
-    db.query(updateQuery, [access_token, refresh_token, consultant_id], (err, result) => {
+    db.query(updateQuery, [access_token, refresh_token, userId], (err, result) => {
       if (err) {
         console.error("DB Error:", err);
         return res.status(500).json({

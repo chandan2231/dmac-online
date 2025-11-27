@@ -12,9 +12,11 @@ export const getGoogleAuthURL = () => {
     "https://www.googleapis.com/auth/calendar"
   ];
 
-  return oauth2Client.generateAuthUrl({
-    access_type: "offline",
-    prompt: "consent",
-    scope: scopes
-  });
+  const url = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: scopes,
+    state: JSON.stringify({ userId: req.user.userId }),
+    prompt: 'consent' // Force to get refresh token
+  })
+  res.json({ url })
 };
