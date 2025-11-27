@@ -270,11 +270,15 @@ export const logout = (req, res) => {
 export const patinetRegistration = async (req, res) => {
   try {
     // 🔍 Check if product is selected
-    if (!req.body.product_id || req.body.product_id === "" || req.body.product_id === null) {
+    if (
+      !req.body.product_id ||
+      req.body.product_id === '' ||
+      req.body.product_id === null
+    ) {
       return res.status(200).json({
         isSuccess: false,
-        message: "Please select the product."
-      });
+        message: 'Please select the product.'
+      })
     }
     // Check if the email already exists
     const checkEmailQuery = 'SELECT * FROM dmac_webapp_users WHERE email = ?'
@@ -301,7 +305,7 @@ export const patinetRegistration = async (req, res) => {
     const salt = bcrypt.genSaltSync(10)
     const hashedPassword = bcrypt.hashSync(req.body.password, salt)
     const verificationToken = uuidv4()
-    const otherInfoJson = JSON.stringify(req.body.otherInfo ?? {});
+    const otherInfoJson = JSON.stringify(req.body.otherInfo ?? {})
     // Insert new user into the database
     const insertQuery = `
       INSERT INTO dmac_webapp_users 
@@ -391,17 +395,17 @@ export const patinetRegistration = async (req, res) => {
 }
 
 export const patientEmailVerification = (req, res) => {
-  const { token } = req.body;
+  const { token } = req.body
 
   // Step 1: Verify and update user
   db.query(
-    "UPDATE dmac_webapp_users SET verified = 1 WHERE verification_token = ?",
+    'UPDATE dmac_webapp_users SET verified = 1 WHERE verification_token = ?',
     [token],
     (err, result) => {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) return res.status(500).json({ error: err.message })
 
       if (result.affectedRows === 0) {
-        return res.status(400).json({ error: "Invalid or expired token" });
+        return res.status(400).json({ error: 'Invalid or expired token' })
       }
 
       // Step 2: Fetch user details using token (include mobile & role since you return them)
@@ -409,17 +413,17 @@ export const patientEmailVerification = (req, res) => {
         SELECT id, name, email, mobile, role
         FROM dmac_webapp_users
         WHERE verification_token = ?
-      `;
+      `
 
       db.query(userQuery, [token], (userErr, userRows) => {
-        if (userErr) return res.status(500).json({ error: userErr.message });
+        if (userErr) return res.status(500).json({ error: userErr.message })
 
         if (!userRows || userRows.length === 0) {
-          return res.status(400).json({ error: "User not found" });
+          return res.status(400).json({ error: 'User not found' })
         }
 
-        const user = userRows[0];
-        const userId = user.id;
+        const user = userRows[0]
+        const userId = user.id
 
         // Step 3: JOIN to get the latest product (if any)
         // NOTE: removed stray comma after p.product_amount which caused SQL syntax error
@@ -435,17 +439,17 @@ export const patientEmailVerification = (req, res) => {
           WHERE rup.user_id = ?
           ORDER BY rup.id DESC
           LIMIT 1
-        `;
+        `
 
         db.query(productJoinQuery, [userId], (prodErr, prodRows) => {
-          if (prodErr) return res.status(500).json({ error: prodErr.message });
+          if (prodErr) return res.status(500).json({ error: prodErr.message })
 
           // Format product response (null if no product assigned)
-          const product = prodRows && prodRows.length > 0 ? prodRows[0] : null;
+          const product = prodRows && prodRows.length > 0 ? prodRows[0] : null
 
           return res.json({
             isSuccess: true,
-            message: "Email verified successfully",
+            message: 'Email verified successfully',
             user: {
               id: user.id,
               name: user.name,
@@ -454,13 +458,12 @@ export const patientEmailVerification = (req, res) => {
               role: user.role
             },
             product // null allowed
-          });
-        });
-      });
+          })
+        })
+      })
     }
-  );
-};
-
+  )
+}
 
 export const patientLogin = (req, res) => {
   const query = `
@@ -525,7 +528,6 @@ export const patientLogin = (req, res) => {
   })
 }
 
-
 export const createPatientPayment = async (req, res) => {
   const createOrderRequest = new paypal.orders.OrdersCreateRequest()
   createOrderRequest.requestBody({
@@ -545,14 +547,14 @@ export const createPatientPayment = async (req, res) => {
   })
   try {
     const order = await client().execute(createOrderRequest)
-    const orderId = order.result.id;
+    const orderId = order.result.id
     const approvalUrl = order.result.links.find(
       (link) => link.rel === 'approve'
     ).href
     res.json({
       orderId,
       approvalUrl
-    });
+    })
   } catch (error) {
     console.error(error)
     res.status(500).send('Error creating PayPal order')
@@ -595,31 +597,39 @@ export const capturePatientPayment = async (req, res) => {
       status: paymentStatus,
       product_id: productId,
       user_id: userId,
-      payment_type: "paypal"
+      payment_type: 'paypal'
     }
 
     await new Promise((resolve, reject) => {
-      db.query('INSERT INTO dmac_webapp_users_transaction SET ?', paymentData, (err, result) => {
-        if (err) return reject(err)
-        resolve(result)
-      })
+      db.query(
+        'INSERT INTO dmac_webapp_users_transaction SET ?',
+        paymentData,
+        (err, result) => {
+          if (err) return reject(err)
+          resolve(result)
+        }
+      )
     })
 
     /** 🔹 If success — update user & send success email */
-    if (paymentStatus === "COMPLETED") {
+    if (paymentStatus === 'COMPLETED') {
       await new Promise((resolve, reject) => {
         const updateQuery = `
           UPDATE dmac_webapp_users 
           SET patient_payment = ?, patient_payment_date = ? 
           WHERE id = ?
         `
-        db.query(updateQuery, [1, datetime.toISOString().slice(0, 10), userId], (err, result) => {
-          if (err) return reject(err)
-          resolve(result)
-        })
+        db.query(
+          updateQuery,
+          [1, datetime.toISOString().slice(0, 10), userId],
+          (err, result) => {
+            if (err) return reject(err)
+            resolve(result)
+          }
+        )
       })
 
-      const subject = "Payment Receipt — Payment Approved"
+      const subject = 'Payment Receipt — Payment Approved'
       const html = `
       <p>Dear ${userName},</p>
       <h3>Receipt of Successful Payment</h3>
@@ -637,19 +647,19 @@ export const capturePatientPayment = async (req, res) => {
       await sendEmail(userEmail, subject, html, html)
 
       return res.json({
-        message: "Payment captured successfully",
+        message: 'Payment captured successfully',
         captureResult
       })
     }
 
     /** 🔹 If PayPal capture doesn't return COMPLETED */
-    throw new Error("PAYMENT_NOT_COMPLETED")
-
+    throw new Error('PAYMENT_NOT_COMPLETED')
   } catch (error) {
-    console.error("PayPal CAPTURE ERROR:", error)
+    console.error('PayPal CAPTURE ERROR:', error)
 
     // Extract safe message from PayPal error if available
-    const failReason = error?.result?.message || error?.message || "Payment failed"
+    const failReason =
+      error?.result?.message || error?.message || 'Payment failed'
 
     /** 🔹 Insert failed transaction record */
     const failedPaymentData = {
@@ -657,22 +667,26 @@ export const capturePatientPayment = async (req, res) => {
       payer_id: payerId || null,
       amount,
       currency: currencyCode,
-      status: "FAILED",
+      status: 'FAILED',
       product_id: productId,
       user_id: userId,
-      payment_type: "paypal",
+      payment_type: 'paypal',
       failure_reason: failReason
     }
 
-    await new Promise(resolve => {
-      db.query('INSERT INTO dmac_webapp_users_transaction SET ?', failedPaymentData, () => {
-        resolve()
-      })
+    await new Promise((resolve) => {
+      db.query(
+        'INSERT INTO dmac_webapp_users_transaction SET ?',
+        failedPaymentData,
+        () => {
+          resolve()
+        }
+      )
     })
 
     /** 🔹 Send failure email to the user */
     if (userEmail) {
-      const subject = "Payment Receipt — Payment Failed"
+      const subject = 'Payment Receipt — Payment Failed'
       const html = `
       <p>Dear ${userName},</p>
       <h3>Payment Failed</h3>
@@ -691,12 +705,11 @@ export const capturePatientPayment = async (req, res) => {
     }
 
     return res.status(400).json({
-      message: "Payment failed",
+      message: 'Payment failed',
       reason: failReason
     })
   }
 }
-
 
 export const successPatientPayment = (req, res) => {
   let result = {}
@@ -713,12 +726,12 @@ export const canclePatientPayment = (req, res) => {
 }
 
 export const getPatientProductByUserId = async (req, res) => {
-  const { userId } = req.body; 
+  const { userId } = req.body
   if (!userId) {
     return res.status(400).json({
       status: 400,
-      message: "User ID is required"
-    });
+      message: 'User ID is required'
+    })
   }
 
   const query = `
@@ -742,15 +755,15 @@ export const getPatientProductByUserId = async (req, res) => {
       AND t.status = 'COMPLETED'
     ORDER BY t.created_date DESC
     LIMIT 1
-  `;
+  `
 
   db.query(query, [userId], (err, result) => {
     if (err) {
-      console.error("DB Error:", err);
+      console.error('DB Error:', err)
       return res.status(500).json({
         status: 500,
-        message: "Database error"
-      });
+        message: 'Database error'
+      })
     }
 
     if (result.length === 0) {
@@ -758,21 +771,15 @@ export const getPatientProductByUserId = async (req, res) => {
         status: 200,
         purchased: false,
         product: [],
-        message: "No purchased products found for this user"
-      });
+        message: 'No purchased products found for this user'
+      })
     }
 
     return res.status(200).json({
       status: 200,
       purchased: true,
       product: result,
-      message: "Purchased Product"
-    });
-  });
-};
-
-
-
-
-
-
+      message: 'Purchased Product'
+    })
+  })
+}

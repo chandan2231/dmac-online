@@ -10,9 +10,6 @@ import {
   changeUserPassword,
   getUsersTransactionList,
   getConsultationList,
-
-
-
   getApprovedProtocolList,
   getContinuinDetailsById,
   getProtocolDetailsById,

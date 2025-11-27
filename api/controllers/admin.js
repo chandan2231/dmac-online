@@ -23,42 +23,50 @@ export const changeProductStatus = (req, res) => {
 
 export const updateProductDetails = async (req, res) => {
   try {
-    const { id, product_name, product_description, product_amount, status } = req.body;
+    const { id, product_name, product_description, product_amount, status } =
+      req.body
 
-    if (!id || !product_name || !product_description || product_amount == null) {
-      return res.status(400).json({ status: 400, msg: "Missing required fields" });
+    if (
+      !id ||
+      !product_name ||
+      !product_description ||
+      product_amount == null
+    ) {
+      return res
+        .status(400)
+        .json({ status: 400, msg: 'Missing required fields' })
     }
 
     const query = `
       UPDATE dmac_webapp_products 
       SET product_name = ?, product_description = ?, product_amount = ? 
       WHERE id = ?
-    `;
+    `
 
-    const values = [product_name, product_description, product_amount, id];
+    const values = [product_name, product_description, product_amount, id]
 
     db.query(query, values, (err, result) => {
       if (err) {
-        return res.status(500).json({ status: 500, msg: "Database error", error: err });
+        return res
+          .status(500)
+          .json({ status: 500, msg: 'Database error', error: err })
       }
 
       if (result.affectedRows === 0) {
-        return res.status(404).json({ status: 404, msg: "Product not found" });
+        return res.status(404).json({ status: 404, msg: 'Product not found' })
       }
 
       return res.json({
         status: 200,
-        msg: "Product details updated successfully",
+        msg: 'Product details updated successfully',
         id,
         product_status: status ?? null
-      });
-    });
+      })
+    })
   } catch (error) {
-    return res.status(500).json({ status: 500, msg: "Server error", error });
+    return res.status(500).json({ status: 500, msg: 'Server error', error })
   }
-};
-
-
+}
 
 export const getProductList = (req, res) => {
   const que = 'SELECT * FROM dmac_webapp_products'
@@ -115,7 +123,7 @@ export const createUsersByRole = async (req, res) => {
       req.body.license_expiration,
       req.body.contracted_rate_per_consult,
       req.body.provinceTitle,
-      req.body.provinceValue,
+      req.body.provinceValue
     ]
 
     await new Promise((resolve, reject) => {
@@ -146,13 +154,17 @@ export const createUsersByRole = async (req, res) => {
       await sendEmail(to, subject, emailHtml, emailHtml)
       return res.status(200).json({
         status: 200,
-        msg: getRoleMessage(req.body.role, "created", true, true),
+        msg: getRoleMessage(req.body.role, 'created', true, true)
       })
     } catch (emailError) {
       console.error('Error sending email:', emailError)
       return res.status(500).json({
         status: 500,
-        msg: getRoleMessage(req.body.role, "created but failed to send email", false),
+        msg: getRoleMessage(
+          req.body.role,
+          'created but failed to send email',
+          false
+        )
       })
     }
   } catch (err) {
@@ -161,60 +173,64 @@ export const createUsersByRole = async (req, res) => {
   }
 }
 
-
 export const getAllUsersByRole = (req, res) => {
-  const { role } = req.body;
+  const { role } = req.body
 
-  let query;
-  let values = [role];
+  let query
+  let values = [role]
 
-  if (role === "USER") {
+  if (role === 'USER') {
     query = `
       SELECT u.*, l.language as language_name
       FROM dmac_webapp_users u
       LEFT JOIN dmac_webapp_language l ON u.language = l.id
       WHERE u.role = ?
-    `;
+    `
   } else {
     query = `
       SELECT *
       FROM dmac_webapp_users
       WHERE role = ?
-    `;
+    `
   }
 
   db.query(query, values, (err, data) => {
     if (err) {
-      console.error("Error fetching users:", err);
-      return res.status(500).json({ status: 500, msg: "Database error", error: err });
+      console.error('Error fetching users:', err)
+      return res
+        .status(500)
+        .json({ status: 500, msg: 'Database error', error: err })
     }
 
     if (!data || data.length === 0) {
-      return res.status(200).json({ status: 200, msg: `No ${role} records found.` });
+      return res
+        .status(200)
+        .json({ status: 200, msg: `No ${role} records found.` })
     }
 
-    return res.status(200).json(data);
-  });
-};
-
+    return res.status(200).json(data)
+  })
+}
 
 export const updateUsersDetails = async (req, res) => {
   try {
-    const { 
-      id, 
-      name, 
+    const {
+      id,
+      name,
       mobile,
-      time_zone, 
-      country, 
-      address, 
-      speciality, 
-      license_number, 
-      license_expiration, 
-      contracted_rate_per_consult 
-    } = req.body;
+      time_zone,
+      country,
+      address,
+      speciality,
+      license_number,
+      license_expiration,
+      contracted_rate_per_consult
+    } = req.body
 
     if (!id) {
-      return res.status(400).json({ status: 400, msg: "User ID is required for update." });
+      return res
+        .status(400)
+        .json({ status: 400, msg: 'User ID is required for update.' })
     }
 
     const updateQuery = `
@@ -230,7 +246,7 @@ export const updateUsersDetails = async (req, res) => {
         license_expiration = ?, 
         contracted_rate_per_consult = ?
       WHERE id = ?
-    `;
+    `
 
     const values = [
       name,
@@ -243,29 +259,29 @@ export const updateUsersDetails = async (req, res) => {
       license_expiration,
       contracted_rate_per_consult,
       id
-    ];
+    ]
 
     const updateResult = await new Promise((resolve, reject) => {
       db.query(updateQuery, values, (err, data) => {
-        if (err) reject(err);
-        resolve(data);
-      });
-    });
+        if (err) reject(err)
+        resolve(data)
+      })
+    })
 
     if (updateResult.affectedRows === 0) {
-      return res.status(404).json({ status: 404, msg: "Consultant not found." });
+      return res.status(404).json({ status: 404, msg: 'Consultant not found.' })
     }
 
     return res.json({
       status: 200,
-      msg: "Consultant details updated successfully",
+      msg: 'Consultant details updated successfully',
       id
-    });
+    })
   } catch (err) {
-    console.error("Error updating user:", err);
-    return res.status(500).json({ status: 500, msg: "Internal server error." });
+    console.error('Error updating user:', err)
+    return res.status(500).json({ status: 500, msg: 'Internal server error.' })
   }
-};
+}
 
 export const changeUserStatus = (req, res) => {
   const que = 'UPDATE dmac_webapp_users SET status=? WHERE id=?'
@@ -297,13 +313,12 @@ export const changeUserPassword = (req, res) => {
 }
 
 export const getUsersTransactionList = (req, res) => {
-
   const que = `SELECT trans.*, users.name AS name, users.email, product.product_name AS product_name, product.product_description as product_description 
        FROM dmac_webapp_users_transaction as trans 
        JOIN dmac_webapp_users AS users ON trans.user_id = users.id 
        JOIN dmac_webapp_products AS product ON trans.product_id = product.id 
        ORDER BY trans.id DESC`
-    
+
   db.query(que, [], (err, data) => {
     if (err) return res.status(500).json(err)
     if (data.length > 0) {
@@ -313,7 +328,6 @@ export const getUsersTransactionList = (req, res) => {
     }
   })
 }
-
 
 export const getConsultationList = (req, res) => {
   const { consultant_id } = req.body
@@ -353,10 +367,6 @@ export const getConsultationList = (req, res) => {
     return res.status(200).json(data || [])
   })
 }
-
-
-
-
 
 export const getAllProtocolList = (req, res) => {
   const que = `
@@ -725,8 +735,6 @@ export const chairCommitteeApprovalProtocol = async (req, res) => {
   }
 }
 
-
-
 export const getActiveVotingMemberList = (req, res) => {
   const que = 'SELECT * FROM users WHERE user_type IN (?, ?, ?) AND status = ?'
   db.query(
@@ -801,8 +809,6 @@ export const getEventPriceList = (req, res) => {
   })
 }
 
-
-
 export const changeMemberPassword = (req, res) => {
   const salt = bcrypt.genSaltSync(10)
   const hashedPassword = bcrypt.hashSync(req.body.password, salt)
@@ -815,8 +821,6 @@ export const changeMemberPassword = (req, res) => {
     }
   })
 }
-
-
 
 export const changeMemberStatus = (req, res) => {
   const que = 'UPDATE users SET status=? WHERE id=?'
@@ -1023,8 +1027,6 @@ export const getCreatedProtocolList = (req, res) => {
     })
   })
 }
-
-
 
 export const getContinuinDetailsById = (req, res) => {
   const continuinReviewDetailObj = {}
