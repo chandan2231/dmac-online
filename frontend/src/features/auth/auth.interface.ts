@@ -18,6 +18,8 @@ export interface IUser {
   phone: string;
   languageCode: LanguageCode;
   isPaymentDone: boolean | null;
+  google_access_token: string | null;
+  google_refresh_token: string | null;  
 }
 
 export interface IAuthState {
