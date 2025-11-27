@@ -185,7 +185,9 @@ export const login = (req, res) => {
       language: user.language,
       phone: user.mobile,
       languageCode: user.language_code,
-      role: user.role
+      role: user.role,
+      google_access_token: user.google_access_token,
+      google_refresh_token: user.google_refresh_token
     }
 
     res.status(200).json({
@@ -518,7 +520,9 @@ export const patientLogin = (req, res) => {
       phone: user.mobile,
       languageCode: user.language_code,
       role: user.role,
-      patient_payment: user.patient_payment
+      patient_payment: user.patient_payment,
+      google_access_token: user.google_access_token,
+      google_refresh_token: user.google_refresh_token
     }
 
     res.status(200).json({
