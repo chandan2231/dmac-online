@@ -13,6 +13,112 @@ function queryDB(query, params = []) {
   });
 }
 
+export const getAvailableSlots = async (req, res) => {
+  const { consultation_id, user_id, date } = req.body;
+
+  if (!consultation_id || !user_id || !date) {
+    return res.status(400).json({
+      status: 400,
+      message: "consultation_id, user_id and date are required",
+    });
+  }
+
+  try {
+    /** 1️⃣ Get timezone from users table */
+    const timezoneQuery = `SELECT time_zone FROM dmac_webapp_users WHERE id = ? LIMIT 1`;
+    const userResult = await new Promise((resolve, reject) => {
+      db.query(timezoneQuery, [user_id], (err, data) => {
+        if (err) reject(err);
+        resolve(data);
+      });
+    });
+
+    if (!userResult.length || !userResult[0].time_zone) {
+      return res.status(404).json({ status: 404, message: "User or timezone not found" });
+    }
+
+    const user_timezone = userResult[0].time_zone;
+
+    /** 2️⃣ Convert selected date into UTC date range */
+    const startOfDayUTC = moment.tz(date + " 00:00", user_timezone).utc().format("YYYY-MM-DD HH:mm:ss");
+    const endOfDayUTC = moment.tz(date + " 23:59", user_timezone).utc().format("YYYY-MM-DD HH:mm:ss");
+
+    /** 3️⃣ Get consultant slots for the selected date */
+    const slotQuery = `
+      SELECT id, start_time, end_time, is_booked
+      FROM dmac_webapp_expert_availability
+      WHERE consultant_id = ?
+        AND start_time BETWEEN ? AND ?
+      ORDER BY start_time ASC
+    `;
+
+    const slotRows = await new Promise((resolve, reject) => {
+      db.query(slotQuery, [consultation_id, startOfDayUTC, endOfDayUTC], (err, data) => {
+        if (err) reject(err);
+        resolve(data);
+      });
+    });
+
+    /** 4️⃣ Convert slots back to user's timezone */
+    const formattedSlots = slotRows.map(slot => ({
+      slot_id: slot.id,
+      is_booked: slot.is_booked,
+      start: moment.utc(slot.start_time).tz(user_timezone).format("YYYY-MM-DD HH:mm"),
+      end: moment.utc(slot.end_time).tz(user_timezone).format("YYYY-MM-DD HH:mm")
+    }));
+
+    return res.status(200).json({
+      status: 200,
+      consultation_id,
+      date,
+      timezone: user_timezone,
+      slots: formattedSlots
+    });
+
+  } catch (error) {
+    console.error("getAvailableSlots Error:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Unable to fetch available slots"
+    });
+  }
+};
+
+
+
+export const saveConsultantAvailability = async (req, res) => {
+    const { consultant_id, timezone, slots } = req.body;
+    /*
+    slots = [
+        { date: "2025-01-10", start: "10:00", end: "10:30" },
+        { date: "2025-01-10", start: "11:00", end: "11:30" },
+        ...
+    ]
+    */
+
+    if (!consultant_id || !timezone || !slots || !slots.length) {
+        return res.status(400).json({ status: 400, message: "Missing fields" });
+    }
+
+    try {
+        const values = slots.map(slot => {
+            const start = moment.tz(`${slot.date} ${slot.start}`, timezone).utc().format("YYYY-MM-DD HH:mm:ss");
+            const end = moment.tz(`${slot.date} ${slot.end}`, timezone).utc().format("YYYY-MM-DD HH:mm:ss");
+            const slotDate = slot.date;
+            return [consultant_id, slotDate, start, end, 0];
+        });
+        const query = `INSERT INTO dmac_webapp_expert_availability (consultant_id, slot_date, start_time, end_time, is_booked) VALUES ?`;
+        db.query(query, [values], (err) => {
+        if (err) throw err;
+            return res.status(200).json({ status: 200, message: "Availability saved successfully" });
+        });
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ status: 500, message: "Unable to save availability" });
+    }
+};
+
+
 export const cancelConsultationByConsultant = async (req, res) => {
   let consultation_id;
 
@@ -219,7 +325,6 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
         items: [{ id: consultant_email }]
       }
     });
-   
 
     if (freeBusy.data.calendars[consultant_email].busy.length > 0) {
       return res.status(400).json({
@@ -274,6 +379,23 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
         eventStartISO, eventEndISO,
         meetLink, user_timezone, consultant_timezone, date, 1
       ], (err, result) => (err ? reject(err) : resolve(result)));
+    });
+
+    /* 🔥 UPDATE SLOT AS BOOKED */
+    const slotUpdateQuery = `
+      UPDATE dmac_webapp_expert_availability
+      SET is_booked = 1
+      WHERE consultant_id = ? 
+      AND slot_date = ? 
+      AND start_time = ? 
+      AND end_time = ?
+    `;
+    await new Promise((resolve, reject) => {
+      db.query(
+        slotUpdateQuery,
+        [consultant_id, date, eventStartISO, eventEndISO],
+        (err, result) => (err ? reject(err) : resolve(result))
+      );
     });
 
     /* 🔹 Email to USER & CONSULTANT */
@@ -490,9 +612,6 @@ export const rescheduleConsultationWithGoogleCalendar = async (req, res) => {
     });
   }
 };
-
-
-
 
 export const googleAuthUrl = (req, res) => {
   const userId = req.user.userId
