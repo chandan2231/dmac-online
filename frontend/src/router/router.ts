@@ -46,6 +46,9 @@ import ConsultationListPage from '../pages/expert/consultation-list';
 import TransactionHistoryPage from '../pages/expert/transaction-history';
 import ExpertHomePage from '../pages/expert/home';
 
+// Therapist Pages
+import TherapistHomePage from '../pages/therapist/home';
+
 export const LAYOUT_MAP = {
   BaseLayout,
   MainLayout,
@@ -95,6 +98,9 @@ export const COMPONENT_MAP = {
   ConsultationListPage,
   TransactionHistoryPage,
   ExpertHomePage,
+
+  // Therapist Pages
+  TherapistHomePage,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -119,14 +125,14 @@ export const ROUTES = {
   QUESTIONERS: '/questioners',
   PATIENT_PRODUCTS: '/patient/products',
 
-  // ADMIN, SUPER_ADMIN, THERAPIST Authenticated routes
+  // ADMIN, SUPER_ADMIN Authenticated routes
   LOGIN: '/login',
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',
   VERIFY_EMAIL: '/verify-email/:token',
   RESET_PASSWORD: '/reset-password/:token',
 
-  // ADMIN, SUPER_ADMIN, THERAPIST Protected routes
+  // ADMIN, SUPER_ADMIN, Protected routes
   ADMIN_DASHBOARD: '/admin/dashboard',
   USERS_LISTING: '/admin/users',
   TRANSACTIONS: '/admin/transactions',
@@ -366,6 +372,19 @@ const EXPERT_ROUTES: IAllowedRoutes[] = [
   },
 ];
 
+const THERAPIST_ROUTES: IAllowedRoutes[] = [
+  {
+    path: ROUTES.HOME,
+    layout: 'MainLayout',
+    component: 'TherapistHomePage',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Auth With Google',
+    sideBarIcon: 'HomeIcon',
+    isAChildOf: null,
+  },
+];
+
 const ADMIN_ROUTES: IAllowedRoutes[] = [
   {
     path: ROUTES.ADMIN_DASHBOARD,
@@ -473,11 +492,14 @@ export const getRoutesByRole = (role: UserRole): IAllowedRoutes[] => {
   if (role === 'USER') {
     return USER_ROUTES;
   }
-  if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
-    return ADMIN_ROUTES;
-  }
   if (role === 'EXPERT') {
     return EXPERT_ROUTES;
+  }
+  if (role === 'THERAPIST') {
+    return THERAPIST_ROUTES;
+  }
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+    return ADMIN_ROUTES;
   }
   return GUEST_USER_ROUTES;
 };
