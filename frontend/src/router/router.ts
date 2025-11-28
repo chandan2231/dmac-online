@@ -39,6 +39,7 @@ import PatientLoginPage from '../pages/auth/login/patient-login';
 import PatientPaymentSuccessPage from '../pages/payment/patient-payment-success';
 import PatientPaymentCancelledPage from '../pages/payment/patient-payment-cancel';
 import PatientProductsPage from '../pages/patient/patient-products';
+import BookConsultationPage from '../pages/patient/book-consultation';
 
 // Expert Pages
 import ConsultationListPage from '../pages/expert/consultation-list';
@@ -88,6 +89,7 @@ export const COMPONENT_MAP = {
   PatientPaymentSuccessPage,
   PatientPaymentCancelledPage,
   PatientProductsPage,
+  BookConsultationPage,
 
   // Expert Pages
   ConsultationListPage,
@@ -110,6 +112,7 @@ export const ROUTES = {
   PATIENT_PAYMENT: '/patient/payment',
   PATIENT_PAYMENT_SUCCESS: '/patient/payment/success',
   PATIENT_PAYMENT_CANCELLED: '/patient/payment/cancelled',
+  BOOK_CONSULTATION: '/patient/book-consultation',
 
   // USER Protected routes
   PROFILE: '/profile',
@@ -291,6 +294,15 @@ const USER_ROUTES: IAllowedRoutes[] = [
     component: 'PatientProductsPage',
     showInSidebar: true,
     sideBarTitle: 'Products',
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.BOOK_CONSULTATION,
+    layout: 'MainLayout',
+    component: 'BookConsultationPage',
+    showInSidebar: true,
+    sideBarTitle: 'Book Consultation',
     sideBarIcon: null,
     isAChildOf: null,
   },
