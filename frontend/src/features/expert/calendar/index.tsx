@@ -17,6 +17,11 @@ import type { RootState } from '../../../store';
 import { get } from 'lodash';
 import ExpertService from '../expert.service';
 import { useToast } from '../../../providers/toast-provider';
+import { useGetExpertSlots } from '../hooks/useGetExpertSlots';
+import type { ISlotsData } from '../expert.interface';
+import CustomLoader from '../../../components/loader';
+import CalendarListing from './calendar-listing';
+import { currentDateIsGreaterThan } from '../../../utils/functions';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => ({
   label: `${i.toString().padStart(2, '0')}:00`,
@@ -25,6 +30,10 @@ const HOURS = Array.from({ length: 24 }, (_, i) => ({
 
 const Calendar = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const { data: expertSlotsData, isLoading: isExpertSlotsLoading } =
+    useGetExpertSlots({
+      expertId: get(user, ['id']),
+    });
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
   const [shiftStart, setShiftStart] = useState<IOption | null>(null);
   const [shiftEnd, setShiftEnd] = useState<IOption | null>(null);
@@ -160,6 +169,36 @@ const Calendar = () => {
       </Box>
     );
   };
+
+  if (isExpertSlotsLoading || get(expertSlotsData, ['success']) === false) {
+    return <CustomLoader />;
+  }
+
+  console.log(
+    'Expert Slots Data:',
+    !currentDateIsGreaterThan(
+      get(expertSlotsData, ['slots'], {})[
+        Object.keys(get(expertSlotsData, ['slots'], {}) as ISlotsData).length
+      ]
+    ),
+    get(expertSlotsData, ['slots'], {}),
+    get(expertSlotsData, ['slots'], {})[
+      Object.keys(get(expertSlotsData, ['slots'], {}) as ISlotsData).length - 1
+    ],
+    Object.keys(get(expertSlotsData, ['slots'], {}) as ISlotsData).length - 1
+  );
+
+  if (
+    Object.keys(get(expertSlotsData, ['slots'], {}) as ISlotsData).length !==
+      0 &&
+    !currentDateIsGreaterThan(
+      get(expertSlotsData, ['slots'], {})[
+        Object.keys(get(expertSlotsData, ['slots'], {}) as ISlotsData).length
+      ]
+    )
+  ) {
+    return <CalendarListing slotsData={get(expertSlotsData, ['slots'], {})} />;
+  }
 
   return (
     <Box sx={{ p: 3, maxWidth: 800, minWidth: 800, margin: '0 auto' }}>
