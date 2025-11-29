@@ -152,8 +152,13 @@ export const getExpertAvailability = async (req, res) => {
       rows.forEach((slot) => {
         // Convert UTC DB times to Expert Timezone
         // Ensure we handle both Date objects and strings
-        const utcStart = moment.utc(slot.start_time)
-        const utcEnd = moment.utc(slot.end_time)
+        // We format first to avoid MySQL driver's local timezone assumption on Date objects
+        const utcStart = moment.utc(
+          moment(slot.start_time).format('YYYY-MM-DD HH:mm:ss')
+        )
+        const utcEnd = moment.utc(
+          moment(slot.end_time).format('YYYY-MM-DD HH:mm:ss')
+        )
 
         const localStart = utcStart.clone().tz(expertTimezone)
         const localEnd = utcEnd.clone().tz(expertTimezone)
@@ -253,11 +258,11 @@ export const getAvailableSlots = async (req, res) => {
       slot_id: slot.id,
       is_booked: slot.is_booked,
       start: moment
-        .utc(slot.start_time)
+        .utc(moment(slot.start_time).format('YYYY-MM-DD HH:mm:ss'))
         .tz(user_timezone)
         .format('YYYY-MM-DD HH:mm'),
       end: moment
-        .utc(slot.end_time)
+        .utc(moment(slot.end_time).format('YYYY-MM-DD HH:mm:ss'))
         .tz(user_timezone)
         .format('YYYY-MM-DD HH:mm')
     }))

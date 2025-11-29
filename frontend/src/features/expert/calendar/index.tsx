@@ -59,10 +59,13 @@ const HOURS = Array.from({ length: 24 }, (_, i) => ({
 
 const Calendar = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const { data: expertSlotsData, isLoading: isExpertSlotsLoading } =
-    useGetExpertSlots({
-      expertId: get(user, ['id']),
-    });
+  const {
+    data: expertSlotsData,
+    isLoading: isExpertSlotsLoading,
+    refetch,
+  } = useGetExpertSlots({
+    expertId: get(user, ['id']),
+  });
 
   // Get user timezone safely
   const userTimezone = (get(user, ['time_zone'], 'UTC') || 'UTC') as string;
@@ -141,6 +144,7 @@ const Calendar = () => {
           response.message || 'Availability saved successfully',
           'success'
         );
+        refetch();
       } else {
         showToast(response.message || 'Failed to save availability', 'error');
       }
