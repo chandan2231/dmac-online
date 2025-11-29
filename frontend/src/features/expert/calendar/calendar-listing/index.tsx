@@ -18,7 +18,7 @@ const CalendarListing = ({ slotsData }: { slotsData: ISlotsData }) => {
         id: date,
         date,
         slots,
-        day_off: slots.some(slot => slot.day_off === 1) ? 1 : 0,
+        is_day_off: slots.length > 0 ? slots[0].is_day_off : 0,
         start_time: slots.length > 0 ? slots[0].start_time : '',
         end_time: slots.length > 0 ? slots[slots.length - 1].end_time : '',
       });
@@ -30,7 +30,15 @@ const CalendarListing = ({ slotsData }: { slotsData: ISlotsData }) => {
     setRows(prevRows =>
       prevRows.map(row => {
         if (row.id === id) {
-          return { ...row, day_off: row.day_off === 1 ? 0 : 1 };
+          const dayoOff = row.is_day_off === 1 ? 0 : 1;
+          return {
+            ...row,
+            day_off: dayoOff,
+            slots: row.slots.map(slot => ({
+              ...slot,
+              is_day_off: dayoOff,
+            })),
+          };
         }
         return row;
       })
@@ -54,7 +62,7 @@ const CalendarListing = ({ slotsData }: { slotsData: ISlotsData }) => {
       headerName: 'Is Available',
       flex: 1,
       renderCell: params => {
-        const isDayOff = params.row.day_off === 1;
+        const isDayOff = params.row.is_day_off === 1;
         return (
           <Box display="flex" alignItems="center" height="100%">
             <ModernSwitch
