@@ -25,6 +25,25 @@ import { useToast } from '../../../../providers/toast-provider';
 import { useGetTherapistListing } from '../../hooks/useGetTherapistListing';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { IconButton, Menu, MenuItem } from '@mui/material';
+import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages';
+import ModernMultiSelect from '../../../../components/multi-select';
+import type { ILanguage } from '../../../../i18n/language.interface';
+
+const FINANCE_MANAGER_LIST = [
+  {
+    id: 1,
+    name: 'John Doe',
+  },
+  {
+    id: 2,
+    name: 'Jane Smith',
+  },
+];
+
+const FINANCE_MANAGER_OPTIONS = FINANCE_MANAGER_LIST.map(fm => ({
+  label: fm.name,
+  value: String(fm.id),
+}));
 
 /* -------------------- SCHEMAS -------------------- */
 const changePasswordSchema = Yup.object({
@@ -46,6 +65,10 @@ const editTherapistSchema = Yup.object({
   license_expiration: Yup.string().required('License expiration is required'),
   contracted_rate_per_consult: Yup.string().required('Rate is required'),
   state: Yup.string().required('State is required'),
+  finance_manager_id: Yup.string().required('Finance Manager is required'),
+  languages: Yup.array()
+    .min(1, 'Select at least one language')
+    .required('Languages are required'),
 });
 type EditTherapistFormValues = Yup.InferType<typeof editTherapistSchema>;
 
@@ -63,12 +86,19 @@ const createTherapistSchema = Yup.object({
   license_expiration: Yup.string().required('License expiration is required'),
   contracted_rate_per_consult: Yup.string().required('Rate is required'),
   state: Yup.string().required('State is required'),
+  languages: Yup.array()
+    .min(1, 'Select at least one language')
+    .required('Languages are required'),
+  finance_manager_id: Yup.string().required('Finance Manager is required'),
 });
 type CreateTherapistFormValues = Yup.InferType<typeof createTherapistSchema>;
 
 /* -------------------- USER TABLE -------------------- */
 function UserTable() {
   const { data, isLoading, refetch } = useGetTherapistListing();
+  const { data: listingResponse } = useLanguageList({
+    USER_TYPE: 'THERAPIST',
+  });
 
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 10,
@@ -83,6 +113,8 @@ function UserTable() {
   );
   const [selectedCountry, setSelectedCountry] = useState<IOption | null>(null);
   const [selectedState, setSelectedState] = useState<IOption | null>(null);
+  const [selectedFinanceManager, setSelectedFinanceManager] =
+    useState<IOption | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isViewMode, setIsViewMode] = useState(false);
   const { showToast } = useToast();
@@ -124,6 +156,15 @@ function UserTable() {
   const handleOpenEditModal = (therapist: TherapistState) => {
     setSelectedTherapist(therapist);
 
+    const therapistLanguages = therapist.language
+      ? therapist.language.split(',').map(l => l.trim())
+      : [];
+
+    const selectedLangIds =
+      get(listingResponse, 'data.languages', [])
+        .filter((l: ILanguage) => therapistLanguages.includes(l.language))
+        .map((l: ILanguage) => String(l.id)) || [];
+
     // populate edit form
     reset({
       name: therapist.name,
@@ -136,6 +177,8 @@ function UserTable() {
       contracted_rate_per_consult: therapist.contracted_rate_per_consult,
       country: therapist.country,
       state: therapist.province_title,
+      finance_manager_id: String(get(therapist, 'finance_manager_id', '')),
+      languages: selectedLangIds,
     });
 
     const countryOpt = COUNTRIES_LIST.find(c => c.label === therapist.country);
@@ -146,6 +189,12 @@ function UserTable() {
     )?.states.find(s => s.value === therapist.province_id);
 
     setSelectedState(stateOpt || null);
+
+    const fmOpt = FINANCE_MANAGER_OPTIONS.find(
+      fm => fm.value === String(get(therapist, 'finance_manager_id', ''))
+    );
+    setSelectedFinanceManager(fmOpt || null);
+
     setIsEditModalOpen(true);
   };
 
@@ -155,6 +204,7 @@ function UserTable() {
     reset();
     setSelectedCountry(null);
     setSelectedState(null);
+    setSelectedFinanceManager(null);
   };
 
   const handleOpenViewModal = (therapist: TherapistState) => {
@@ -205,8 +255,11 @@ function UserTable() {
         country => country.value === selectedCountry?.value
       )?.states.find(state => state.value === values.state)?.timeZone || '';
 
+    const languages = values.languages.join(',');
+
     const payload = {
       ...values,
+      languages,
       time_zone: timeZone,
       provinceValue: selectedState?.value || '',
       provinceTitle: selectedState?.label || '',
@@ -517,6 +570,60 @@ function UserTable() {
             />
           </Box>
 
+          <Box display="flex" flexDirection="row" gap={2}>
+            <Box display="flex" flexDirection="column" flex={1}>
+              <Controller
+                control={control}
+                name="languages"
+                render={({ field: { value, onChange } }) => {
+                  const options =
+                    get(listingResponse, 'data.languages', []).map(
+                      (lang: ILanguage) => ({
+                        label: lang.language,
+                        value: String(lang.id),
+                      })
+                    ) || [];
+                  return (
+                    <ModernMultiSelect
+                      label="Languages"
+                      options={options}
+                      value={value || []}
+                      onChange={(selectedValues: string[]) => {
+                        onChange(selectedValues);
+                      }}
+                      placeholder="Select languages"
+                      fullWidth
+                      searchable
+                      error={!!errors.languages}
+                      helperText={errors.languages?.message as string}
+                    />
+                  );
+                }}
+              />
+            </Box>
+
+            <Box display="flex" flexDirection="column" flex={1}>
+              <ModernSelect
+                label="Finance Manager"
+                options={FINANCE_MANAGER_OPTIONS}
+                value={selectedFinanceManager}
+                onChange={opt => {
+                  setSelectedFinanceManager(opt);
+                  setValue('finance_manager_id', opt.value, {
+                    shouldValidate: true,
+                  });
+                }}
+                fullWidth
+                searchable
+              />
+              {errors.finance_manager_id && (
+                <Typography color="error">
+                  {errors.finance_manager_id.message}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+
           <MorenButton
             type="submit"
             variant="contained"
@@ -735,6 +842,34 @@ function UserTable() {
                   {get(selectedTherapist, 'created_date', '')}
                 </Typography>
               </Box>
+
+              {/* Languages */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Languages:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'language', '')}
+                </Typography>
+              </Box>
+
+              {/* Finance Manager */}
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  minWidth={120}
+                >
+                  Finance Manager:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {get(selectedTherapist, 'finance_manager', '')}
+                </Typography>
+              </Box>
             </Box>
           </Box>
         )}
@@ -747,8 +882,13 @@ function UserTable() {
 const TherapistListing = () => {
   const [createTherapistModalOpen, setCreateTherapistModalOpen] =
     useState(false);
+  const { data: listingResponse } = useLanguageList({
+    USER_TYPE: 'THERAPIST',
+  });
   const [selectedCountry, setSelectedCountry] = useState<IOption | null>(null);
   const [selectedState, setSelectedState] = useState<IOption | null>(null);
+  const [selectedFinanceManager, setSelectedFinanceManager] =
+    useState<IOption | null>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
 
   const { showToast } = useToast();
@@ -762,6 +902,7 @@ const TherapistListing = () => {
     reset();
     setSelectedCountry(null);
     setSelectedState(null);
+    setSelectedFinanceManager(null);
   };
 
   const {
@@ -775,6 +916,7 @@ const TherapistListing = () => {
     resolver: yupResolver(createTherapistSchema),
     defaultValues: {
       state: '',
+      languages: [],
     },
   });
 
@@ -788,8 +930,11 @@ const TherapistListing = () => {
         country => country.value === selectedCountry?.value
       )?.states.find(state => state.value === values.state)?.timeZone || '';
 
+    const languages = values.languages.join(',');
+
     const payload = {
       ...values,
+      languages,
       time_zone: timeZone,
       provinceValue: selectedState?.value || '',
       provinceTitle: selectedState?.label || '',
@@ -807,6 +952,7 @@ const TherapistListing = () => {
       // reset country and time zone
       setSelectedCountry(null);
       setSelectedState(null);
+      setSelectedFinanceManager(null);
       reset();
     } else {
       showToast(result.message, 'error');
@@ -996,12 +1142,68 @@ const TherapistListing = () => {
             </Box>
           </Box>
 
+          <Box display="flex" flexDirection="row" gap={2}>
+            <Box display="flex" flexDirection="column" flex={1}>
+              <Controller
+                control={control}
+                name="languages"
+                render={({ field: { value, onChange } }) => {
+                  const options =
+                    get(listingResponse, 'data.languages', []).map(
+                      (lang: ILanguage) => ({
+                        label: lang.language,
+                        value: String(lang.id),
+                      })
+                    ) || [];
+                  return (
+                    <ModernMultiSelect
+                      label="Languages"
+                      options={options}
+                      value={value || []}
+                      onChange={(selectedValues: string[]) => {
+                        onChange(selectedValues);
+                      }}
+                      placeholder="Select languages"
+                      fullWidth
+                      searchable
+                      error={!!errors.languages}
+                      helperText={errors.languages?.message as string}
+                      sx={{ flex: '1' }}
+                    />
+                  );
+                }}
+              />
+            </Box>
+
+            <Box display="flex" flexDirection="column" flex={1}>
+              <ModernSelect
+                label="Finance Manager"
+                options={FINANCE_MANAGER_OPTIONS}
+                value={selectedFinanceManager}
+                onChange={opt => {
+                  setSelectedFinanceManager(opt);
+                  setValue('finance_manager_id', opt.value, {
+                    shouldValidate: true,
+                  });
+                }}
+                fullWidth
+                searchable
+              />
+              {errors.finance_manager_id && (
+                <Typography color="error">
+                  {errors.finance_manager_id.message}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+
           <ModernInput
             label="Rate per Consult"
             placeholder="Enter rate"
             {...register('contracted_rate_per_consult')}
             error={!!errors.contracted_rate_per_consult}
             helperText={errors.contracted_rate_per_consult?.message}
+            sx={{ flex: '1' }}
           />
 
           <MorenButton

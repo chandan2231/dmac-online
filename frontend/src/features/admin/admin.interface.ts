@@ -94,6 +94,7 @@ export type ConsultantState = IConsultant & {
   time_zone: string;
   province_id: string;
   province_title: string;
+  language: string;
 };
 
 export interface ICreateConsultantPayload {
@@ -111,6 +112,7 @@ export interface ICreateConsultantPayload {
   contracted_rate_per_consult: string;
   provinceValue: string;
   provinceTitle: string;
+  languages: string;
 }
 
 export interface ITherapist {
@@ -133,6 +135,7 @@ export type TherapistState = ITherapist & {
   time_zone: string;
   province_id: string;
   province_title: string;
+  language: string;
 };
 
 export interface ICreateTherapistPayload {

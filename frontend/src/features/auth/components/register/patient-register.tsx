@@ -353,7 +353,7 @@ const PatientRegister = () => {
               onChange={option => setValue('language', option)}
               placeholder="Choose your language"
               options={convertLanguagesListToOptions(
-                get(listingResponse, ['data'], []) || []
+                get(listingResponse, ['data', 'languages'], []) || []
               )}
               error={!!errors.language}
               helperText={errors.language?.value?.message}
