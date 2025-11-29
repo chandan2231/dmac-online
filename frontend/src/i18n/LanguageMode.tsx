@@ -30,7 +30,10 @@ export default function LanguageMode() {
     (state: RootState) => state.language
   );
   const { user } = useSelector((state: RootState) => state.auth);
-  const { data: listingResponse } = useLanguageList(isLanguageModalOpen);
+  const { data: listingResponse } = useLanguageList({
+    enable: isLanguageModalOpen,
+    USER_TYPE: get(user, ['role'], null),
+  });
 
   const handleSelect = async (langCode: ILanguage) => {
     // i18n.changeLanguage(langCode);

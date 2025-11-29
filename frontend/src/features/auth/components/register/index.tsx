@@ -61,7 +61,9 @@ const schema = Yup.object({
 });
 
 const Register = () => {
-  const { data: listingResponse } = useLanguageList();
+  const { data: listingResponse } = useLanguageList({
+    USER_TYPE: 'ADMIN',
+  });
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { loading } = useSelector((state: RootState) => state.auth);

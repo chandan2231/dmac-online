@@ -64,7 +64,9 @@ const schema = Yup.object({
 });
 
 const PatientRegister = () => {
-  const { data: listingResponse } = useLanguageList();
+  const { data: listingResponse } = useLanguageList({
+    USER_TYPE: 'USER',
+  });
   const navigate = useNavigate();
   const { state } = useLocation();
   const { showToast } = useToast();
