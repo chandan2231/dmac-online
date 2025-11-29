@@ -9,7 +9,12 @@ import {
   Divider,
 } from '@mui/material';
 import dayjs, { Dayjs } from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import ModernDatePicker from '../../../components/date-picker';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import ModernSelect from '../../../components/select';
 import type { IOption } from '../../../components/select';
 import { useSelector } from 'react-redux';
@@ -22,11 +27,23 @@ import type { ISlotsData } from '../expert.interface';
 import CustomLoader from '../../../components/loader';
 import CalendarListing from './calendar-listing';
 
-const isExpired = ({ expertSlotsData }: { expertSlotsData: unknown }) => {
+const isExpired = ({
+  expertSlotsData,
+  userTimezone,
+}: {
+  expertSlotsData: unknown;
+  userTimezone: string;
+}) => {
   const slots = get(expertSlotsData, ['slots'], {}) as ISlotsData;
   const slotKeys = Object.keys(slots).sort();
   const lastDate = slotKeys.length > 0 ? slotKeys[slotKeys.length - 1] : null;
-  const isExpired = lastDate ? dayjs(lastDate).isBefore(dayjs(), 'day') : true;
+
+  const isExpired = lastDate
+    ? dayjs
+        .tz(lastDate, userTimezone)
+        .endOf('day')
+        .isBefore(dayjs().tz(userTimezone), 'day')
+    : true;
 
   return {
     isExpired,
@@ -42,10 +59,17 @@ const HOURS = Array.from({ length: 24 }, (_, i) => ({
 
 const Calendar = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const { data: expertSlotsData, isLoading: isExpertSlotsLoading } =
-    useGetExpertSlots({
-      expertId: get(user, ['id']),
-    });
+  const {
+    data: expertSlotsData,
+    isLoading: isExpertSlotsLoading,
+    refetch,
+  } = useGetExpertSlots({
+    expertId: get(user, ['id']),
+  });
+
+  // Get user timezone safely
+  const userTimezone = (get(user, ['time_zone'], 'UTC') || 'UTC') as string;
+
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
   const [shiftStart, setShiftStart] = useState<IOption | null>(null);
   const [shiftEnd, setShiftEnd] = useState<IOption | null>(null);
@@ -120,6 +144,7 @@ const Calendar = () => {
           response.message || 'Availability saved successfully',
           'success'
         );
+        refetch();
       } else {
         showToast(response.message || 'Failed to save availability', 'error');
       }
@@ -186,11 +211,14 @@ const Calendar = () => {
     return <CustomLoader />;
   }
 
-  if (
-    isExpired({ expertSlotsData }).slotKeys.length > 0 &&
-    !isExpired({ expertSlotsData }).isExpired
-  ) {
-    return <CalendarListing slotsData={isExpired({ expertSlotsData }).slots} />;
+  const {
+    isExpired: hasExpired,
+    slots: existingSlots,
+    slotKeys,
+  } = isExpired({ expertSlotsData, userTimezone });
+
+  if (slotKeys.length > 0 && !hasExpired) {
+    return <CalendarListing slotsData={existingSlots} />;
   }
 
   return (
@@ -198,6 +226,9 @@ const Calendar = () => {
       <Paper elevation={3} sx={{ p: 3 }}>
         <Typography variant="h5" gutterBottom>
           Set Availability
+        </Typography>
+        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+          Timezone: {userTimezone}
         </Typography>
 
         <Stack spacing={3}>
