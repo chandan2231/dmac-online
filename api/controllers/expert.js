@@ -349,3 +349,82 @@ export const toggleDayOff = async (req, res) => {
       .json({ status: 500, message: 'Unable to update day off status' })
   }
 }
+
+export const updateDaySlots = async (req, res) => {
+  const { userId, date, slots } = req.body
+
+  if (!userId || !date || !slots || !Array.isArray(slots)) {
+    return res
+      .status(400)
+      .json({ status: 400, message: 'Missing required fields' })
+  }
+
+  try {
+    // 1. Get Expert's Timezone
+    const userResult = await new Promise((resolve, reject) => {
+      db.query(
+        `SELECT time_zone FROM dmac_webapp_users WHERE id = ?`,
+        [userId],
+        (err, data) => {
+          if (err) reject(err)
+          resolve(data)
+        }
+      )
+    })
+
+    const expertTimezone = userResult[0]?.time_zone
+    if (!expertTimezone) {
+      return res
+        .status(400)
+        .json({ status: 400, message: 'Expert timezone not found' })
+    }
+
+    // 2. Process updates
+    const updatePromises = slots.map((slot) => {
+      return new Promise((resolve, reject) => {
+        // Construct local time and convert to UTC
+        // slot.start_time is likely "HH:mm:ss" or "HH:mm"
+        const localStartTime = moment.tz(
+          `${date} ${slot.start_time}`,
+          'YYYY-MM-DD HH:mm:ss',
+          expertTimezone
+        )
+
+        const utcStartTime = localStartTime
+          .clone()
+          .utc()
+          .format('YYYY-MM-DD HH:mm:ss')
+
+        const query = `
+          UPDATE dmac_webapp_expert_availability
+          SET is_slot_available = ?
+          WHERE consultant_id = ?
+          AND start_time = ?
+          AND is_booked = 0 
+        `
+        // Added is_booked = 0 check as a safety measure, though frontend also checks it
+
+        db.query(
+          query,
+          [slot.is_slot_available, userId, utcStartTime],
+          (err, result) => {
+            if (err) reject(err)
+            resolve(result)
+          }
+        )
+      })
+    })
+
+    await Promise.all(updatePromises)
+
+    return res.status(200).json({
+      status: 200,
+      message: 'Slots updated successfully'
+    })
+  } catch (error) {
+    console.error('UPDATE SLOTS ERROR:', error)
+    return res
+      .status(500)
+      .json({ status: 500, message: 'Unable to update slots' })
+  }
+}

@@ -29,9 +29,9 @@ const ViewSlotDetails: React.FC<ViewSlotDetailsProps> = ({
         <Typography variant="subtitle1" gutterBottom>
           <strong>Day Status:</strong>{' '}
           {slotData.is_day_off === 1 ? (
-            <Chip label="Day Off" color="default" size="small" />
+            <Chip label="Available" color="success" size="small" />
           ) : (
-            <Chip label="Active" color="success" size="small" />
+            <Chip label="Day Off" color="default" size="small" />
           )}
         </Typography>
 
@@ -41,7 +41,7 @@ const ViewSlotDetails: React.FC<ViewSlotDetailsProps> = ({
             let color: 'default' | 'error' | 'success' | 'warning' = 'default';
             let variant: 'filled' | 'outlined' = 'filled';
 
-            if (slot.is_day_off === 1) {
+            if (slot.is_day_off === 0) {
               color = 'default';
               variant = 'outlined';
             } else if (slot.is_booked === 1) {
@@ -49,7 +49,7 @@ const ViewSlotDetails: React.FC<ViewSlotDetailsProps> = ({
             } else if (slot.is_slot_available === 1) {
               color = 'success';
             } else {
-              color = 'warning';
+              color = 'default';
               variant = 'outlined';
             }
 
@@ -95,8 +95,7 @@ const ViewSlotDetails: React.FC<ViewSlotDetailsProps> = ({
                 height: 12,
                 borderRadius: '50%',
                 border: '1px solid',
-                borderColor: 'warning.main',
-                color: 'warning.main',
+                borderColor: 'text.secondary',
               }}
             />
             <Typography variant="caption">Unavailable</Typography>

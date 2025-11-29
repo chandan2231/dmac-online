@@ -87,11 +87,39 @@ const toggleDayOff = async (data: {
   }
 };
 
+const updateDaySlots = async (data: {
+  userId: string;
+  date: string;
+  slots: Array<{
+    start_time: string;
+    end_time: string;
+    is_slot_available: number;
+  }>;
+}): Promise<{
+  success: boolean;
+  message?: string;
+}> => {
+  try {
+    await HttpService.post('/expert/update-day-slots', data);
+    return {
+      success: true,
+      message: 'Slots updated successfully',
+    };
+  } catch (error: unknown) {
+    console.error('Error updating slots:', error);
+    return {
+      success: false,
+      message: 'Failed to update slots',
+    };
+  }
+};
+
 const ExpertService = {
   getGoogleAuthUrl,
   setAvailability,
   getExpertSlots,
   toggleDayOff,
+  updateDaySlots,
 };
 
 export default ExpertService;

@@ -12,14 +12,22 @@ import { get } from 'lodash';
 import ExpertService from '../../expert.service';
 import { useToast } from '../../../../providers/toast-provider';
 import ViewSlotDetails from './view-slot-details';
+import UpdateSlot from './update-slot';
 
-const CalendarListing = ({ slotsData }: { slotsData: ISlotsData }) => {
+const CalendarListing = ({
+  slotsData,
+  onRefresh,
+}: {
+  slotsData: ISlotsData;
+  onRefresh: () => void;
+}) => {
   const [rows, setRows] = useState<IAvailabilitySlot[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedRow, setSelectedRow] = useState<IAvailabilitySlot | null>(
     null
   );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
   const { user } = useSelector((state: RootState) => state.auth);
   const { showToast } = useToast();
@@ -109,6 +117,18 @@ const CalendarListing = ({ slotsData }: { slotsData: ISlotsData }) => {
     handleMenuClose();
   };
 
+  const handleUpdateSlot = () => {
+    setIsUpdateModalOpen(true);
+    handleMenuClose();
+  };
+
+  const handleUpdateSuccess = () => {
+    setIsUpdateModalOpen(false);
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
+
   const columns: GridColDef<IAvailabilitySlot>[] = [
     { field: 'date', headerName: 'Date', flex: 1 },
     { field: 'start_time', headerName: 'Start Time', flex: 1 },
@@ -173,13 +193,25 @@ const CalendarListing = ({ slotsData }: { slotsData: ISlotsData }) => {
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <MenuItem onClick={handleViewDetails}>View Details</MenuItem>
-        <MenuItem onClick={handleMenuClose}>Update Slot</MenuItem>
+        <MenuItem
+          onClick={handleUpdateSlot}
+          disabled={selectedRow?.is_day_off !== 1}
+        >
+          Update Slot
+        </MenuItem>
       </Menu>
 
       <ViewSlotDetails
         open={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
         slotData={selectedRow}
+      />
+
+      <UpdateSlot
+        open={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+        slotData={selectedRow}
+        onUpdateSuccess={handleUpdateSuccess}
       />
     </Box>
   );

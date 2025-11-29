@@ -3,7 +3,8 @@ import {
   saveExpertAvailability,
   getExpertAvailability,
   getAvailableSlots,
-  toggleDayOff
+  toggleDayOff,
+  updateDaySlots
 } from '../controllers/expert.js'
 
 const router = express.Router()
@@ -12,5 +13,6 @@ router.post('/save/slot', saveExpertAvailability)
 router.post('/get/slots', getExpertAvailability)
 router.post('/get/slot', getAvailableSlots)
 router.post('/toggle-day-off', toggleDayOff)
+router.post('/update-day-slots', updateDaySlots)
 
 export default router

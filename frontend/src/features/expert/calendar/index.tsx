@@ -218,7 +218,7 @@ const Calendar = () => {
   } = isExpired({ expertSlotsData, userTimezone });
 
   if (slotKeys.length > 0 && !hasExpired) {
-    return <CalendarListing slotsData={existingSlots} />;
+    return <CalendarListing slotsData={existingSlots} onRefresh={refetch} />;
   }
 
   return (
