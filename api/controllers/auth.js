@@ -187,7 +187,8 @@ export const login = (req, res) => {
       languageCode: user.language_code,
       role: user.role,
       google_access_token: user.google_access_token,
-      google_refresh_token: user.google_refresh_token
+      google_refresh_token: user.google_refresh_token,
+      time_zone: user.google_refresh_token
     }
 
     res.status(200).json({
@@ -522,7 +523,8 @@ export const patientLogin = (req, res) => {
       role: user.role,
       patient_payment: user.patient_payment,
       google_access_token: user.google_access_token,
-      google_refresh_token: user.google_refresh_token
+      google_refresh_token: user.google_refresh_token,
+      time_zone: user.time_zone
     }
 
     res.status(200).json({

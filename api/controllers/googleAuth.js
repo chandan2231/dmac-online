@@ -97,15 +97,13 @@ export const saveConsultantAvailability = async (req, res) => {
 
     availability.forEach(day => {
       day.slots.forEach(slot => {
-        if (slot.available) {
-
           const hour = slot.hour.toString().padStart(2, "0"); // e.g. 09, 10
           const startTime = `${hour}:00:00`;                 // save as received
           const endHour = (slot.hour + 1).toString().padStart(2, "0");
           const endTime = `${endHour}:00:00`;
-
-          values.push([userId, day.date, startTime, endTime, 0]);
-        }
+          const unavailableSlot = Number(slot.available)
+          
+          values.push([userId, day.date, startTime, endTime, unavailableSlot, 0, 1]);
       });
     });
 
@@ -115,7 +113,7 @@ export const saveConsultantAvailability = async (req, res) => {
 
     const query = `
       INSERT INTO dmac_webapp_expert_availability
-      (consultant_id, slot_date, start_time, end_time, is_booked)
+      (consultant_id, slot_date, start_time, end_time, is_slot_available, is_booked, is_day_off)
       VALUES ?
     `;
 
