@@ -126,7 +126,6 @@ export const createUsersByRole = async (req, res) => {
       req.body.provinceValue,
       req.body.finance_manager_id,
       req.body.languages
-
     ]
 
     await new Promise((resolve, reject) => {
@@ -177,10 +176,10 @@ export const createUsersByRole = async (req, res) => {
 }
 
 export const getAllUsersByRole = (req, res) => {
-  const { role } = req.body;
+  const { role } = req.body
 
-  let query;
-  let values = [role];
+  let query
+  let values = [role]
 
   // If the role is USER (single language)
   if (role === 'USER') {
@@ -192,8 +191,8 @@ export const getAllUsersByRole = (req, res) => {
       LEFT JOIN dmac_webapp_language l 
         ON u.language = l.id
       WHERE u.role = ?
-    `;
-  } 
+    `
+  }
   // For therapist or other roles (multiple languages possible)
   else {
     query = `
@@ -205,30 +204,29 @@ export const getAllUsersByRole = (req, res) => {
         ON FIND_IN_SET(lang.id, u.language)
       WHERE u.role = ?
       GROUP BY u.id
-    `;
+    `
   }
 
   db.query(query, values, (err, data) => {
     if (err) {
-      console.error("Error fetching users:", err);
+      console.error('Error fetching users:', err)
       return res.status(500).json({
         status: 500,
-        msg: "Database error",
-        error: err,
-      });
+        msg: 'Database error',
+        error: err
+      })
     }
 
     if (!data || data.length === 0) {
       return res.status(200).json({
         status: 200,
-        msg: `No ${role} records found.`,
-      });
+        msg: `No ${role} records found.`
+      })
     }
 
-    return res.status(200).json(data);
-  });
-};
-
+    return res.status(200).json(data)
+  })
+}
 
 export const updateUsersDetails = async (req, res) => {
   try {
@@ -246,7 +244,7 @@ export const updateUsersDetails = async (req, res) => {
       finance_manager_id,
       languages,
       provinceTitle,
-      provinceValue,
+      provinceValue
     } = req.body
 
     if (!id) {
@@ -268,10 +266,9 @@ export const updateUsersDetails = async (req, res) => {
         license_expiration = ?, 
         contracted_rate_per_consult = ?,
         finance_manager_id = ?,
-        languages = ?,
+        language = ?,
         province_title = ?,
-        province_id = ?,
-
+        province_id = ?
       WHERE id = ?
     `
 
