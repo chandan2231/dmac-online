@@ -76,11 +76,14 @@ export const getExpertAvailability = (req, res) => {
     const groupedResult = {};
 
     rows.forEach(slot => {
-      if (!groupedResult[slot.slot_date]) {
-        groupedResult[slot.slot_date] = [];
+        const formattedDate = new Date(slot.slot_date).toISOString().split("T")[0];
+      
+
+      if (!groupedResult[formattedDate]) {
+        groupedResult[formattedDate] = [];
       }
 
-      groupedResult[slot.slot_date].push({
+      groupedResult[formattedDate].push({
         start_time: slot.start_time,
         end_time: slot.end_time,
         available: slot.is_slot_available,
