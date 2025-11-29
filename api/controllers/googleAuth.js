@@ -1,8 +1,5 @@
 import { db } from '../connect.js'
-import { oauth2Client } from '../googleAuth.js';
-import moment from "moment-timezone";
-import { google } from "googleapis";
-import sendEmail from '../emailService.js';
+import { oauth2Client, getGoogleAuthURL } from '../googleAuth.js';
 
 
 
@@ -75,10 +72,3 @@ export const googleCallbackUrl = async (req, res) => {
     })
   }
 }
-
-
-
-
-
-
-
