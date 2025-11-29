@@ -6,6 +6,7 @@ import {
     rescheduleConsultationWithGoogleCalendar,
     cancelConsultationByConsultant,
     saveConsultantAvailability,
+    getConsultantAvailability,
     getAvailableSlots
 } from '../controllers/googleAuth.js'
 import { authenticateUserGoogle } from '../utils/middleware.js'
@@ -18,6 +19,7 @@ router.post('/book/consultation', bookConsultationWithGoogleCalender)
 router.post('/reschedule/consultation', rescheduleConsultationWithGoogleCalendar)
 router.post('/cancel/consultation', cancelConsultationByConsultant)
 router.post('/save/slot', saveConsultantAvailability)
+router.post('/get/expert-slots', getConsultantAvailability)
 router.post('/get/slot', getAvailableSlots)
 
 export default router

@@ -13,6 +13,61 @@ function queryDB(query, params = []) {
   });
 }
 
+export const getConsultantAvailability = (req, res) => {
+  const { consultant_id } = req.body;
+
+  if (!consultant_id) {
+    return res.status(400).json({ status: 400, message: "Consultant ID is required" });
+  }
+
+  const query = `
+    SELECT 
+      slot_date,
+      start_time,
+      end_time,
+      is_slot_available,
+      is_booked,
+      is_day_off
+    FROM dmac_webapp_expert_availability
+    WHERE consultant_id = ?
+    ORDER BY slot_date ASC, start_time ASC
+  `;
+
+  db.query(query, [consultant_id], (err, rows) => {
+    if (err) return res.status(500).json(err);
+
+    if (!rows.length) {
+      return res.status(200).json({ status: 200, message: "No slots found", slots: [] });
+    }
+
+    // Grouped result
+    const groupedResult = {};
+
+    rows.forEach(slot => {
+      if (!groupedResult[slot.slot_date]) {
+        groupedResult[slot.slot_date] = [];
+      }
+
+      groupedResult[slot.slot_date].push({
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        available: slot.is_slot_available,
+        booked: slot.is_booked,
+        day_off: slot.is_day_off
+      });
+    });
+
+    return res.status(200).json({
+      status: 200,
+      message: "Availability fetched successfully",
+      consultant_id,
+      slots: groupedResult
+    });
+  });
+};
+
+
+
 export const getAvailableSlots = async (req, res) => {
   const { consultation_id, user_id, date } = req.body;
 
@@ -97,12 +152,11 @@ export const saveConsultantAvailability = async (req, res) => {
 
     availability.forEach(day => {
       day.slots.forEach(slot => {
-          const hour = slot.hour.toString().padStart(2, "0"); // e.g. 09, 10
-          const startTime = `${hour}:00:00`;                 // save as received
+          const hour = slot.hour.toString().padStart(2, "0");
+          const startTime = `${hour}:00:00`;
           const endHour = (slot.hour + 1).toString().padStart(2, "0");
           const endTime = `${endHour}:00:00`;
           const unavailableSlot = Number(slot.available)
-          
           values.push([userId, day.date, startTime, endTime, unavailableSlot, 0, 1]);
       });
     });
@@ -127,46 +181,6 @@ export const saveConsultantAvailability = async (req, res) => {
     return res.status(500).json({ status: 500, message: "Unable to save availability" });
   }
 };
-
-
-
-
-
-
-
-
-// export const saveConsultantAvailability = async (req, res) => {
-//     const { consultant_id, timezone, slots } = req.body;
-//     /*
-//     slots = [
-//         { date: "2025-01-10", start: "10:00", end: "10:30" },
-//         { date: "2025-01-10", start: "11:00", end: "11:30" },
-//         ...
-//     ]
-//     */
-
-//     if (!consultant_id || !timezone || !slots || !slots.length) {
-//         return res.status(400).json({ status: 400, message: "Missing fields" });
-//     }
-
-//     try {
-//         const values = slots.map(slot => {
-//             const start = moment.tz(`${slot.date} ${slot.start}`, timezone).utc().format("YYYY-MM-DD HH:mm:ss");
-//             const end = moment.tz(`${slot.date} ${slot.end}`, timezone).utc().format("YYYY-MM-DD HH:mm:ss");
-//             const slotDate = slot.date;
-//             return [consultant_id, slotDate, start, end, 0];
-//         });
-//         const query = `INSERT INTO dmac_webapp_expert_availability (consultant_id, slot_date, start_time, end_time, is_booked) VALUES ?`;
-//         db.query(query, [values], (err) => {
-//         if (err) throw err;
-//             return res.status(200).json({ status: 200, message: "Availability saved successfully" });
-//         });
-//     } catch (e) {
-//         console.error(e);
-//         return res.status(500).json({ status: 500, message: "Unable to save availability" });
-//     }
-// };
-
 
 export const cancelConsultationByConsultant = async (req, res) => {
   let consultation_id;
