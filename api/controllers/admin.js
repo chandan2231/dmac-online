@@ -105,7 +105,7 @@ export const createUsersByRole = async (req, res) => {
 
     // Insert new user
     const insertQuery = `
-      INSERT INTO dmac_webapp_users (name, mobile, email, password, role, verified, verification_token, time_zone, country, address, speciality, license_number, license_expiration, contracted_rate_per_consult, province_title, province_id, finance_manager, language) 
+      INSERT INTO dmac_webapp_users (name, mobile, email, password, role, verified, verification_token, time_zone, country, address, speciality, license_number, license_expiration, contracted_rate_per_consult, province_title, province_id, finance_manager_id, language) 
       VALUES (?)`
     const values = [
       req.body.name,
@@ -177,43 +177,58 @@ export const createUsersByRole = async (req, res) => {
 }
 
 export const getAllUsersByRole = (req, res) => {
-  const { role } = req.body
+  const { role } = req.body;
 
-  let query
-  let values = [role]
+  let query;
+  let values = [role];
 
+  // If the role is USER (single language)
   if (role === 'USER') {
     query = `
-      SELECT u.*, l.language as language_name
+      SELECT 
+        u.*,
+        l.language AS language_name
       FROM dmac_webapp_users u
-      LEFT JOIN dmac_webapp_language l ON u.language = l.id
+      LEFT JOIN dmac_webapp_language l 
+        ON u.language = l.id
       WHERE u.role = ?
-    `
-  } else {
+    `;
+  } 
+  // For therapist or other roles (multiple languages possible)
+  else {
     query = `
-      SELECT *
-      FROM dmac_webapp_users
-      WHERE role = ?
-    `
+      SELECT 
+        u.*,
+        GROUP_CONCAT(lang.language ORDER BY lang.language SEPARATOR ', ') AS language_name
+      FROM dmac_webapp_users u
+      LEFT JOIN dmac_webapp_language lang
+        ON FIND_IN_SET(lang.id, u.language)
+      WHERE u.role = ?
+      GROUP BY u.id
+    `;
   }
 
   db.query(query, values, (err, data) => {
     if (err) {
-      console.error('Error fetching users:', err)
-      return res
-        .status(500)
-        .json({ status: 500, msg: 'Database error', error: err })
+      console.error("Error fetching users:", err);
+      return res.status(500).json({
+        status: 500,
+        msg: "Database error",
+        error: err,
+      });
     }
 
     if (!data || data.length === 0) {
-      return res
-        .status(200)
-        .json({ status: 200, msg: `No ${role} records found.` })
+      return res.status(200).json({
+        status: 200,
+        msg: `No ${role} records found.`,
+      });
     }
 
-    return res.status(200).json(data)
-  })
-}
+    return res.status(200).json(data);
+  });
+};
+
 
 export const updateUsersDetails = async (req, res) => {
   try {
@@ -227,7 +242,11 @@ export const updateUsersDetails = async (req, res) => {
       speciality,
       license_number,
       license_expiration,
-      contracted_rate_per_consult
+      contracted_rate_per_consult,
+      finance_manager_id,
+      languages,
+      provinceTitle,
+      provinceValue,
     } = req.body
 
     if (!id) {
@@ -247,7 +266,12 @@ export const updateUsersDetails = async (req, res) => {
         speciality = ?, 
         license_number = ?, 
         license_expiration = ?, 
-        contracted_rate_per_consult = ?
+        contracted_rate_per_consult = ?,
+        finance_manager_id = ?,
+        languages = ?,
+        province_title = ?,
+        province_id = ?,
+
       WHERE id = ?
     `
 
@@ -261,6 +285,10 @@ export const updateUsersDetails = async (req, res) => {
       license_number,
       license_expiration,
       contracted_rate_per_consult,
+      finance_manager_id,
+      languages,
+      provinceTitle,
+      provinceValue,
       id
     ]
 

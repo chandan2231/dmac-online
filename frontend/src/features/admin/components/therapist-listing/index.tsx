@@ -853,7 +853,7 @@ function UserTable() {
                   Languages:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
-                  {get(selectedTherapist, 'language', '')}
+                  {get(selectedTherapist, 'language_name', '')}
                 </Typography>
               </Box>
 

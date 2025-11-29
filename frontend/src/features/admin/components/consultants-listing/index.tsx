@@ -834,7 +834,7 @@ function ConsultantTable() {
                   Languages:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
-                  {get(selectedConsultant, 'language', '')}
+                  {get(selectedConsultant, 'language_name', '')}
                 </Typography>
               </Box>
 
