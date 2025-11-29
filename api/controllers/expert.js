@@ -86,9 +86,9 @@ export const getExpertAvailability = (req, res) => {
       groupedResult[formattedDate].push({
         start_time: slot.start_time,
         end_time: slot.end_time,
-        available: slot.is_slot_available,
-        booked: slot.is_booked,
-        day_off: slot.is_day_off
+        is_slot_available: slot.is_slot_available,
+        is_booked: slot.is_booked,
+        is_day_off: slot.is_day_off
       });
     });
 
