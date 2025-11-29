@@ -32,7 +32,7 @@ const Calendar = () => {
   const { showToast } = useToast();
 
   const endDate = useMemo(() => {
-    return startDate ? startDate.add(15, 'day') : null;
+    return startDate ? startDate.add(14, 'day') : null;
   }, [startDate]);
 
   const endOptions = useMemo(() => {
@@ -63,14 +63,15 @@ const Calendar = () => {
     const startHour = parseInt(shiftStart.value, 10);
     const endHour = parseInt(shiftEnd.value, 10);
     const availability = [];
+    const startDateStr = startDate.format('YYYY-MM-DD');
 
-    for (let i = 0; i <= 15; i++) {
+    for (let i = 0; i <= 14; i++) {
       const currentDate = startDate.add(i, 'day');
       const dateStr = currentDate.format('YYYY-MM-DD');
       const daySlots = [];
 
       for (let h = startHour; h < endHour; h++) {
-        const slotId = `${dateStr}-${h}`;
+        const slotId = `${startDateStr}-${h}`;
         daySlots.push({
           hour: h,
           available: !disabledSlots.has(slotId),
