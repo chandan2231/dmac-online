@@ -28,7 +28,7 @@ const setAvailability = async (
   message?: string;
 }> => {
   try {
-    await HttpService.post('/expert/availability', data);
+    await HttpService.post('/save/slot', data);
     return {
       success: true,
       message: 'Availability saved successfully',
