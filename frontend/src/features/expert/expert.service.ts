@@ -21,8 +21,30 @@ const getGoogleAuthUrl = async (): Promise<{
   }
 };
 
+const setAvailability = async (
+  data: unknown
+): Promise<{
+  success: boolean;
+  message?: string;
+}> => {
+  try {
+    await HttpService.post('/expert/availability', data);
+    return {
+      success: true,
+      message: 'Availability saved successfully',
+    };
+  } catch (error: unknown) {
+    console.error('Error saving availability:', error);
+    return {
+      success: false,
+      message: 'Failed to save availability',
+    };
+  }
+};
+
 const ExpertService = {
   getGoogleAuthUrl,
+  setAvailability,
 };
 
 export default ExpertService;

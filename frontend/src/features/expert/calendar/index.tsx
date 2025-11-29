@@ -15,6 +15,8 @@ import type { IOption } from '../../../components/select';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import { get } from 'lodash';
+import ExpertService from '../expert.service';
+import { useToast } from '../../../providers/toast-provider';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => ({
   label: `${i.toString().padStart(2, '0')}:00`,
@@ -27,6 +29,7 @@ const Calendar = () => {
   const [shiftStart, setShiftStart] = useState<IOption | null>(null);
   const [shiftEnd, setShiftEnd] = useState<IOption | null>(null);
   const [disabledSlots, setDisabledSlots] = useState<Set<string>>(new Set());
+  const { showToast } = useToast();
 
   const endDate = useMemo(() => {
     return startDate ? startDate.add(15, 'day') : null;
@@ -54,7 +57,7 @@ const Calendar = () => {
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!startDate || !shiftStart || !shiftEnd) return;
 
     const startHour = parseInt(shiftStart.value, 10);
@@ -89,7 +92,16 @@ const Calendar = () => {
       userId: get(user, ['id']),
     };
 
-    console.log('Configuration Submitted:', config);
+    await ExpertService.setAvailability(config).then(response => {
+      if (response.success) {
+        showToast(
+          response.message || 'Availability saved successfully',
+          'success'
+        );
+      } else {
+        showToast(response.message || 'Failed to save availability', 'error');
+      }
+    });
   };
 
   const renderSlots = () => {
