@@ -25,27 +25,6 @@ import externalMonitor from './routes/externalMonitor.js'
 dotenv.config({ path: `.env`, override: true })
 const app = express()
 
-
-app.use('/api/language', languageRoutes)
-app.use('/api/questionar', questionarRoutes)
-app.use('/api/auth', authRoutes)
-app.use('/api/admin', adminRoutes)
-app.use('/api/google', googleAuth)
-app.use('/api/expert', expertRoutes)
-app.use('/api/therapist', theraistRoutes)
-app.use('/api/patient', patientRoutes)
-
-
-
-
-app.use('/api/researchInfo', researchRoutes)
-app.use('/api/protocol', protocolRoutes)
-app.use('/api/continuinReview', continuinReviewRoutes)
-app.use('/api/eventAndRequest', eventAndRequest)
-app.use('/api/communication', communication)
-app.use('/api/payment', payment)
-app.use('/api/externalMonitor', externalMonitor)
-
 // middlewares
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -94,6 +73,26 @@ if (process.env.NODE_ENV === 'localhost') {
   app.use(cors({ origin: ['https://app.irbhub.org'] }))
   app.use(cors(corsOptions))
 }
+
+app.use('/api/language', languageRoutes)
+app.use('/api/questionar', questionarRoutes)
+app.use('/api/auth', authRoutes)
+app.use('/api/admin', adminRoutes)
+app.use('/api/google', googleAuth)
+app.use('/api/expert', expertRoutes)
+app.use('/api/therapist', theraistRoutes)
+app.use('/api/patient', patientRoutes)
+
+
+
+
+app.use('/api/researchInfo', researchRoutes)
+app.use('/api/protocol', protocolRoutes)
+app.use('/api/continuinReview', continuinReviewRoutes)
+app.use('/api/eventAndRequest', eventAndRequest)
+app.use('/api/communication', communication)
+app.use('/api/payment', payment)
+app.use('/api/externalMonitor', externalMonitor)
 
 
 
