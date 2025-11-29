@@ -28,7 +28,7 @@ const setAvailability = async (
   message?: string;
 }> => {
   try {
-    await HttpService.post('/save/slot', data);
+    await HttpService.post('/google/save/slot', data);
     return {
       success: true,
       message: 'Availability saved successfully',

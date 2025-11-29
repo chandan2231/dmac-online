@@ -85,38 +85,89 @@ export const getAvailableSlots = async (req, res) => {
 };
 
 
-
 export const saveConsultantAvailability = async (req, res) => {
-    const { consultant_id, timezone, slots } = req.body;
-    /*
-    slots = [
-        { date: "2025-01-10", start: "10:00", end: "10:30" },
-        { date: "2025-01-10", start: "11:00", end: "11:30" },
-        ...
-    ]
-    */
+  const { startDate, endDate, availability, userId } = req.body;
 
-    if (!consultant_id || !timezone || !slots || !slots.length) {
-        return res.status(400).json({ status: 400, message: "Missing fields" });
+  if (!startDate || !endDate || !availability || !userId) {
+    return res.status(400).json({ status: 400, message: "Missing required fields" });
+  }
+
+  try {
+    const values = [];
+
+    availability.forEach(day => {
+      day.slots.forEach(slot => {
+        if (slot.available) {
+
+          const hour = slot.hour.toString().padStart(2, "0"); // e.g. 09, 10
+          const startTime = `${hour}:00:00`;                 // save as received
+          const endHour = (slot.hour + 1).toString().padStart(2, "0");
+          const endTime = `${endHour}:00:00`;
+
+          values.push([userId, day.date, startTime, endTime, 0]);
+        }
+      });
+    });
+
+    if (!values.length) {
+      return res.status(400).json({ status: 400, message: "No available slots selected" });
     }
 
-    try {
-        const values = slots.map(slot => {
-            const start = moment.tz(`${slot.date} ${slot.start}`, timezone).utc().format("YYYY-MM-DD HH:mm:ss");
-            const end = moment.tz(`${slot.date} ${slot.end}`, timezone).utc().format("YYYY-MM-DD HH:mm:ss");
-            const slotDate = slot.date;
-            return [consultant_id, slotDate, start, end, 0];
-        });
-        const query = `INSERT INTO dmac_webapp_expert_availability (consultant_id, slot_date, start_time, end_time, is_booked) VALUES ?`;
-        db.query(query, [values], (err) => {
-        if (err) throw err;
-            return res.status(200).json({ status: 200, message: "Availability saved successfully" });
-        });
-    } catch (e) {
-        console.error(e);
-        return res.status(500).json({ status: 500, message: "Unable to save availability" });
-    }
+    const query = `
+      INSERT INTO dmac_webapp_expert_availability
+      (consultant_id, slot_date, start_time, end_time, is_booked)
+      VALUES ?
+    `;
+
+    db.query(query, [values], (err) => {
+      if (err) throw err;
+      return res.status(200).json({ status: 200, message: "Availability saved successfully" });
+    });
+
+  } catch (error) {
+    console.error("SAVE ERROR:", error);
+    return res.status(500).json({ status: 500, message: "Unable to save availability" });
+  }
 };
+
+
+
+
+
+
+
+
+// export const saveConsultantAvailability = async (req, res) => {
+//     const { consultant_id, timezone, slots } = req.body;
+//     /*
+//     slots = [
+//         { date: "2025-01-10", start: "10:00", end: "10:30" },
+//         { date: "2025-01-10", start: "11:00", end: "11:30" },
+//         ...
+//     ]
+//     */
+
+//     if (!consultant_id || !timezone || !slots || !slots.length) {
+//         return res.status(400).json({ status: 400, message: "Missing fields" });
+//     }
+
+//     try {
+//         const values = slots.map(slot => {
+//             const start = moment.tz(`${slot.date} ${slot.start}`, timezone).utc().format("YYYY-MM-DD HH:mm:ss");
+//             const end = moment.tz(`${slot.date} ${slot.end}`, timezone).utc().format("YYYY-MM-DD HH:mm:ss");
+//             const slotDate = slot.date;
+//             return [consultant_id, slotDate, start, end, 0];
+//         });
+//         const query = `INSERT INTO dmac_webapp_expert_availability (consultant_id, slot_date, start_time, end_time, is_booked) VALUES ?`;
+//         db.query(query, [values], (err) => {
+//         if (err) throw err;
+//             return res.status(200).json({ status: 200, message: "Availability saved successfully" });
+//         });
+//     } catch (e) {
+//         console.error(e);
+//         return res.status(500).json({ status: 500, message: "Unable to save availability" });
+//     }
+// };
 
 
 export const cancelConsultationByConsultant = async (req, res) => {
