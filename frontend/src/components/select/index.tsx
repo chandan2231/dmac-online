@@ -12,6 +12,7 @@ import { ListSubheader } from '@mui/material';
 export interface IOption {
   label: string;
   value: string;
+  disabled?: boolean;
 }
 
 interface IModernSelectProps {
@@ -166,7 +167,11 @@ const ModernSelect = ({
 
           {filteredOptions.length > 0 ? (
             filteredOptions.map(option => (
-              <MenuItem key={option.value} value={option.value}>
+              <MenuItem
+                key={option.value}
+                value={option.value}
+                disabled={option.disabled}
+              >
                 {option.label}
               </MenuItem>
             ))

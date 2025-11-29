@@ -45,6 +45,7 @@ import BookConsultationPage from '../pages/patient/book-consultation';
 import ConsultationListPage from '../pages/expert/consultation-list';
 import TransactionHistoryPage from '../pages/expert/transaction-history';
 import ExpertHomePage from '../pages/expert/home';
+import CalendarPage from '../pages/expert/calendar';
 
 // Therapist Pages
 import TherapistHomePage from '../pages/therapist/home';
@@ -98,6 +99,7 @@ export const COMPONENT_MAP = {
   ConsultationListPage,
   TransactionHistoryPage,
   ExpertHomePage,
+  CalendarPage,
 
   // Therapist Pages
   TherapistHomePage,
@@ -147,6 +149,7 @@ export const ROUTES = {
   // EXPERT Protected routes
   EXPERT_CONSULTATIONS: '/expert/consultations',
   EXPERT_TRANSACTIONS: '/expert/transactions',
+  EXPERT_CALENDAR: '/expert/calendar',
 } as const;
 
 export type ROUTES = (typeof ROUTES)[keyof typeof ROUTES];
@@ -350,6 +353,16 @@ const EXPERT_ROUTES: IAllowedRoutes[] = [
     showInSidebar: true,
     sideBarTitle: 'Auth With Google',
     sideBarIcon: 'HomeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.EXPERT_CALENDAR,
+    layout: 'MainLayout',
+    component: 'CalendarPage',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Calendar',
+    sideBarIcon: null,
     isAChildOf: null,
   },
   {
