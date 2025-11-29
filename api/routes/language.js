@@ -4,11 +4,7 @@ import { authenticateUser } from '../utils/middleware.js'
 
 const router = express.Router()
 
-router.get('/language-list', getLanguageList)
-router.post(
-  '/language-update',
-  //  authenticateUser,
-  updateLanguage
-)
+router.post('/language-list', getLanguageList)
+router.post( '/language-update', updateLanguage)
 
 export default router
