@@ -72,6 +72,7 @@ const editConsultantSchema = Yup.object({
   languages: Yup.array()
     .min(1, 'Select at least one language')
     .required('Languages are required'),
+  time_zone: Yup.string().required('Time zone is required'),
 });
 type EditConsultantFormValues = Yup.InferType<typeof editConsultantSchema>;
 
@@ -155,14 +156,9 @@ function ConsultantTable() {
   const handleOpenEditModal = (consultant: ConsultantState) => {
     setSelectedConsultant(consultant);
 
-    const consultantLanguages = consultant.language
+    const selectedLangIds = consultant.language
       ? consultant.language.split(',').map(l => l.trim())
       : [];
-
-    const selectedLangIds =
-      get(listingResponse, 'data.languages', [])
-        .filter((l: ILanguage) => consultantLanguages.includes(l.language))
-        .map((l: ILanguage) => String(l.id)) || [];
 
     reset({
       name: consultant.name,
@@ -174,9 +170,10 @@ function ConsultantTable() {
       license_expiration: consultant.license_expiration,
       contracted_rate_per_consult: consultant.contracted_rate_per_consult,
       country: consultant.country,
-      state: consultant.province_title,
+      state: consultant.province_id ,
       finance_manager_id: String(get(consultant, 'finance_manager_id', '')),
       languages: selectedLangIds,
+      time_zone: consultant.time_zone,
     });
 
     const countryOpt = COUNTRIES_LIST.find(c => c.label === consultant.country);

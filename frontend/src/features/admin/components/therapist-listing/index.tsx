@@ -58,7 +58,7 @@ const editTherapistSchema = Yup.object({
   mobile: Yup.string().required('Mobile is required'),
   email: Yup.string().email('Invalid email').required('Email is required'),
   country: Yup.string().required('Country is required'),
-  time_zne: Yup.string().required('Time zone is required'),
+  time_zone: Yup.string().required('Time zone is required'),
   address: Yup.string().required('Address is required'),
   speciality: Yup.string().required('Speciality is required'),
   license_number: Yup.string().required('License number is required'),
@@ -156,14 +156,9 @@ function UserTable() {
   const handleOpenEditModal = (therapist: TherapistState) => {
     setSelectedTherapist(therapist);
 
-    const therapistLanguages = therapist.language
+    const selectedLangIds = therapist.language
       ? therapist.language.split(',').map(l => l.trim())
       : [];
-
-    const selectedLangIds =
-      get(listingResponse, 'data.languages', [])
-        .filter((l: ILanguage) => therapistLanguages.includes(l.language))
-        .map((l: ILanguage) => String(l.id)) || [];
 
     // populate edit form
     reset({
@@ -176,9 +171,10 @@ function UserTable() {
       license_expiration: therapist.license_expiration,
       contracted_rate_per_consult: therapist.contracted_rate_per_consult,
       country: therapist.country,
-      state: therapist.province_title,
+      state: therapist.province_id,
       finance_manager_id: String(get(therapist, 'finance_manager_id', '')),
       languages: selectedLangIds,
+      time_zone: therapist.time_zone,
     });
 
     const countryOpt = COUNTRIES_LIST.find(c => c.label === therapist.country);
@@ -577,7 +573,7 @@ function UserTable() {
                 name="languages"
                 render={({ field: { value, onChange } }) => {
                   const options =
-                    get(listingResponse, 'data.languages', []).map(
+                    get(listingResponse, ['data', 'languages'], []).map(
                       (lang: ILanguage) => ({
                         label: lang.language,
                         value: String(lang.id),
@@ -1149,7 +1145,7 @@ const TherapistListing = () => {
                 name="languages"
                 render={({ field: { value, onChange } }) => {
                   const options =
-                    get(listingResponse, 'data.languages', []).map(
+                    get(listingResponse, ['data', 'languages'], []).map(
                       (lang: ILanguage) => ({
                         label: lang.language,
                         value: String(lang.id),
