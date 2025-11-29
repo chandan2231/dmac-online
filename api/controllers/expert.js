@@ -282,3 +282,70 @@ export const getAvailableSlots = async (req, res) => {
     })
   }
 }
+
+export const toggleDayOff = async (req, res) => {
+  const { consultant_id, date, is_day_off } = req.body
+
+  if (!consultant_id || !date || is_day_off === undefined) {
+    return res
+      .status(400)
+      .json({ status: 400, message: 'Missing required fields' })
+  }
+
+  try {
+    // 1. Get Expert's Timezone
+    const userResult = await new Promise((resolve, reject) => {
+      db.query(
+        `SELECT time_zone FROM dmac_webapp_users WHERE id = ?`,
+        [consultant_id],
+        (err, data) => {
+          if (err) reject(err)
+          resolve(data)
+        }
+      )
+    })
+
+    const expertTimezone = userResult[0]?.time_zone
+    if (!expertTimezone) {
+      return res
+        .status(400)
+        .json({ status: 400, message: 'Expert timezone not found' })
+    }
+
+    // 2. Calculate UTC range for the day in Expert's timezone
+    const startOfDayUTC = moment
+      .tz(date + ' 00:00', 'YYYY-MM-DD HH:mm', expertTimezone)
+      .utc()
+      .format('YYYY-MM-DD HH:mm:ss')
+    const endOfDayUTC = moment
+      .tz(date + ' 23:59:59', 'YYYY-MM-DD HH:mm:ss', expertTimezone)
+      .utc()
+      .format('YYYY-MM-DD HH:mm:ss')
+
+    // 3. Update slots
+    const query = `
+      UPDATE dmac_webapp_expert_availability
+      SET is_day_off = ?
+      WHERE consultant_id = ?
+      AND start_time BETWEEN ? AND ?
+    `
+
+    db.query(
+      query,
+      [is_day_off, consultant_id, startOfDayUTC, endOfDayUTC],
+      (err, result) => {
+        if (err) throw err
+        return res.status(200).json({
+          status: 200,
+          message: 'Day off status updated successfully',
+          updatedSlots: result.affectedRows
+        })
+      }
+    )
+  } catch (error) {
+    console.error('TOGGLE DAY OFF ERROR:', error)
+    return res
+      .status(500)
+      .json({ status: 500, message: 'Unable to update day off status' })
+  }
+}

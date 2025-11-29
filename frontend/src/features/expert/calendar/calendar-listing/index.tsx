@@ -6,10 +6,23 @@ import { TabHeaderLayout } from '../../../../components/tab-header';
 import { GenericTable } from '../../../../components/table';
 import ModernSwitch from '../../../../components/switch';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../../../store';
+import { get } from 'lodash';
+import ExpertService from '../../expert.service';
+import { useToast } from '../../../../providers/toast-provider';
+import ViewSlotDetails from './view-slot-details';
 
 const CalendarListing = ({ slotsData }: { slotsData: ISlotsData }) => {
   const [rows, setRows] = useState<IAvailabilitySlot[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedRow, setSelectedRow] = useState<IAvailabilitySlot | null>(
+    null
+  );
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { showToast } = useToast();
 
   useEffect(() => {
     const transformedData: IAvailabilitySlot[] = [];
@@ -26,31 +39,74 @@ const CalendarListing = ({ slotsData }: { slotsData: ISlotsData }) => {
     setRows(transformedData);
   }, [slotsData]);
 
-  const handleDayOffChange = (id: string) => {
+  const handleDayOffChange = async (id: string) => {
+    const row = rows.find(r => r.id === id);
+    if (!row) return;
+
+    const newIsDayOff = row.is_day_off === 1 ? 0 : 1;
+
+    // Optimistic update
     setRows(prevRows =>
-      prevRows.map(row => {
-        if (row.id === id) {
-          const dayoOff = row.is_day_off === 1 ? 0 : 1;
+      prevRows.map(r => {
+        if (r.id === id) {
           return {
-            ...row,
-            day_off: dayoOff,
-            slots: row.slots.map(slot => ({
+            ...r,
+            is_day_off: newIsDayOff,
+            slots: r.slots.map(slot => ({
               ...slot,
-              is_day_off: dayoOff,
+              is_day_off: newIsDayOff,
             })),
           };
         }
-        return row;
+        return r;
       })
     );
+
+    // API Call
+    const response = await ExpertService.toggleDayOff({
+      consultant_id: get(user, 'id', ''),
+      date: row.date,
+      is_day_off: newIsDayOff,
+    });
+
+    if (response.success) {
+      showToast(response.message || 'Updated successfully', 'success');
+    } else {
+      showToast(response.message || 'Update failed', 'error');
+      // Revert on failure
+      setRows(prevRows =>
+        prevRows.map(r => {
+          if (r.id === id) {
+            return {
+              ...r,
+              is_day_off: row.is_day_off, // Revert to old value
+              slots: r.slots.map(slot => ({
+                ...slot,
+                is_day_off: row.is_day_off,
+              })),
+            };
+          }
+          return r;
+        })
+      );
+    }
   };
 
-  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleMenuClick = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    row: IAvailabilitySlot
+  ) => {
     setAnchorEl(event.currentTarget);
+    setSelectedRow(row);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleViewDetails = () => {
+    setIsViewModalOpen(true);
+    handleMenuClose();
   };
 
   const columns: GridColDef<IAvailabilitySlot>[] = [
@@ -80,34 +136,12 @@ const CalendarListing = ({ slotsData }: { slotsData: ISlotsData }) => {
       width: 80,
       renderCell: params => {
         return (
-          <>
-            <IconButton onClick={handleMenuClick} size="small">
-              <MoreVertIcon />
-            </IconButton>
-
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-              <MenuItem
-                onClick={() => {
-                  handleMenuClose();
-                }}
-              >
-                View Details
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  handleMenuClose();
-                }}
-              >
-                Update Slot
-              </MenuItem>
-            </Menu>
-          </>
+          <IconButton
+            onClick={e => handleMenuClick(e, params.row)}
+            size="small"
+          >
+            <MoreVertIcon />
+          </IconButton>
         );
       },
     },
@@ -130,6 +164,23 @@ const CalendarListing = ({ slotsData }: { slotsData: ISlotsData }) => {
         }
       />
       <GenericTable rows={rows} columns={columns} loading={false} />
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem onClick={handleViewDetails}>View Details</MenuItem>
+        <MenuItem onClick={handleMenuClose}>Update Slot</MenuItem>
+      </Menu>
+
+      <ViewSlotDetails
+        open={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        slotData={selectedRow}
+      />
     </Box>
   );
 };

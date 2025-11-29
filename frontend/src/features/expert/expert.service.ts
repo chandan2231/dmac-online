@@ -64,10 +64,34 @@ const getExpertSlots = async ({
   }
 };
 
+const toggleDayOff = async (data: {
+  consultant_id: string;
+  date: string;
+  is_day_off: number;
+}): Promise<{
+  success: boolean;
+  message?: string;
+}> => {
+  try {
+    await HttpService.post('/expert/toggle-day-off', data);
+    return {
+      success: true,
+      message: 'Day off status updated successfully',
+    };
+  } catch (error: unknown) {
+    console.error('Error updating day off status:', error);
+    return {
+      success: false,
+      message: 'Failed to update day off status',
+    };
+  }
+};
+
 const ExpertService = {
   getGoogleAuthUrl,
   setAvailability,
   getExpertSlots,
+  toggleDayOff,
 };
 
 export default ExpertService;
