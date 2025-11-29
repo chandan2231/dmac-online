@@ -14,7 +14,12 @@ const TherapistHome = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const handleGoogleAuth = async () => {
-    await TherapistService.getGoogleAuthUrl();
+    const resp = await TherapistService.getGoogleAuthUrl();
+    if (resp.success && resp.url) {
+      window.location.href = resp.url; // 👈 open Google login
+    } else {
+      showToast('Failed to connect with Google', 'error');
+    }
   };
 
   useEffect(() => {

@@ -14,7 +14,12 @@ const ExportHome = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const handleGoogleAuth = async () => {
-    await ExpertService.getGoogleAuthUrl();
+    const resp = await ExpertService.getGoogleAuthUrl();
+    if (resp.success && resp.url) {
+      window.location.href = resp.url; // 👈 open Google login
+    } else {
+      showToast('Failed to connect with Google', 'error');
+    }
   };
 
   useEffect(() => {
