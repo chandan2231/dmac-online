@@ -64,7 +64,9 @@ const schema = Yup.object({
 });
 
 const PatientRegister = () => {
-  const { data: listingResponse } = useLanguageList();
+  const { data: listingResponse } = useLanguageList({
+    USER_TYPE: 'USER',
+  });
   const navigate = useNavigate();
   const { state } = useLocation();
   const { showToast } = useToast();
@@ -351,7 +353,7 @@ const PatientRegister = () => {
               onChange={option => setValue('language', option)}
               placeholder="Choose your language"
               options={convertLanguagesListToOptions(
-                get(listingResponse, ['data'], []) || []
+                get(listingResponse, ['data', 'languages'], []) || []
               )}
               error={!!errors.language}
               helperText={errors.language?.value?.message}

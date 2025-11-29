@@ -1,15 +1,47 @@
 import HttpService from '../services/HttpService';
 import type {
   IChangeLanguagePayload,
-  ILanguage,
   ILanguageConstants,
 } from './language.interface';
 
-const fetchLanguageList = async () => {
+const getPayload = (USER_TYPE?: string | null) => {
+  if (USER_TYPE === 'ADMIN') {
+    return {
+      patient_show: 1,
+    };
+  }
+
+  if (USER_TYPE === 'USER') {
+    return {
+      patient_show: 1,
+    };
+  }
+
+  if (USER_TYPE === 'THERAPIST') {
+    return {
+      therapist_show: 1,
+    };
+  }
+
+  if (USER_TYPE === 'EXPERT') {
+    return {
+      expert_show: 1,
+    };
+  }
+
+  return {};
+};
+
+const fetchLanguageList = async ({
+  USER_TYPE,
+}: {
+  USER_TYPE?: string | null;
+}) => {
+  const payload = getPayload(USER_TYPE);
   try {
-    const response = await HttpService.get<ILanguage[]>(
-      '/language/language-list'
-    );
+    const response = await HttpService.post('/language/language-list', {
+      ...payload,
+    });
     const { data } = response;
     return {
       isSuccess: true,

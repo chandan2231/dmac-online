@@ -30,7 +30,10 @@ export default function LanguageMode() {
     (state: RootState) => state.language
   );
   const { user } = useSelector((state: RootState) => state.auth);
-  const { data: listingResponse } = useLanguageList(isLanguageModalOpen);
+  const { data: listingResponse } = useLanguageList({
+    enable: isLanguageModalOpen,
+    USER_TYPE: get(user, ['role'], null),
+  });
 
   const handleSelect = async (langCode: ILanguage) => {
     // i18n.changeLanguage(langCode);
@@ -101,38 +104,40 @@ export default function LanguageMode() {
             padding: 0,
           }}
         >
-          {get(listingResponse, ['data'], []).map((language, index) => {
-            const currentLang = String(get(user, ['language'], ''));
-            const languageId = String(get(language, ['id'], ''));
-            const selectedLang = currentLang === languageId;
-            return (
-              <ListItem
-                key={index}
-                sx={{ boxSizing: 'border-box' }}
-                disablePadding
-              >
-                <ListItemButton
-                  selected={selectedLang}
-                  onClick={() => handleSelect(language)}
-                  sx={theme => ({
-                    borderRadius: '8px',
-                    '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                    },
-                    ...(selectedLang && {
-                      backgroundColor: `${theme.palette.primary.main} !important`,
-                      color: theme.palette.common.white,
-                      '&:hover': {
-                        backgroundColor: theme.palette.primary.dark,
-                      },
-                    }),
-                  })}
+          {(get(listingResponse, ['data', 'languages'], []) as ILanguage[]).map(
+            (language, index) => {
+              const currentLang = String(get(user, ['language'], ''));
+              const languageId = String(get(language, ['id'], ''));
+              const selectedLang = currentLang === languageId;
+              return (
+                <ListItem
+                  key={index}
+                  sx={{ boxSizing: 'border-box' }}
+                  disablePadding
                 >
-                  {get(language, ['language'], '')}
-                </ListItemButton>
-              </ListItem>
-            );
-          })}
+                  <ListItemButton
+                    selected={selectedLang}
+                    onClick={() => handleSelect(language)}
+                    sx={theme => ({
+                      borderRadius: '8px',
+                      '&:hover': {
+                        backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                      },
+                      ...(selectedLang && {
+                        backgroundColor: `${theme.palette.primary.main} !important`,
+                        color: theme.palette.common.white,
+                        '&:hover': {
+                          backgroundColor: theme.palette.primary.dark,
+                        },
+                      }),
+                    })}
+                  >
+                    {get(language, ['language'], '')}
+                  </ListItemButton>
+                </ListItem>
+              );
+            }
+          )}
         </List>
       </GenericModal>
     </>
