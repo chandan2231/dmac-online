@@ -188,7 +188,7 @@ export const login = (req, res) => {
       role: user.role,
       google_access_token: user.google_access_token,
       google_refresh_token: user.google_refresh_token,
-      time_zone: user.google_refresh_token
+      time_zone: user.time_zone
     }
 
     res.status(200).json({
