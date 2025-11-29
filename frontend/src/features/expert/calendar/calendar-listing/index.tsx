@@ -1,6 +1,4 @@
-import { useSelector } from 'react-redux';
 import type { IAvailabilitySlot, ISlotsData } from '../../expert.interface';
-import type { RootState } from '../../../../store';
 import { useEffect, useState } from 'react';
 import type { GridColDef } from '@mui/x-data-grid';
 import { Box, IconButton, Menu, MenuItem, Typography } from '@mui/material';
@@ -10,7 +8,6 @@ import ModernSwitch from '../../../../components/switch';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 const CalendarListing = ({ slotsData }: { slotsData: ISlotsData }) => {
-  const { user } = useSelector((state: RootState) => state.auth);
   const [rows, setRows] = useState<IAvailabilitySlot[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -54,7 +51,7 @@ const CalendarListing = ({ slotsData }: { slotsData: ISlotsData }) => {
     { field: 'end_time', headerName: 'End Time', flex: 1 },
     {
       field: 'day_off',
-      headerName: 'Day Off',
+      headerName: 'Is Available',
       flex: 1,
       renderCell: params => {
         const isDayOff = params.row.day_off === 1;
