@@ -8,15 +8,49 @@ import {
   Stack,
   Divider,
 } from '@mui/material';
-import { Dayjs } from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import ModernDatePicker from '../../../components/date-picker';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import ModernSelect from '../../../components/select';
 import type { IOption } from '../../../components/select';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import { get } from 'lodash';
-import { useToast } from '../../../providers/toast-provider';
 import TherapistService from '../therapist.service';
+import { useToast } from '../../../providers/toast-provider';
+import { useGetTherapistSlots } from '../hooks/useGetTherapistSlots';
+import type { ISlotsData } from '../therapist.interface';
+import CustomLoader from '../../../components/loader';
+import CalendarListing from './calendar-listing';
+
+const isExpired = ({
+  therapistSlotsData,
+  userTimezone,
+}: {
+  therapistSlotsData: unknown;
+  userTimezone: string;
+}) => {
+  const slots = get(therapistSlotsData, ['slots'], {}) as ISlotsData;
+  const slotKeys = Object.keys(slots).sort();
+  const lastDate = slotKeys.length > 0 ? slotKeys[slotKeys.length - 1] : null;
+
+  const isExpired = lastDate
+    ? dayjs
+        .tz(lastDate, userTimezone)
+        .endOf('day')
+        .isBefore(dayjs().tz(userTimezone), 'day')
+    : true;
+
+  return {
+    isExpired,
+    slots,
+    slotKeys,
+  };
+};
 
 const HOURS = Array.from({ length: 24 }, (_, i) => ({
   label: `${i.toString().padStart(2, '0')}:00`,
@@ -25,6 +59,17 @@ const HOURS = Array.from({ length: 24 }, (_, i) => ({
 
 const Calendar = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const {
+    data: therapistSlotsData,
+    isLoading: isTherapistSlotsLoading,
+    refetch,
+  } = useGetTherapistSlots({
+    therapistId: get(user, ['id']),
+  });
+
+  // Get user timezone safely
+  const userTimezone = (get(user, ['time_zone'], 'UTC') || 'UTC') as string;
+
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
   const [shiftStart, setShiftStart] = useState<IOption | null>(null);
   const [shiftEnd, setShiftEnd] = useState<IOption | null>(null);
@@ -99,6 +144,7 @@ const Calendar = () => {
           response.message || 'Availability saved successfully',
           'success'
         );
+        refetch();
       } else {
         showToast(response.message || 'Failed to save availability', 'error');
       }
@@ -161,11 +207,31 @@ const Calendar = () => {
     );
   };
 
+  if (
+    isTherapistSlotsLoading ||
+    get(therapistSlotsData, ['success']) === false
+  ) {
+    return <CustomLoader />;
+  }
+
+  const {
+    isExpired: hasExpired,
+    slots: existingSlots,
+    slotKeys,
+  } = isExpired({ therapistSlotsData, userTimezone });
+
+  if (slotKeys.length > 0 && !hasExpired) {
+    return <CalendarListing slotsData={existingSlots} onRefresh={refetch} />;
+  }
+
   return (
     <Box sx={{ p: 3, maxWidth: 800, minWidth: 800, margin: '0 auto' }}>
       <Paper elevation={3} sx={{ p: 3 }}>
         <Typography variant="h5" gutterBottom>
           Set Availability
+        </Typography>
+        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+          Timezone: {userTimezone}
         </Typography>
 
         <Stack spacing={3}>
