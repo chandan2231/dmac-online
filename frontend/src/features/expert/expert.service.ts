@@ -42,9 +42,32 @@ const setAvailability = async (
   }
 };
 
+const getExpertSlots = async ({
+  expertId,
+}: {
+  expertId: string | undefined;
+}) => {
+  try {
+    const response = await HttpService.post(`/expert/get/slots`, {
+      consultant_id: expertId,
+    });
+    return {
+      success: true,
+      slots: get(response, 'data.slots'),
+    };
+  } catch (error: unknown) {
+    console.error('Error fetching expert slots:', error);
+    return {
+      success: false,
+      message: 'Failed to get expert slots',
+    };
+  }
+};
+
 const ExpertService = {
   getGoogleAuthUrl,
   setAvailability,
+  getExpertSlots,
 };
 
 export default ExpertService;
