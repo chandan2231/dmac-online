@@ -11,3 +11,12 @@ export interface ISlot {
 }
 
 export type ISlotsData = Record<string, ISlot[]>;
+
+export interface IAvailabilitySlot {
+  id: string;
+  date: string;
+  slots: ISlot[];
+  day_off: number;
+  start_time: string;
+  end_time: string;
+}
