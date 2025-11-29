@@ -11,16 +11,28 @@ export const saveExpertAvailability = async (req, res) => {
   }
 
   try {
+    // Get consultant timezone using userId
+    const tzQuery = `SELECT time_zone FROM dmac_webapp_users WHERE id = ?`;
+    const result = await new Promise((resolve, reject) => {
+      db.query(tzQuery, [userId], (err, data) => (err ? reject(err) : resolve(data)));
+    });
+
+    if (!result.length) {
+      return res.status(404).json({ status: 404, message: "Consultant not found" });
+    }
+
+    const consultant_tz = result[0].time_zone;
     const values = [];
 
     availability.forEach(day => {
       day.slots.forEach(slot => {
-          const hour = slot.hour.toString().padStart(2, "0");
-          const startTime = `${hour}:00:00`;
-          const endHour = (slot.hour + 1).toString().padStart(2, "0");
-          const endTime = `${endHour}:00:00`;
           const unavailableSlot = Number(slot.available)
-          values.push([userId, day.date, startTime, endTime, unavailableSlot, 0, 1]);
+          const hour = slot.hour.toString().padStart(2, "0"); // 09, 10...
+          const startLocal = `${day.date} ${hour}:00`;
+          const endLocal = `${day.date} ${slot.hour + 1}:00`; // +1 hour duration
+          const startUTC = moment.tz(startLocal, consultant_tz).utc().format("YYYY-MM-DD HH:mm:ss");
+          const endUTC = moment.tz(endLocal, consultant_tz).utc().format("YYYY-MM-DD HH:mm:ss");
+          values.push([userId, day.date, startUTC, endUTC, unavailableSlot, 0, 1]);
       });
     });
 
