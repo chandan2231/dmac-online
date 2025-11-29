@@ -8,6 +8,7 @@ import questionarRoutes from './routes/questionar.js'
 import authRoutes from './routes/auth.js'
 import adminRoutes from './routes/admin.js'
 import googleAuth from './routes/googleAuth.js'
+import patientRoutes from './routes/patient.js'
 
 
 import researchRoutes from './routes/researchInfo.js'
@@ -76,6 +77,7 @@ app.use('/api/questionar', questionarRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/google', googleAuth)
+app.use('/api/patient', patientRoutes)
 
 
 
