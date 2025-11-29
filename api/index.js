@@ -8,6 +8,8 @@ import questionarRoutes from './routes/questionar.js'
 import authRoutes from './routes/auth.js'
 import adminRoutes from './routes/admin.js'
 import googleAuth from './routes/googleAuth.js'
+import expertRoutes from './routes/expert.js'
+import theraistRoutes from './routes/therapist.js'
 import patientRoutes from './routes/patient.js'
 
 
@@ -22,6 +24,27 @@ import externalMonitor from './routes/externalMonitor.js'
 
 dotenv.config({ path: `.env`, override: true })
 const app = express()
+
+
+app.use('/api/language', languageRoutes)
+app.use('/api/questionar', questionarRoutes)
+app.use('/api/auth', authRoutes)
+app.use('/api/admin', adminRoutes)
+app.use('/api/google', googleAuth)
+app.use('/api/expert', expertRoutes)
+app.use('/api/therapist', theraistRoutes)
+app.use('/api/patient', patientRoutes)
+
+
+
+
+app.use('/api/researchInfo', researchRoutes)
+app.use('/api/protocol', protocolRoutes)
+app.use('/api/continuinReview', continuinReviewRoutes)
+app.use('/api/eventAndRequest', eventAndRequest)
+app.use('/api/communication', communication)
+app.use('/api/payment', payment)
+app.use('/api/externalMonitor', externalMonitor)
 
 // middlewares
 app.use(bodyParser.json())
@@ -72,23 +95,7 @@ if (process.env.NODE_ENV === 'localhost') {
   app.use(cors(corsOptions))
 }
 
-app.use('/api/language', languageRoutes)
-app.use('/api/questionar', questionarRoutes)
-app.use('/api/auth', authRoutes)
-app.use('/api/admin', adminRoutes)
-app.use('/api/google', googleAuth)
-app.use('/api/patient', patientRoutes)
 
-
-
-
-app.use('/api/researchInfo', researchRoutes)
-app.use('/api/protocol', protocolRoutes)
-app.use('/api/continuinReview', continuinReviewRoutes)
-app.use('/api/eventAndRequest', eventAndRequest)
-app.use('/api/communication', communication)
-app.use('/api/payment', payment)
-app.use('/api/externalMonitor', externalMonitor)
 
 if (process.env.NODE_ENV === 'localhost') {
   app.listen(8800, () => {
