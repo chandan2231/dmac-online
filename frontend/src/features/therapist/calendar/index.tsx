@@ -15,8 +15,8 @@ import type { IOption } from '../../../components/select';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import { get } from 'lodash';
-import ExpertService from '../expert.service';
 import { useToast } from '../../../providers/toast-provider';
+import TherapistService from '../therapist.service';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => ({
   label: `${i.toString().padStart(2, '0')}:00`,
@@ -32,7 +32,7 @@ const Calendar = () => {
   const { showToast } = useToast();
 
   const endDate = useMemo(() => {
-    return startDate ? startDate.add(14, 'day') : null;
+    return startDate ? startDate.add(15, 'day') : null;
   }, [startDate]);
 
   const endOptions = useMemo(() => {
@@ -63,15 +63,14 @@ const Calendar = () => {
     const startHour = parseInt(shiftStart.value, 10);
     const endHour = parseInt(shiftEnd.value, 10);
     const availability = [];
-    const startDateStr = startDate.format('YYYY-MM-DD');
 
-    for (let i = 0; i <= 14; i++) {
+    for (let i = 0; i <= 15; i++) {
       const currentDate = startDate.add(i, 'day');
       const dateStr = currentDate.format('YYYY-MM-DD');
       const daySlots = [];
 
       for (let h = startHour; h < endHour; h++) {
-        const slotId = `${startDateStr}-${h}`;
+        const slotId = `${dateStr}-${h}`;
         daySlots.push({
           hour: h,
           available: !disabledSlots.has(slotId),
@@ -93,7 +92,7 @@ const Calendar = () => {
       userId: get(user, ['id']),
     };
 
-    await ExpertService.setAvailability(config).then(response => {
+    await TherapistService.setAvailability(config).then(response => {
       if (response.success) {
         showToast(
           response.message || 'Availability saved successfully',

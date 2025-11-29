@@ -49,6 +49,7 @@ import CalendarPage from '../pages/expert/calendar';
 
 // Therapist Pages
 import TherapistHomePage from '../pages/therapist/home';
+import CalendarPageForTherapist from '../pages/therapist/calendar';
 
 export const LAYOUT_MAP = {
   BaseLayout,
@@ -103,6 +104,7 @@ export const COMPONENT_MAP = {
 
   // Therapist Pages
   TherapistHomePage,
+  CalendarPageForTherapist,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -150,6 +152,9 @@ export const ROUTES = {
   EXPERT_CONSULTATIONS: '/expert/consultations',
   EXPERT_TRANSACTIONS: '/expert/transactions',
   EXPERT_CALENDAR: '/expert/calendar',
+
+  // THERAPIST Protected routes
+  THERAPIST_CALENDAR: '/therapist/calendar',
 } as const;
 
 export type ROUTES = (typeof ROUTES)[keyof typeof ROUTES];
@@ -394,6 +399,15 @@ const THERAPIST_ROUTES: IAllowedRoutes[] = [
     showInSidebar: true,
     sideBarTitle: 'Auth With Google',
     sideBarIcon: 'HomeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.THERAPIST_CALENDAR,
+    layout: 'MainLayout',
+    component: 'CalendarPageForTherapist',
+    showInSidebar: true,
+    sideBarTitle: 'Calendar',
+    sideBarIcon: null,
     isAChildOf: null,
   },
 ];
