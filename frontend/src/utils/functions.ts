@@ -183,17 +183,6 @@ const getUserEnvironmentInfo = async () => {
   return { userEnvironmentInfo };
 };
 
-const getCurrentDateUsingLocale = (locale: string): string => {
-  const date = new Date();
-  return date.toLocaleDateString(locale);
-};
-
-const currentDateIsGreaterThan = (dateToCompare: string): boolean => {
-  const currentDate = new Date(getCurrentDate());
-  const compareDate = new Date(dateToCompare);
-  return currentDate > compareDate;
-};
-
 export {
   getCurrentYear,
   getCurrentMonth,
@@ -208,6 +197,4 @@ export {
   canWeShowChangeLanguageOption,
   navigateUserTo,
   getUserEnvironmentInfo,
-  getCurrentDateUsingLocale,
-  currentDateIsGreaterThan,
 };
