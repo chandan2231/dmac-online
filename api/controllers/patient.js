@@ -256,78 +256,89 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
     const eventStartISO = consultantStart.toISOString()
     const eventEndISO = consultantEnd.toISOString()
 
+    let meetLink = ''
+
     /* 🔹 Setup Google Calendar for CONSULTANT */
-    const consultantAuth = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_SECRET_KEY,
-      process.env.GOOGLE_REDIRECT_URL
-    )
-    consultantAuth.setCredentials({
-      access_token: google_access_token,
-      refresh_token: google_refresh_token
-    })
+    if (google_access_token && google_refresh_token) {
+      try {
+        const consultantAuth = new google.auth.OAuth2(
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_SECRET_KEY,
+          process.env.GOOGLE_REDIRECT_URL
+        )
+        consultantAuth.setCredentials({
+          access_token: google_access_token,
+          refresh_token: google_refresh_token
+        })
 
-    const consultantCalendar = google.calendar({
-      version: 'v3',
-      auth: consultantAuth
-    })
+        const consultantCalendar = google.calendar({
+          version: 'v3',
+          auth: consultantAuth
+        })
 
-    // Check availability
-    const freeBusy = await consultantCalendar.freebusy.query({
-      requestBody: {
-        timeMin: eventStartISO,
-        timeMax: eventEndISO,
-        items: [{ id: consultant_email }]
+        // Check availability
+        const freeBusy = await consultantCalendar.freebusy.query({
+          requestBody: {
+            timeMin: eventStartISO,
+            timeMax: eventEndISO,
+            items: [{ id: consultant_email }]
+          }
+        })
+
+        if (freeBusy.data.calendars[consultant_email].busy.length > 0) {
+          return res.status(400).json({
+            status: 400,
+            message: 'Consultant already booked for this time slot'
+          })
+        }
+
+        /* 🔹 Create Event (attendees: BOTH) */
+        const event = {
+          summary: 'DMAC Consultation Meeting',
+          description: 'Online consultation for the DMAC',
+          start: { dateTime: eventStartISO, timeZone: consultant_timezone },
+          end: { dateTime: eventEndISO, timeZone: consultant_timezone },
+          attendees: [{ email: consultant_email }, { email: user_email }],
+          conferenceData: {
+            createRequest: { requestId: Date.now().toString() }
+          }
+        }
+
+        const eventResult = await consultantCalendar.events.insert({
+          calendarId: consultant_email,
+          conferenceDataVersion: 1,
+          requestBody: event
+        })
+
+        meetLink = eventResult.data.hangoutLink
+
+        /* 🔹 OPTIONAL: Add event to USER calendar only if they have Google token */
+        if (user_access_token) {
+          const userAuth = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_SECRET_KEY,
+            process.env.GOOGLE_REDIRECT_URL
+          )
+          userAuth.setCredentials({
+            access_token: user_access_token,
+            refresh_token: user_refresh_token
+          })
+
+          const userCalendar = google.calendar({
+            version: 'v3',
+            auth: userAuth
+          })
+
+          await userCalendar.events.insert({
+            calendarId: user_email,
+            conferenceDataVersion: 1,
+            requestBody: event
+          })
+        }
+      } catch (googleError) {
+        console.error('Google Calendar Error (Expert):', googleError)
+        // Continue without Google Calendar
       }
-    })
-
-    if (freeBusy.data.calendars[consultant_email].busy.length > 0) {
-      return res.status(400).json({
-        status: 400,
-        message: 'Consultant already booked for this time slot'
-      })
-    }
-
-    /* 🔹 Create Event (attendees: BOTH) */
-    const event = {
-      summary: 'DMAC Consultation Meeting',
-      description: 'Online consultation for the DMAC',
-      start: { dateTime: eventStartISO, timeZone: consultant_timezone },
-      end: { dateTime: eventEndISO, timeZone: consultant_timezone },
-      attendees: [{ email: consultant_email }, { email: user_email }],
-      conferenceData: { createRequest: { requestId: Date.now().toString() } }
-    }
-
-    const eventResult = await consultantCalendar.events.insert({
-      calendarId: consultant_email,
-      conferenceDataVersion: 1,
-      requestBody: event
-    })
-
-    const meetLink = eventResult.data.hangoutLink
-
-    /* 🔹 OPTIONAL: Add event to USER calendar only if they have Google token */
-    if (user_access_token) {
-      const userAuth = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_SECRET_KEY,
-        process.env.GOOGLE_REDIRECT_URL
-      )
-      userAuth.setCredentials({
-        access_token: user_access_token,
-        refresh_token: user_refresh_token
-      })
-
-      const userCalendar = google.calendar({
-        version: 'v3',
-        auth: userAuth
-      })
-
-      await userCalendar.events.insert({
-        calendarId: user_email,
-        conferenceDataVersion: 1,
-        requestBody: event
-      })
     }
 
     /* 🔹 Save booking */
@@ -1047,78 +1058,89 @@ export const bookTherapistConsultation = async (req, res) => {
     const eventStartISO = consultantStart.toISOString()
     const eventEndISO = consultantEnd.toISOString()
 
+    let meetLink = ''
+
     /* 🔹 Setup Google Calendar for CONSULTANT */
-    const consultantAuth = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_SECRET_KEY,
-      process.env.GOOGLE_REDIRECT_URL
-    )
-    consultantAuth.setCredentials({
-      access_token: google_access_token,
-      refresh_token: google_refresh_token
-    })
+    if (google_access_token && google_refresh_token) {
+      try {
+        const consultantAuth = new google.auth.OAuth2(
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_SECRET_KEY,
+          process.env.GOOGLE_REDIRECT_URL
+        )
+        consultantAuth.setCredentials({
+          access_token: google_access_token,
+          refresh_token: google_refresh_token
+        })
 
-    const consultantCalendar = google.calendar({
-      version: 'v3',
-      auth: consultantAuth
-    })
+        const consultantCalendar = google.calendar({
+          version: 'v3',
+          auth: consultantAuth
+        })
 
-    // Check availability
-    const freeBusy = await consultantCalendar.freebusy.query({
-      requestBody: {
-        timeMin: eventStartISO,
-        timeMax: eventEndISO,
-        items: [{ id: consultant_email }]
+        // Check availability
+        const freeBusy = await consultantCalendar.freebusy.query({
+          requestBody: {
+            timeMin: eventStartISO,
+            timeMax: eventEndISO,
+            items: [{ id: consultant_email }]
+          }
+        })
+
+        if (freeBusy.data.calendars[consultant_email].busy.length > 0) {
+          return res.status(400).json({
+            status: 400,
+            message: 'Consultant already booked for this time slot'
+          })
+        }
+
+        /* 🔹 Create Event (attendees: BOTH) */
+        const event = {
+          summary: 'DMAC Consultation Meeting',
+          description: 'Online consultation for the DMAC',
+          start: { dateTime: eventStartISO, timeZone: consultant_timezone },
+          end: { dateTime: eventEndISO, timeZone: consultant_timezone },
+          attendees: [{ email: consultant_email }, { email: user_email }],
+          conferenceData: {
+            createRequest: { requestId: Date.now().toString() }
+          }
+        }
+
+        const eventResult = await consultantCalendar.events.insert({
+          calendarId: consultant_email,
+          conferenceDataVersion: 1,
+          requestBody: event
+        })
+
+        meetLink = eventResult.data.hangoutLink
+
+        /* 🔹 OPTIONAL: Add event to USER calendar only if they have Google token */
+        if (user_access_token) {
+          const userAuth = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_SECRET_KEY,
+            process.env.GOOGLE_REDIRECT_URL
+          )
+          userAuth.setCredentials({
+            access_token: user_access_token,
+            refresh_token: user_refresh_token
+          })
+
+          const userCalendar = google.calendar({
+            version: 'v3',
+            auth: userAuth
+          })
+
+          await userCalendar.events.insert({
+            calendarId: user_email,
+            conferenceDataVersion: 1,
+            requestBody: event
+          })
+        }
+      } catch (googleError) {
+        console.error('Google Calendar Error (Therapist):', googleError)
+        // Continue without Google Calendar
       }
-    })
-
-    if (freeBusy.data.calendars[consultant_email].busy.length > 0) {
-      return res.status(400).json({
-        status: 400,
-        message: 'Consultant already booked for this time slot'
-      })
-    }
-
-    /* 🔹 Create Event (attendees: BOTH) */
-    const event = {
-      summary: 'DMAC Consultation Meeting',
-      description: 'Online consultation for the DMAC',
-      start: { dateTime: eventStartISO, timeZone: consultant_timezone },
-      end: { dateTime: eventEndISO, timeZone: consultant_timezone },
-      attendees: [{ email: consultant_email }, { email: user_email }],
-      conferenceData: { createRequest: { requestId: Date.now().toString() } }
-    }
-
-    const eventResult = await consultantCalendar.events.insert({
-      calendarId: consultant_email,
-      conferenceDataVersion: 1,
-      requestBody: event
-    })
-
-    const meetLink = eventResult.data.hangoutLink
-
-    /* 🔹 OPTIONAL: Add event to USER calendar only if they have Google token */
-    if (user_access_token) {
-      const userAuth = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_SECRET_KEY,
-        process.env.GOOGLE_REDIRECT_URL
-      )
-      userAuth.setCredentials({
-        access_token: user_access_token,
-        refresh_token: user_refresh_token
-      })
-
-      const userCalendar = google.calendar({
-        version: 'v3',
-        auth: userAuth
-      })
-
-      await userCalendar.events.insert({
-        calendarId: user_email,
-        conferenceDataVersion: 1,
-        requestBody: event
-      })
     }
 
     /* 🔹 Save booking */
