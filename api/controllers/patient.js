@@ -41,12 +41,15 @@ export const getAvailableExpertSlots = async (req, res) => {
     const user_timezone = userResult[0].time_zone
 
     /** 2️⃣ Convert selected date into UTC date range */
+    // We use startOf('day') and endOf('day') to cover the full 24 hours of the user's selected date
     const startOfDayUTC = moment
-      .tz(date + ' 00:00', user_timezone)
+      .tz(date, 'YYYY-MM-DD', user_timezone)
+      .startOf('day')
       .utc()
       .format('YYYY-MM-DD HH:mm:ss')
     const endOfDayUTC = moment
-      .tz(date + ' 23:59', user_timezone)
+      .tz(date, 'YYYY-MM-DD', user_timezone)
+      .endOf('day')
       .utc()
       .format('YYYY-MM-DD HH:mm:ss')
 

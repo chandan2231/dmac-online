@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
+import { get } from 'lodash';
 import type { RootState } from '../../../store';
 import {
   Box,
@@ -156,9 +157,19 @@ const BookConsultation = () => {
 
         {slots.length > 0 && (
           <Box>
-            <Typography variant="h6" gutterBottom>
-              Available Slots:
-            </Typography>
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+              mb={1}
+            >
+              <Typography variant="h6" mb={0}>
+                Available Slots:
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Timezone: {get(user, 'time_zone', 'UTC')}
+              </Typography>
+            </Box>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               {slots.map((slot: ISlot) => (
                 <Chip
