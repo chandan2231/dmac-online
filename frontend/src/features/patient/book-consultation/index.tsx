@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import {
@@ -15,6 +15,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, { Dayjs } from 'dayjs';
 import { useExperts } from '../hooks/useExperts';
+import { useGetSubscribedProduct } from '../hooks/useGetSubscribedProduct';
 import type { IExpert, ISlot } from '../patient.interface';
 import CustomLoader from '../../../components/loader';
 import PatientService from '../patient.service';
@@ -33,17 +34,9 @@ const BookConsultation = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<ISlot | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [productId, setProductId] = useState<number | null>(null);
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      const products = await PatientService.getSubscribedProduct(user);
-      if (products && products.length > 0) {
-        setProductId(products[0].id); // Assuming first product for now
-      }
-    };
-    fetchProduct();
-  }, [user]);
+  const { data: products } = useGetSubscribedProduct(user);
+  const productId = products && products.length > 0 ? products[0].id : null;
 
   const handleExpertChange = (event: SelectChangeEvent) => {
     setSelectedExpertId(event.target.value as string);
