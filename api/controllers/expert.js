@@ -452,7 +452,7 @@ export const getExpertConsultations = async (req, res) => {
         c.consultation_date,
         u.name as patient_name,
         u.email as patient_email,
-        p.title as product_name
+        p.product_name as product_name
     FROM dmac_webapp_consultations c
     JOIN dmac_webapp_users u ON c.user_id = u.id
     LEFT JOIN dmac_webapp_products p ON c.product_id = p.id
