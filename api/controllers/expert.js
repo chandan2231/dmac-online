@@ -434,3 +434,40 @@ export const updateDaySlots = async (req, res) => {
       .json({ status: 500, message: 'Unable to update slots' })
   }
 }
+
+export const getExpertConsultations = async (req, res) => {
+  const { consultant_id } = req.body
+
+  if (!consultant_id) {
+    return res.status(400).json({ message: 'Consultant ID is required' })
+  }
+
+  const query = `
+    SELECT 
+        c.id,
+        c.event_start,
+        c.event_end,
+        c.meet_link,
+        c.consultation_status,
+        c.consultation_date,
+        u.name as patient_name,
+        u.email as patient_email,
+        p.title as product_name
+    FROM dmac_webapp_consultations c
+    JOIN dmac_webapp_users u ON c.user_id = u.id
+    LEFT JOIN dmac_webapp_products p ON c.product_id = p.id
+    WHERE c.consultant_id = ?
+    ORDER BY c.event_start DESC
+  `
+
+  db.query(query, [consultant_id], (err, data) => {
+    if (err) {
+      console.error('GET CONSULTATIONS ERROR:', err)
+      return res.status(500).json({ message: 'Failed to fetch consultations' })
+    }
+    return res.status(200).json({
+      status: 200,
+      data
+    })
+  })
+}

@@ -114,12 +114,37 @@ const updateDaySlots = async (data: {
   }
 };
 
+const getConsultations = async (
+  expertId: string
+): Promise<{
+  success: boolean;
+  data?: any[];
+  message?: string;
+}> => {
+  try {
+    const response = await HttpService.post('/expert/get/consultations', {
+      consultant_id: expertId,
+    });
+    return {
+      success: true,
+      data: get(response, 'data.data', []),
+    };
+  } catch (error: unknown) {
+    console.error('Error fetching consultations:', error);
+    return {
+      success: false,
+      message: 'Failed to fetch consultations',
+    };
+  }
+};
+
 const ExpertService = {
   getGoogleAuthUrl,
   setAvailability,
   getExpertSlots,
   toggleDayOff,
   updateDaySlots,
+  getConsultations,
 };
 
 export default ExpertService;
