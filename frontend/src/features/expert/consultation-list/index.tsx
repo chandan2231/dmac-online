@@ -2,11 +2,16 @@ import { Box, Typography, Chip, Link } from '@mui/material';
 import { useSelector } from 'react-redux';
 import { get } from 'lodash';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import type { GridColDef } from '@mui/x-data-grid';
 import type { RootState } from '../../../store';
 import { GenericTable } from '../../../components/table';
 import { TabHeaderLayout } from '../../../components/tab-header';
 import { useGetConsultations } from '../hooks/useGetConsultations';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface IConsultation {
   id: number;
@@ -27,27 +32,31 @@ const ConsultationList = () => {
   });
 
   const consultations = get(consultationsData, 'data', []) as IConsultation[];
+  const userTimezone = get(user, 'time_zone') || 'UTC';
 
   const columns: GridColDef<IConsultation>[] = [
     {
       field: 'consultation_date',
       headerName: 'Date',
       flex: 1,
-      valueFormatter: params =>
-        dayjs(get(params, ['value'])).format('MMM D, YYYY'),
+      valueFormatter: (params: { value: string | null }) =>
+        dayjs(params.value).tz(userTimezone).format('MMM D, YYYY'),
     },
     {
       field: 'event_start',
       headerName: 'Time',
       flex: 1,
       renderCell: params => {
-        const start = dayjs(params.row.event_start).format('HH:mm');
-        const end = dayjs(params.row.event_end).format('HH:mm');
+        const start = dayjs(params.row.event_start)
+          .tz(userTimezone)
+          .format('HH:mm');
+        const end = dayjs(params.row.event_end)
+          .tz(userTimezone)
+          .format('HH:mm');
         return `${start} - ${end}`;
       },
     },
     { field: 'patient_name', headerName: 'Patient Name', flex: 1 },
-    { field: 'product_name', headerName: 'Product', flex: 1 },
     {
       field: 'meet_link',
       headerName: 'Meeting Link',
@@ -77,13 +86,34 @@ const ConsultationList = () => {
           | 'warning' = 'default';
 
         switch (params.value) {
+          case 0:
           case 1:
-            label = 'Confirmed';
+            label = 'Created';
+            color = 'info';
+            break;
+          case 2:
+            label = 'Pending';
+            color = 'warning';
+            break;
+          case 3:
+            label = 'Accepted';
             color = 'success';
+            break;
+          case 4:
+            label = 'Completed';
+            color = 'success';
+            break;
+          case 5:
+            label = 'Cancelled';
+            color = 'error';
             break;
           case 6:
             label = 'Rescheduled';
             color = 'warning';
+            break;
+          case 7:
+            label = 'Paid';
+            color = 'success';
             break;
           default:
             label = `Status ${params.value}`;
