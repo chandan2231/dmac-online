@@ -31,6 +31,22 @@ const getExpertList = async (user: IUser | null) => {
   }
 };
 
+const getTherapistList = async (user: IUser | null) => {
+  try {
+    const userId = get(user, 'id');
+    const response = await HttpService.getAxiosClient().post(
+      `patient/therapist-list`,
+      {
+        userId,
+      }
+    );
+    return get(response, ['data'], []);
+  } catch (error: unknown) {
+    console.error('Error fetching therapist list:', error);
+    return [];
+  }
+};
+
 const getExpertSlots = async (
   user: IUser | null,
   expertId: number,
@@ -49,6 +65,28 @@ const getExpertSlots = async (
     return get(response, ['data', 'slots'], []);
   } catch (error: unknown) {
     console.error('Error fetching expert slots:', error);
+    return [];
+  }
+};
+
+const getTherapistSlots = async (
+  user: IUser | null,
+  therapistId: number,
+  date: string
+) => {
+  try {
+    const userId = get(user, 'id');
+    const response = await HttpService.getAxiosClient().post(
+      `patient/therapist-slot`,
+      {
+        user_id: userId,
+        consultation_id: therapistId,
+        date,
+      }
+    );
+    return get(response, ['data', 'slots'], []);
+  } catch (error: unknown) {
+    console.error('Error fetching therapist slots:', error);
     return [];
   }
 };
@@ -79,11 +117,40 @@ const bookConsultation = async (
   }
 };
 
+const bookTherapistConsultation = async (
+  user: IUser | null,
+  therapistId: number,
+  date: string,
+  startTime: string,
+  productId: number
+) => {
+  try {
+    const userId = get(user, 'id');
+    const response = await HttpService.getAxiosClient().post(
+      `patient/book/therapist-consultation`,
+      {
+        user_id: userId,
+        consultant_id: therapistId,
+        date,
+        start_time: startTime,
+        product_id: productId,
+      }
+    );
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error booking therapist consultation:', error);
+    return null;
+  }
+};
+
 const PatientService = {
   getSubscribedProduct,
   getExpertList,
+  getTherapistList,
   getExpertSlots,
+  getTherapistSlots,
   bookConsultation,
+  bookTherapistConsultation,
 };
 
 export default PatientService;

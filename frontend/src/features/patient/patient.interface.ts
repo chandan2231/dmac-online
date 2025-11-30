@@ -1,6 +1,7 @@
 export const QUERY_KEYS_FOR_PATIENT = {
   GET_SUBSCRIBED_PRODUCTS: 'getSubscribedProducts',
   GET_EXPERTS: 'getExperts',
+  GET_THERAPISTS: 'getTherapists',
 } as const;
 
 export interface IExpert {

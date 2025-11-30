@@ -5,7 +5,9 @@ import {
   getAvailableExpertSlots,
   bookConsultationWithGoogleCalender,
   rescheduleConsultationWithGoogleCalendar,
-  cancelConsultationByConsultant
+  cancelConsultationByConsultant,
+  getAvailableTherapistSlots,
+  bookTherapistConsultation
 } from '../controllers/patient.js'
 
 const router = express.Router()
@@ -19,5 +21,7 @@ router.post(
   rescheduleConsultationWithGoogleCalendar
 )
 router.post('/cancel/consultation', cancelConsultationByConsultant)
+router.post('/therapist-slot', getAvailableTherapistSlots)
+router.post('/book/therapist-consultation', bookTherapistConsultation)
 
 export default router
