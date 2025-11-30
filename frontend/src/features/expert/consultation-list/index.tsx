@@ -1,4 +1,13 @@
-import { Box, Typography, Chip, Link, Button } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Chip,
+  Link,
+  IconButton,
+  Menu,
+  MenuItem,
+} from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useSelector } from 'react-redux';
 import { get } from 'lodash';
 import dayjs from 'dayjs';
@@ -39,6 +48,9 @@ const ConsultationList = () => {
   const [selectedConsultation, setSelectedConsultation] =
     useState<IConsultation | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [menuConsultation, setMenuConsultation] =
+    useState<IConsultation | null>(null);
 
   const handleOpenModal = (consultation: IConsultation) => {
     setSelectedConsultation(consultation);
@@ -48,6 +60,26 @@ const ConsultationList = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedConsultation(null);
+  };
+
+  const handleMenuClick = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    consultation: IConsultation
+  ) => {
+    setMenuAnchor(event.currentTarget);
+    setMenuConsultation(consultation);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setMenuConsultation(null);
+  };
+
+  const handleEditStatusClick = () => {
+    if (menuConsultation) {
+      handleOpenModal(menuConsultation);
+    }
+    handleMenuClose();
   };
 
   const handleSubmitStatus = (status: number, notes: string) => {
@@ -158,14 +190,14 @@ const ConsultationList = () => {
       field: 'actions',
       headerName: 'Actions',
       flex: 1,
+      maxWidth: 80,
       renderCell: params => (
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={() => handleOpenModal(params.row)}
+        <IconButton
+          onClick={e => handleMenuClick(e, params.row)}
+          disabled={params.row.consultation_status !== 1}
         >
-          Edit Status
-        </Button>
+          <MoreVertIcon />
+        </IconButton>
       ),
     },
   ];
@@ -192,6 +224,13 @@ const ConsultationList = () => {
         onSubmit={handleSubmitStatus}
         isLoading={isUpdating}
       />
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={handleEditStatusClick}>Edit Status</MenuItem>
+      </Menu>
     </Box>
   );
 };

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import ExpertService from '../expert.service';
 import { useSnackbar } from 'notistack';
+import { QUERY_KEYS_FOR_EXPERT } from '../expert.interface';
 
 export const useUpdateConsultationStatus = () => {
   const queryClient = useQueryClient();
@@ -12,7 +13,9 @@ export const useUpdateConsultationStatus = () => {
       enqueueSnackbar('Consultation status updated successfully', {
         variant: 'success',
       });
-      queryClient.invalidateQueries({ queryKey: ['expert-consultations'] });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS_FOR_EXPERT.GET_CONSULTATIONS],
+      });
     },
     onError: (error: any) => {
       enqueueSnackbar(
