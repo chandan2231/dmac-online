@@ -35,26 +35,32 @@ export const saveExpertAvailability = async (req, res) => {
 
     availability.forEach((day) => {
       day.slots.forEach((slot) => {
-        const hour = slot.hour.toString().padStart(2, '0')
+        let utcStartTime, utcEndTime, utcDate
 
-        // Create moment object in Expert's timezone
-        const localStartTime = moment.tz(
-          `${day.date} ${hour}:00`,
-          'YYYY-MM-DD HH:mm',
-          expertTimezone
-        )
-        const localEndTime = localStartTime.clone().add(1, 'hours')
+        if (slot.utcStartTime && slot.utcEndTime) {
+          utcStartTime = slot.utcStartTime
+          utcEndTime = slot.utcEndTime
+          utcDate =
+            slot.utcDate || moment.utc(utcStartTime).format('YYYY-MM-DD')
+        } else {
+          const hour = slot.hour.toString().padStart(2, '0')
 
-        // Convert to UTC for storage
-        const utcStartTime = localStartTime
-          .clone()
-          .utc()
-          .format('YYYY-MM-DD HH:mm:ss')
-        const utcEndTime = localEndTime
-          .clone()
-          .utc()
-          .format('YYYY-MM-DD HH:mm:ss')
-        const utcDate = localStartTime.clone().utc().format('YYYY-MM-DD')
+          // Create moment object in Expert's timezone
+          const localStartTime = moment.tz(
+            `${day.date} ${hour}:00`,
+            'YYYY-MM-DD HH:mm',
+            expertTimezone
+          )
+          const localEndTime = localStartTime.clone().add(1, 'hours')
+
+          // Convert to UTC for storage
+          utcStartTime = localStartTime
+            .clone()
+            .utc()
+            .format('YYYY-MM-DD HH:mm:ss')
+          utcEndTime = localEndTime.clone().utc().format('YYYY-MM-DD HH:mm:ss')
+          utcDate = localStartTime.clone().utc().format('YYYY-MM-DD')
+        }
 
         const unavailableSlot = Number(slot.available)
         values.push([
