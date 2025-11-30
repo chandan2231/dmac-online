@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import {
@@ -19,27 +19,44 @@ import type { IExpert, ISlot } from '../patient.interface';
 import CustomLoader from '../../../components/loader';
 import PatientService from '../patient.service';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import { useToast } from '../../../providers/toast-provider';
 
 const BookConsultation = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const { data: experts, isLoading } = useExperts(user);
+  const { showToast } = useToast();
 
   const [selectedExpertId, setSelectedExpertId] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
   const [slots, setSlots] = useState<ISlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<ISlot | null>(null);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [productId, setProductId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      const products = await PatientService.getSubscribedProduct(user);
+      if (products && products.length > 0) {
+        setProductId(products[0].id); // Assuming first product for now
+      }
+    };
+    fetchProduct();
+  }, [user]);
 
   const handleExpertChange = (event: SelectChangeEvent) => {
     setSelectedExpertId(event.target.value as string);
     setSlots([]);
     setHasSearched(false);
+    setSelectedSlot(null);
   };
 
   const handleGetSlots = async () => {
     if (selectedExpertId && selectedDate) {
       setLoadingSlots(true);
       setHasSearched(true);
+      setSelectedSlot(null);
       const dateStr = selectedDate.format('YYYY-MM-DD');
       const fetchedSlots = await PatientService.getExpertSlots(
         user,
@@ -49,6 +66,42 @@ const BookConsultation = () => {
       setSlots(fetchedSlots);
       setLoadingSlots(false);
     }
+  };
+
+  const handleBookSlot = async () => {
+    if (!selectedSlot || !selectedExpertId || !selectedDate || !productId) {
+      showToast(
+        'Please select a slot and ensure you have a valid subscription.',
+        'error'
+      );
+      return;
+    }
+
+    setBookingLoading(true);
+    const dateStr = selectedDate.format('YYYY-MM-DD');
+    // Extract time from start string "YYYY-MM-DD HH:mm"
+    const startTime = selectedSlot.start.split(' ')[1];
+
+    const result = await PatientService.bookConsultation(
+      user,
+      Number(selectedExpertId),
+      dateStr,
+      startTime,
+      productId
+    );
+
+    if (result && result.booked) {
+      showToast('Consultation booked successfully!', 'success');
+      setSlots(prev =>
+        prev.map(s =>
+          s.slot_id === selectedSlot.slot_id ? { ...s, is_booked: 1 } : s
+        )
+      );
+      setSelectedSlot(null);
+    } else {
+      showToast(result?.message || 'Failed to book consultation.', 'error');
+    }
+    setBookingLoading(false);
   };
 
   if (isLoading) {
@@ -118,12 +171,32 @@ const BookConsultation = () => {
                 <Chip
                   key={slot.slot_id}
                   label={`${slot.start.split(' ')[1]} - ${slot.end.split(' ')[1]}`}
-                  color={slot.is_booked ? 'default' : 'primary'}
+                  color={
+                    slot.is_booked
+                      ? 'default'
+                      : selectedSlot?.slot_id === slot.slot_id
+                        ? 'secondary'
+                        : 'primary'
+                  }
                   variant={slot.is_booked ? 'outlined' : 'filled'}
                   disabled={Boolean(slot.is_booked)}
+                  onClick={() => !slot.is_booked && setSelectedSlot(slot)}
+                  clickable={!slot.is_booked}
                 />
               ))}
             </Stack>
+            {selectedSlot && (
+              <Box mt={2}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleBookSlot}
+                  disabled={bookingLoading}
+                >
+                  {bookingLoading ? 'Booking...' : 'Book Selected Slot'}
+                </Button>
+              </Box>
+            )}
           </Box>
         )}
 

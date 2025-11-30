@@ -53,10 +53,37 @@ const getExpertSlots = async (
   }
 };
 
+const bookConsultation = async (
+  user: IUser | null,
+  expertId: number,
+  date: string,
+  startTime: string,
+  productId: number
+) => {
+  try {
+    const userId = get(user, 'id');
+    const response = await HttpService.getAxiosClient().post(
+      `patient/book/consultation`,
+      {
+        user_id: userId,
+        consultant_id: expertId,
+        date,
+        start_time: startTime,
+        product_id: productId,
+      }
+    );
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error booking consultation:', error);
+    return null;
+  }
+};
+
 const PatientService = {
   getSubscribedProduct,
   getExpertList,
   getExpertSlots,
+  bookConsultation,
 };
 
 export default PatientService;

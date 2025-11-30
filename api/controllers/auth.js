@@ -51,7 +51,7 @@ export const register = async (req, res) => {
     const verificationToken = uuidv4()
     // Insert new user into the database
     const insertQuery = `
-      INSERT INTO dmac_webapp_users (name, email, mobile, password, country, state, zip_code,language, verified, verification_token, role) 
+      INSERT INTO dmac_webapp_users (name, email, mobile, password, country, state, zip_code,language, verified, verification_token, role, time_zone) 
       VALUES (?)`
     const values = [
       req.body.name,
@@ -64,7 +64,8 @@ export const register = async (req, res) => {
       req.body.language,
       0,
       verificationToken,
-      'USER'
+      'USER',
+      req.body.timeZone
     ]
 
     // Entry for LICCA login, later will enable it for the licca login,
