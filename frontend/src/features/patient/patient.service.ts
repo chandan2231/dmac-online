@@ -31,9 +31,32 @@ const getExpertList = async (user: IUser | null) => {
   }
 };
 
+const getExpertSlots = async (
+  user: IUser | null,
+  expertId: number,
+  date: string
+) => {
+  try {
+    const userId = get(user, 'id');
+    const response = await HttpService.getAxiosClient().post(
+      `patient/expert-slot`,
+      {
+        user_id: userId,
+        consultation_id: expertId,
+        date,
+      }
+    );
+    return get(response, ['data', 'slots'], []);
+  } catch (error: unknown) {
+    console.error('Error fetching expert slots:', error);
+    return [];
+  }
+};
+
 const PatientService = {
   getSubscribedProduct,
   getExpertList,
+  getExpertSlots,
 };
 
 export default PatientService;
