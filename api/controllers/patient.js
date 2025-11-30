@@ -40,6 +40,9 @@ export const getAvailableExpertSlots = async (req, res) => {
 
     const user_timezone = userResult[0].time_zone
 
+    console.log('DEBUG: user_timezone', user_timezone)
+    console.log('DEBUG: date', date)
+
     /** 2️⃣ Convert selected date into UTC date range */
     // We use startOf('day') and endOf('day') to cover the full 24 hours of the user's selected date
     const startOfDayUTC = moment
@@ -52,6 +55,9 @@ export const getAvailableExpertSlots = async (req, res) => {
       .endOf('day')
       .utc()
       .format('YYYY-MM-DD HH:mm:ss')
+
+    console.log('DEBUG: startOfDayUTC', startOfDayUTC)
+    console.log('DEBUG: endOfDayUTC', endOfDayUTC)
 
     /** 3️⃣ Get consultant slots for the selected date */
     const currentDateTimeUTC = moment.utc().format('YYYY-MM-DD HH:mm:ss')
@@ -76,25 +82,25 @@ export const getAvailableExpertSlots = async (req, res) => {
     })
 
     /** 4️⃣ Convert slots back to user's timezone */
-    const formattedSlots = slotRows.map((slot) => {
-      // Ensure we treat the DB time as a UTC string to avoid driver timezone conversions
-      const utcStartStr = moment(slot.start_time)
-        .utc()
-        .format('YYYY-MM-DD HH:mm:ss')
-      const utcEndStr = moment(slot.end_time)
-        .utc()
-        .format('YYYY-MM-DD HH:mm:ss')
+    const formattedSlots = slotRows
+      .map((slot) => {
+        // 1. Get the "face value" of the time string from the DB (e.g., "2025-12-01 19:00:00")
+        // We use moment() to parse, then format() to strip any timezone offsets the driver might have added
+        const rawStart = moment(slot.start_time).format('YYYY-MM-DD HH:mm:ss')
+        const rawEnd = moment(slot.end_time).format('YYYY-MM-DD HH:mm:ss')
 
-      return {
-        slot_id: slot.id,
-        is_booked: slot.is_booked,
-        start: moment
-          .utc(utcStartStr)
-          .tz(user_timezone)
-          .format('YYYY-MM-DD HH:mm'),
-        end: moment.utc(utcEndStr).tz(user_timezone).format('YYYY-MM-DD HH:mm')
-      }
-    })
+        // 2. Treat that face value as UTC, then convert to User's Timezone
+        const startMoment = moment.utc(rawStart).tz(user_timezone)
+        const endMoment = moment.utc(rawEnd).tz(user_timezone)
+
+        return {
+          slot_id: slot.id,
+          is_booked: slot.is_booked,
+          start: startMoment.format('YYYY-MM-DD HH:mm'),
+          end: endMoment.format('YYYY-MM-DD HH:mm')
+        }
+      })
+      .filter((slot) => slot.start.startsWith(date))
 
     return res.status(200).json({
       status: 200,
