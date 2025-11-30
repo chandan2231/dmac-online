@@ -1,4 +1,4 @@
-import { Box, Typography, Chip, Link } from '@mui/material';
+import { Box, Typography, Chip, Link, Button } from '@mui/material';
 import { useSelector } from 'react-redux';
 import { get } from 'lodash';
 import dayjs from 'dayjs';
@@ -9,6 +9,9 @@ import type { RootState } from '../../../store';
 import { GenericTable } from '../../../components/table';
 import { TabHeaderLayout } from '../../../components/tab-header';
 import { useGetConsultations } from '../hooks/useGetConsultations';
+import { useState } from 'react';
+import UpdateStatusModal from './UpdateStatusModal';
+import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -30,6 +33,35 @@ const ConsultationList = () => {
   const { data: consultationsData, isLoading } = useGetConsultations({
     expertId: get(user, 'id'),
   });
+  const { mutate: updateStatus, isPending: isUpdating } =
+    useUpdateConsultationStatus();
+
+  const [selectedConsultation, setSelectedConsultation] =
+    useState<IConsultation | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenModal = (consultation: IConsultation) => {
+    setSelectedConsultation(consultation);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedConsultation(null);
+  };
+
+  const handleSubmitStatus = (status: number, notes: string) => {
+    if (selectedConsultation) {
+      updateStatus(
+        { consultationId: selectedConsultation.id, status, notes },
+        {
+          onSuccess: () => {
+            handleCloseModal();
+          },
+        }
+      );
+    }
+  };
 
   const consultations = get(consultationsData, 'data', []) as IConsultation[];
   const userTimezone = get(user, 'time_zone') || 'UTC';
@@ -122,6 +154,20 @@ const ConsultationList = () => {
         return <Chip label={label} color={color} size="small" />;
       },
     },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      flex: 1,
+      renderCell: params => (
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => handleOpenModal(params.row)}
+        >
+          Edit Status
+        </Button>
+      ),
+    },
   ];
 
   return (
@@ -140,6 +186,12 @@ const ConsultationList = () => {
           loading={isLoading}
         />
       </Box>
+      <UpdateStatusModal
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmitStatus}
+        isLoading={isUpdating}
+      />
     </Box>
   );
 };

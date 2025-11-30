@@ -138,6 +138,23 @@ const getConsultations = async (
   }
 };
 
+const updateConsultationStatus = async (data: {
+  consultationId: number;
+  status: number;
+  notes: string;
+}) => {
+  try {
+    const response = await HttpService.post('/expert/update-status', data);
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error: unknown) {
+    console.error('Error updating consultation status:', error);
+    throw error;
+  }
+};
+
 const ExpertService = {
   getGoogleAuthUrl,
   setAvailability,
@@ -145,6 +162,7 @@ const ExpertService = {
   toggleDayOff,
   updateDaySlots,
   getConsultations,
+  updateConsultationStatus,
 };
 
 export default ExpertService;

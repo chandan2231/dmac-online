@@ -471,3 +471,78 @@ export const getExpertConsultations = async (req, res) => {
     })
   })
 }
+
+export const updateConsultationStatus = async (req, res) => {
+  const { consultationId, status, notes } = req.body
+
+  if (!consultationId || !status || !notes) {
+    return res.status(400).json({ message: 'Missing required fields' })
+  }
+
+  try {
+    // Update status and notes
+    const updateQuery = `
+      UPDATE dmac_webapp_consultations 
+      SET consultation_status = ?, consultation_notes = ? 
+      WHERE id = ?
+    `
+
+    await new Promise((resolve, reject) => {
+      db.query(updateQuery, [status, notes, consultationId], (err, result) => {
+        if (err) reject(err)
+        resolve(result)
+      })
+    })
+
+    // If Cancelled (5) or Rescheduled (6), send email
+    if (status === 5 || status === 6) {
+      // Fetch consultation details to get user email
+      const getConsultationQuery = `
+        SELECT c.*, u.email as user_email, u.name as user_name 
+        FROM dmac_webapp_consultations c
+        JOIN dmac_webapp_users u ON c.user_id = u.id
+        WHERE c.id = ?
+      `
+
+      const consultation = await new Promise((resolve, reject) => {
+        db.query(getConsultationQuery, [consultationId], (err, data) => {
+          if (err) reject(err)
+          resolve(data[0])
+        })
+      })
+
+      if (consultation) {
+        const { user_email, user_name, consultation_date } = consultation
+        let subject = ''
+        let htmlContent = ''
+
+        if (status === 5) {
+          subject = 'Consultation Cancelled'
+          htmlContent = `
+            <p>Dear ${user_name},</p>
+            <p>Your consultation scheduled for ${consultation_date} has been cancelled.</p>
+            <p><b>Reason:</b> ${notes}</p>
+            <p>Please login to reschedule if needed.</p>
+          `
+        } else if (status === 6) {
+          subject = 'Consultation Reschedule Requested'
+          htmlContent = `
+            <p>Dear ${user_name},</p>
+            <p>Your consultation scheduled for ${consultation_date} needs to be rescheduled.</p>
+            <p><b>Reason:</b> ${notes}</p>
+            <p>Please login to reschedule your appointment.</p>
+          `
+        }
+
+        await sendEmail(user_email, subject, htmlContent, htmlContent)
+      }
+    }
+
+    return res
+      .status(200)
+      .json({ message: 'Consultation status updated successfully' })
+  } catch (error) {
+    console.error('UPDATE STATUS ERROR:', error)
+    return res.status(500).json({ message: 'Failed to update status' })
+  }
+}
