@@ -117,9 +117,21 @@ const Calendar = () => {
 
       for (let h = startHour; h < endHour; h++) {
         const slotId = `${startDateStr}-${h}`;
+
+        // Calculate UTC times
+        const slotStart = dayjs
+          .tz(dateStr, userTimezone)
+          .hour(h)
+          .minute(0)
+          .second(0);
+        const slotEnd = slotStart.add(1, 'hour');
+
         daySlots.push({
           hour: h,
           available: !disabledSlots.has(slotId),
+          utcStartTime: slotStart.utc().format('YYYY-MM-DD HH:mm:ss'),
+          utcEndTime: slotEnd.utc().format('YYYY-MM-DD HH:mm:ss'),
+          utcDate: slotStart.utc().format('YYYY-MM-DD'),
         });
       }
 
