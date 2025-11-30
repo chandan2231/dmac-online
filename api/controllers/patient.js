@@ -76,18 +76,25 @@ export const getAvailableExpertSlots = async (req, res) => {
     })
 
     /** 4️⃣ Convert slots back to user's timezone */
-    const formattedSlots = slotRows.map((slot) => ({
-      slot_id: slot.id,
-      is_booked: slot.is_booked,
-      start: moment
-        .utc(slot.start_time)
-        .tz(user_timezone)
-        .format('YYYY-MM-DD HH:mm'),
-      end: moment
-        .utc(slot.end_time)
-        .tz(user_timezone)
-        .format('YYYY-MM-DD HH:mm')
-    }))
+    const formattedSlots = slotRows.map((slot) => {
+      // Ensure we treat the DB time as a UTC string to avoid driver timezone conversions
+      const utcStartStr = moment(slot.start_time)
+        .utc()
+        .format('YYYY-MM-DD HH:mm:ss')
+      const utcEndStr = moment(slot.end_time)
+        .utc()
+        .format('YYYY-MM-DD HH:mm:ss')
+
+      return {
+        slot_id: slot.id,
+        is_booked: slot.is_booked,
+        start: moment
+          .utc(utcStartStr)
+          .tz(user_timezone)
+          .format('YYYY-MM-DD HH:mm'),
+        end: moment.utc(utcEndStr).tz(user_timezone).format('YYYY-MM-DD HH:mm')
+      }
+    })
 
     return res.status(200).json({
       status: 200,
