@@ -40,9 +40,6 @@ export const getAvailableExpertSlots = async (req, res) => {
 
     const user_timezone = userResult[0].time_zone
 
-    console.log('DEBUG: user_timezone', user_timezone)
-    console.log('DEBUG: date', date)
-
     /** 2️⃣ Convert selected date into UTC date range */
     // We use startOf('day') and endOf('day') to cover the full 24 hours of the user's selected date
     const startOfDayUTC = moment
@@ -56,17 +53,17 @@ export const getAvailableExpertSlots = async (req, res) => {
       .utc()
       .format('YYYY-MM-DD HH:mm:ss')
 
-    console.log('DEBUG: startOfDayUTC', startOfDayUTC)
-    console.log('DEBUG: endOfDayUTC', endOfDayUTC)
-
     /** 3️⃣ Get consultant slots for the selected date */
     const currentDateTimeUTC = moment.utc().format('YYYY-MM-DD HH:mm:ss')
     const slotQuery = `
-      SELECT id, start_time, end_time, is_booked
+      SELECT id, start_time, end_time
       FROM dmac_webapp_expert_availability
       WHERE consultant_id = ?
         AND start_time BETWEEN ? AND ?
         AND start_time > ?
+        AND is_booked = 0
+        AND is_slot_available = 1
+        AND is_day_off = 1
       ORDER BY start_time ASC
     `
 
@@ -95,7 +92,6 @@ export const getAvailableExpertSlots = async (req, res) => {
 
         return {
           slot_id: slot.id,
-          is_booked: slot.is_booked,
           start: startMoment.format('YYYY-MM-DD HH:mm'),
           end: endMoment.format('YYYY-MM-DD HH:mm')
         }
