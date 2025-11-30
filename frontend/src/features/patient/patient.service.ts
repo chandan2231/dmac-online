@@ -15,8 +15,25 @@ const getSubscribedProduct = async (user: IUser | null) => {
   }
 };
 
+const getExpertList = async (user: IUser | null) => {
+  try {
+    const userId = get(user, 'id');
+    const response = await HttpService.getAxiosClient().post(
+      `patient/expert-list`,
+      {
+        userId,
+      }
+    );
+    return get(response, ['data'], []);
+  } catch (error: unknown) {
+    console.error('Error fetching expert list:', error);
+    return [];
+  }
+};
+
 const PatientService = {
   getSubscribedProduct,
+  getExpertList,
 };
 
 export default PatientService;
