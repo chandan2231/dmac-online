@@ -974,7 +974,60 @@ export const getAvailableTherapistSlots = async (req, res) => {
 
     const user_timezone = userResult[0].time_zone
 
-    /** 2️⃣ Convert selected date into UTC date range */
+    /** 2️⃣ Check availability on date + 13 days */
+    const checkDate = moment
+      .tz(date, 'YYYY-MM-DD', user_timezone)
+      .add(13, 'days')
+      .format('YYYY-MM-DD')
+    const startOfCheckDayUTC = moment
+      .tz(checkDate, 'YYYY-MM-DD', user_timezone)
+      .startOf('day')
+      .utc()
+      .format('YYYY-MM-DD HH:mm:ss')
+    const endOfCheckDayUTC = moment
+      .tz(checkDate, 'YYYY-MM-DD', user_timezone)
+      .endOf('day')
+      .utc()
+      .format('YYYY-MM-DD HH:mm:ss')
+    const currentDateTimeUTC = moment.utc().format('YYYY-MM-DD HH:mm:ss')
+
+    const checkQuery = `
+      SELECT id
+      FROM dmac_webapp_therapist_availability
+      WHERE consultant_id = ?
+        AND start_time BETWEEN ? AND ?
+        AND start_time > ?
+        AND is_booked = 0
+        AND is_slot_available = 1
+        AND is_day_off = 1
+      LIMIT 1
+    `
+
+    const checkRows = await new Promise((resolve, reject) => {
+      db.query(
+        checkQuery,
+        [
+          consultation_id,
+          startOfCheckDayUTC,
+          endOfCheckDayUTC,
+          currentDateTimeUTC
+        ],
+        (err, data) => {
+          if (err) reject(err)
+          resolve(data)
+        }
+      )
+    })
+
+    if (checkRows.length === 0) {
+      return res.status(200).json({
+        status: 400,
+        message:
+          'Therapist is not available for the alternate day slot booking.'
+      })
+    }
+
+    /** 3️⃣ Convert selected date into UTC date range */
     // We use startOf('day') and endOf('day') to cover the full 24 hours of the user's selected date
     const startOfDayUTC = moment
       .tz(date, 'YYYY-MM-DD', user_timezone)
@@ -987,8 +1040,7 @@ export const getAvailableTherapistSlots = async (req, res) => {
       .utc()
       .format('YYYY-MM-DD HH:mm:ss')
 
-    /** 3️⃣ Get consultant slots for the selected date */
-    const currentDateTimeUTC = moment.utc().format('YYYY-MM-DD HH:mm:ss')
+    /** 4️⃣ Get consultant slots for the selected date */
     const slotQuery = `
       SELECT id, start_time, end_time
       FROM dmac_webapp_therapist_availability
@@ -1012,7 +1064,7 @@ export const getAvailableTherapistSlots = async (req, res) => {
       )
     })
 
-    /** 4️⃣ Convert slots back to user's timezone */
+    /** 5️⃣ Convert slots back to user's timezone */
     const formattedSlots = slotRows
       .map((slot) => {
         // 1. Get the "face value" of the time string from the DB (e.g., "2025-12-01 19:00:00")
