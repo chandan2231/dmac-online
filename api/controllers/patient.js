@@ -114,14 +114,58 @@ export const getAvailableExpertSlots = async (req, res) => {
   }
 }
 
-export const getTherapistListByLanguage = (req, res) => {
-  const { userId } = req.body
+export const getTherapistListByLanguage = async (req, res) => {
+  const { userId, date } = req.body
 
   if (!userId) {
     return res.status(400).json({ message: 'User ID is required' })
   }
 
-  const query = `
+  try {
+    let availabilityJoin = ''
+    let availabilityParams = []
+
+    if (date) {
+      // Get user timezone
+      const timezoneQuery = `SELECT time_zone FROM dmac_webapp_users WHERE id = ? LIMIT 1`
+      const userResult = await new Promise((resolve, reject) => {
+        db.query(timezoneQuery, [userId], (err, data) => {
+          if (err) reject(err)
+          resolve(data)
+        })
+      })
+
+      const user_timezone = userResult[0]?.time_zone || 'UTC'
+
+      // Calculate start and end of 14 days window in UTC
+      const startOfDayUTC = moment
+        .tz(date, 'YYYY-MM-DD', user_timezone)
+        .startOf('day')
+        .utc()
+        .format('YYYY-MM-DD HH:mm:ss')
+      const endOf14DaysUTC = moment
+        .tz(date, 'YYYY-MM-DD', user_timezone)
+        .add(14, 'days')
+        .endOf('day')
+        .utc()
+        .format('YYYY-MM-DD HH:mm:ss')
+      const currentDateTimeUTC = moment.utc().format('YYYY-MM-DD HH:mm:ss')
+
+      availabilityJoin = `
+        JOIN (
+          SELECT DISTINCT consultant_id 
+          FROM dmac_webapp_therapist_availability
+          WHERE start_time BETWEEN ? AND ?
+            AND start_time > ?
+            AND is_booked = 0
+            AND is_slot_available = 1
+            AND is_day_off = 1
+        ) avail ON avail.consultant_id = t.id
+      `
+      availabilityParams = [startOfDayUTC, endOf14DaysUTC, currentDateTimeUTC]
+    }
+
+    const query = `
     SELECT 
         t.id,
         t.name,
@@ -134,15 +178,22 @@ export const getTherapistListByLanguage = (req, res) => {
     FROM dmac_webapp_users t
     JOIN dmac_webapp_users u ON u.id = ?
     JOIN dmac_webapp_language lang ON FIND_IN_SET(lang.id, t.language)
+    ${availabilityJoin}
     WHERE t.role = 'THERAPIST'
       AND FIND_IN_SET(u.language, t.language)
     GROUP BY t.id, t.name, t.email, t.country, t.province_title, t.role, t.time_zone;
   `
 
-  db.query(query, [userId], (err, data) => {
-    if (err) return res.status(500).json(err)
-    return res.status(200).json(data)
-  })
+    const params = [userId, ...availabilityParams]
+
+    db.query(query, params, (err, data) => {
+      if (err) return res.status(500).json(err)
+      return res.status(200).json(data)
+    })
+  } catch (error) {
+    console.error('Error in getTherapistListByLanguage:', error)
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
 }
 
 export const getExpertListByLanguage = (req, res) => {
@@ -1049,178 +1100,216 @@ export const bookTherapistConsultation = async (req, res) => {
 
     const user_timezone = fetched_user_timezone
 
-    const userStartDatetime = `${date} ${start_time}`
-    const consultantStart = moment
-      .tz(userStartDatetime, user_timezone)
-      .tz(consultant_timezone)
-    const consultantEnd = consultantStart.clone().add(1, 'hour')
+    const bookings = []
+    const errors = []
 
-    const eventStartISO = consultantStart.toISOString()
-    const eventEndISO = consultantEnd.toISOString()
+    // Loop for 6 sessions on alternate days
+    for (let i = 0; i < 6; i++) {
+      const currentDate = moment(date)
+        .add(i * 2, 'days')
+        .format('YYYY-MM-DD')
+      const userStartDatetime = `${currentDate} ${start_time}`
+      const consultantStart = moment
+        .tz(userStartDatetime, user_timezone)
+        .tz(consultant_timezone)
+      const consultantEnd = consultantStart.clone().add(1, 'hour')
 
-    let meetLink = ''
+      const eventStartISO = consultantStart.toISOString()
+      const eventEndISO = consultantEnd.toISOString()
 
-    /* 🔹 Setup Google Calendar for CONSULTANT */
-    if (google_access_token && google_refresh_token) {
-      try {
-        const consultantAuth = new google.auth.OAuth2(
-          process.env.GOOGLE_CLIENT_ID,
-          process.env.GOOGLE_SECRET_KEY,
-          process.env.GOOGLE_REDIRECT_URL
-        )
-        consultantAuth.setCredentials({
-          access_token: google_access_token,
-          refresh_token: google_refresh_token
-        })
+      let meetLink = ''
+      let bookingSuccess = true
+      let errorMessage = ''
 
-        const consultantCalendar = google.calendar({
-          version: 'v3',
-          auth: consultantAuth
-        })
-
-        // Check availability
-        const freeBusy = await consultantCalendar.freebusy.query({
-          requestBody: {
-            timeMin: eventStartISO,
-            timeMax: eventEndISO,
-            items: [{ id: consultant_email }]
-          }
-        })
-
-        if (freeBusy.data.calendars[consultant_email].busy.length > 0) {
-          return res.status(400).json({
-            status: 400,
-            message: 'Consultant already booked for this time slot'
-          })
-        }
-
-        /* 🔹 Create Event (attendees: BOTH) */
-        const event = {
-          summary: 'DMAC Consultation Meeting',
-          description: 'Online consultation for the DMAC',
-          start: { dateTime: eventStartISO, timeZone: consultant_timezone },
-          end: { dateTime: eventEndISO, timeZone: consultant_timezone },
-          attendees: [{ email: consultant_email }, { email: user_email }],
-          conferenceData: {
-            createRequest: { requestId: Date.now().toString() }
-          }
-        }
-
-        const eventResult = await consultantCalendar.events.insert({
-          calendarId: consultant_email,
-          conferenceDataVersion: 1,
-          requestBody: event
-        })
-
-        meetLink = eventResult.data.hangoutLink
-
-        /* 🔹 OPTIONAL: Add event to USER calendar only if they have Google token */
-        if (user_access_token) {
-          const userAuth = new google.auth.OAuth2(
+      /* 🔹 Setup Google Calendar for CONSULTANT */
+      if (google_access_token && google_refresh_token) {
+        try {
+          const consultantAuth = new google.auth.OAuth2(
             process.env.GOOGLE_CLIENT_ID,
             process.env.GOOGLE_SECRET_KEY,
             process.env.GOOGLE_REDIRECT_URL
           )
-          userAuth.setCredentials({
-            access_token: user_access_token,
-            refresh_token: user_refresh_token
+          consultantAuth.setCredentials({
+            access_token: google_access_token,
+            refresh_token: google_refresh_token
           })
 
-          const userCalendar = google.calendar({
+          const consultantCalendar = google.calendar({
             version: 'v3',
-            auth: userAuth
+            auth: consultantAuth
           })
 
-          await userCalendar.events.insert({
-            calendarId: user_email,
-            conferenceDataVersion: 1,
-            requestBody: event
+          // Check availability
+          const freeBusy = await consultantCalendar.freebusy.query({
+            requestBody: {
+              timeMin: eventStartISO,
+              timeMax: eventEndISO,
+              items: [{ id: consultant_email }]
+            }
           })
+
+          if (freeBusy.data.calendars[consultant_email].busy.length > 0) {
+            bookingSuccess = false
+            errorMessage = 'Consultant already booked for this time slot'
+          } else {
+            /* 🔹 Create Event (attendees: BOTH) */
+            const event = {
+              summary: `DMAC Consultation Meeting (Session ${i + 1}/6)`,
+              description: 'Online consultation for the DMAC',
+              start: { dateTime: eventStartISO, timeZone: consultant_timezone },
+              end: { dateTime: eventEndISO, timeZone: consultant_timezone },
+              attendees: [{ email: consultant_email }, { email: user_email }],
+              conferenceData: {
+                createRequest: { requestId: Date.now().toString() }
+              }
+            }
+
+            const eventResult = await consultantCalendar.events.insert({
+              calendarId: consultant_email,
+              conferenceDataVersion: 1,
+              requestBody: event
+            })
+
+            meetLink = eventResult.data.hangoutLink
+
+            /* 🔹 OPTIONAL: Add event to USER calendar only if they have Google token */
+            if (user_access_token) {
+              const userAuth = new google.auth.OAuth2(
+                process.env.GOOGLE_CLIENT_ID,
+                process.env.GOOGLE_SECRET_KEY,
+                process.env.GOOGLE_REDIRECT_URL
+              )
+              userAuth.setCredentials({
+                access_token: user_access_token,
+                refresh_token: user_refresh_token
+              })
+
+              const userCalendar = google.calendar({
+                version: 'v3',
+                auth: userAuth
+              })
+
+              await userCalendar.events.insert({
+                calendarId: user_email,
+                conferenceDataVersion: 1,
+                requestBody: event
+              })
+            }
+          }
+        } catch (googleError) {
+          console.error('Google Calendar Error (Therapist):', googleError)
+          // Continue without Google Calendar
         }
-      } catch (googleError) {
-        console.error('Google Calendar Error (Therapist):', googleError)
-        // Continue without Google Calendar
+      }
+
+      if (bookingSuccess) {
+        try {
+          /* 🔹 Save booking */
+          const insertQuery = `
+            INSERT INTO dmac_webapp_therapist_consultations 
+            (product_id, user_id, consultant_id, event_start, event_end, meet_link, user_timezone, consultant_timezone, consultation_date, consultation_status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `
+          await new Promise((resolve, reject) => {
+            db.query(
+              insertQuery,
+              [
+                product_id,
+                user_id,
+                consultant_id,
+                eventStartISO,
+                eventEndISO,
+                meetLink,
+                user_timezone,
+                consultant_timezone,
+                currentDate,
+                1
+              ],
+              (err, result) => (err ? reject(err) : resolve(result))
+            )
+          })
+
+          /* 🔥 UPDATE SLOT AS BOOKED */
+          const utcDate = moment.utc(eventStartISO).format('YYYY-MM-DD')
+          const utcStartTime = moment
+            .utc(eventStartISO)
+            .format('YYYY-MM-DD HH:mm:ss')
+          const utcEndTime = moment
+            .utc(eventEndISO)
+            .format('YYYY-MM-DD HH:mm:ss')
+
+          const slotUpdateQuery = `
+            UPDATE dmac_webapp_therapist_availability
+            SET is_booked = 1
+            WHERE consultant_id = ? 
+            AND slot_date = ? 
+            AND start_time = ? 
+            AND end_time = ?
+          `
+          await new Promise((resolve, reject) => {
+            db.query(
+              slotUpdateQuery,
+              [consultant_id, utcDate, utcStartTime, utcEndTime],
+              (err, result) => (err ? reject(err) : resolve(result))
+            )
+          })
+
+          bookings.push({ date: currentDate, status: 'booked', meetLink })
+        } catch (dbError) {
+          console.error('DB Error:', dbError)
+          errors.push({ date: currentDate, error: 'Database error' })
+        }
+      } else {
+        errors.push({ date: currentDate, error: errorMessage })
       }
     }
 
-    /* 🔹 Save booking */
-    const insertQuery = `
-      INSERT INTO dmac_webapp_therapist_consultations 
-      (product_id, user_id, consultant_id, event_start, event_end, meet_link, user_timezone, consultant_timezone, consultation_date, consultation_status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    await new Promise((resolve, reject) => {
-      db.query(
-        insertQuery,
-        [
-          product_id,
-          user_id,
-          consultant_id,
-          eventStartISO,
-          eventEndISO,
-          meetLink,
-          user_timezone,
-          consultant_timezone,
-          date,
-          1
-        ],
-        (err, result) => (err ? reject(err) : resolve(result))
+    /* 🔹 Email to USER & CONSULTANT (Summary) */
+    const emailSubject = 'DMAC Consultation Bookings Confirmed'
+
+    // Construct email body with list of bookings
+    const bookingListHtml = bookings
+      .map(
+        (b) => `<li>${b.date}: <a href="${b.meetLink}">${b.meetLink}</a></li>`
       )
-    })
-
-    /* 🔥 UPDATE SLOT AS BOOKED */
-    const utcDate = moment.utc(eventStartISO).format('YYYY-MM-DD')
-    const utcStartTime = moment.utc(eventStartISO).format('YYYY-MM-DD HH:mm:ss')
-    const utcEndTime = moment.utc(eventEndISO).format('YYYY-MM-DD HH:mm:ss')
-
-    const slotUpdateQuery = `
-      UPDATE dmac_webapp_therapist_availability
-      SET is_booked = 1
-      WHERE consultant_id = ? 
-      AND slot_date = ? 
-      AND start_time = ? 
-      AND end_time = ?
-    `
-    await new Promise((resolve, reject) => {
-      db.query(
-        slotUpdateQuery,
-        [consultant_id, utcDate, utcStartTime, utcEndTime],
-        (err, result) => (err ? reject(err) : resolve(result))
-      )
-    })
-
-    /* 🔹 Email to USER & CONSULTANT */
-    const emailSubject = 'DMAC Consultation Booking Confirmed'
+      .join('')
 
     const userHtml = `
       <p>Dear ${user_name},</p>
-      <h3>Your consultation has been booked successfully.</h3>
-      <p><b>Date:</b> ${date}</p>
-      <p><b>Time:</b> ${moment(eventStartISO).tz(user_timezone).format('YYYY-MM-DD hh:mm A')}</p>
-      <p><b>Meeting Link:</b> <a href="${meetLink}">${meetLink}</a></p>
+      <h3>Your consultations have been booked successfully.</h3>
+      <ul>${bookingListHtml}</ul>
+      ${
+        errors.length > 0
+          ? `<p>Failed bookings: ${errors.map((e) => e.date).join(', ')}</p>`
+          : ''
+      }
     `
 
     const consultantHtml = `
       <p>Dear ${consultant_name},</p>
-      <h3>A new consultation has been scheduled.</h3>
-      <p><b>Date:</b> ${date}</p>
-      <p><b>Time:</b> ${consultantStart.format('YYYY-MM-DD hh:mm A')}</p>
-      <p><b>Meeting Link:</b> <a href="${meetLink}">${meetLink}</a></p>
+      <h3>New consultations have been scheduled.</h3>
+      <ul>${bookingListHtml}</ul>
     `
 
-    await sendEmail(user_email, emailSubject, userHtml, userHtml)
-    await sendEmail(
-      consultant_email,
-      emailSubject,
-      consultantHtml,
-      consultantHtml
-    )
+    if (bookings.length > 0) {
+      await sendEmail(user_email, emailSubject, userHtml, userHtml)
+      await sendEmail(
+        consultant_email,
+        emailSubject,
+        consultantHtml,
+        consultantHtml
+      )
+    }
 
     return res.status(200).json({
       status: 200,
-      booked: true,
-      message: 'Consultation booked successfully',
-      meetLink
+      booked: bookings.length > 0,
+      bookings,
+      errors,
+      message:
+        bookings.length === 6
+          ? 'All 6 sessions booked successfully'
+          : `Booked ${bookings.length} sessions. ${errors.length} failed.`
     })
   } catch (error) {
     console.error('BOOKING ERROR:', error)

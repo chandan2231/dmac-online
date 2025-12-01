@@ -39,7 +39,11 @@ dayjs.extend(timezone);
 
 const BookTherapist = () => {
   const user = useSelector((state: RootState) => state.auth.user);
-  const { data: therapists, isLoading } = useTherapists(user);
+  const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
+  const { data: therapists, isLoading } = useTherapists(
+    user,
+    selectedDate?.format('YYYY-MM-DD')
+  );
   const { showToast } = useToast();
 
   const [view, setView] = useState<'list' | 'book'>('list');
@@ -52,7 +56,6 @@ const BookTherapist = () => {
   );
 
   const [selectedTherapistId, setSelectedTherapistId] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
   const [slots, setSlots] = useState<ISlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -141,7 +144,7 @@ const BookTherapist = () => {
         <Typography variant="h4">
           {view === 'list' ? 'My Therapist Consultations' : 'Book Therapist'}
         </Typography>
-        {view === 'list' ? (
+        {view === 'list' && consultations.length === 0 ? (
           <Button
             variant="contained"
             onClick={() => setView('book')}
@@ -149,11 +152,11 @@ const BookTherapist = () => {
           >
             Add Book Therapist
           </Button>
-        ) : (
+        ) : view === 'book' ? (
           <Button variant="outlined" onClick={() => setView('list')}>
             Back to List
           </Button>
-        )}
+        ) : null}
       </Box>
 
       {view === 'list' ? (

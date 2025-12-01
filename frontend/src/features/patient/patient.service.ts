@@ -31,13 +31,14 @@ const getExpertList = async (user: IUser | null) => {
   }
 };
 
-const getTherapistList = async (user: IUser | null) => {
+const getTherapistList = async (user: IUser | null, date?: string) => {
   try {
     const userId = get(user, 'id');
     const response = await HttpService.getAxiosClient().post(
       `patient/therapist-list`,
       {
         userId,
+        date,
       }
     );
     return get(response, ['data'], []);
