@@ -21,3 +21,13 @@ export interface ISlot {
   start: string;
   end: string;
 }
+
+export interface IConsultation {
+  id: number;
+  expert_name: string;
+  consultation_date: string;
+  event_start: string;
+  event_end: string;
+  status: number;
+  meet_link: string;
+}
