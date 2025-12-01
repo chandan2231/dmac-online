@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { get } from 'lodash';
 import type { RootState } from '../../../store';
@@ -30,6 +30,7 @@ import { useExperts } from '../hooks/useExperts';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 import { useGetSubscribedProduct } from '../hooks/useGetSubscribedProduct';
+import { useGetConsultations } from '../hooks/useGetConsultations';
 import type { IExpert, ISlot, IConsultation } from '../patient.interface';
 import CustomLoader from '../../../components/loader';
 import PatientService from '../patient.service';
@@ -42,8 +43,8 @@ const BookConsultation = () => {
   const { showToast } = useToast();
 
   const [view, setView] = useState<'list' | 'book'>('list');
-  const [consultations, setConsultations] = useState<IConsultation[]>([]);
-  const [loadingConsultations, setLoadingConsultations] = useState(false);
+  const { data: consultations = [], isLoading: loadingConsultations } =
+    useGetConsultations(user);
 
   const [selectedExpertId, setSelectedExpertId] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
@@ -55,19 +56,6 @@ const BookConsultation = () => {
 
   const { data: products } = useGetSubscribedProduct(user);
   const productId = products && products.length > 0 ? products[0].id : null;
-
-  useEffect(() => {
-    const fetchConsultations = async () => {
-      setLoadingConsultations(true);
-      const data = await PatientService.getConsultationList(user);
-      setConsultations(data);
-      setLoadingConsultations(false);
-    };
-
-    if (view === 'list') {
-      fetchConsultations();
-    }
-  }, [view, user]);
 
   const handleExpertChange = (event: SelectChangeEvent) => {
     setSelectedExpertId(event.target.value as string);
@@ -176,7 +164,7 @@ const BookConsultation = () => {
               </TableHead>
               <TableBody>
                 {consultations.length > 0 ? (
-                  consultations.map(consultation => {
+                  consultations.map((consultation: IConsultation) => {
                     const userTimezone = get(user, 'time_zone') || 'UTC';
                     const start = dayjs(consultation.event_start)
                       .tz(userTimezone)

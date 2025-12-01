@@ -1293,3 +1293,64 @@ export const getConsultationList = async (req, res) => {
     })
   }
 }
+
+export const getTherapistConsultationList = async (req, res) => {
+  const { user_id } = req.body
+
+  if (!user_id) {
+    return res.status(400).json({
+      status: 400,
+      message: 'user_id is required'
+    })
+  }
+
+  try {
+    const query = `
+      SELECT 
+        c.id,
+        c.consultation_date,
+        c.event_start,
+        c.event_end,
+        c.consultation_status,
+        c.meet_link,
+        u.name as expert_name,
+        c.user_timezone
+      FROM dmac_webapp_therapist_consultations c
+      JOIN dmac_webapp_users u ON c.consultant_id = u.id
+      WHERE c.user_id = ?
+      ORDER BY c.consultation_date DESC
+    `
+
+    const consultations = await new Promise((resolve, reject) => {
+      db.query(query, [user_id], (err, result) => {
+        if (err) reject(err)
+        resolve(result)
+      })
+    })
+
+    // Format the dates and times for the frontend
+    const formattedConsultations = consultations.map((consultation) => {
+      return {
+        id: consultation.id,
+        expert_name: consultation.expert_name,
+        consultation_date: consultation.consultation_date,
+        event_start: consultation.event_start,
+        event_end: consultation.event_end,
+        status: consultation.consultation_status,
+        meet_link: consultation.meet_link
+      }
+    })
+
+    return res.status(200).json({
+      status: 200,
+      data: formattedConsultations
+    })
+  } catch (error) {
+    console.error('Error fetching therapist consultation list:', error)
+    return res.status(500).json({
+      status: 500,
+      message: 'Failed to fetch therapist consultation list',
+      error: error.message
+    })
+  }
+}

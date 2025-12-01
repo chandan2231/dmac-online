@@ -159,6 +159,22 @@ const getConsultationList = async (user: IUser | null) => {
   }
 };
 
+const getTherapistConsultationList = async (user: IUser | null) => {
+  try {
+    const userId = get(user, 'id');
+    const response = await HttpService.getAxiosClient().post(
+      `patient/therapist-consultation-list`,
+      {
+        user_id: userId,
+      }
+    );
+    return get(response, ['data', 'data'], []);
+  } catch (error: unknown) {
+    console.error('Error fetching therapist consultation list:', error);
+    return [];
+  }
+};
+
 const PatientService = {
   getSubscribedProduct,
   getExpertList,
@@ -168,6 +184,7 @@ const PatientService = {
   bookConsultation,
   bookTherapistConsultation,
   getConsultationList,
+  getTherapistConsultationList,
 };
 
 export default PatientService;
