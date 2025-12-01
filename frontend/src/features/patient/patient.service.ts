@@ -176,6 +176,29 @@ const getTherapistConsultationList = async (user: IUser | null) => {
   }
 };
 
+const rescheduleTherapistConsultation = async (
+  consultationId: number,
+  date: string,
+  startTime: string,
+  userTimezone: string
+) => {
+  try {
+    const response = await HttpService.getAxiosClient().post(
+      `patient/reschedule/therapist-consultation`,
+      {
+        consultation_id: consultationId,
+        date,
+        start_time: startTime,
+        user_timezone: userTimezone,
+      }
+    );
+    return get(response, ['data'], {});
+  } catch (error: unknown) {
+    console.error('Error rescheduling therapist consultation:', error);
+    return { status: 500, message: 'Failed to reschedule consultation' };
+  }
+};
+
 const PatientService = {
   getSubscribedProduct,
   getExpertList,
@@ -186,6 +209,7 @@ const PatientService = {
   bookTherapistConsultation,
   getConsultationList,
   getTherapistConsultationList,
+  rescheduleTherapistConsultation,
 };
 
 export default PatientService;

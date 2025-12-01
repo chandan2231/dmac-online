@@ -1495,3 +1495,282 @@ export const getTherapistConsultationList = async (req, res) => {
     })
   }
 }
+
+export const rescheduleTherapistConsultation = async (req, res) => {
+  const { consultation_id, date, start_time, user_timezone } = req.body
+
+  if (!consultation_id || !date || !start_time || !user_timezone) {
+    return res.status(400).json({
+      status: 400,
+      message: 'Missing required fields'
+    })
+  }
+
+  try {
+    /* 🔹 Fetch existing consultation details */
+    const existingQuery = `
+      SELECT c.*, 
+        u.email AS user_email, u.name AS user_name, u.google_access_token AS user_access_token, u.google_refresh_token AS user_refresh_token, u.time_zone AS user_db_timezone,
+        con.email AS consultant_email, con.name AS consultant_name, con.google_access_token AS consultant_access, con.google_refresh_token AS consultant_refresh, con.time_zone AS consultant_db_timezone,
+        c.consultant_timezone
+      FROM dmac_webapp_therapist_consultations c
+      JOIN dmac_webapp_users u ON c.user_id = u.id
+      JOIN dmac_webapp_users con ON c.consultant_id = con.id
+      WHERE c.id = ?`
+    const data = await new Promise((resolve, reject) =>
+      db.query(existingQuery, [consultation_id], (err, result) =>
+        err ? reject(err) : resolve(result)
+      )
+    )
+
+    if (!data.length)
+      return res
+        .status(404)
+        .json({ status: 404, message: 'Consultation not found' })
+
+    const booking = data[0]
+
+    const {
+      meet_link,
+      consultant_timezone: booked_consultant_timezone,
+      user_email,
+      user_name,
+      consultant_email,
+      consultant_name,
+      user_access_token,
+      user_refresh_token,
+      consultant_access,
+      consultant_refresh,
+      user_db_timezone,
+      consultant_db_timezone
+    } = booking
+
+    // Use current DB timezones if available, otherwise fall back to booked/requested values
+    const final_user_timezone = user_db_timezone || user_timezone
+    const final_consultant_timezone =
+      consultant_db_timezone || booked_consultant_timezone
+
+    if (!final_user_timezone || !final_consultant_timezone) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Timezone information missing for user or consultant'
+      })
+    }
+
+    /* 🔹 Convert user requested time to consultant TZ */
+    const newUserStart = `${date} ${start_time}`
+    const consultantStart = moment
+      .tz(newUserStart, final_user_timezone)
+      .tz(final_consultant_timezone)
+    const consultantEnd = consultantStart.clone().add(1, 'hour')
+
+    const eventStartISO = consultantStart.toISOString()
+    const eventEndISO = consultantEnd.toISOString()
+
+    /* 🔹 Update event in CONSULTANT Google Calendar */
+    if (consultant_access && consultant_refresh) {
+      try {
+        const consultantAuth = new google.auth.OAuth2(
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_SECRET_KEY,
+          process.env.GOOGLE_REDIRECT_URL
+        )
+        consultantAuth.setCredentials({
+          access_token: consultant_access,
+          refresh_token: consultant_refresh
+        })
+        const consultantCalendar = google.calendar({
+          version: 'v3',
+          auth: consultantAuth
+        })
+
+        // Fetch event by Meet link
+        const list = await consultantCalendar.events.list({
+          calendarId: consultant_email,
+          q: meet_link
+        })
+
+        if (list.data.items.length) {
+          const eventId = list.data.items[0].id
+
+          await consultantCalendar.events.patch({
+            calendarId: consultant_email,
+            eventId,
+            conferenceDataVersion: 1,
+            requestBody: {
+              start: {
+                dateTime: eventStartISO,
+                timeZone: final_consultant_timezone
+              },
+              end: {
+                dateTime: eventEndISO,
+                timeZone: final_consultant_timezone
+              }
+            }
+          })
+        }
+      } catch (error) {
+        console.error('Google Calendar Error (Therapist):', error)
+      }
+    }
+
+    /* 🔹 OPTIONAL: Update event in USER Google Calendar */
+    if (user_access_token) {
+      try {
+        const userAuth = new google.auth.OAuth2(
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_SECRET_KEY,
+          process.env.GOOGLE_REDIRECT_URL
+        )
+        userAuth.setCredentials({
+          access_token: user_access_token,
+          refresh_token: user_refresh_token
+        })
+
+        const userCalendar = google.calendar({
+          version: 'v3',
+          auth: userAuth
+        })
+
+        const userEventList = await userCalendar.events.list({
+          calendarId: user_email,
+          q: meet_link
+        })
+
+        if (userEventList.data.items.length > 0) {
+          const userEventID = userEventList.data.items[0].id
+          await userCalendar.events.patch({
+            calendarId: user_email,
+            eventId: userEventID,
+            conferenceDataVersion: 1,
+            requestBody: {
+              start: {
+                dateTime: eventStartISO,
+                timeZone: final_consultant_timezone
+              },
+              end: {
+                dateTime: eventEndISO,
+                timeZone: final_consultant_timezone
+              }
+            }
+          })
+        }
+      } catch (error) {
+        console.error('Google Calendar Error (User):', error)
+      }
+    }
+
+    /* 🔹 Update DB */
+    const updateQuery = `
+      UPDATE dmac_webapp_therapist_consultations
+      SET event_start = ?, event_end = ?, consultation_date = ?, consultation_status = ?, user_timezone = ?, consultant_timezone = ?
+      WHERE id = ?
+    `
+    await new Promise((resolve, reject) =>
+      db.query(
+        updateQuery,
+        [
+          eventStartISO,
+          eventEndISO,
+          date,
+          6,
+          final_user_timezone,
+          final_consultant_timezone,
+          consultation_id
+        ],
+        (err, result) => (err ? reject(err) : resolve(result))
+      )
+    )
+
+    /* 🔹 Update Availability Slots */
+    // 1. Free the old slot
+    if (booking.event_start && booking.event_end) {
+      const oldUtcDate = moment.utc(booking.event_start).format('YYYY-MM-DD')
+      const oldUtcStart = moment
+        .utc(booking.event_start)
+        .format('YYYY-MM-DD HH:mm:ss')
+      const oldUtcEnd = moment
+        .utc(booking.event_end)
+        .format('YYYY-MM-DD HH:mm:ss')
+
+      const freeSlotQuery = `
+        UPDATE dmac_webapp_therapist_availability
+        SET is_booked = 0
+        WHERE consultant_id = ? 
+        AND slot_date = ? 
+        AND start_time = ? 
+        AND end_time = ?
+      `
+      await new Promise((resolve, reject) =>
+        db.query(
+          freeSlotQuery,
+          [booking.consultant_id, oldUtcDate, oldUtcStart, oldUtcEnd],
+          (err, result) => (err ? reject(err) : resolve(result))
+        )
+      )
+    }
+
+    // 2. Book the new slot
+    const newUtcDate = moment.utc(eventStartISO).format('YYYY-MM-DD')
+    const newUtcStart = moment.utc(eventStartISO).format('YYYY-MM-DD HH:mm:ss')
+    const newUtcEnd = moment.utc(eventEndISO).format('YYYY-MM-DD HH:mm:ss')
+
+    const bookSlotQuery = `
+      UPDATE dmac_webapp_therapist_availability
+      SET is_booked = 1
+      WHERE consultant_id = ? 
+      AND slot_date = ? 
+      AND start_time = ? 
+      AND end_time = ?
+    `
+    await new Promise((resolve, reject) =>
+      db.query(
+        bookSlotQuery,
+        [booking.consultant_id, newUtcDate, newUtcStart, newUtcEnd],
+        (err, result) => (err ? reject(err) : resolve(result))
+      )
+    )
+
+    /* 🔹 Send Email */
+    const subject = 'DMAC Consultation Rescheduled'
+
+    const userHtml = `
+      <p>Dear ${user_name},</p>
+      <h3>Your consultation has been rescheduled successfully.</h3>
+      <p><b>Date:</b> ${date}</p>
+      <p><b>Time:</b> ${moment(eventStartISO).tz(user_timezone).format('YYYY-MM-DD hh:mm A')}</p>
+      <p><b>Meeting Link:</b> <a href="${meet_link}">${meet_link}</a></p>
+    `
+
+    const consultantHtml = `
+      <p>Dear ${consultant_name},</p>
+      <h3>A consultation has been rescheduled.</h3>
+      <p><b>Date:</b> ${date}</p>
+      <p><b>Time:</b> ${consultantStart.format('YYYY-MM-DD hh:mm A')}</p>
+      <p><b>Meeting Link:</b> <a href="${meet_link}">${meet_link}</a></p>
+    `
+
+    await sendEmail(user_email, subject, userHtml, userHtml)
+    await sendEmail(consultant_email, subject, consultantHtml, consultantHtml)
+
+    return res.status(200).json({
+      status: 200,
+      rescheduled: true,
+      meetLink: meet_link,
+      user_view_time: moment(eventStartISO)
+        .tz(user_timezone)
+        .format('YYYY-MM-DD hh:mm A'),
+      consultant_view_time: consultantStart.format('YYYY-MM-DD hh:mm A'),
+      message: user_access_token
+        ? 'Reschedule updated in both calendars and emails sent'
+        : 'Reschedule updated in consultant calendar only. User notified via email'
+    })
+  } catch (error) {
+    console.error('RESCHEDULE ERROR:', error)
+    return res.status(500).json({
+      status: 500,
+      rescheduled: false,
+      message: 'Unable to reschedule consultation'
+    })
+  }
+}
