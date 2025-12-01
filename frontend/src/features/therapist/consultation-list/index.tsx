@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import {
   Box,
@@ -25,11 +25,11 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { get } from 'lodash';
 import type { RootState } from '../../../store';
-import TherapistService from '../therapist.service';
 import CustomLoader from '../../../components/loader';
 import { useDebounce } from '../../../hooks/useDebouce';
 import UpdateStatusModal from './UpdateStatusModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
+import { useGetConsultations } from '../hooks/useGetConsultations';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -48,10 +48,16 @@ interface IConsultation {
 
 const TherapistConsultationList = () => {
   const user = useSelector((state: RootState) => state.auth.user);
-  const [consultations, setConsultations] = useState<IConsultation[]>([]);
-  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  const { data: consultationsResponse, isLoading: loading } =
+    useGetConsultations({
+      therapistId: user?.id ? String(user.id) : undefined,
+      patientName: debouncedSearchTerm,
+    });
+
+  const consultations = (consultationsResponse?.data || []) as IConsultation[];
 
   const { mutate: updateStatus, isPending: isUpdating } =
     useUpdateConsultationStatus();
@@ -62,23 +68,6 @@ const TherapistConsultationList = () => {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuConsultation, setMenuConsultation] =
     useState<IConsultation | null>(null);
-
-  const fetchConsultations = async () => {
-    if (!user?.id) return;
-    setLoading(true);
-    const response = await TherapistService.getConsultationList(
-      String(user.id),
-      debouncedSearchTerm
-    );
-    if (response.success) {
-      setConsultations(response.data);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchConsultations();
-  }, [user?.id, debouncedSearchTerm]);
 
   const handleOpenModal = (consultation: IConsultation) => {
     setSelectedConsultation(consultation);
@@ -117,7 +106,6 @@ const TherapistConsultationList = () => {
         {
           onSuccess: () => {
             handleCloseModal();
-            fetchConsultations(); // Refresh list after update
           },
         }
       );
