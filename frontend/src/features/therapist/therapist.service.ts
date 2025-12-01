@@ -114,12 +114,36 @@ const updateDaySlots = async (data: {
   }
 };
 
+const getConsultationList = async (
+  consultantId: string,
+  patientName?: string
+) => {
+  try {
+    const response = await HttpService.post(`/therapist/consultation-list`, {
+      consultant_id: consultantId,
+      patient_name: patientName,
+    });
+    return {
+      success: true,
+      data: get(response, 'data.data', []),
+    };
+  } catch (error: unknown) {
+    console.error('Error fetching consultation list:', error);
+    return {
+      success: false,
+      message: 'Failed to get consultation list',
+      data: [],
+    };
+  }
+};
+
 const TherapistService = {
   getGoogleAuthUrl,
   setAvailability,
   getTherapistSlots,
   toggleDayOff,
   updateDaySlots,
+  getConsultationList,
 };
 
 export default TherapistService;

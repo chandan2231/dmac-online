@@ -430,3 +430,60 @@ export const updateDaySlots = async (req, res) => {
       .json({ status: 500, message: 'Unable to update slots' })
   }
 }
+
+export const getConsultationList = async (req, res) => {
+  const { consultant_id, patient_name } = req.body
+
+  if (!consultant_id) {
+    return res.status(400).json({
+      status: 400,
+      message: 'consultant_id is required'
+    })
+  }
+
+  try {
+    let query = `
+      SELECT 
+        c.id,
+        c.consultation_date,
+        c.event_start,
+        c.event_end,
+        c.consultation_status,
+        c.meet_link,
+        u.name as patient_name,
+        u.email as patient_email,
+        c.consultant_timezone
+      FROM dmac_webapp_therapist_consultations c
+      JOIN dmac_webapp_users u ON c.user_id = u.id
+      WHERE c.consultant_id = ?
+    `
+
+    const params = [consultant_id]
+
+    if (patient_name) {
+      query += ` AND u.name LIKE ?`
+      params.push(`%${patient_name}%`)
+    }
+
+    query += ` ORDER BY c.consultation_date DESC`
+
+    const consultations = await new Promise((resolve, reject) => {
+      db.query(query, params, (err, result) => {
+        if (err) reject(err)
+        resolve(result)
+      })
+    })
+
+    return res.status(200).json({
+      status: 200,
+      data: consultations
+    })
+  } catch (error) {
+    console.error('Error fetching therapist consultation list:', error)
+    return res.status(500).json({
+      status: 500,
+      message: 'Failed to fetch consultation list',
+      error: error.message
+    })
+  }
+}

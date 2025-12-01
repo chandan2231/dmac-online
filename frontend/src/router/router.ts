@@ -51,6 +51,7 @@ import CalendarPage from '../pages/expert/calendar';
 // Therapist Pages
 import TherapistHomePage from '../pages/therapist/home';
 import CalendarPageForTherapist from '../pages/therapist/calendar';
+import TherapistConsultationListPage from '../pages/therapist/consultation-list';
 
 export const LAYOUT_MAP = {
   BaseLayout,
@@ -107,6 +108,7 @@ export const COMPONENT_MAP = {
   // Therapist Pages
   TherapistHomePage,
   CalendarPageForTherapist,
+  TherapistConsultationListPage,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -158,6 +160,7 @@ export const ROUTES = {
 
   // THERAPIST Protected routes
   THERAPIST_CALENDAR: '/therapist/calendar',
+  THERAPIST_CONSULTATION_LIST: '/therapist/consultation-list',
 } as const;
 
 export type ROUTES = (typeof ROUTES)[keyof typeof ROUTES];
@@ -420,6 +423,15 @@ const THERAPIST_ROUTES: IAllowedRoutes[] = [
     showInSidebar: true,
     sideBarTitle: 'Calendar',
     sideBarIcon: null,
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.THERAPIST_CONSULTATION_LIST,
+    layout: 'MainLayout',
+    component: 'TherapistConsultationListPage',
+    showInSidebar: true,
+    sideBarTitle: 'Consultations',
+    sideBarIcon: 'EventIcon',
     isAChildOf: null,
   },
 ];
