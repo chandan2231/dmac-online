@@ -85,6 +85,9 @@ export const saveTherapistAvailability = async (req, res) => {
       INSERT INTO dmac_webapp_therapist_availability
       (consultant_id, slot_date, start_time, end_time, is_slot_available, is_booked, is_day_off)
       VALUES ?
+      ON DUPLICATE KEY UPDATE
+      is_slot_available = VALUES(is_slot_available),
+      is_day_off = VALUES(is_day_off)
     `
 
     db.query(query, [values], (err) => {
@@ -588,5 +591,148 @@ export const updateConsultationStatus = async (req, res) => {
   } catch (error) {
     console.error('UPDATE STATUS ERROR:', error)
     return res.status(500).json({ message: 'Failed to update status' })
+  }
+}
+
+export const rescheduleTherapistConsultation = async (req, res) => {
+  const { consultationId, newDate, newStartTime } = req.body
+
+  if (!consultationId || !newDate || !newStartTime) {
+    return res.status(400).json({ message: 'Missing required fields' })
+  }
+
+  try {
+    // 1. Fetch existing consultation
+    const getConsultationQuery = `
+      SELECT c.*, u.email as user_email, u.name as user_name, 
+             t.email as consultant_email, t.name as consultant_name, t.time_zone as consultant_timezone
+      FROM dmac_webapp_therapist_consultations c
+      JOIN dmac_webapp_users u ON c.user_id = u.id
+      JOIN dmac_webapp_users t ON c.consultant_id = t.id
+      WHERE c.id = ?
+    `
+    const consultation = await new Promise((resolve, reject) => {
+      db.query(getConsultationQuery, [consultationId], (err, data) => {
+        if (err) reject(err)
+        resolve(data[0])
+      })
+    })
+
+    if (!consultation) {
+      return res.status(404).json({ message: 'Consultation not found' })
+    }
+
+    const {
+      consultant_id,
+      event_start: oldEventStart,
+      user_email,
+      user_name,
+      consultant_email,
+      consultant_name,
+      consultant_timezone
+    } = consultation
+
+    // 2. Calculate New Times (in UTC)
+    // Assume newStartTime is in Consultant's timezone or UTC?
+    // Usually frontend sends date 'YYYY-MM-DD' and time 'HH:mm'
+    // Let's assume we construct it in Consultant's timezone
+
+    const newStartMoment = moment.tz(
+      `${newDate} ${newStartTime}`,
+      'YYYY-MM-DD HH:mm',
+      consultant_timezone
+    )
+    const newEndMoment = newStartMoment.clone().add(1, 'hour')
+
+    const newStartUTC = newStartMoment
+      .clone()
+      .utc()
+      .format('YYYY-MM-DD HH:mm:ss')
+    const newEndUTC = newEndMoment.clone().utc().format('YYYY-MM-DD HH:mm:ss')
+    const newDateUTC = newStartMoment.clone().utc().format('YYYY-MM-DD')
+
+    // 3. Lock New Slot
+    const lockQuery = `
+      UPDATE dmac_webapp_therapist_availability
+      SET is_booked = 1
+      WHERE consultant_id = ? 
+      AND slot_date = ? 
+      AND start_time = ? 
+      AND is_booked = 0
+    `
+    const lockResult = await new Promise((resolve, reject) => {
+      db.query(
+        lockQuery,
+        [consultant_id, newDateUTC, newStartUTC],
+        (err, result) => {
+          if (err) reject(err)
+          resolve(result)
+        }
+      )
+    })
+
+    if (lockResult.affectedRows === 0) {
+      return res.status(400).json({ message: 'Selected slot is not available' })
+    }
+
+    // 4. Unlock Old Slot
+    const oldStartUTC = moment.utc(oldEventStart).format('YYYY-MM-DD HH:mm:ss')
+    const oldDateUTC = moment.utc(oldEventStart).format('YYYY-MM-DD')
+
+    const unlockQuery = `
+      UPDATE dmac_webapp_therapist_availability
+      SET is_booked = 0
+      WHERE consultant_id = ? 
+      AND slot_date = ? 
+      AND start_time = ?
+    `
+    await new Promise((resolve, reject) => {
+      db.query(
+        unlockQuery,
+        [consultant_id, oldDateUTC, oldStartUTC],
+        (err, result) => {
+          if (err) reject(err)
+          resolve(result)
+        }
+      )
+    })
+
+    // 5. Update Consultation Record
+    const updateQuery = `
+      UPDATE dmac_webapp_therapist_consultations
+      SET event_start = ?, event_end = ?, consultation_date = ?, consultation_status = 1
+      WHERE id = ?
+    `
+    await new Promise((resolve, reject) => {
+      db.query(
+        updateQuery,
+        [newStartUTC, newEndUTC, newDate, consultationId],
+        (err, result) => {
+          if (err) reject(err)
+          resolve(result)
+        }
+      )
+    })
+
+    // 6. Send Emails
+    const subject = 'Consultation Rescheduled'
+    const htmlContent = `
+      <p>Dear User,</p>
+      <p>Your consultation has been rescheduled.</p>
+      <p><b>New Date:</b> ${newDate}</p>
+      <p><b>New Time:</b> ${newStartTime}</p>
+    `
+
+    await sendEmail(user_email, subject, htmlContent, htmlContent)
+    await sendEmail(consultant_email, subject, htmlContent, htmlContent)
+
+    return res
+      .status(200)
+      .json({ message: 'Consultation rescheduled successfully' })
+  } catch (error) {
+    console.error('RESCHEDULE ERROR:', error)
+    return res
+      .status(500)
+      .json({ message: 'Failed to reschedule consultation' })
   }
 }

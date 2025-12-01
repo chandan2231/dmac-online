@@ -1167,7 +1167,7 @@ export const bookTherapistConsultation = async (req, res) => {
       time_zone: fetched_consultant_timezone
     } = consultant[0]
 
-    const consultant_timezone = fetched_consultant_timezone
+    const consultant_timezone = fetched_consultant_timezone || 'Asia/Kolkata'
 
     /* 🔹 Fetch user info + timezone */
     const userQuery = `SELECT id, email, name, google_access_token as user_access_token, google_refresh_token as user_refresh_token, time_zone FROM dmac_webapp_users WHERE id = ?`
@@ -1187,12 +1187,13 @@ export const bookTherapistConsultation = async (req, res) => {
       time_zone: fetched_user_timezone
     } = user[0]
 
-    const user_timezone = fetched_user_timezone
+    const user_timezone = fetched_user_timezone || 'Asia/Kolkata'
 
     const bookings = []
     const errors = []
+    const slotsToBook = []
 
-    // Loop for 6 sessions on alternate days
+    // 1. Calculate all 6 slots first
     for (let i = 0; i < 6; i++) {
       const currentDate = moment(date)
         .add(i * 2, 'days')
@@ -1206,9 +1207,91 @@ export const bookTherapistConsultation = async (req, res) => {
       const eventStartISO = consultantStart.toISOString()
       const eventEndISO = consultantEnd.toISOString()
 
+      const utcDate = moment.utc(eventStartISO).format('YYYY-MM-DD')
+      const utcStartTime = moment
+        .utc(eventStartISO)
+        .format('YYYY-MM-DD HH:mm:ss')
+      const utcEndTime = moment.utc(eventEndISO).format('YYYY-MM-DD HH:mm:ss')
+
+      slotsToBook.push({
+        i,
+        currentDate,
+        eventStartISO,
+        eventEndISO,
+        utcDate,
+        utcStartTime,
+        utcEndTime,
+        consultantStart,
+        consultantEnd
+      })
+    }
+
+    // 2. Try to LOCK all 6 slots in DB
+    const lockedSlots = []
+    let lockFailed = false
+
+    try {
+      for (const slot of slotsToBook) {
+        const slotUpdateQuery = `
+          UPDATE dmac_webapp_therapist_availability
+          SET is_booked = 1
+          WHERE consultant_id = ? 
+          AND slot_date = ? 
+          AND start_time = ? 
+          AND is_booked = 0
+        `
+        const result = await new Promise((resolve, reject) => {
+          db.query(
+            slotUpdateQuery,
+            [consultant_id, slot.utcDate, slot.utcStartTime],
+            (err, result) => (err ? reject(err) : resolve(result))
+          )
+        })
+
+        if (result.affectedRows === 0) {
+          lockFailed = true
+          break
+        }
+        lockedSlots.push(slot)
+      }
+    } catch (err) {
+      console.error('DB Lock Error:', err)
+      lockFailed = true
+    }
+
+    // 3. If locking failed, ROLLBACK (unlock) any locked slots and return error
+    if (lockFailed) {
+      for (const slot of lockedSlots) {
+        const unlockQuery = `
+          UPDATE dmac_webapp_therapist_availability
+          SET is_booked = 0
+          WHERE consultant_id = ? AND slot_date = ? AND start_time = ?
+        `
+        await new Promise((resolve) => {
+          db.query(
+            unlockQuery,
+            [consultant_id, slot.utcDate, slot.utcStartTime],
+            resolve
+          )
+        })
+      }
+      return res.status(400).json({
+        status: 400,
+        message:
+          'One or more slots in the series are unavailable. Please choose a different start date or time.'
+      })
+    }
+
+    // 4. Proceed with Booking (Google Calendar + DB Insert)
+    for (const slot of slotsToBook) {
+      const {
+        currentDate,
+        eventStartISO,
+        eventEndISO,
+        consultantStart,
+        consultantEnd
+      } = slot
       let meetLink = ''
-      let bookingSuccess = true
-      let errorMessage = ''
 
       /* 🔹 Setup Google Calendar for CONSULTANT */
       if (google_access_token && google_refresh_token) {
@@ -1228,7 +1311,7 @@ export const bookTherapistConsultation = async (req, res) => {
             auth: consultantAuth
           })
 
-          // Check availability
+          // Check availability (Double check, though we locked our DB)
           const freeBusy = await consultantCalendar.freebusy.query({
             requestBody: {
               timeMin: eventStartISO,
@@ -1238,12 +1321,11 @@ export const bookTherapistConsultation = async (req, res) => {
           })
 
           if (freeBusy.data.calendars[consultant_email].busy.length > 0) {
-            bookingSuccess = false
-            errorMessage = 'Consultant already booked for this time slot'
+            console.warn(`Consultant Google Calendar busy for ${currentDate}`)
           } else {
             /* 🔹 Create Event (attendees: BOTH) */
             const event = {
-              summary: `DMAC Consultation Meeting (Session ${i + 1}/6)`,
+              summary: `DMAC Consultation Meeting (Session ${slot.i + 1}/6)`,
               description: 'Online consultation for the DMAC',
               start: { dateTime: eventStartISO, timeZone: consultant_timezone },
               end: { dateTime: eventEndISO, timeZone: consultant_timezone },
@@ -1291,65 +1373,36 @@ export const bookTherapistConsultation = async (req, res) => {
         }
       }
 
-      if (bookingSuccess) {
-        try {
-          /* 🔹 Save booking */
-          const insertQuery = `
-            INSERT INTO dmac_webapp_therapist_consultations 
-            (product_id, user_id, consultant_id, event_start, event_end, meet_link, user_timezone, consultant_timezone, consultation_date, consultation_status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `
-          await new Promise((resolve, reject) => {
-            db.query(
-              insertQuery,
-              [
-                product_id,
-                user_id,
-                consultant_id,
-                eventStartISO,
-                eventEndISO,
-                meetLink,
-                user_timezone,
-                consultant_timezone,
-                currentDate,
-                1
-              ],
-              (err, result) => (err ? reject(err) : resolve(result))
-            )
-          })
+      try {
+        /* 🔹 Save booking */
+        const insertQuery = `
+          INSERT INTO dmac_webapp_therapist_consultations 
+          (product_id, user_id, consultant_id, event_start, event_end, meet_link, user_timezone, consultant_timezone, consultation_date, consultation_status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `
+        await new Promise((resolve, reject) => {
+          db.query(
+            insertQuery,
+            [
+              product_id,
+              user_id,
+              consultant_id,
+              eventStartISO,
+              eventEndISO,
+              meetLink,
+              user_timezone,
+              consultant_timezone,
+              currentDate,
+              1
+            ],
+            (err, result) => (err ? reject(err) : resolve(result))
+          )
+        })
 
-          /* 🔥 UPDATE SLOT AS BOOKED */
-          const utcDate = moment.utc(eventStartISO).format('YYYY-MM-DD')
-          const utcStartTime = moment
-            .utc(eventStartISO)
-            .format('YYYY-MM-DD HH:mm:ss')
-          const utcEndTime = moment
-            .utc(eventEndISO)
-            .format('YYYY-MM-DD HH:mm:ss')
-
-          const slotUpdateQuery = `
-            UPDATE dmac_webapp_therapist_availability
-            SET is_booked = 1
-            WHERE consultant_id = ? 
-            AND slot_date = ? 
-            AND start_time = ? 
-            AND end_time = ?
-          `
-          await new Promise((resolve, reject) => {
-            db.query(
-              slotUpdateQuery,
-              [consultant_id, utcDate, utcStartTime, utcEndTime],
-              (err, result) => (err ? reject(err) : resolve(result))
-            )
-          })
-
-          bookings.push({ date: currentDate, status: 'booked', meetLink })
-        } catch (dbError) {
-          console.error('DB Error:', dbError)
-          errors.push({ date: currentDate, error: 'Database error' })
-        }
-      } else {
-        errors.push({ date: currentDate, error: errorMessage })
+        bookings.push({ date: currentDate, status: 'booked', meetLink })
+      } catch (dbError) {
+        console.error('DB Insert Error:', dbError)
+        errors.push({ date: currentDate, error: 'Database error' })
       }
     }
 
