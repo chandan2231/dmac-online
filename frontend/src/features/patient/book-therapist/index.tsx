@@ -47,6 +47,10 @@ const BookTherapist = () => {
   const { data: consultations = [], isLoading: loadingConsultations } =
     useGetTherapistConsultations(user);
 
+  const isAddDisabled = consultations.some((c: IConsultation) =>
+    [0, 1, 2, 3, 4].includes(c.status)
+  );
+
   const [selectedTherapistId, setSelectedTherapistId] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
   const [slots, setSlots] = useState<ISlot[]>([]);
@@ -138,7 +142,11 @@ const BookTherapist = () => {
           {view === 'list' ? 'My Therapist Consultations' : 'Book Therapist'}
         </Typography>
         {view === 'list' ? (
-          <Button variant="contained" onClick={() => setView('book')}>
+          <Button
+            variant="contained"
+            onClick={() => setView('book')}
+            disabled={isAddDisabled}
+          >
             Add Book Therapist
           </Button>
         ) : (
