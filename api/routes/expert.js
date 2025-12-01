@@ -6,7 +6,8 @@ import {
   toggleDayOff,
   updateDaySlots,
   getExpertConsultations,
-  updateConsultationStatus
+  updateConsultationStatus,
+  rescheduleConsultation
 } from '../controllers/expert.js'
 
 const router = express.Router()
@@ -18,5 +19,6 @@ router.post('/toggle-day-off', toggleDayOff)
 router.post('/update-day-slots', updateDaySlots)
 router.post('/get/consultations', getExpertConsultations)
 router.post('/update-status', updateConsultationStatus)
+router.post('/reschedule', rescheduleConsultation)
 
 export default router

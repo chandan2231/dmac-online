@@ -307,6 +307,43 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
     const eventStartISO = consultantStart.toISOString()
     const eventEndISO = consultantEnd.toISOString()
 
+    /* 🔥 SECURE SLOT FIRST (Optimistic Locking) */
+    const utcDate = moment.utc(eventStartISO).format('YYYY-MM-DD')
+    const utcStartTime = moment.utc(eventStartISO).format('YYYY-MM-DD HH:mm:ss')
+    const utcEndTime = moment.utc(eventEndISO).format('YYYY-MM-DD HH:mm:ss')
+
+    const slotUpdateQuery = `
+      UPDATE dmac_webapp_expert_availability
+      SET is_booked = 1
+      WHERE consultant_id = ? 
+      AND slot_date = ? 
+      AND start_time = ? 
+      AND is_booked = 0
+    `
+
+    try {
+      const secureResult = await new Promise((resolve, reject) => {
+        db.query(
+          slotUpdateQuery,
+          [consultant_id, utcDate, utcStartTime],
+          (err, result) => (err ? reject(err) : resolve(result))
+        )
+      })
+
+      if (secureResult.affectedRows === 0) {
+        return res.status(400).json({
+          status: 400,
+          message:
+            'This slot is already booked or unavailable. Please choose another time.'
+        })
+      }
+    } catch (dbError) {
+      console.error('DB Error securing slot:', dbError)
+      return res
+        .status(500)
+        .json({ status: 500, message: 'Database error while securing slot' })
+    }
+
     let meetLink = ''
 
     /* 🔹 Setup Google Calendar for CONSULTANT */
@@ -337,9 +374,17 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
         })
 
         if (freeBusy.data.calendars[consultant_email].busy.length > 0) {
+          // Rollback slot booking
+          await new Promise((resolve) => {
+            db.query(
+              `UPDATE dmac_webapp_expert_availability SET is_booked = 0 WHERE consultant_id = ? AND slot_date = ? AND start_time = ?`,
+              [consultant_id, utcDate, utcStartTime],
+              resolve
+            )
+          })
           return res.status(400).json({
             status: 400,
-            message: 'Consultant already booked for this time slot'
+            message: 'Consultant Google Calendar is busy for this time slot'
           })
         }
 
@@ -388,7 +433,8 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
         }
       } catch (googleError) {
         console.error('Google Calendar Error (Expert):', googleError)
-        // Continue without Google Calendar
+        // Continue without Google Calendar, but warn?
+        // For now, we assume internal booking is primary.
       }
     }
 
@@ -398,45 +444,36 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
       (product_id, user_id, consultant_id, event_start, event_end, meet_link, user_timezone, consultant_timezone, consultation_date, consultation_status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
-    await new Promise((resolve, reject) => {
-      db.query(
-        insertQuery,
-        [
-          product_id,
-          user_id,
-          consultant_id,
-          eventStartISO,
-          eventEndISO,
-          meetLink,
-          user_timezone,
-          consultant_timezone,
-          date,
-          1
-        ],
-        (err, result) => (err ? reject(err) : resolve(result))
-      )
-    })
-
-    /* 🔥 UPDATE SLOT AS BOOKED */
-    const utcDate = moment.utc(eventStartISO).format('YYYY-MM-DD')
-    const utcStartTime = moment.utc(eventStartISO).format('YYYY-MM-DD HH:mm:ss')
-    const utcEndTime = moment.utc(eventEndISO).format('YYYY-MM-DD HH:mm:ss')
-
-    const slotUpdateQuery = `
-      UPDATE dmac_webapp_expert_availability
-      SET is_booked = 1
-      WHERE consultant_id = ? 
-      AND slot_date = ? 
-      AND start_time = ? 
-      AND end_time = ?
-    `
-    await new Promise((resolve, reject) => {
-      db.query(
-        slotUpdateQuery,
-        [consultant_id, utcDate, utcStartTime, utcEndTime],
-        (err, result) => (err ? reject(err) : resolve(result))
-      )
-    })
+    try {
+      await new Promise((resolve, reject) => {
+        db.query(
+          insertQuery,
+          [
+            product_id,
+            user_id,
+            consultant_id,
+            eventStartISO,
+            eventEndISO,
+            meetLink,
+            user_timezone,
+            consultant_timezone,
+            date,
+            1
+          ],
+          (err, result) => (err ? reject(err) : resolve(result))
+        )
+      })
+    } catch (insertError) {
+      // Rollback slot booking if insert fails
+      await new Promise((resolve) => {
+        db.query(
+          `UPDATE dmac_webapp_expert_availability SET is_booked = 0 WHERE consultant_id = ? AND slot_date = ? AND start_time = ?`,
+          [consultant_id, utcDate, utcStartTime],
+          resolve
+        )
+      })
+      throw insertError
+    }
 
     /* 🔹 Email to USER & CONSULTANT */
     const emailSubject = 'DMAC Consultation Booking Confirmed'

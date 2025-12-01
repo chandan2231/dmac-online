@@ -512,11 +512,39 @@ export const updateConsultationStatus = async (req, res) => {
       })
 
       if (consultation) {
-        const { user_email, user_name, consultation_date } = consultation
+        const {
+          user_email,
+          user_name,
+          consultation_date,
+          consultant_id,
+          event_start
+        } = consultation
         let subject = ''
         let htmlContent = ''
 
         if (status === 5) {
+          // Free the slot in availability table
+          const utcDate = moment.utc(event_start).format('YYYY-MM-DD')
+          const utcStartTime = moment
+            .utc(event_start)
+            .format('YYYY-MM-DD HH:mm:ss')
+
+          const freeSlotQuery = `
+            UPDATE dmac_webapp_expert_availability
+            SET is_booked = 0
+            WHERE consultant_id = ? AND slot_date = ? AND start_time = ?
+          `
+          await new Promise((resolve, reject) => {
+            db.query(
+              freeSlotQuery,
+              [consultant_id, utcDate, utcStartTime],
+              (err, result) => {
+                if (err) reject(err)
+                resolve(result)
+              }
+            )
+          })
+
           subject = 'Consultation Cancelled'
           htmlContent = `
             <p>Dear ${user_name},</p>
@@ -544,5 +572,149 @@ export const updateConsultationStatus = async (req, res) => {
   } catch (error) {
     console.error('UPDATE STATUS ERROR:', error)
     return res.status(500).json({ message: 'Failed to update status' })
+  }
+}
+
+export const rescheduleConsultation = async (req, res) => {
+  const { consultationId, newDate, newStartTime, userId, timezone } = req.body
+
+  if (!consultationId || !newDate || !newStartTime || !userId) {
+    return res.status(400).json({ message: 'Missing required fields' })
+  }
+
+  try {
+    // 1. Fetch existing consultation
+    const getConsultationQuery = `
+      SELECT c.*, u.time_zone as user_timezone, exp.time_zone as expert_timezone, exp.email as expert_email, u.email as user_email, u.name as user_name
+      FROM dmac_webapp_consultations c
+      JOIN dmac_webapp_users u ON c.user_id = u.id
+      JOIN dmac_webapp_users exp ON c.consultant_id = exp.id
+      WHERE c.id = ?
+    `
+
+    const consultation = await new Promise((resolve, reject) => {
+      db.query(getConsultationQuery, [consultationId], (err, data) => {
+        if (err) reject(err)
+        resolve(data[0])
+      })
+    })
+
+    if (!consultation) {
+      return res.status(404).json({ message: 'Consultation not found' })
+    }
+
+    const {
+      consultant_id,
+      event_start: oldEventStart,
+      user_timezone,
+      expert_timezone,
+      user_email,
+      user_name
+    } = consultation
+
+    // 2. Calculate New Times (UTC)
+    const requestTimezone = timezone || user_timezone
+
+    const newStartDatetime = `${newDate} ${newStartTime}`
+    const newConsultantStart = moment
+      .tz(newStartDatetime, requestTimezone)
+      .tz(expert_timezone)
+    const newConsultantEnd = newConsultantStart.clone().add(1, 'hour')
+
+    const newEventStartISO = newConsultantStart.toISOString()
+    const newEventEndISO = newConsultantEnd.toISOString()
+
+    const newUtcDate = moment.utc(newEventStartISO).format('YYYY-MM-DD')
+    const newUtcStartTime = moment
+      .utc(newEventStartISO)
+      .format('YYYY-MM-DD HH:mm:ss')
+
+    // 3. Secure New Slot
+    const secureSlotQuery = `
+      UPDATE dmac_webapp_expert_availability
+      SET is_booked = 1
+      WHERE consultant_id = ? 
+      AND slot_date = ? 
+      AND start_time = ? 
+      AND is_booked = 0
+    `
+
+    const secureResult = await new Promise((resolve, reject) => {
+      db.query(
+        secureSlotQuery,
+        [consultant_id, newUtcDate, newUtcStartTime],
+        (err, result) => {
+          if (err) reject(err)
+          resolve(result)
+        }
+      )
+    })
+
+    if (secureResult.affectedRows === 0) {
+      return res.status(400).json({ message: 'New slot is not available' })
+    }
+
+    // 4. Free Old Slot
+    const oldUtcDate = moment.utc(oldEventStart).format('YYYY-MM-DD')
+    const oldUtcStartTime = moment
+      .utc(oldEventStart)
+      .format('YYYY-MM-DD HH:mm:ss')
+
+    const freeSlotQuery = `
+      UPDATE dmac_webapp_expert_availability
+      SET is_booked = 0
+      WHERE consultant_id = ? AND slot_date = ? AND start_time = ?
+    `
+
+    await new Promise((resolve, reject) => {
+      db.query(
+        freeSlotQuery,
+        [consultant_id, oldUtcDate, oldUtcStartTime],
+        (err, result) => {
+          if (err) reject(err)
+          resolve(result)
+        }
+      )
+    })
+
+    // 5. Update Consultation Record
+    const updateConsultationQuery = `
+      UPDATE dmac_webapp_consultations
+      SET event_start = ?, event_end = ?, consultation_date = ?, consultation_status = 1
+      WHERE id = ?
+    `
+
+    await new Promise((resolve, reject) => {
+      db.query(
+        updateConsultationQuery,
+        [newEventStartISO, newEventEndISO, newDate, consultationId],
+        (err, result) => {
+          if (err) reject(err)
+          resolve(result)
+        }
+      )
+    })
+
+    // 6. Send Email Notification
+    const subject = 'Consultation Rescheduled'
+    const htmlContent = `
+      <p>Dear ${user_name},</p>
+      <p>Your consultation has been successfully rescheduled.</p>
+      <p><b>New Date:</b> ${newDate}</p>
+      <p><b>New Time:</b> ${moment(newEventStartISO)
+        .tz(user_timezone)
+        .format('YYYY-MM-DD hh:mm A')}</p>
+    `
+
+    await sendEmail(user_email, subject, htmlContent, htmlContent)
+
+    return res
+      .status(200)
+      .json({ message: 'Consultation rescheduled successfully' })
+  } catch (error) {
+    console.error('RESCHEDULE ERROR:', error)
+    return res
+      .status(500)
+      .json({ message: 'Failed to reschedule consultation' })
   }
 }
