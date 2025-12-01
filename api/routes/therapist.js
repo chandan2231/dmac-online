@@ -5,7 +5,8 @@ import {
   getAvailableSlots,
   toggleDayOff,
   updateDaySlots,
-  getConsultationList
+  getConsultationList,
+  updateConsultationStatus
 } from '../controllers/therapist.js'
 
 const router = express.Router()
@@ -16,5 +17,6 @@ router.post('/get/slot', getAvailableSlots)
 router.post('/toggle-day-off', toggleDayOff)
 router.post('/update-day-slots', updateDaySlots)
 router.post('/consultation-list', getConsultationList)
+router.post('/update-status', updateConsultationStatus)
 
 export default router

@@ -1,5 +1,6 @@
 export const QUERY_KEYS_FOR_THERAPIST = {
   GET_THERAPIST_SLOTS: 'getTherapistSlots',
+  GET_CONSULTATIONS: 'getConsultations',
 } as const;
 
 export interface ISlot {

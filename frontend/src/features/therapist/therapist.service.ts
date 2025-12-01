@@ -137,6 +137,29 @@ const getConsultationList = async (
   }
 };
 
+const updateConsultationStatus = async (data: {
+  consultationId: number;
+  status: number;
+  notes: string;
+}): Promise<{
+  success: boolean;
+  message?: string;
+}> => {
+  try {
+    await HttpService.post('/therapist/update-status', data);
+    return {
+      success: true,
+      message: 'Consultation status updated successfully',
+    };
+  } catch (error: unknown) {
+    console.error('Error updating consultation status:', error);
+    return {
+      success: false,
+      message: 'Failed to update consultation status',
+    };
+  }
+};
+
 const TherapistService = {
   getGoogleAuthUrl,
   setAvailability,
@@ -144,6 +167,7 @@ const TherapistService = {
   toggleDayOff,
   updateDaySlots,
   getConsultationList,
+  updateConsultationStatus,
 };
 
 export default TherapistService;

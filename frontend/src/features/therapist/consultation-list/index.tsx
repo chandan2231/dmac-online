@@ -14,8 +14,12 @@ import {
   Chip,
   TextField,
   InputAdornment,
+  IconButton,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -24,6 +28,8 @@ import type { RootState } from '../../../store';
 import TherapistService from '../therapist.service';
 import CustomLoader from '../../../components/loader';
 import { useDebounce } from '../../../hooks/useDebouce';
+import UpdateStatusModal from './UpdateStatusModal';
+import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -47,21 +53,76 @@ const TherapistConsultationList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
+  const { mutate: updateStatus, isPending: isUpdating } =
+    useUpdateConsultationStatus();
+
+  const [selectedConsultation, setSelectedConsultation] =
+    useState<IConsultation | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [menuConsultation, setMenuConsultation] =
+    useState<IConsultation | null>(null);
+
+  const fetchConsultations = async () => {
+    if (!user?.id) return;
+    setLoading(true);
+    const response = await TherapistService.getConsultationList(
+      String(user.id),
+      debouncedSearchTerm
+    );
+    if (response.success) {
+      setConsultations(response.data);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchConsultations = async () => {
-      if (!user?.id) return;
-      setLoading(true);
-      const response = await TherapistService.getConsultationList(
-        String(user.id),
-        debouncedSearchTerm
-      );
-      if (response.success) {
-        setConsultations(response.data);
-      }
-      setLoading(false);
-    };
     fetchConsultations();
   }, [user?.id, debouncedSearchTerm]);
+
+  const handleOpenModal = (consultation: IConsultation) => {
+    setSelectedConsultation(consultation);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedConsultation(null);
+  };
+
+  const handleMenuClick = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    consultation: IConsultation
+  ) => {
+    setMenuAnchor(event.currentTarget);
+    setMenuConsultation(consultation);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setMenuConsultation(null);
+  };
+
+  const handleEditStatusClick = () => {
+    if (menuConsultation) {
+      handleOpenModal(menuConsultation);
+    }
+    handleMenuClose();
+  };
+
+  const handleSubmitStatus = (status: number, notes: string) => {
+    if (selectedConsultation) {
+      updateStatus(
+        { consultationId: selectedConsultation.id, status, notes },
+        {
+          onSuccess: () => {
+            handleCloseModal();
+            fetchConsultations(); // Refresh list after update
+          },
+        }
+      );
+    }
+  };
 
   const getStatusLabel = (
     status: number
@@ -135,6 +196,7 @@ const TherapistConsultationList = () => {
                 <TableCell>Status</TableCell>
                 <TableCell>Date</TableCell>
                 <TableCell>Meeting Link</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -177,12 +239,20 @@ const TherapistConsultationList = () => {
                           'N/A'
                         )}
                       </TableCell>
+                      <TableCell>
+                        <IconButton
+                          onClick={e => handleMenuClick(e, consultation)}
+                          disabled={consultation.consultation_status !== 1}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                      </TableCell>
                     </TableRow>
                   );
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
+                  <TableCell colSpan={7} align="center">
                     No consultations found.
                   </TableCell>
                 </TableRow>
@@ -191,6 +261,19 @@ const TherapistConsultationList = () => {
           </Table>
         </TableContainer>
       )}
+      <UpdateStatusModal
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmitStatus}
+        isLoading={isUpdating}
+      />
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={handleEditStatusClick}>Edit Status</MenuItem>
+      </Menu>
     </Box>
   );
 };
