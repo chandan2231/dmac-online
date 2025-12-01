@@ -85,10 +85,10 @@ const getTherapistSlots = async (
         date,
       }
     );
-    return get(response, ['data', 'slots'], []);
+    return get(response, ['data']);
   } catch (error: unknown) {
     console.error('Error fetching therapist slots:', error);
-    return [];
+    return { slots: [] };
   }
 };
 

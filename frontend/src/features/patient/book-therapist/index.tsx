@@ -78,12 +78,18 @@ const BookTherapist = () => {
       setHasSearched(true);
       setSelectedSlot(null);
       const dateStr = selectedDate.format('YYYY-MM-DD');
-      const fetchedSlots = await PatientService.getTherapistSlots(
+      const response = await PatientService.getTherapistSlots(
         user,
         Number(selectedTherapistId),
         dateStr
       );
-      setSlots(fetchedSlots);
+
+      if (response.status === 400) {
+        showToast(response.message, 'error');
+        setSlots([]);
+      } else {
+        setSlots(response.slots || []);
+      }
       setLoadingSlots(false);
     }
   };
