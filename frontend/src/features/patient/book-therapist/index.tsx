@@ -61,6 +61,7 @@ const BookTherapist = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<ISlot | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data: products } = useGetSubscribedProduct(user);
   const productId = products && products.length > 0 ? products[0].id : null;
@@ -70,6 +71,7 @@ const BookTherapist = () => {
     setSlots([]);
     setHasSearched(false);
     setSelectedSlot(null);
+    setErrorMessage(null);
   };
 
   const handleGetSlots = async () => {
@@ -77,6 +79,7 @@ const BookTherapist = () => {
       setLoadingSlots(true);
       setHasSearched(true);
       setSelectedSlot(null);
+      setErrorMessage(null);
       const dateStr = selectedDate.format('YYYY-MM-DD');
       const response = await PatientService.getTherapistSlots(
         user,
@@ -85,7 +88,7 @@ const BookTherapist = () => {
       );
 
       if (response.status === 400) {
-        showToast(response.message, 'error');
+        setErrorMessage(response.message);
         setSlots([]);
       } else {
         setSlots(response.slots || []);
@@ -375,8 +378,11 @@ const BookTherapist = () => {
           )}
 
           {hasSearched && slots.length === 0 && !loadingSlots && (
-            <Typography variant="body1" color="textSecondary">
-              No slots available for this date.
+            <Typography
+              variant="body1"
+              color={errorMessage ? 'error' : 'textSecondary'}
+            >
+              {errorMessage || 'No slots available for this date.'}
             </Typography>
           )}
         </Box>
