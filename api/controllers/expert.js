@@ -436,13 +436,13 @@ export const updateDaySlots = async (req, res) => {
 }
 
 export const getExpertConsultations = async (req, res) => {
-  const { consultant_id } = req.body
+  const { consultant_id, patient_name } = req.body
 
   if (!consultant_id) {
     return res.status(400).json({ message: 'Consultant ID is required' })
   }
 
-  const query = `
+  let query = `
     SELECT 
         c.id,
         c.event_start,
@@ -457,10 +457,18 @@ export const getExpertConsultations = async (req, res) => {
     JOIN dmac_webapp_users u ON c.user_id = u.id
     LEFT JOIN dmac_webapp_products p ON c.product_id = p.id
     WHERE c.consultant_id = ?
-    ORDER BY c.event_start DESC
   `
 
-  db.query(query, [consultant_id], (err, data) => {
+  const queryParams = [consultant_id]
+
+  if (patient_name) {
+    query += ` AND u.name LIKE ?`
+    queryParams.push(`%${patient_name}%`)
+  }
+
+  query += ` ORDER BY c.event_start DESC`
+
+  db.query(query, queryParams, (err, data) => {
     if (err) {
       console.error('GET CONSULTATIONS ERROR:', err)
       return res.status(500).json({ message: 'Failed to fetch consultations' })
@@ -470,6 +478,45 @@ export const getExpertConsultations = async (req, res) => {
       data
     })
   })
+}
+
+export const getExpertPatients = async (req, res) => {
+  const { consultant_id } = req.body
+
+  if (!consultant_id) {
+    return res.status(400).json({
+      status: 400,
+      message: 'consultant_id is required'
+    })
+  }
+
+  try {
+    const query = `
+      SELECT DISTINCT u.id, u.name, u.email
+      FROM dmac_webapp_consultations c
+      JOIN dmac_webapp_users u ON c.user_id = u.id
+      WHERE c.consultant_id = ?
+      ORDER BY u.name ASC
+    `
+
+    const patients = await new Promise((resolve, reject) => {
+      db.query(query, [consultant_id], (err, result) => {
+        if (err) reject(err)
+        resolve(result)
+      })
+    })
+
+    return res.status(200).json({
+      status: 200,
+      data: patients
+    })
+  } catch (error) {
+    console.error('Error fetching expert patients:', error)
+    return res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    })
+  }
 }
 
 export const updateConsultationStatus = async (req, res) => {

@@ -3,13 +3,6 @@ import { useSelector } from 'react-redux';
 import {
   Box,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Link,
   Chip,
   IconButton,
@@ -25,11 +18,12 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { get } from 'lodash';
 import type { RootState } from '../../../store';
-import CustomLoader from '../../../components/loader';
+import { GenericTable } from '../../../components/table';
 import UpdateStatusModal from './UpdateStatusModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
 import { useGetConsultations } from '../hooks/useGetConsultations';
 import { useGetTherapistPatients } from '../hooks/useGetTherapistPatients';
+import type { GridColDef } from '@mui/x-data-grid';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -154,6 +148,73 @@ const TherapistConsultationList = () => {
     }
   };
 
+  const columns: GridColDef[] = [
+    { field: 'patient_name', headerName: 'Patient Name', flex: 1 },
+    { field: 'patient_email', headerName: 'Patient Email', flex: 1 },
+    {
+      field: 'slot_time',
+      headerName: 'Slot Time',
+      flex: 1,
+      renderCell: params => {
+        const consultation = params.row;
+        const therapistTimezone = get(user, 'time_zone') || 'UTC';
+        const start = dayjs(consultation.event_start)
+          .tz(therapistTimezone)
+          .format('HH:mm');
+        const end = dayjs(consultation.event_end)
+          .tz(therapistTimezone)
+          .format('HH:mm');
+        return `${start} - ${end}`;
+      },
+    },
+    {
+      field: 'consultation_status',
+      headerName: 'Status',
+      flex: 1,
+      renderCell: params => {
+        const { label, color } = getStatusLabel(params.value);
+        return <Chip label={label} color={color} size="small" />;
+      },
+    },
+    {
+      field: 'consultation_date',
+      headerName: 'Date',
+      flex: 1,
+      renderCell: params => {
+        const therapistTimezone = get(user, 'time_zone') || 'UTC';
+        return dayjs(params.value).tz(therapistTimezone).format('MMM D, YYYY');
+      },
+    },
+    {
+      field: 'meet_link',
+      headerName: 'Meeting Link',
+      flex: 1,
+      renderCell: params => {
+        return params.value ? (
+          <Link href={params.value} target="_blank" rel="noopener">
+            Join Meeting
+          </Link>
+        ) : (
+          'N/A'
+        );
+      },
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 100,
+      sortable: false,
+      renderCell: params => (
+        <IconButton
+          onClick={e => handleMenuClick(e, params.row)}
+          disabled={params.row.consultation_status !== 1}
+        >
+          <MoreVertIcon />
+        </IconButton>
+      ),
+    },
+  ];
+
   return (
     <Box p={3} height="100%" width="100%">
       <Box
@@ -189,84 +250,7 @@ const TherapistConsultationList = () => {
         </Box>
       </Box>
 
-      {loading ? (
-        <CustomLoader />
-      ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Patient Name</TableCell>
-                <TableCell>Patient Email</TableCell>
-                <TableCell>Slot Time</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Meeting Link</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {consultations.length > 0 ? (
-                consultations.map(consultation => {
-                  const therapistTimezone = get(user, 'time_zone') || 'UTC';
-                  const start = dayjs(consultation.event_start)
-                    .tz(therapistTimezone)
-                    .format('HH:mm');
-                  const end = dayjs(consultation.event_end)
-                    .tz(therapistTimezone)
-                    .format('HH:mm');
-                  const date = dayjs(consultation.consultation_date)
-                    .tz(therapistTimezone)
-                    .format('MMM D, YYYY');
-
-                  const { label, color } = getStatusLabel(
-                    consultation.consultation_status
-                  );
-
-                  return (
-                    <TableRow key={consultation.id}>
-                      <TableCell>{consultation.patient_name}</TableCell>
-                      <TableCell>{consultation.patient_email}</TableCell>
-                      <TableCell>{`${start} - ${end}`}</TableCell>
-                      <TableCell>
-                        <Chip label={label} color={color} size="small" />
-                      </TableCell>
-                      <TableCell>{date}</TableCell>
-                      <TableCell>
-                        {consultation.meet_link ? (
-                          <Link
-                            href={consultation.meet_link}
-                            target="_blank"
-                            rel="noopener"
-                          >
-                            Join Meeting
-                          </Link>
-                        ) : (
-                          'N/A'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <IconButton
-                          onClick={e => handleMenuClick(e, consultation)}
-                          disabled={consultation.consultation_status !== 1}
-                        >
-                          <MoreVertIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    No consultations found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+      <GenericTable rows={consultations} columns={columns} loading={loading} />
       <UpdateStatusModal
         open={isModalOpen}
         onClose={handleCloseModal}

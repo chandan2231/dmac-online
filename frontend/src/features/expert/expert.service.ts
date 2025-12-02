@@ -115,7 +115,8 @@ const updateDaySlots = async (data: {
 };
 
 const getConsultations = async (
-  expertId: string
+  expertId: string,
+  patientName?: string
 ): Promise<{
   success: boolean;
   data?: any[];
@@ -124,6 +125,7 @@ const getConsultations = async (
   try {
     const response = await HttpService.post('/expert/get/consultations', {
       consultant_id: expertId,
+      patient_name: patientName,
     });
     return {
       success: true,
@@ -134,6 +136,28 @@ const getConsultations = async (
     return {
       success: false,
       message: 'Failed to fetch consultations',
+    };
+  }
+};
+
+const getExpertPatients = async ({
+  expertId,
+}: {
+  expertId: string | undefined;
+}) => {
+  try {
+    const response = await HttpService.post('/expert/patients', {
+      consultant_id: expertId,
+    });
+    return {
+      success: true,
+      data: get(response, 'data.data', []),
+    };
+  } catch (error: unknown) {
+    console.error('Error fetching expert patients:', error);
+    return {
+      success: false,
+      message: 'Failed to fetch expert patients',
     };
   }
 };
@@ -163,6 +187,7 @@ const ExpertService = {
   updateDaySlots,
   getConsultations,
   updateConsultationStatus,
+  getExpertPatients,
 };
 
 export default ExpertService;

@@ -6,6 +6,9 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Autocomplete,
+  TextField,
+  Button,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useSelector } from 'react-redux';
@@ -18,6 +21,7 @@ import type { RootState } from '../../../store';
 import { GenericTable } from '../../../components/table';
 import { TabHeaderLayout } from '../../../components/tab-header';
 import { useGetConsultations } from '../hooks/useGetConsultations';
+import { useGetExpertPatients } from '../hooks/useGetExpertPatients';
 import { useState } from 'react';
 import UpdateStatusModal from './UpdateStatusModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
@@ -39,9 +43,23 @@ interface IConsultation {
 
 const ConsultationList = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const [selectedPatient, setSelectedPatient] = useState<{
+    id: number;
+    name: string;
+    email: string;
+  } | null>(null);
+
   const { data: consultationsData, isLoading } = useGetConsultations({
     expertId: get(user, 'id'),
+    patientName: selectedPatient?.name || '',
   });
+
+  const { data: patientsResponse } = useGetExpertPatients({
+    expertId: get(user, 'id'),
+  });
+
+  const patients = get(patientsResponse, 'data', []);
+
   const { mutate: updateStatus, isPending: isUpdating } =
     useUpdateConsultationStatus();
 
@@ -208,6 +226,32 @@ const ConsultationList = () => {
         leftNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
             <Typography variant="h6">My Consultations</Typography>
+          </Box>
+        }
+        rightNode={
+          <Box display="flex" gap={2} alignItems="center">
+            <Autocomplete
+              options={patients}
+              getOptionLabel={option => option.name}
+              value={selectedPatient}
+              onChange={(_, newValue) => setSelectedPatient(newValue)}
+              renderInput={params => (
+                <TextField
+                  {...params}
+                  label="Search Patient"
+                  variant="outlined"
+                  size="small"
+                  sx={{ width: 250 }}
+                />
+              )}
+            />
+            <Button
+              variant="outlined"
+              onClick={() => setSelectedPatient(null)}
+              disabled={!selectedPatient}
+            >
+              Clear
+            </Button>
           </Box>
         }
       />
