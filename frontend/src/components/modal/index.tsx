@@ -40,6 +40,7 @@ type GenericModalProps = {
   onCancel?: () => void | null;
   isLoading?: boolean;
   renderHtmlContent?: string;
+  submitDisabled?: boolean;
 };
 
 const GenericModal: React.FC<GenericModalProps> = ({
@@ -57,6 +58,7 @@ const GenericModal: React.FC<GenericModalProps> = ({
   onCancel = null,
   isLoading = false,
   renderHtmlContent = null,
+  submitDisabled = false,
 }) => {
   if (isLoading) {
     return <CustomLoader />;
@@ -151,6 +153,7 @@ const GenericModal: React.FC<GenericModalProps> = ({
             <MorenButton
               onClick={onSubmit}
               variant="contained"
+              disabled={submitDisabled}
               sx={{
                 maxWidth: '150px',
               }}

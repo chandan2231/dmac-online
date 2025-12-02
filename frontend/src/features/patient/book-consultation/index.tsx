@@ -225,7 +225,7 @@ const BookConsultation = () => {
         alignItems="center"
         mb={3}
       >
-        <Typography variant="h4">
+        <Typography variant="h5">
           {view === 'list' ? 'My Consultations' : 'Book Consultation'}
         </Typography>
         {view === 'list' ? (

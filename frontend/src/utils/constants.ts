@@ -5,7 +5,7 @@ export const LOCAL_STORAGE_KEYS = {
   LANGUAGE_CONSTANTS: 'languageConstants',
 };
 
-export const DRAWER_WIDTH = 280;
+export const DRAWER_WIDTH = 260;
 export const MINI_DRAWER_WIDTH = 70;
 
 export const COUNTRIES_LIST = [

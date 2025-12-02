@@ -15,10 +15,6 @@ import {
   Link,
   IconButton,
   Menu,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -34,6 +30,7 @@ import PatientService from '../patient.service';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { useToast } from '../../../providers/toast-provider';
 import { GenericTable } from '../../../components/table';
+import GenericModal from '../../../components/modal';
 import type { GridColDef } from '@mui/x-data-grid';
 
 dayjs.extend(utc);
@@ -345,7 +342,10 @@ const BookTherapist = () => {
       headerName: 'Action',
       flex: 0.5,
       renderCell: params => (
-        <IconButton onClick={e => handleMenuOpen(e, params.row)}>
+        <IconButton
+          onClick={e => handleMenuOpen(e, params.row)}
+          disabled={![5, 6].includes(params.row.status)}
+        >
           <MoreVertIcon />
         </IconButton>
       ),
@@ -367,7 +367,7 @@ const BookTherapist = () => {
         alignItems="center"
         mb={3}
       >
-        <Typography variant="h4">
+        <Typography variant="h5">
           {view === 'list' ? 'My Therapist Consultations' : 'Book Therapist'}
         </Typography>
         {view === 'list' && consultations.length === 0 ? (
@@ -518,114 +518,104 @@ const BookTherapist = () => {
       )}
 
       {/* Reschedule Modal */}
-      <Dialog
-        open={rescheduleModalOpen}
+      <GenericModal
+        isOpen={rescheduleModalOpen}
         onClose={handleRescheduleClose}
-        fullWidth
+        title="Reschedule Consultation"
         maxWidth="sm"
+        onSubmit={handleSubmitReschedule}
+        submitButtonText={
+          rescheduleSubmitting ? 'Rescheduling...' : 'Confirm Reschedule'
+        }
+        cancelButtonText="Cancel"
+        submitDisabled={!rescheduleSelectedSlot || rescheduleSubmitting}
       >
-        <DialogTitle>Reschedule Consultation</DialogTitle>
-        <DialogContent>
-          <Box display="flex" flexDirection="column" gap={3} mt={1}>
-            <FormControl fullWidth>
-              <InputLabel id="reschedule-therapist-label">
-                Select Therapist
-              </InputLabel>
-              <Select
-                labelId="reschedule-therapist-label"
-                value={rescheduleTherapistId}
-                label="Select Therapist"
-                onChange={e => {
-                  setRescheduleTherapistId(e.target.value as string);
-                  setRescheduleSlots([]);
-                  setRescheduleSelectedSlot(null);
-                }}
-              >
-                {therapists?.map((therapist: IExpert) => (
-                  <MenuItem key={therapist.id} value={therapist.id}>
-                    {therapist.name} - {therapist.country} (
-                    {therapist.province_title})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <DatePicker
-              label="Select Date"
-              value={rescheduleDate}
-              onChange={newValue => {
-                setRescheduleDate(newValue);
+        <Box display="flex" flexDirection="column" gap={3} mt={1}>
+          <FormControl fullWidth>
+            <InputLabel id="reschedule-therapist-label">
+              Select Therapist
+            </InputLabel>
+            <Select
+              labelId="reschedule-therapist-label"
+              value={rescheduleTherapistId}
+              label="Select Therapist"
+              onChange={e => {
+                setRescheduleTherapistId(e.target.value as string);
                 setRescheduleSlots([]);
                 setRescheduleSelectedSlot(null);
               }}
-              minDate={today}
-              maxDate={maxDate}
-            />
-
-            <Button
-              variant="contained"
-              onClick={handleGetRescheduleSlots}
-              disabled={
-                !rescheduleTherapistId ||
-                !rescheduleDate ||
-                rescheduleLoadingSlots
-              }
             >
-              {rescheduleLoadingSlots ? 'Loading Slots...' : 'Get Slots'}
-            </Button>
+              {therapists?.map((therapist: IExpert) => (
+                <MenuItem key={therapist.id} value={therapist.id}>
+                  {therapist.name} - {therapist.country} (
+                  {therapist.province_title})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-            {rescheduleSlots.length > 0 && (
-              <Box>
-                <Typography variant="subtitle1" mb={1}>
-                  Available Slots:
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  {rescheduleSlots.map((slot: ISlot) => (
-                    <Chip
-                      key={slot.slot_id}
-                      label={`${slot.start.split(' ')[1]} - ${slot.end.split(' ')[1]}`}
-                      color={
-                        slot.is_booked
-                          ? 'default'
-                          : rescheduleSelectedSlot?.slot_id === slot.slot_id
-                            ? 'secondary'
-                            : 'primary'
-                      }
-                      variant={slot.is_booked ? 'outlined' : 'filled'}
-                      disabled={Boolean(slot.is_booked)}
-                      onClick={() =>
-                        !slot.is_booked && setRescheduleSelectedSlot(slot)
-                      }
-                      clickable={!slot.is_booked}
-                    />
-                  ))}
-                </Stack>
-              </Box>
-            )}
+          <DatePicker
+            label="Select Date"
+            value={rescheduleDate}
+            onChange={newValue => {
+              setRescheduleDate(newValue);
+              setRescheduleSlots([]);
+              setRescheduleSelectedSlot(null);
+            }}
+            minDate={today}
+            maxDate={maxDate}
+          />
 
-            {rescheduleSlots.length === 0 &&
-              rescheduleDate &&
-              !rescheduleLoadingSlots && (
-                <Typography variant="body2" color="textSecondary">
-                  No slots available.
-                </Typography>
-              )}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleRescheduleClose} color="inherit">
-            Cancel
-          </Button>
           <Button
-            onClick={handleSubmitReschedule}
             variant="contained"
-            color="primary"
-            disabled={!rescheduleSelectedSlot || rescheduleSubmitting}
+            onClick={handleGetRescheduleSlots}
+            disabled={
+              !rescheduleTherapistId ||
+              !rescheduleDate ||
+              rescheduleLoadingSlots
+            }
           >
-            {rescheduleSubmitting ? 'Rescheduling...' : 'Confirm Reschedule'}
+            {rescheduleLoadingSlots ? 'Loading Slots...' : 'Get Slots'}
           </Button>
-        </DialogActions>
-      </Dialog>
+
+          {rescheduleSlots.length > 0 && (
+            <Box>
+              <Typography variant="subtitle1" mb={1}>
+                Available Slots:
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {rescheduleSlots.map((slot: ISlot) => (
+                  <Chip
+                    key={slot.slot_id}
+                    label={`${slot.start.split(' ')[1]} - ${slot.end.split(' ')[1]}`}
+                    color={
+                      slot.is_booked
+                        ? 'default'
+                        : rescheduleSelectedSlot?.slot_id === slot.slot_id
+                          ? 'secondary'
+                          : 'primary'
+                    }
+                    variant={slot.is_booked ? 'outlined' : 'filled'}
+                    disabled={Boolean(slot.is_booked)}
+                    onClick={() =>
+                      !slot.is_booked && setRescheduleSelectedSlot(slot)
+                    }
+                    clickable={!slot.is_booked}
+                  />
+                ))}
+              </Stack>
+            </Box>
+          )}
+
+          {rescheduleSlots.length === 0 &&
+            rescheduleDate &&
+            !rescheduleLoadingSlots && (
+              <Typography variant="body2" color="textSecondary">
+                No slots available.
+              </Typography>
+            )}
+        </Box>
+      </GenericModal>
     </Box>
   );
 };
