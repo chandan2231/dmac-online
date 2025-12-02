@@ -16,10 +16,14 @@ import PaymentService from '../payment.service';
 import Loader from '../../../components/loader';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import GenericModal from '../../../components/modal';
+import MorenCheckbox from '../../../components/checkbox';
 
 const PatientPayment = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [isAcknowledgementOpen, setIsAcknowledgementOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
 
@@ -255,11 +259,57 @@ const PatientPayment = () => {
           xs={12}
           sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}
         >
-          <Box sx={{ width: '100%', maxWidth: 400 }}>
+          <Box sx={{ width: '100%', maxWidth: 400, position: 'relative' }}>
+            {!acknowledged && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  zIndex: 1000000,
+                }}
+                onClick={e => {
+                  e.preventDefault();
+                  setIsAcknowledgementOpen(true);
+                }}
+              />
+            )}
             <div ref={paypalRef} />
           </Box>
         </Grid>
       </Grid>
+
+      <GenericModal
+        isOpen={isAcknowledgementOpen}
+        onClose={() => setIsAcknowledgementOpen(false)}
+        title="Payment Acknowledged"
+        onSubmit={() => setIsAcknowledgementOpen(false)}
+        children={
+          <Box>
+            <Typography variant="body1">
+              This is to acknowledge that I have read and understood that I need
+              to complete the payment through PayPal to proceed with the
+              purchase.
+            </Typography>
+            {/* Check box */}
+            <Box
+              mt={2}
+              display="flex"
+              alignItems="center"
+              gap={1}
+              onClick={() => setAcknowledged(!acknowledged)}
+              sx={{ cursor: 'pointer' }}
+            >
+              <MorenCheckbox checked={acknowledged} />
+              <Typography variant="body2">
+                I acknowledge that I have completed the payment.
+              </Typography>
+            </Box>
+          </Box>
+        }
+      />
     </Box>
   );
 };
