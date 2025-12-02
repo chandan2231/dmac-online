@@ -82,7 +82,7 @@ const UploadDocuments = () => {
   if (loading) return <CustomLoader />;
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, width: '100%', height: '100%' }}>
       <Typography variant="h4" gutterBottom>
         My Documents
       </Typography>

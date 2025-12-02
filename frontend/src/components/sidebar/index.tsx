@@ -8,6 +8,8 @@ import {
   ListItemText,
   Toolbar,
   Tooltip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import type { RootState } from '../../store';
 import { get } from 'lodash';
@@ -20,21 +22,38 @@ import withAuthGuard from '../../middlewares/withAuthGuard';
 import mappedIcons from './mapped-icons';
 
 const Sidebar = () => {
-  const { drawerOpen } = useSidebarContext();
+  const { drawerOpen, toggleDrawer } = useSidebarContext();
   const { allowedRoutes } = useSelector((state: RootState) => state.auth);
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const handleDrawerToggle = () => {
+    toggleDrawer();
+  };
+
+  const drawerWidth = isMobile
+    ? DRAWER_WIDTH
+    : drawerOpen
+      ? DRAWER_WIDTH
+      : MINI_DRAWER_WIDTH;
 
   return (
     <Drawer
-      variant="permanent"
+      variant={isMobile ? 'temporary' : 'permanent'}
+      open={isMobile ? drawerOpen : true}
+      onClose={handleDrawerToggle}
+      ModalProps={{
+        keepMounted: true, // Better open performance on mobile.
+      }}
       sx={{
-        width: drawerOpen ? DRAWER_WIDTH : MINI_DRAWER_WIDTH,
+        width: drawerWidth,
         flexShrink: 0,
         whiteSpace: 'nowrap',
         transition: 'width 0.3s',
         [`& .MuiDrawer-paper`]: {
-          width: drawerOpen ? DRAWER_WIDTH : MINI_DRAWER_WIDTH,
+          width: drawerWidth,
           transition: 'width 0.3s',
           overflowX: 'hidden',
         },
@@ -49,14 +68,18 @@ const Sidebar = () => {
           return (
             <ListItem key={index} disablePadding sx={{ display: 'block' }}>
               <Tooltip
-                title={!drawerOpen ? option.title : ''}
+                title={!drawerOpen && !isMobile ? option.title : ''}
                 placement="right"
               >
                 <ListItemButton
-                  onClick={() => navigate(String(get(option, ['path'])))}
+                  onClick={() => {
+                    navigate(String(get(option, ['path'])));
+                    if (isMobile) toggleDrawer();
+                  }}
                   sx={{
                     minHeight: 48,
-                    justifyContent: drawerOpen ? 'initial' : 'center',
+                    justifyContent:
+                      drawerOpen || isMobile ? 'initial' : 'center',
                     px: 2.5,
                     backgroundColor: isActive
                       ? theme => theme.palette.action.selected
@@ -71,13 +94,15 @@ const Sidebar = () => {
                   <ListItemIcon
                     sx={{
                       minWidth: 0,
-                      mr: drawerOpen ? 3 : 'auto',
+                      mr: drawerOpen || isMobile ? 3 : 'auto',
                       justifyContent: 'center',
                     }}
                   >
                     <IconComponent color={isActive ? 'primary' : 'inherit'} />
                   </ListItemIcon>
-                  {drawerOpen && <ListItemText primary={option.title} />}
+                  {(drawerOpen || isMobile) && (
+                    <ListItemText primary={option.title} />
+                  )}
                 </ListItemButton>
               </Tooltip>
             </ListItem>

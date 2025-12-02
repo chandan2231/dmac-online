@@ -13,8 +13,8 @@ interface ErrorBoundaryState {
 
 const ErrorContainer = styled('div')(({ theme }) => ({
   padding: 20,
-  backgroundColor: theme.colors.errorBg,
-  color: theme.colors.errorText,
+  backgroundColor: 'red',
+  color: theme?.colors?.errorText || '#fff',
 }));
 
 class ErrorBoundary extends React.Component<
