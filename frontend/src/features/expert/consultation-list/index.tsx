@@ -24,6 +24,7 @@ import { useGetConsultations } from '../hooks/useGetConsultations';
 import { useGetExpertPatients } from '../hooks/useGetExpertPatients';
 import { useState } from 'react';
 import UpdateStatusModal from './UpdateStatusModal';
+import ReviewModal from './ReviewModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
 
 dayjs.extend(utc);
@@ -70,6 +71,10 @@ const ConsultationList = () => {
   const [menuConsultation, setMenuConsultation] =
     useState<IConsultation | null>(null);
 
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedReviewConsultationId, setSelectedReviewConsultationId] =
+    useState<number | null>(null);
+
   const handleOpenModal = (consultation: IConsultation) => {
     setSelectedConsultation(consultation);
     setIsModalOpen(true);
@@ -98,6 +103,19 @@ const ConsultationList = () => {
       handleOpenModal(menuConsultation);
     }
     handleMenuClose();
+  };
+
+  const handleViewReviewClick = () => {
+    if (menuConsultation) {
+      setSelectedReviewConsultationId(menuConsultation.id);
+      setReviewModalOpen(true);
+    }
+    handleMenuClose();
+  };
+
+  const handleCloseReviewModal = () => {
+    setReviewModalOpen(false);
+    setSelectedReviewConsultationId(null);
   };
 
   const handleSubmitStatus = (status: number, notes: string) => {
@@ -210,10 +228,7 @@ const ConsultationList = () => {
       flex: 1,
       maxWidth: 80,
       renderCell: params => (
-        <IconButton
-          onClick={e => handleMenuClick(e, params.row)}
-          disabled={params.row.consultation_status !== 1}
-        >
+        <IconButton onClick={e => handleMenuClick(e, params.row)}>
           <MoreVertIcon />
         </IconButton>
       ),
@@ -268,12 +283,25 @@ const ConsultationList = () => {
         onSubmit={handleSubmitStatus}
         isLoading={isUpdating}
       />
+      <ReviewModal
+        open={reviewModalOpen}
+        onClose={handleCloseReviewModal}
+        consultationId={selectedReviewConsultationId}
+      />
       <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleEditStatusClick}>Edit Status</MenuItem>
+        <MenuItem
+          onClick={handleEditStatusClick}
+          disabled={menuConsultation?.consultation_status !== 1}
+        >
+          Edit Status
+        </MenuItem>
+        {import.meta.env.VITE_ENABLE_REVIEWS === 'true' && (
+          <MenuItem onClick={handleViewReviewClick}>View Review</MenuItem>
+        )}
       </Menu>
     </Box>
   );

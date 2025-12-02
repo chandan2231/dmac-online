@@ -179,6 +179,16 @@ const updateConsultationStatus = async (data: {
   }
 };
 
+const getExpertReview = async (consultationId: number) => {
+  try {
+    const response = await HttpService.get(`reviews/expert/${consultationId}`);
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching expert review:', error);
+    return null;
+  }
+};
+
 const ExpertService = {
   getGoogleAuthUrl,
   setAvailability,
@@ -188,6 +198,7 @@ const ExpertService = {
   getConsultations,
   updateConsultationStatus,
   getExpertPatients,
+  getExpertReview,
 };
 
 export default ExpertService;
