@@ -1484,6 +1484,8 @@ export const getConsultationList = async (req, res) => {
         c.consultation_status,
         c.meet_link,
         u.name as expert_name,
+        c.consultant_id,
+        c.consultant_id as expert_id,
         c.user_timezone
       FROM dmac_webapp_consultations c
       JOIN dmac_webapp_users u ON c.consultant_id = u.id
@@ -1507,7 +1509,9 @@ export const getConsultationList = async (req, res) => {
         event_start: consultation.event_start,
         event_end: consultation.event_end,
         status: consultation.consultation_status,
-        meet_link: consultation.meet_link
+        meet_link: consultation.meet_link,
+        expert_id: consultation.expert_id,
+        consultant_id: consultation.consultant_id
       }
     })
 
@@ -1545,6 +1549,8 @@ export const getTherapistConsultationList = async (req, res) => {
         c.consultation_status,
         c.meet_link,
         u.name as expert_name,
+        c.consultant_id,
+        c.consultant_id as therapist_id,
         c.user_timezone
       FROM dmac_webapp_therapist_consultations c
       JOIN dmac_webapp_users u ON c.consultant_id = u.id
@@ -1568,7 +1574,9 @@ export const getTherapistConsultationList = async (req, res) => {
         event_start: consultation.event_start,
         event_end: consultation.event_end,
         status: consultation.consultation_status,
-        meet_link: consultation.meet_link
+        meet_link: consultation.meet_link,
+        therapist_id: consultation.therapist_id,
+        consultant_id: consultation.consultant_id
       }
     })
 

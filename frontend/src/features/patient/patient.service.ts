@@ -232,6 +232,52 @@ const updateProfile = async (user: IUser | null, data: any) => {
   }
 };
 
+const addExpertReview = async (data: any) => {
+  try {
+    const response = await HttpService.post(`reviews/expert`, data);
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error adding expert review:', error);
+    return {
+      error: true,
+      message: get(error, 'response.data', 'Failed to add review'),
+    };
+  }
+};
+
+const getExpertReview = async (consultationId: number) => {
+  try {
+    const response = await HttpService.get(`reviews/expert/${consultationId}`);
+    return response.data;
+  } catch (error: unknown) {
+    return null;
+  }
+};
+
+const addTherapistReview = async (data: any) => {
+  try {
+    const response = await HttpService.post(`reviews/therapist`, data);
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error adding therapist review:', error);
+    return {
+      error: true,
+      message: get(error, 'response.data', 'Failed to add review'),
+    };
+  }
+};
+
+const getTherapistReview = async (consultationId: number) => {
+  try {
+    const response = await HttpService.get(
+      `reviews/therapist/${consultationId}`
+    );
+    return response.data;
+  } catch (error: unknown) {
+    return null;
+  }
+};
+
 const PatientService = {
   getSubscribedProduct,
   getExpertList,
@@ -245,6 +291,10 @@ const PatientService = {
   rescheduleTherapistConsultation,
   getProfile,
   updateProfile,
+  addExpertReview,
+  getExpertReview,
+  addTherapistReview,
+  getTherapistReview,
 };
 
 export default PatientService;

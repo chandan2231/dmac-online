@@ -641,7 +641,7 @@ function UserTable() {
           selectedTherapist ? ` - ${get(selectedTherapist, 'name', '')}` : ''
         }`}
         hideCancelButton
-        maxWidth="md"
+        maxWidth="xl"
       >
         {selectedTherapist && (
           <Box display="flex" flexDirection="column" gap={2}>

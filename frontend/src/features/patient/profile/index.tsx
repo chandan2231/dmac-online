@@ -177,7 +177,7 @@ const Profile = () => {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         title="Edit Profile"
-        maxWidth="sm"
+        maxWidth="xl"
         onSubmit={formik.handleSubmit}
         submitButtonText={
           updateMutation.isPending ? 'Updating...' : 'Save Changes'

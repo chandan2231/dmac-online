@@ -23,7 +23,7 @@ const ViewSlotDetails: React.FC<ViewSlotDetailsProps> = ({
       title={`Details for ${slotData.date}`}
       hideSubmitButton
       cancelButtonText="Close"
-      maxWidth="md"
+      maxWidth="xl"
     >
       <Box sx={{ mt: 2 }}>
         <Typography variant="subtitle1" gutterBottom>

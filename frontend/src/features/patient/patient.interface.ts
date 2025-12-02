@@ -28,6 +28,9 @@ export interface ISlot {
 export interface IConsultation {
   id: number;
   expert_name: string;
+  consultant_id?: number;
+  expert_id?: number;
+  therapist_id?: number;
   consultation_date: string;
   event_start: string;
   event_end: string;

@@ -75,7 +75,7 @@ const UpdateSlot: React.FC<UpdateSlotProps> = ({
       onSubmit={handleSubmit}
       submitButtonText="Save Changes"
       cancelButtonText="Cancel"
-      maxWidth="md"
+      maxWidth="xl"
     >
       <Box sx={{ mt: 2 }}>
         <Typography variant="body2" color="text.secondary" gutterBottom>
