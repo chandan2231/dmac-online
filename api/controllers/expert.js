@@ -776,7 +776,7 @@ export const getPatientDocuments = async (req, res) => {
 
   try {
     const query =
-      'SELECT * FROM patient_documents WHERE user_id = ? ORDER BY created_at DESC'
+      'SELECT * FROM dmac_webapp_patient_documents WHERE user_id = ? ORDER BY created_at DESC'
     const documents = await new Promise((resolve, reject) => {
       db.query(query, [patient_id], (err, result) => {
         if (err) reject(err)

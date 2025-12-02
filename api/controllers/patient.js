@@ -183,7 +183,7 @@ export const getTherapistListByLanguage = async (req, res) => {
     JOIN dmac_webapp_users u ON u.id = ?
     JOIN dmac_webapp_language lang ON FIND_IN_SET(lang.id, t.language)
     ${availabilityJoin}
-    LEFT JOIN therapist_reviews r ON r.therapist_id = t.id
+    LEFT JOIN dmac_webapp_therapist_reviews r ON r.therapist_id = t.id
     WHERE t.role = 'THERAPIST'
       AND FIND_IN_SET(u.language, t.language)
     GROUP BY t.id, t.name, t.email, t.country, t.province_title, t.role, t.time_zone;
@@ -223,7 +223,7 @@ export const getExpertListByLanguage = (req, res) => {
     FROM dmac_webapp_users t
     JOIN dmac_webapp_users u ON u.id = ?
     JOIN dmac_webapp_language lang ON FIND_IN_SET(lang.id, t.language)
-    LEFT JOIN expert_reviews r ON r.expert_id = t.id
+    LEFT JOIN dmac_webapp_expert_reviews r ON r.expert_id = t.id
     WHERE t.role = 'EXPERT'
       AND FIND_IN_SET(u.language, t.language)
     GROUP BY t.id, t.name, t.email, t.country, t.province_title, t.role, t.time_zone;
@@ -1941,7 +1941,7 @@ export const uploadDocument = async (req, res) => {
   try {
     // Check document count
     const countQuery =
-      'SELECT COUNT(*) as count FROM patient_documents WHERE user_id = ?'
+      'SELECT COUNT(*) as count FROM dmac_webapp_patient_documents WHERE user_id = ?'
     const countResult = await queryDB(countQuery, [userId])
     if (countResult[0].count >= 5) {
       fs.unlinkSync(file.path) // Delete temp file
@@ -1971,7 +1971,7 @@ export const uploadDocument = async (req, res) => {
 
     // Save to DB
     const insertQuery = `
-      INSERT INTO patient_documents (user_id, file_name, file_url, file_type, file_size, s3_key)
+      INSERT INTO dmac_webapp_patient_documents (user_id, file_name, file_url, file_type, file_size, s3_key)
       VALUES (?, ?, ?, ?, ?, ?)
     `
     await queryDB(insertQuery, [
@@ -2000,7 +2000,7 @@ export const getUserDocuments = async (req, res) => {
   const userId = req.user.id
   try {
     const query =
-      'SELECT * FROM patient_documents WHERE user_id = ? ORDER BY created_at DESC'
+      'SELECT * FROM dmac_webapp_patient_documents WHERE user_id = ? ORDER BY created_at DESC'
     const documents = await queryDB(query, [userId])
     res.status(200).json(documents)
   } catch (error) {
@@ -2015,7 +2015,7 @@ export const deleteUserDocument = async (req, res) => {
 
   try {
     // Get document details
-    const query = 'SELECT * FROM patient_documents WHERE id = ? AND user_id = ?'
+    const query = 'SELECT * FROM dmac_webapp_patient_documents WHERE id = ? AND user_id = ?'
     const result = await queryDB(query, [id, userId])
 
     if (!result.length) {
@@ -2028,7 +2028,7 @@ export const deleteUserDocument = async (req, res) => {
     await deleteFile(document.s3_key)
 
     // Delete from DB
-    const deleteQuery = 'DELETE FROM patient_documents WHERE id = ?'
+    const deleteQuery = 'DELETE FROM dmac_webapp_patient_documents WHERE id = ?'
     await queryDB(deleteQuery, [id])
 
     res.status(200).json({ message: 'Document deleted successfully' })
