@@ -219,9 +219,6 @@ const BookConsultation = () => {
   if (!productId) {
     return (
       <Box p={3} height="100%" width="100%">
-        <Typography variant="h5" mb={3}>
-          My Consultations
-        </Typography>
         <SubscriptionRequired
           title="Subscription Required"
           description="You need to purchase a subscription to book a consultation or view your history."
