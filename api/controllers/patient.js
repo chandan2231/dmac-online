@@ -1926,7 +1926,7 @@ export const updateProfile = (req, res) => {
 }
 
 export const uploadDocument = async (req, res) => {
-  const userId = req.user.id
+  const userId = req.user.userId
   const file = req.file
 
   if (!file) {
@@ -1951,18 +1951,13 @@ export const uploadDocument = async (req, res) => {
     }
 
     // Get user name for folder structure
-    const userQuery =
-      'SELECT first_name, last_name FROM dmac_webapp_users WHERE id = ?'
+    const userQuery = 'SELECT name FROM dmac_webapp_users WHERE id = ?'
     const userResult = await queryDB(userQuery, [userId])
     if (!userResult.length) {
       fs.unlinkSync(file.path)
       return res.status(404).json({ message: 'User not found' })
     }
-    const userName =
-      `${userResult[0].first_name}_${userResult[0].last_name}`.replace(
-        /\s+/g,
-        '_'
-      )
+    const userName = userResult[0].name.replace(/\s+/g, '_')
 
     const s3Key = `${userName}/${file.originalname}`
 
@@ -1997,7 +1992,7 @@ export const uploadDocument = async (req, res) => {
 }
 
 export const getUserDocuments = async (req, res) => {
-  const userId = req.user.id
+  const userId = req.user.userId
   try {
     const query =
       'SELECT * FROM dmac_webapp_patient_documents WHERE user_id = ? ORDER BY created_at DESC'
@@ -2010,12 +2005,13 @@ export const getUserDocuments = async (req, res) => {
 }
 
 export const deleteUserDocument = async (req, res) => {
-  const userId = req.user.id
+  const userId = req.user.userId
   const { id } = req.params
 
   try {
     // Get document details
-    const query = 'SELECT * FROM dmac_webapp_patient_documents WHERE id = ? AND user_id = ?'
+    const query =
+      'SELECT * FROM dmac_webapp_patient_documents WHERE id = ? AND user_id = ?'
     const result = await queryDB(query, [id, userId])
 
     if (!result.length) {
