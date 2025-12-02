@@ -20,13 +20,15 @@ const bucketName = STORAGE_SPACE_NAME
 export function uploadFile(filePath, customKey) {
   // Read the file as a buffer
   const fileContent = fs.readFileSync(filePath)
-
+  const contentType = mime.lookup(filePath) || 'application/octet-stream'
   // Set the parameters for S3 upload
   const params = {
     Bucket: bucketName,
     Key: customKey || filePath,
     Body: fileContent,
-    ACL: 'public-read'
+    ACL: 'public-read',
+    ContentType: contentType,
+    ContentDisposition: 'inline'
   }
 
   return new Promise((resolve, reject) => {
