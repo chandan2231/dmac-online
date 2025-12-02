@@ -284,7 +284,7 @@ const TherapistConsultationList = () => {
       >
         <MenuItem
           onClick={handleEditStatusClick}
-          disabled={menuConsultation?.consultation_status !== 1}
+          disabled={menuConsultation?.consultation_status === 4}
         >
           Edit Status
         </MenuItem>
