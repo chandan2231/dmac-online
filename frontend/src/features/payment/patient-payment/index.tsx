@@ -1,12 +1,21 @@
 import { get } from 'lodash';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Box, Typography } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Divider,
+  Stack,
+  Chip,
+} from '@mui/material';
 import { ROUTES } from '../../../router/router';
 import Grid from '@mui/material/GridLegacy';
 import PaymentService from '../payment.service';
-import MorenCard from '../../../components/card';
 import Loader from '../../../components/loader';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
 const PatientPayment = () => {
   const navigate = useNavigate();
@@ -114,125 +123,144 @@ const PatientPayment = () => {
   if (loading) return <Loader />;
 
   return (
-    <Grid container spacing={4} sx={{ p: 4 }}>
-      {/* LEFT SECTION */}
-      <Grid item xs={12} md={6}>
-        <MorenCard
-          title="User Details"
-          description="Review your information"
-          minHeight="100%"
-        >
-          <Box display="flex" flexDirection="column">
-            <Typography variant="h6" fontWeight="bold">
-              Name: {get(state, ['user', 'name'], 'N/A')}
-            </Typography>
+    <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
+      <Typography variant="h4" fontWeight="bold" mb={4} textAlign="center">
+        Checkout
+      </Typography>
+      <Grid container spacing={4}>
+        {/* LEFT SECTION - User Details */}
+        <Grid item xs={12} md={6}>
+          <Card sx={{ borderRadius: 4, height: '100%', boxShadow: 3 }}>
+            <CardContent sx={{ p: 4 }}>
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                gutterBottom
+                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+              >
+                <PersonOutlineIcon color="primary" /> User Details
+              </Typography>
+              <Divider sx={{ my: 2 }} />
+              <Stack spacing={3}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Name
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {get(state, ['user', 'name'], 'N/A')}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Email
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {get(state, ['user', 'email'], 'N/A')}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Mobile
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {get(state, ['user', 'mobile'], 'N/A')}
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
 
-            <Typography sx={{ color: 'text.secondary' }}>
-              Email: {get(state, ['user', 'email'], 'N/A')}
-            </Typography>
-
-            <Typography sx={{ color: 'text.secondary' }}>
-              Mobile: {get(state, ['user', 'mobile'], 'N/A')}
-            </Typography>
-          </Box>
-        </MorenCard>
-      </Grid>
-
-      {/* RIGHT SECTION */}
-      <Grid item xs={12} md={6}>
-        <MorenCard
-          title="Product Details"
-          description="Review your selected product"
-          minHeight="100%"
-          cardStyles={{
-            position: 'relative',
-          }}
-        >
-          <Box display="flex" flexDirection="column">
-            <span
-              className=""
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                backgroundColor: '#bed6fb',
-                borderRadius: '99em 0 0 99em',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0.625em 0.75em',
-                fontSize: '1.25rem',
-                fontWeight: 600,
-                color: '#425475',
-              }}
-            >
-              <span>${get(state, ['product', 'product_amount'], '')}</span>
-            </span>
-            <Typography variant="h6" fontWeight="bold">
-              Product Name: {get(state, ['product', 'product_name'], '')}
-            </Typography>
-            <Typography sx={{ color: 'text.secondary' }}>
-              Description: {get(state, ['product', 'product_description'], '')}
-            </Typography>
-            {get(state, ['product', 'subscription_list'], '') && (
-              <Box mt={2}>
-                <ul>
-                  {(get(state, ['product', 'subscription_list'], '') as string)
-                    .split(',')
-                    .map((feature: string, index: number) => (
-                      <li
-                        key={index}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          marginBottom: '8px',
-                        }}
-                      >
-                        <span
-                          className=""
-                          style={{
-                            backgroundColor: '#1FCAC5',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#fff',
-                            borderRadius: '50%',
-                            width: '20px',
-                            height: '20px',
-                          }}
-                        >
-                          <svg
-                            height="24"
-                            width="24"
-                            viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path d="M0 0h24v24H0z" fill="none"></path>
-                            <path
-                              fill="currentColor"
-                              d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
-                            ></path>
-                          </svg>
-                        </span>
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                </ul>
+        {/* RIGHT SECTION - Product Details */}
+        <Grid item xs={12} md={6}>
+          <Card
+            sx={{
+              borderRadius: 4,
+              height: '100%',
+              boxShadow: 3,
+              position: 'relative',
+              overflow: 'visible',
+            }}
+          >
+            <CardContent sx={{ p: 4 }}>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="start"
+                mb={2}
+              >
+                <Box>
+                  <Typography
+                    variant="overline"
+                    color="text.secondary"
+                    fontWeight="bold"
+                  >
+                    PRODUCT
+                  </Typography>
+                  <Typography variant="h5" fontWeight="bold">
+                    {get(state, ['product', 'product_name'], '')}
+                  </Typography>
+                </Box>
+                <Chip
+                  label={`$${get(state, ['product', 'product_amount'], '')}`}
+                  color="primary"
+                  sx={{ fontWeight: 'bold', fontSize: '1rem', height: 32 }}
+                />
               </Box>
-            )}
-          </Box>
-        </MorenCard>
-      </Grid>
 
-      {/* PAYPAL BUTTON */}
-      <Grid
-        item
-        xs={12}
-        sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}
-      >
-        <div ref={paypalRef} style={{ width: '300px' }} />
+              <Typography variant="body2" color="text.secondary" paragraph>
+                {get(state, ['product', 'product_description'], '')}
+              </Typography>
+
+              <Divider sx={{ my: 2 }} />
+
+              {get(state, ['product', 'subscription_list'], '') && (
+                <Box>
+                  <Typography
+                    variant="subtitle2"
+                    fontWeight="bold"
+                    gutterBottom
+                  >
+                    Features included:
+                  </Typography>
+                  <Stack spacing={1}>
+                    {(
+                      get(state, ['product', 'subscription_list'], '') as string
+                    )
+                      .split(',')
+                      .map((feature: string, index: number) => (
+                        <Box
+                          key={index}
+                          display="flex"
+                          alignItems="center"
+                          gap={1}
+                        >
+                          <CheckCircleOutlineIcon
+                            color="success"
+                            fontSize="small"
+                          />
+                          <Typography variant="body2">{feature}</Typography>
+                        </Box>
+                      ))}
+                  </Stack>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* PAYPAL BUTTON */}
+        <Grid
+          item
+          xs={12}
+          sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}
+        >
+          <Box sx={{ width: '100%', maxWidth: 400 }}>
+            <div ref={paypalRef} />
+          </Box>
+        </Grid>
       </Grid>
-    </Grid>
+    </Box>
   );
 };
 

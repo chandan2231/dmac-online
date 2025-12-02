@@ -1,7 +1,16 @@
 import './index.css';
 import { get } from 'lodash';
 import type { IProduct } from '../../admin/admin.interface';
-import { Box, Button, Card, CardContent, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  Chip,
+  Divider,
+  Stack,
+} from '@mui/material';
 import { useGetProductListing } from '../../admin/hooks/useGetProductListing';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -179,107 +188,110 @@ const PatientProducts = () => {
                 status,
               } = product;
               return (
-                <Card key={index}>
-                  <CardContent
-                    sx={{
-                      width: '100%',
-                      display: 'flex',
-                      justifyContent: 'start',
-                      flexDirection: 'column',
-                      alignItems: 'start',
-                      gap: 1,
-                    }}
-                  >
+                <Card
+                  key={index}
+                  elevation={0}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 4,
+                    transition: '0.3s',
+                    '&:hover': { borderColor: 'primary.main' },
+                    width: '100%',
+                    mb: 2,
+                  }}
+                >
+                  <CardContent sx={{ p: 3 }}>
                     <Box
-                      sx={{
-                        display: 'flex',
-                        gap: 1,
-                      }}
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="flex-start"
+                      mb={2}
                     >
-                      <Typography variant="body2">Product Name:</Typography>
+                      <Box>
+                        <Typography
+                          variant="overline"
+                          color="text.secondary"
+                          fontWeight="bold"
+                          letterSpacing={1}
+                        >
+                          SUBSCRIPTION
+                        </Typography>
+                        <Typography variant="h5" fontWeight="800" gutterBottom>
+                          {product_name}
+                        </Typography>
+                        <Chip
+                          label={status}
+                          size="small"
+                          color={
+                            String(status).toLowerCase() === 'succeeded' ||
+                            String(status).toLowerCase() === 'active'
+                              ? 'success'
+                              : 'default'
+                          }
+                          sx={{ fontWeight: 600, borderRadius: 1 }}
+                        />
+                      </Box>
                       <Typography
-                        gutterBottom
-                        sx={{ color: 'text.secondary', fontSize: 14 }}
-                      >
-                        {product_name}
-                      </Typography>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        gap: 1,
-                      }}
-                    >
-                      <Typography variant="body2">
-                        Product Description:
-                      </Typography>
-                      <Typography
-                        gutterBottom
-                        sx={{ color: 'text.secondary', fontSize: 14 }}
-                      >
-                        {product_description}
-                      </Typography>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        gap: 1,
-                      }}
-                    >
-                      <Typography variant="body2">Product Amount:</Typography>
-                      <Typography
-                        gutterBottom
-                        sx={{ color: 'text.secondary', fontSize: 14 }}
+                        variant="h4"
+                        color="primary.main"
+                        fontWeight="bold"
                       >
                         ${product_amount}
                       </Typography>
                     </Box>
 
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        gap: 1,
-                      }}
+                    <Divider sx={{ my: 2 }} />
+
+                    <Typography
+                      variant="body1"
+                      color="text.secondary"
+                      paragraph
                     >
-                      <Typography variant="body2">Transaction ID:</Typography>
-                      <Typography
-                        gutterBottom
-                        sx={{ color: 'text.secondary', fontSize: 14 }}
-                      >
-                        {payment_id}
-                      </Typography>
-                    </Box>
+                      {product_description}
+                    </Typography>
 
                     <Box
                       sx={{
-                        display: 'flex',
-                        gap: 1,
+                        bgcolor: 'grey.50',
+                        p: 2,
+                        borderRadius: 2,
+                        mt: 2,
                       }}
                     >
-                      <Typography variant="body2">Payment Date:</Typography>
-                      <Typography
-                        gutterBottom
-                        sx={{ color: 'text.secondary', fontSize: 14 }}
+                      <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={2}
                       >
-                        {payment_date}
-                      </Typography>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        gap: 1,
-                      }}
-                    >
-                      <Typography variant="body2">Paymen Status:</Typography>
-                      <Typography
-                        gutterBottom
-                        sx={{ color: 'text.secondary', fontSize: 14 }}
-                      >
-                        {status}
-                      </Typography>
+                        <Box flex={1}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            display="block"
+                          >
+                            Transaction ID
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            fontWeight="medium"
+                            sx={{ fontFamily: 'monospace' }}
+                          >
+                            {payment_id}
+                          </Typography>
+                        </Box>
+                        <Box flex={1}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            display="block"
+                          >
+                            Payment Date
+                          </Typography>
+                          <Typography variant="body2" fontWeight="medium">
+                            {payment_date}
+                          </Typography>
+                        </Box>
+                      </Stack>
                     </Box>
                   </CardContent>
                 </Card>
