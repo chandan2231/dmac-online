@@ -2,6 +2,8 @@ import { db } from '../connect.js'
 import moment from 'moment-timezone'
 import { google } from 'googleapis'
 import sendEmail from '../emailService.js'
+import { uploadFile, deleteFile } from '../utils/s3Service.js'
+import fs from 'fs'
 
 function queryDB(query, params = []) {
   return new Promise((resolve, reject) => {
@@ -1921,4 +1923,117 @@ export const updateProfile = (req, res) => {
     if (err) return res.status(500).json(err)
     return res.status(200).json('Profile has been updated.')
   })
+}
+
+export const uploadDocument = async (req, res) => {
+  const userId = req.user.id
+  const file = req.file
+
+  if (!file) {
+    return res.status(400).json({ message: 'No file uploaded' })
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    fs.unlinkSync(file.path)
+    return res.status(400).json({ message: 'File size exceeds 5MB' })
+  }
+
+  try {
+    // Check document count
+    const countQuery =
+      'SELECT COUNT(*) as count FROM patient_documents WHERE user_id = ?'
+    const countResult = await queryDB(countQuery, [userId])
+    if (countResult[0].count >= 5) {
+      fs.unlinkSync(file.path) // Delete temp file
+      return res
+        .status(400)
+        .json({ message: 'Maximum document limit (5) reached' })
+    }
+
+    // Get user name for folder structure
+    const userQuery =
+      'SELECT first_name, last_name FROM dmac_webapp_users WHERE id = ?'
+    const userResult = await queryDB(userQuery, [userId])
+    if (!userResult.length) {
+      fs.unlinkSync(file.path)
+      return res.status(404).json({ message: 'User not found' })
+    }
+    const userName =
+      `${userResult[0].first_name}_${userResult[0].last_name}`.replace(
+        /\s+/g,
+        '_'
+      )
+
+    const s3Key = `${userName}/${file.originalname}`
+
+    // Upload to S3
+    const s3Result = await uploadFile(file.path, s3Key)
+
+    // Save to DB
+    const insertQuery = `
+      INSERT INTO patient_documents (user_id, file_name, file_url, file_type, file_size, s3_key)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `
+    await queryDB(insertQuery, [
+      userId,
+      file.originalname,
+      s3Result.Location || s3Result.cdnUrl, // Fallback to cdnUrl if Location is missing
+      file.mimetype,
+      file.size,
+      s3Result.Key || s3Result.key
+    ])
+
+    // Cleanup
+    fs.unlinkSync(file.path)
+
+    res
+      .status(200)
+      .json({ message: 'Document uploaded successfully', document: s3Result })
+  } catch (error) {
+    if (fs.existsSync(file.path)) fs.unlinkSync(file.path)
+    console.error(error)
+    res.status(500).json({ message: 'Error uploading document' })
+  }
+}
+
+export const getUserDocuments = async (req, res) => {
+  const userId = req.user.id
+  try {
+    const query =
+      'SELECT * FROM patient_documents WHERE user_id = ? ORDER BY created_at DESC'
+    const documents = await queryDB(query, [userId])
+    res.status(200).json(documents)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error fetching documents' })
+  }
+}
+
+export const deleteUserDocument = async (req, res) => {
+  const userId = req.user.id
+  const { id } = req.params
+
+  try {
+    // Get document details
+    const query = 'SELECT * FROM patient_documents WHERE id = ? AND user_id = ?'
+    const result = await queryDB(query, [id, userId])
+
+    if (!result.length) {
+      return res.status(404).json({ message: 'Document not found' })
+    }
+
+    const document = result[0]
+
+    // Delete from S3
+    await deleteFile(document.s3_key)
+
+    // Delete from DB
+    const deleteQuery = 'DELETE FROM patient_documents WHERE id = ?'
+    await queryDB(deleteQuery, [id])
+
+    res.status(200).json({ message: 'Document deleted successfully' })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error deleting document' })
+  }
 }

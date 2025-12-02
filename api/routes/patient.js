@@ -1,4 +1,5 @@
 import express from 'express'
+import { authenticateUser, upload } from '../utils/middleware.js'
 import {
   getTherapistListByLanguage,
   getExpertListByLanguage,
@@ -12,10 +13,22 @@ import {
   getTherapistConsultationList,
   rescheduleTherapistConsultation,
   getProfile,
-  updateProfile
+  updateProfile,
+  uploadDocument,
+  getUserDocuments,
+  deleteUserDocument
 } from '../controllers/patient.js'
 
 const router = express.Router()
+
+router.post(
+  '/upload-document',
+  authenticateUser,
+  upload.single('file'),
+  uploadDocument
+)
+router.get('/documents', authenticateUser, getUserDocuments)
+router.delete('/documents/:id', authenticateUser, deleteUserDocument)
 
 router.post('/therapist-list', getTherapistListByLanguage)
 router.post('/expert-list', getExpertListByLanguage)

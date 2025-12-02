@@ -17,14 +17,14 @@ const s3 = new AWS.S3({
 
 const bucketName = STORAGE_SPACE_NAME
 
-export function uploadFile(filePath) {
+export function uploadFile(filePath, customKey) {
   // Read the file as a buffer
   const fileContent = fs.readFileSync(filePath)
 
   // Set the parameters for S3 upload
   const params = {
     Bucket: bucketName,
-    Key: filePath,
+    Key: customKey || filePath,
     Body: fileContent,
     ACL: 'public-read'
   }
