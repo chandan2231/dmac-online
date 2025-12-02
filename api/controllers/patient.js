@@ -1959,7 +1959,7 @@ export const uploadDocument = async (req, res) => {
     }
     const userName = userResult[0].name.replace(/\s+/g, '_')
 
-    const s3Key = `${userName}/${file.originalname}`
+    const s3Key = `${userName}_${userId}/${file.originalname}`
 
     // Upload to S3
     const s3Result = await uploadFile(file.path, s3Key)

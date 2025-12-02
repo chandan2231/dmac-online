@@ -1,5 +1,6 @@
 import AWS from 'aws-sdk'
 import fs from 'fs'
+import mime from 'mime-types'
 import 'dotenv/config'
 
 const {

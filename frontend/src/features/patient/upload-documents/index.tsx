@@ -46,8 +46,9 @@ const UploadDocuments = () => {
       return;
     }
 
-    if (documents.length >= 5) {
-      enqueueSnackbar('Maximum 5 documents allowed', { variant: 'warning' });
+    // 🔥 Updated: max document limit from 5 → 10
+    if (documents.length >= 10) {
+      enqueueSnackbar('Maximum 10 documents allowed', { variant: 'warning' });
       return;
     }
 
@@ -88,14 +89,16 @@ const UploadDocuments = () => {
       </Typography>
 
       <Box sx={{ mb: 4 }}>
+        {/* 🔥 Updated: UI text for new limit */}
         <Typography variant="body1" color="textSecondary" gutterBottom>
-          Upload up to 5 documents (PDF, Image, Doc). Max 5MB each.
+          Upload up to 10 documents (PDF, Image, Doc). Max 5MB each.
         </Typography>
         <Typography variant="subtitle1" gutterBottom>
-          Documents Uploaded: {documents.length} / 5
+          Documents Uploaded: {documents.length} / 10
         </Typography>
 
-        {documents.length < 5 && (
+        {/* 🔥 Updated: show upload button until 10 */}
+        {documents.length < 10 && (
           <Button
             component="label"
             variant="contained"
@@ -158,6 +161,7 @@ const UploadDocuments = () => {
             </Card>
           </Box>
         ))}
+
         {documents.length === 0 && (
           <Box sx={{ width: '100%' }}>
             <Alert severity="info">No documents uploaded yet.</Alert>
