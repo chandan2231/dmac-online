@@ -205,10 +205,7 @@ const TherapistConsultationList = () => {
       width: 100,
       sortable: false,
       renderCell: params => (
-        <IconButton
-          onClick={e => handleMenuClick(e, params.row)}
-          disabled={params.row.consultation_status !== 1}
-        >
+        <IconButton onClick={e => handleMenuClick(e, params.row)}>
           <MoreVertIcon />
         </IconButton>
       ),
@@ -223,7 +220,7 @@ const TherapistConsultationList = () => {
         alignItems="center"
         mb={3}
       >
-        <Typography variant="h4">My Consultations</Typography>
+        <Typography variant="h5">My Consultations</Typography>
         <Box display="flex" gap={2} alignItems="center">
           <Autocomplete
             options={patients}
@@ -262,7 +259,12 @@ const TherapistConsultationList = () => {
         open={Boolean(menuAnchor)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleEditStatusClick}>Edit Status</MenuItem>
+        <MenuItem
+          onClick={handleEditStatusClick}
+          disabled={menuConsultation?.consultation_status !== 1}
+        >
+          Edit Status
+        </MenuItem>
       </Menu>
     </Box>
   );
