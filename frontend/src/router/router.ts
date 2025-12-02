@@ -295,7 +295,7 @@ const USER_ROUTES: IAllowedRoutes[] = [
     component: 'QuestionersPage',
     showInSidebar: true,
     sideBarTitle: 'Questioners',
-    sideBarIcon: null,
+    sideBarIcon: 'QuizIcon',
     isAChildOf: null,
   },
   {
@@ -314,7 +314,7 @@ const USER_ROUTES: IAllowedRoutes[] = [
     component: 'PatientProductsPage',
     showInSidebar: true,
     sideBarTitle: 'Products',
-    sideBarIcon: null,
+    sideBarIcon: 'ShoppingCartIcon',
     isAChildOf: null,
   },
   {
@@ -323,7 +323,7 @@ const USER_ROUTES: IAllowedRoutes[] = [
     component: 'BookConsultationPage',
     showInSidebar: true,
     sideBarTitle: 'Expert Consultation',
-    sideBarIcon: null,
+    sideBarIcon: 'MedicalServicesIcon',
     isAChildOf: null,
   },
   {
@@ -332,7 +332,7 @@ const USER_ROUTES: IAllowedRoutes[] = [
     component: 'BookTherapistPage',
     showInSidebar: true,
     sideBarTitle: 'Therapist Consultation',
-    sideBarIcon: null,
+    sideBarIcon: 'PsychologyIcon',
     isAChildOf: null,
   },
   {
@@ -382,7 +382,7 @@ const EXPERT_ROUTES: IAllowedRoutes[] = [
     // This route will be shown in the sidebar
     showInSidebar: true,
     sideBarTitle: 'Calendar',
-    sideBarIcon: null,
+    sideBarIcon: 'CalendarMonthIcon',
     isAChildOf: null,
   },
   {
@@ -422,7 +422,7 @@ const THERAPIST_ROUTES: IAllowedRoutes[] = [
     component: 'CalendarPageForTherapist',
     showInSidebar: true,
     sideBarTitle: 'Calendar',
-    sideBarIcon: null,
+    sideBarIcon: 'CalendarMonthIcon',
     isAChildOf: null,
   },
   {
@@ -444,7 +444,7 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     // This route will be shown in the sidebar
     showInSidebar: true,
     sideBarTitle: 'Dashboard',
-    sideBarIcon: 'GroupIcon',
+    sideBarIcon: 'DashboardIcon',
     isAChildOf: null,
   },
   {

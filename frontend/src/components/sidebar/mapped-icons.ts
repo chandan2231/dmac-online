@@ -7,6 +7,12 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import BadgeIcon from '@mui/icons-material/Badge';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import EventIcon from '@mui/icons-material/Event';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import QuizIcon from '@mui/icons-material/Quiz';
+import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 
 const mapperObject = {
   HomeIcon: HomeIcon,
@@ -18,6 +24,12 @@ const mapperObject = {
   BadgeIcon: BadgeIcon,
   InventoryIcon: InventoryIcon,
   EventIcon: EventIcon,
+  DashboardIcon: DashboardIcon,
+  CalendarMonthIcon: CalendarMonthIcon,
+  QuizIcon: QuizIcon,
+  MedicalServicesIcon: MedicalServicesIcon,
+  PsychologyIcon: PsychologyIcon,
+  ShoppingCartIcon: ShoppingCartIcon,
 };
 
 export type MapperObjectKey = keyof typeof mapperObject;
