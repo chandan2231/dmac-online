@@ -20,6 +20,7 @@ import { get } from 'lodash';
 import type { RootState } from '../../../store';
 import { GenericTable } from '../../../components/table';
 import UpdateStatusModal from './UpdateStatusModal';
+import ReviewModal from './ReviewModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
 import { useGetConsultations } from '../hooks/useGetConsultations';
 import { useGetTherapistPatients } from '../hooks/useGetTherapistPatients';
@@ -71,6 +72,10 @@ const TherapistConsultationList = () => {
   const [menuConsultation, setMenuConsultation] =
     useState<IConsultation | null>(null);
 
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedReviewConsultationId, setSelectedReviewConsultationId] =
+    useState<number | null>(null);
+
   const handleOpenModal = (consultation: IConsultation) => {
     setSelectedConsultation(consultation);
     setIsModalOpen(true);
@@ -99,6 +104,19 @@ const TherapistConsultationList = () => {
       handleOpenModal(menuConsultation);
     }
     handleMenuClose();
+  };
+
+  const handleViewReviewClick = () => {
+    if (menuConsultation) {
+      setSelectedReviewConsultationId(menuConsultation.id);
+      setReviewModalOpen(true);
+    }
+    handleMenuClose();
+  };
+
+  const handleCloseReviewModal = () => {
+    setReviewModalOpen(false);
+    setSelectedReviewConsultationId(null);
   };
 
   const handleSubmitStatus = (status: number, notes: string) => {
@@ -254,6 +272,11 @@ const TherapistConsultationList = () => {
         onSubmit={handleSubmitStatus}
         isLoading={isUpdating}
       />
+      <ReviewModal
+        open={reviewModalOpen}
+        onClose={handleCloseReviewModal}
+        consultationId={selectedReviewConsultationId}
+      />
       <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
@@ -265,6 +288,9 @@ const TherapistConsultationList = () => {
         >
           Edit Status
         </MenuItem>
+        {import.meta.env.VITE_ENABLE_REVIEWS === 'true' && (
+          <MenuItem onClick={handleViewReviewClick}>View Review</MenuItem>
+        )}
       </Menu>
     </Box>
   );

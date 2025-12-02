@@ -180,6 +180,18 @@ const getTherapistPatients = async ({
   }
 };
 
+const getTherapistReview = async (consultationId: number) => {
+  try {
+    const response = await HttpService.get(
+      `reviews/therapist/${consultationId}`
+    );
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching therapist review:', error);
+    return null;
+  }
+};
+
 const TherapistService = {
   getGoogleAuthUrl,
   setAvailability,
@@ -189,6 +201,7 @@ const TherapistService = {
   getConsultationList,
   updateConsultationStatus,
   getTherapistPatients,
+  getTherapistReview,
 };
 
 export default TherapistService;
