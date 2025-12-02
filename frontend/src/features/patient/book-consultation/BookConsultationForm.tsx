@@ -9,6 +9,7 @@ import {
   Button,
   Chip,
   Stack,
+  Rating,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, { Dayjs } from 'dayjs';
@@ -105,6 +106,9 @@ const BookConsultationForm = ({
     setBookingLoading(false);
   };
 
+  const selectedExpert = experts?.find(e => e.id === Number(selectedExpertId));
+  const enableReviews = import.meta.env.VITE_ENABLE_REVIEWS === 'true';
+
   return (
     <Box p={3} height="100%" width="100%">
       <Box
@@ -129,10 +133,53 @@ const BookConsultationForm = ({
               value={selectedExpertId}
               label="Select Consultant"
               onChange={handleExpertChange}
+              renderValue={selected => {
+                const expert = experts.find(e => e.id === Number(selected));
+                return expert
+                  ? `${expert.name} - ${expert.country} (${expert.province_title})`
+                  : '';
+              }}
             >
               {experts?.map((expert: IExpert) => (
                 <MenuItem key={expert.id} value={expert.id}>
-                  {expert.name} - {expert.country} ({expert.province_title})
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Typography variant="body2">
+                      {expert.name} - {expert.country} ({expert.province_title})
+                    </Typography>
+                    {enableReviews &&
+                      (expert.average_rating ? (
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            ml: 2,
+                          }}
+                        >
+                          <Rating
+                            value={Number(expert.average_rating)}
+                            readOnly
+                            size="small"
+                            precision={0.5}
+                          />
+                        </Box>
+                      ) : (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ ml: 2 }}
+                        >
+                          No reviews available
+                        </Typography>
+                      ))}
+                  </Box>
                 </MenuItem>
               ))}
             </Select>
@@ -162,6 +209,26 @@ const BookConsultationForm = ({
             {loadingSlots ? 'Loading...' : 'Get Slots'}
           </Button>
         </Box>
+
+        {selectedExpert && enableReviews && (
+          <Box display="flex" alignItems="center" gap={1}>
+            <Typography variant="subtitle2">Average Rating:</Typography>
+            {selectedExpert.average_rating ? (
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <Rating
+                  value={Number(selectedExpert.average_rating)}
+                  readOnly
+                  size="small"
+                  precision={0.5}
+                />
+              </Box>
+            ) : (
+              <Typography variant="caption" color="text.secondary">
+                No reviews available
+              </Typography>
+            )}
+          </Box>
+        )}
 
         {slots.length > 0 && (
           <Box>

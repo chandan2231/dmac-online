@@ -16,6 +16,8 @@ export interface IExpert {
   role: string;
   time_zone: string;
   language_names: string;
+  average_rating?: number;
+  review_count?: number;
 }
 
 export interface ISlot {

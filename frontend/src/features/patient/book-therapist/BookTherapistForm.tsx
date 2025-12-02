@@ -9,6 +9,7 @@ import {
   Button,
   Chip,
   Stack,
+  Rating,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, { Dayjs } from 'dayjs';
@@ -118,6 +119,11 @@ const BookTherapistForm = ({
     setBookingLoading(false);
   };
 
+  const selectedTherapist = therapists?.find(
+    (t: IExpert) => t.id === Number(selectedTherapistId)
+  );
+  const enableReviews = import.meta.env.VITE_ENABLE_REVIEWS === 'true';
+
   return (
     <Box p={3} height="100%" width="100%">
       <Box
@@ -145,6 +151,14 @@ const BookTherapistForm = ({
               label="Select Therapist"
               onChange={handleTherapistChange}
               disabled={loadingTherapists}
+              renderValue={selected => {
+                const therapist = therapists?.find(
+                  (t: IExpert) => t.id === Number(selected)
+                );
+                return therapist
+                  ? `${therapist.name} - ${therapist.country} (${therapist.province_title})`
+                  : '';
+              }}
             >
               {loadingTherapists ? (
                 <MenuItem disabled value="">
@@ -153,8 +167,45 @@ const BookTherapistForm = ({
               ) : (
                 therapists?.map((therapist: IExpert) => (
                   <MenuItem key={therapist.id} value={therapist.id}>
-                    {therapist.name} - {therapist.country} (
-                    {therapist.province_title})
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography variant="body2">
+                        {therapist.name} - {therapist.country} (
+                        {therapist.province_title})
+                      </Typography>
+                      {enableReviews &&
+                        (therapist.average_rating ? (
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.5,
+                              ml: 2,
+                            }}
+                          >
+                            <Rating
+                              value={Number(therapist.average_rating)}
+                              readOnly
+                              size="small"
+                              precision={0.5}
+                            />
+                          </Box>
+                        ) : (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ ml: 2 }}
+                          >
+                            No reviews available
+                          </Typography>
+                        ))}
+                    </Box>
                   </MenuItem>
                 ))
               )}
@@ -185,6 +236,26 @@ const BookTherapistForm = ({
             {loadingSlots ? 'Loading...' : 'Get Slots'}
           </Button>
         </Box>
+
+        {selectedTherapist && enableReviews && (
+          <Box display="flex" alignItems="center" gap={1}>
+            <Typography variant="subtitle2">Average Rating:</Typography>
+            {selectedTherapist.average_rating ? (
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <Rating
+                  value={Number(selectedTherapist.average_rating)}
+                  readOnly
+                  size="small"
+                  precision={0.5}
+                />
+              </Box>
+            ) : (
+              <Typography variant="caption" color="text.secondary">
+                No reviews available
+              </Typography>
+            )}
+          </Box>
+        )}
 
         {slots.length > 0 && (
           <Box>

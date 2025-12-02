@@ -174,11 +174,14 @@ export const getTherapistListByLanguage = async (req, res) => {
         t.province_title,
         t.role,
         t.time_zone,
-        GROUP_CONCAT(lang.language ORDER BY lang.language SEPARATOR ', ') AS language_names
+        GROUP_CONCAT(lang.language ORDER BY lang.language SEPARATOR ', ') AS language_names,
+        COALESCE(AVG(r.rating), 0) as average_rating,
+        COUNT(r.id) as review_count
     FROM dmac_webapp_users t
     JOIN dmac_webapp_users u ON u.id = ?
     JOIN dmac_webapp_language lang ON FIND_IN_SET(lang.id, t.language)
     ${availabilityJoin}
+    LEFT JOIN therapist_reviews r ON r.therapist_id = t.id
     WHERE t.role = 'THERAPIST'
       AND FIND_IN_SET(u.language, t.language)
     GROUP BY t.id, t.name, t.email, t.country, t.province_title, t.role, t.time_zone;
@@ -212,10 +215,13 @@ export const getExpertListByLanguage = (req, res) => {
         t.province_title,
         t.role,
         t.time_zone,
-        GROUP_CONCAT(lang.language ORDER BY lang.language SEPARATOR ', ') AS language_names
+        GROUP_CONCAT(lang.language ORDER BY lang.language SEPARATOR ', ') AS language_names,
+        COALESCE(AVG(r.rating), 0) as average_rating,
+        COUNT(r.id) as review_count
     FROM dmac_webapp_users t
     JOIN dmac_webapp_users u ON u.id = ?
     JOIN dmac_webapp_language lang ON FIND_IN_SET(lang.id, t.language)
+    LEFT JOIN expert_reviews r ON r.expert_id = t.id
     WHERE t.role = 'EXPERT'
       AND FIND_IN_SET(u.language, t.language)
     GROUP BY t.id, t.name, t.email, t.country, t.province_title, t.role, t.time_zone;
