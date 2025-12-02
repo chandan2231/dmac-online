@@ -215,7 +215,10 @@ const getProfile = async (user: IUser | null) => {
   }
 };
 
-const updateProfile = async (user: IUser | null, data: any) => {
+const updateProfile = async (
+  user: IUser | null,
+  data: Record<string, unknown>
+) => {
   try {
     const user_id = get(user, 'id');
     const response = await HttpService.getAxiosClient().post(
@@ -232,7 +235,7 @@ const updateProfile = async (user: IUser | null, data: any) => {
   }
 };
 
-const addExpertReview = async (data: any) => {
+const addExpertReview = async (data: Record<string, unknown>) => {
   try {
     const response = await HttpService.post(`reviews/expert`, data);
     return response.data;
@@ -250,11 +253,12 @@ const getExpertReview = async (consultationId: number) => {
     const response = await HttpService.get(`reviews/expert/${consultationId}`);
     return response.data;
   } catch (error: unknown) {
+    console.error('Error fetching expert review:', error);
     return null;
   }
 };
 
-const addTherapistReview = async (data: any) => {
+const addTherapistReview = async (data: Record<string, unknown>) => {
   try {
     const response = await HttpService.post(`reviews/therapist`, data);
     return response.data;
@@ -274,8 +278,29 @@ const getTherapistReview = async (consultationId: number) => {
     );
     return response.data;
   } catch (error: unknown) {
+    console.error('Error fetching therapist review:', error);
     return null;
   }
+};
+
+const uploadDocument = (formData: FormData) => {
+  return HttpService.getAxiosClient().post(
+    '/patient/upload-document',
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+};
+
+const getUserDocuments = () => {
+  return HttpService.get('/patient/documents');
+};
+
+const deleteDocument = (id: number) => {
+  return HttpService.delete(`/patient/documents/${id}`);
 };
 
 const PatientService = {
@@ -295,6 +320,9 @@ const PatientService = {
   getExpertReview,
   addTherapistReview,
   getTherapistReview,
+  uploadDocument,
+  getUserDocuments,
+  deleteDocument,
 };
 
 export default PatientService;

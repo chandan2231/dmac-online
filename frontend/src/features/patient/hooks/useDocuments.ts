@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import DocumentService from '../../../../services/document.service';
+import PatientService from '../patient.service';
 
 export const DOCUMENT_QUERY_KEYS = {
   GET_USER_DOCUMENTS: 'GET_USER_DOCUMENTS',
@@ -8,7 +8,7 @@ export const DOCUMENT_QUERY_KEYS = {
 export const useGetUserDocuments = () => {
   return useQuery({
     queryKey: [DOCUMENT_QUERY_KEYS.GET_USER_DOCUMENTS],
-    queryFn: () => DocumentService.getUserDocuments(),
+    queryFn: () => PatientService.getUserDocuments(),
     select: response => response.data,
   });
 };
@@ -16,8 +16,7 @@ export const useGetUserDocuments = () => {
 export const useUploadDocument = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (formData: FormData) =>
-      DocumentService.uploadDocument(formData),
+    mutationFn: (formData: FormData) => PatientService.uploadDocument(formData),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [DOCUMENT_QUERY_KEYS.GET_USER_DOCUMENTS],
@@ -29,7 +28,7 @@ export const useUploadDocument = () => {
 export const useDeleteDocument = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => DocumentService.deleteDocument(id),
+    mutationFn: (id: number) => PatientService.deleteDocument(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [DOCUMENT_QUERY_KEYS.GET_USER_DOCUMENTS],

@@ -17,7 +17,7 @@ import {
   useGetUserDocuments,
   useUploadDocument,
   useDeleteDocument,
-} from './hooks/useDocuments';
+} from '../hooks/useDocuments';
 
 interface Document {
   id: number;
