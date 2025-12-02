@@ -1864,3 +1864,47 @@ export const rescheduleTherapistConsultation = async (req, res) => {
     })
   }
 }
+
+export const getProfile = (req, res) => {
+  const { user_id } = req.body
+  const q =
+    'SELECT id, name, email, mobile, country, state, zip_code, language, time_zone, role FROM dmac_webapp_users WHERE id = ?'
+
+  db.query(q, [user_id], (err, data) => {
+    if (err) return res.status(500).json(err)
+    if (data.length === 0) return res.status(404).json('User not found!')
+    const { password, ...info } = data[0]
+    return res.status(200).json(info)
+  })
+}
+
+export const updateProfile = (req, res) => {
+  const {
+    user_id,
+    name,
+    mobile,
+    country,
+    state,
+    zip_code,
+    language,
+    time_zone
+  } = req.body
+
+  const q =
+    'UPDATE dmac_webapp_users SET name=?, mobile=?, country=?, state=?, zip_code=?, language=?, time_zone=? WHERE id=?'
+  const values = [
+    name,
+    mobile,
+    country,
+    state,
+    zip_code,
+    language,
+    time_zone,
+    user_id
+  ]
+
+  db.query(q, values, (err, data) => {
+    if (err) return res.status(500).json(err)
+    return res.status(200).json('Profile has been updated.')
+  })
+}

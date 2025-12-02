@@ -10,7 +10,9 @@ import {
   bookTherapistConsultation,
   getConsultationList,
   getTherapistConsultationList,
-  rescheduleTherapistConsultation
+  rescheduleTherapistConsultation,
+  getProfile,
+  updateProfile
 } from '../controllers/patient.js'
 
 const router = express.Router()
@@ -32,5 +34,7 @@ router.post(
 router.post('/cancel/consultation', cancelConsultationByConsultant)
 router.post('/therapist-slot', getAvailableTherapistSlots)
 router.post('/book/therapist-consultation', bookTherapistConsultation)
+router.post('/profile', getProfile)
+router.post('/profile/update', updateProfile)
 
 export default router

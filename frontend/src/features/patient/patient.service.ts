@@ -195,7 +195,40 @@ const rescheduleTherapistConsultation = async (
     return get(response, ['data'], {});
   } catch (error: unknown) {
     console.error('Error rescheduling therapist consultation:', error);
-    return { status: 500, message: 'Failed to reschedule consultation' };
+    return { rescheduled: false, message: 'Failed to reschedule.' };
+  }
+};
+
+const getProfile = async (user: IUser | null) => {
+  try {
+    const user_id = get(user, 'id');
+    const response = await HttpService.getAxiosClient().post(
+      `patient/profile`,
+      {
+        user_id,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    return null;
+  }
+};
+
+const updateProfile = async (user: IUser | null, data: any) => {
+  try {
+    const user_id = get(user, 'id');
+    const response = await HttpService.getAxiosClient().post(
+      `patient/profile/update`,
+      {
+        user_id,
+        ...data,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    return null;
   }
 };
 
@@ -210,6 +243,8 @@ const PatientService = {
   getConsultationList,
   getTherapistConsultationList,
   rescheduleTherapistConsultation,
+  getProfile,
+  updateProfile,
 };
 
 export default PatientService;
