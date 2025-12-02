@@ -18,6 +18,7 @@ import { GenericTable } from '../../../components/table';
 import type { IConsultation } from '../patient.interface';
 import type { GridColDef } from '@mui/x-data-grid';
 import type { IUser } from '../../auth/auth.interface';
+import { TabHeaderLayout } from '../../../components/tab-header';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -180,22 +181,31 @@ const TherapistConsultationList = ({
 
   return (
     <Box p={3} height="100%" width="100%">
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
-        <Typography variant="h5">My Therapist Consultations</Typography>
-        <Button
-          variant="contained"
-          onClick={onAddClick}
-          disabled={isAddDisabled}
-        >
-          Add Book Therapist
-        </Button>
+      <TabHeaderLayout
+        leftNode={
+          <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
+            <Typography variant="h5">Therapist Consultations</Typography>
+          </Box>
+        }
+        rightNode={
+          <Box display="flex" gap={2} alignItems="center">
+            <Button
+              variant="contained"
+              onClick={onAddClick}
+              disabled={isAddDisabled}
+            >
+              Add Book Therapist
+            </Button>
+          </Box>
+        }
+      />
+      <Box mt={2} height="calc(100% - 60px)">
+        <GenericTable
+          rows={consultations}
+          columns={columns}
+          loading={loading}
+        />
       </Box>
-      <GenericTable rows={consultations} columns={columns} loading={loading} />
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}

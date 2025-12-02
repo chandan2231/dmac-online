@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
 import {
   DataGrid,
   type GridColDef,
@@ -29,6 +29,13 @@ export function GenericTable<T extends { id: string | number }>({
   maxHeight = 'calc(100vh - 150px)',
   minHeight = 'calc(100vh - 150px)',
 }: GenericTableProps<T>) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const updatedCols = isMobile
+    ? columns.map(col => ({ ...col, width: 200, maxWidth: 200, minWidth: 200 }))
+    : columns;
+
   return (
     <Box
       sx={{
@@ -41,7 +48,7 @@ export function GenericTable<T extends { id: string | number }>({
     >
       <DataGrid
         rows={rows}
-        columns={columns}
+        columns={updatedCols}
         getRowId={row => row[rowIdKey] as string | number}
         pageSizeOptions={[5, 10, 25, 50, 100]}
         paginationModel={paginationModel}

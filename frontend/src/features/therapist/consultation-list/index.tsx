@@ -26,6 +26,7 @@ import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatu
 import { useGetConsultations } from '../hooks/useGetConsultations';
 import { useGetTherapistPatients } from '../hooks/useGetTherapistPatients';
 import type { GridColDef } from '@mui/x-data-grid';
+import { TabHeaderLayout } from '../../../components/tab-header';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -256,40 +257,47 @@ const TherapistConsultationList = () => {
 
   return (
     <Box p={3} height="100%" width="100%">
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
-        <Typography variant="h5">My Consultations</Typography>
-        <Box display="flex" gap={2} alignItems="center">
-          <Autocomplete
-            options={patients}
-            getOptionLabel={option => option.name}
-            value={selectedPatient}
-            onChange={(_, newValue) => setSelectedPatient(newValue)}
-            renderInput={params => (
-              <TextField
-                {...params}
-                label="Search Patient"
-                variant="outlined"
-                size="small"
-                sx={{ width: 250 }}
-              />
-            )}
-          />
-          <Button
-            variant="outlined"
-            onClick={() => setSelectedPatient(null)}
-            disabled={!selectedPatient}
-          >
-            Clear
-          </Button>
-        </Box>
-      </Box>
+      <TabHeaderLayout
+        leftNode={
+          <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
+            <Typography variant="h6">My Consultations</Typography>
+          </Box>
+        }
+        rightNode={
+          <Box display="flex" gap={2} alignItems="center">
+            <Autocomplete
+              options={patients}
+              getOptionLabel={option => option.name}
+              value={selectedPatient}
+              onChange={(_, newValue) => setSelectedPatient(newValue)}
+              renderInput={params => (
+                <TextField
+                  {...params}
+                  label="Search Patient"
+                  variant="outlined"
+                  size="small"
+                  sx={{ width: 250 }}
+                />
+              )}
+            />
+            <Button
+              variant="outlined"
+              onClick={() => setSelectedPatient(null)}
+              disabled={!selectedPatient}
+            >
+              Clear
+            </Button>
+          </Box>
+        }
+      />
 
-      <GenericTable rows={consultations} columns={columns} loading={loading} />
+      <Box mt={2} height="calc(100% - 60px)">
+        <GenericTable
+          rows={consultations}
+          columns={columns}
+          loading={loading}
+        />
+      </Box>
       <UpdateStatusModal
         open={isModalOpen}
         onClose={handleCloseModal}

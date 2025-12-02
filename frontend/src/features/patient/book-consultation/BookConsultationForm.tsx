@@ -124,7 +124,14 @@ const BookConsultationForm = ({
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+        <Box
+          sx={{ display: 'flex', gap: 2 }}
+          flexDirection={{
+            xs: 'column',
+            sm: 'column',
+            md: 'row',
+          }}
+        >
           <FormControl sx={{ flex: 1 }}>
             <InputLabel id="expert-select-label">Select Consultant</InputLabel>
             <Select

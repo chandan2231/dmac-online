@@ -234,8 +234,15 @@ const Calendar = () => {
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 800, minWidth: 800, margin: '0 auto' }}>
-      <Paper elevation={3} sx={{ p: 3 }}>
+    <Box
+      sx={{
+        p: { xs: 2, md: 3 },
+        maxWidth: 800,
+        width: '100%',
+        margin: '0 auto',
+      }}
+    >
+      <Paper elevation={3} sx={{ p: { xs: 2, md: 3 } }}>
         <Typography variant="h5" gutterBottom>
           Set Availability
         </Typography>

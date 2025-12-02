@@ -45,11 +45,15 @@ const ExportHome = () => {
   return (
     <Box>
       {get(user, 'google_access_token') && get(user, 'google_refresh_token') ? (
-        <Box sx={{ fontSize: '16px', fontWeight: '500', color: 'green' }}>
+        <Box sx={{ fontSize: '16px', fontWeight: '500', color: 'green', p: 4 }}>
           Google Calendar is already connected with your account. 🎉
         </Box>
       ) : (
-        <MorenButton variant="contained" onClick={() => handleGoogleAuth()}>
+        <MorenButton
+          variant="contained"
+          onClick={() => handleGoogleAuth()}
+          sx={{ m: 4 }} 
+        >
           Auth With Google
         </MorenButton>
       )}
