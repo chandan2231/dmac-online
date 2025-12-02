@@ -28,6 +28,7 @@ import { IconButton, Menu, MenuItem } from '@mui/material';
 import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages';
 import ModernMultiSelect from '../../../../components/multi-select';
 import type { ILanguage } from '../../../../i18n/language.interface';
+import ReviewsModal from '../ReviewsModal';
 
 const FINANCE_MANAGER_LIST = [
   {
@@ -108,6 +109,7 @@ function UserTable() {
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
   const [selectedTherapist, setSelectedTherapist] = useState<ITherapist | null>(
     null
   );
@@ -116,6 +118,7 @@ function UserTable() {
   const [selectedFinanceManager, setSelectedFinanceManager] =
     useState<IOption | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuRowId, setMenuRowId] = useState<number | null>(null);
   const [isViewMode, setIsViewMode] = useState(false);
   const { showToast } = useToast();
 
@@ -151,6 +154,16 @@ function UserTable() {
     setIsPasswordModalOpen(false);
     setSelectedTherapist(null);
     resetPassword();
+  };
+
+  const handleOpenReviewsModal = (user: ITherapist) => {
+    setSelectedTherapist(user);
+    setIsReviewsModalOpen(true);
+  };
+
+  const handleCloseReviewsModal = () => {
+    setIsReviewsModalOpen(false);
+    setSelectedTherapist(null);
   };
 
   const handleOpenEditModal = (therapist: TherapistState) => {
@@ -314,14 +327,16 @@ function UserTable() {
       sortable: false,
       filterable: false,
       renderCell: params => {
-        const open = Boolean(anchorEl);
+        const open = Boolean(anchorEl) && menuRowId === params.row.id;
 
         const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
           setAnchorEl(event.currentTarget);
+          setMenuRowId(params.row.id);
         };
 
         const handleClose = () => {
           setAnchorEl(null);
+          setMenuRowId(null);
         };
 
         return (
@@ -350,6 +365,14 @@ function UserTable() {
                 }}
               >
                 View Details
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  handleClose();
+                  handleOpenReviewsModal(params.row);
+                }}
+              >
+                View Ratings
               </MenuItem>
               <MenuItem
                 onClick={() => {
@@ -870,6 +893,14 @@ function UserTable() {
           </Box>
         )}
       </GenericModal>
+
+      <ReviewsModal
+        isOpen={isReviewsModalOpen}
+        onClose={handleCloseReviewsModal}
+        userId={selectedTherapist?.id || null}
+        userType="THERAPIST"
+        userName={selectedTherapist?.name || ''}
+      />
     </>
   );
 }

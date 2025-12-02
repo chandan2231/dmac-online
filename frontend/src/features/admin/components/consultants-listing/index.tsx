@@ -32,6 +32,7 @@ import { IconButton, Menu, MenuItem } from '@mui/material';
 import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages';
 import ModernMultiSelect from '../../../../components/multi-select';
 import type { ILanguage } from '../../../../i18n/language.interface';
+import ReviewsModal from '../ReviewsModal';
 
 const FINANCE_MANAGER_LIST = [
   {
@@ -110,6 +111,7 @@ function ConsultantTable() {
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
   const [selectedConsultant, setSelectedConsultant] =
     useState<IConsultant | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<IOption | null>(null);
@@ -117,6 +119,7 @@ function ConsultantTable() {
   const [selectedFinanceManager, setSelectedFinanceManager] =
     useState<IOption | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuRowId, setMenuRowId] = useState<number | null>(null);
   const [isViewMode, setIsViewMode] = useState(false);
   const { showToast } = useToast();
 
@@ -153,6 +156,16 @@ function ConsultantTable() {
     resetPassword();
   };
 
+  const handleOpenReviewsModal = (user: IConsultant) => {
+    setSelectedConsultant(user);
+    setIsReviewsModalOpen(true);
+  };
+
+  const handleCloseReviewsModal = () => {
+    setIsReviewsModalOpen(false);
+    setSelectedConsultant(null);
+  };
+
   const handleOpenEditModal = (consultant: ConsultantState) => {
     setSelectedConsultant(consultant);
 
@@ -170,7 +183,7 @@ function ConsultantTable() {
       license_expiration: consultant.license_expiration,
       contracted_rate_per_consult: consultant.contracted_rate_per_consult,
       country: consultant.country,
-      state: consultant.province_id ,
+      state: consultant.province_id,
       finance_manager_id: String(get(consultant, 'finance_manager_id', '')),
       languages: selectedLangIds,
       time_zone: consultant.time_zone,
@@ -313,14 +326,16 @@ function ConsultantTable() {
       sortable: false,
       filterable: false,
       renderCell: params => {
-        const open = Boolean(anchorEl);
+        const open = Boolean(anchorEl) && menuRowId === params.row.id;
 
         const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
           setAnchorEl(event.currentTarget);
+          setMenuRowId(params.row.id);
         };
 
         const handleClose = () => {
           setAnchorEl(null);
+          setMenuRowId(null);
         };
 
         return (
@@ -349,6 +364,14 @@ function ConsultantTable() {
                 }}
               >
                 View Details
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  handleClose();
+                  handleOpenReviewsModal(params.row);
+                }}
+              >
+                View Ratings
               </MenuItem>
               <MenuItem
                 onClick={() => {
@@ -852,6 +875,14 @@ function ConsultantTable() {
           </Box>
         )}
       </GenericModal>
+
+      <ReviewsModal
+        isOpen={isReviewsModalOpen}
+        onClose={handleCloseReviewsModal}
+        userId={selectedConsultant?.id || null}
+        userType="EXPERT"
+        userName={selectedConsultant?.name || ''}
+      />
     </>
   );
 }

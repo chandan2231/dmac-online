@@ -61,3 +61,35 @@ export const getTherapistReview = (req, res) => {
     return res.status(200).json(data[0])
   })
 }
+
+export const getExpertReviews = (req, res) => {
+  const expertId = req.params.expertId
+  const q = `
+    SELECT r.*, u.name as patient_name 
+    FROM expert_reviews r
+    JOIN dmac_webapp_users u ON r.patient_id = u.id
+    WHERE r.expert_id = ?
+    ORDER BY r.created_at DESC
+  `
+
+  db.query(q, [expertId], (err, data) => {
+    if (err) return res.status(500).json(err)
+    return res.status(200).json(data)
+  })
+}
+
+export const getTherapistReviews = (req, res) => {
+  const therapistId = req.params.therapistId
+  const q = `
+    SELECT r.*, u.name as patient_name 
+    FROM therapist_reviews r
+    JOIN dmac_webapp_users u ON r.patient_id = u.id
+    WHERE r.therapist_id = ?
+    ORDER BY r.created_at DESC
+  `
+
+  db.query(q, [therapistId], (err, data) => {
+    if (err) return res.status(500).json(err)
+    return res.status(200).json(data)
+  })
+}

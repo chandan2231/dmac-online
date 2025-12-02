@@ -641,6 +641,38 @@ const getConsultationsListing = async (
   }
 };
 
+const getExpertReviews = async (expertId: number) => {
+  try {
+    const response = await HttpService.get(`/reviews/expert/list/${expertId}`);
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: get(error, 'response.data.message', 'Failed to fetch reviews'),
+    };
+  }
+};
+
+const getTherapistReviews = async (therapistId: number) => {
+  try {
+    const response = await HttpService.get(
+      `/reviews/therapist/list/${therapistId}`
+    );
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: get(error, 'response.data.message', 'Failed to fetch reviews'),
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
   updateProduct, // ✅ export update service
@@ -660,6 +692,8 @@ const AdminService = {
   updateConsultant,
   updateTherapist,
   getConsultationsListing,
+  getExpertReviews,
+  getTherapistReviews,
 };
 
 export default AdminService;
