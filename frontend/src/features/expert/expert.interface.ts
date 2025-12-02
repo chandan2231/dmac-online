@@ -3,6 +3,7 @@ export const QUERY_KEYS_FOR_EXPERT = {
   GET_CONSULTATIONS: 'getConsultations',
   GET_EXPERT_PATIENTS: 'getExpertPatients',
   GET_EXPERT_REVIEW: 'getExpertReview',
+  GET_PATIENT_DOCUMENTS: 'getPatientDocuments',
 } as const;
 
 export interface ISlot {

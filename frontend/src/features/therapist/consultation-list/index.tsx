@@ -21,6 +21,7 @@ import type { RootState } from '../../../store';
 import { GenericTable } from '../../../components/table';
 import UpdateStatusModal from './UpdateStatusModal';
 import ReviewModal from './ReviewModal';
+import DocumentsModal from './DocumentsModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
 import { useGetConsultations } from '../hooks/useGetConsultations';
 import { useGetTherapistPatients } from '../hooks/useGetTherapistPatients';
@@ -36,6 +37,7 @@ interface IConsultation {
   event_end: string;
   consultation_status: number;
   meet_link: string;
+  patient_id: number;
   patient_name: string;
   patient_email: string;
   consultant_timezone: string;
@@ -76,6 +78,12 @@ const TherapistConsultationList = () => {
   const [selectedReviewConsultationId, setSelectedReviewConsultationId] =
     useState<number | null>(null);
 
+  const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
+  const [selectedPatientForDocs, setSelectedPatientForDocs] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+
   const handleOpenModal = (consultation: IConsultation) => {
     setSelectedConsultation(consultation);
     setIsModalOpen(true);
@@ -114,9 +122,25 @@ const TherapistConsultationList = () => {
     handleMenuClose();
   };
 
+  const handleViewDocumentsClick = () => {
+    if (menuConsultation) {
+      setSelectedPatientForDocs({
+        id: menuConsultation.patient_id,
+        name: menuConsultation.patient_name,
+      });
+      setDocumentsModalOpen(true);
+    }
+    handleMenuClose();
+  };
+
   const handleCloseReviewModal = () => {
     setReviewModalOpen(false);
     setSelectedReviewConsultationId(null);
+  };
+
+  const handleCloseDocumentsModal = () => {
+    setDocumentsModalOpen(false);
+    setSelectedPatientForDocs(null);
   };
 
   const handleSubmitStatus = (status: number, notes: string) => {
@@ -277,6 +301,12 @@ const TherapistConsultationList = () => {
         onClose={handleCloseReviewModal}
         consultationId={selectedReviewConsultationId}
       />
+      <DocumentsModal
+        open={documentsModalOpen}
+        onClose={handleCloseDocumentsModal}
+        patientId={selectedPatientForDocs?.id || null}
+        patientName={selectedPatientForDocs?.name || ''}
+      />
       <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
@@ -291,6 +321,7 @@ const TherapistConsultationList = () => {
         {import.meta.env.VITE_ENABLE_REVIEWS === 'true' && (
           <MenuItem onClick={handleViewReviewClick}>View Review</MenuItem>
         )}
+        <MenuItem onClick={handleViewDocumentsClick}>View Documents</MenuItem>
       </Menu>
     </Box>
   );

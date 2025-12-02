@@ -8,7 +8,8 @@ import {
   getConsultationList,
   updateConsultationStatus,
   rescheduleTherapistConsultation,
-  getTherapistPatients
+  getTherapistPatients,
+  getPatientDocuments
 } from '../controllers/therapist.js'
 
 const router = express.Router()
@@ -22,5 +23,6 @@ router.post('/consultation-list', getConsultationList)
 router.post('/update-status', updateConsultationStatus)
 router.post('/reschedule', rescheduleTherapistConsultation)
 router.post('/patients', getTherapistPatients)
+router.post('/patient-documents', getPatientDocuments)
 
 export default router

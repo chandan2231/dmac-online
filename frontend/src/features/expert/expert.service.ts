@@ -189,6 +189,22 @@ const getExpertReview = async (consultationId: number) => {
   }
 };
 
+const getPatientDocuments = async (patientId: number) => {
+  try {
+    const response = await HttpService.post('/expert/patient-documents', {
+      patient_id: patientId,
+    });
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching patient documents:', error);
+    return {
+      status: 500,
+      data: [],
+      message: 'Failed to fetch documents',
+    };
+  }
+};
+
 const ExpertService = {
   getGoogleAuthUrl,
   setAvailability,
@@ -199,6 +215,7 @@ const ExpertService = {
   updateConsultationStatus,
   getExpertPatients,
   getExpertReview,
+  getPatientDocuments,
 };
 
 export default ExpertService;

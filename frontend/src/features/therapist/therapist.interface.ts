@@ -3,6 +3,7 @@ export const QUERY_KEYS_FOR_THERAPIST = {
   GET_CONSULTATIONS: 'getConsultations',
   GET_THERAPIST_PATIENTS: 'getTherapistPatients',
   GET_THERAPIST_REVIEW: 'getTherapistReview',
+  GET_PATIENT_DOCUMENTS: 'getPatientDocuments',
 } as const;
 
 export interface ISlot {

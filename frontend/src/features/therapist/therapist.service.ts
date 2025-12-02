@@ -192,6 +192,22 @@ const getTherapistReview = async (consultationId: number) => {
   }
 };
 
+const getPatientDocuments = async (patientId: number) => {
+  try {
+    const response = await HttpService.post('/therapist/patient-documents', {
+      patient_id: patientId,
+    });
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching patient documents:', error);
+    return {
+      status: 500,
+      data: [],
+      message: 'Failed to fetch documents',
+    };
+  }
+};
+
 const TherapistService = {
   getGoogleAuthUrl,
   setAvailability,
@@ -202,6 +218,7 @@ const TherapistService = {
   updateConsultationStatus,
   getTherapistPatients,
   getTherapistReview,
+  getPatientDocuments,
 };
 
 export default TherapistService;

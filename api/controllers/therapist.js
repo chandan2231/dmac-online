@@ -453,6 +453,7 @@ export const getConsultationList = async (req, res) => {
         c.event_end,
         c.consultation_status,
         c.meet_link,
+        u.id as patient_id,
         u.name as patient_name,
         u.email as patient_email,
         c.consultant_timezone
@@ -774,5 +775,28 @@ export const rescheduleTherapistConsultation = async (req, res) => {
     return res
       .status(500)
       .json({ message: 'Failed to reschedule consultation' })
+  }
+}
+
+export const getPatientDocuments = async (req, res) => {
+  const { patient_id } = req.body
+
+  if (!patient_id) {
+    return res.status(400).json({ message: 'Patient ID is required' })
+  }
+
+  try {
+    const query =
+      'SELECT * FROM patient_documents WHERE user_id = ? ORDER BY created_at DESC'
+    const documents = await new Promise((resolve, reject) => {
+      db.query(query, [patient_id], (err, result) => {
+        if (err) reject(err)
+        resolve(result)
+      })
+    })
+    res.status(200).json({ status: 200, data: documents })
+  } catch (error) {
+    console.error('Error fetching patient documents:', error)
+    res.status(500).json({ message: 'Error fetching documents' })
   }
 }
