@@ -41,6 +41,7 @@ import PatientPaymentCancelledPage from '../pages/payment/patient-payment-cancel
 import PatientProductsPage from '../pages/patient/patient-products';
 import BookConsultationPage from '../pages/patient/book-consultation';
 import BookTherapistPage from '../pages/patient/book-therapist';
+import UploadDocumentsPage from '../pages/patient/upload-documents';
 
 // Expert Pages
 import ConsultationListPage from '../pages/expert/consultation-list';
@@ -98,6 +99,7 @@ export const COMPONENT_MAP = {
   PatientProductsPage,
   BookConsultationPage,
   BookTherapistPage,
+  UploadDocumentsPage,
 
   // Expert Pages
   ConsultationListPage,
@@ -133,6 +135,7 @@ export const ROUTES = {
   QUESTIONERS: '/questioners',
   PATIENT_PRODUCTS: '/patient/products',
   BOOK_THERAPIST: '/patient/book-therapist',
+  UPLOAD_DOCUMENTS: '/patient/upload-documents',
 
   // ADMIN, SUPER_ADMIN Authenticated routes
   LOGIN: '/login',
@@ -333,6 +336,15 @@ const USER_ROUTES: IAllowedRoutes[] = [
     showInSidebar: true,
     sideBarTitle: 'Therapist Consultation',
     sideBarIcon: 'PsychologyIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.UPLOAD_DOCUMENTS,
+    layout: 'MainLayout',
+    component: 'UploadDocumentsPage',
+    showInSidebar: true,
+    sideBarTitle: 'My Documents',
+    sideBarIcon: 'UploadFileIcon',
     isAChildOf: null,
   },
   {

@@ -13,6 +13,7 @@ import QuizIcon from '@mui/icons-material/Quiz';
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 
 const mapperObject = {
   HomeIcon: HomeIcon,
@@ -30,6 +31,7 @@ const mapperObject = {
   MedicalServicesIcon: MedicalServicesIcon,
   PsychologyIcon: PsychologyIcon,
   ShoppingCartIcon: ShoppingCartIcon,
+  UploadFileIcon: UploadFileIcon,
 };
 
 export type MapperObjectKey = keyof typeof mapperObject;
