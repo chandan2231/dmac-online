@@ -12,13 +12,6 @@ import {
   Button,
   Chip,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Link,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -36,6 +29,8 @@ import CustomLoader from '../../../components/loader';
 import PatientService from '../patient.service';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { useToast } from '../../../providers/toast-provider';
+import { GenericTable } from '../../../components/table';
+import type { GridColDef } from '@mui/x-data-grid';
 
 const BookConsultation = () => {
   const user = useSelector((state: RootState) => state.auth.user);
@@ -122,6 +117,99 @@ const BookConsultation = () => {
     setBookingLoading(false);
   };
 
+  const columns: GridColDef[] = [
+    { field: 'expert_name', headerName: 'Expert Name', flex: 1 },
+    {
+      field: 'booked_slot',
+      headerName: 'Booked Slot',
+      flex: 1,
+      renderCell: params => {
+        const userTimezone = get(user, 'time_zone') || 'UTC';
+        const start = dayjs(params.row.event_start)
+          .tz(userTimezone)
+          .format('HH:mm');
+        const end = dayjs(params.row.event_end)
+          .tz(userTimezone)
+          .format('HH:mm');
+        return `${start} - ${end}`;
+      },
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      flex: 1,
+      renderCell: params => {
+        let statusLabel = 'Unknown';
+        let statusColor:
+          | 'default'
+          | 'primary'
+          | 'secondary'
+          | 'error'
+          | 'info'
+          | 'success'
+          | 'warning' = 'default';
+
+        switch (params.value) {
+          case 0:
+          case 1:
+            statusLabel = 'Created';
+            statusColor = 'info';
+            break;
+          case 2:
+            statusLabel = 'Pending';
+            statusColor = 'warning';
+            break;
+          case 3:
+            statusLabel = 'Accepted';
+            statusColor = 'success';
+            break;
+          case 4:
+            statusLabel = 'Completed';
+            statusColor = 'success';
+            break;
+          case 5:
+            statusLabel = 'Cancelled';
+            statusColor = 'error';
+            break;
+          case 6:
+            statusLabel = 'Rescheduled';
+            statusColor = 'warning';
+            break;
+          case 7:
+            statusLabel = 'Paid';
+            statusColor = 'success';
+            break;
+          default:
+            statusLabel = `Status ${params.value}`;
+        }
+        return <Chip label={statusLabel} color={statusColor} size="small" />;
+      },
+    },
+    {
+      field: 'consultation_date',
+      headerName: 'Booking Date',
+      flex: 1,
+      renderCell: params => {
+        const userTimezone = get(user, 'time_zone') || 'UTC';
+        return dayjs(params.value).tz(userTimezone).format('MMM D, YYYY');
+      },
+    },
+    {
+      field: 'meet_link',
+      headerName: 'Meeting Link',
+      flex: 1,
+      renderCell: params => {
+        return params.value ? (
+          <Link href={params.value} target="_blank" rel="noopener">
+            Join Meeting
+          </Link>
+        ) : (
+          'N/A'
+        );
+      },
+    },
+  ];
+
   if (isLoading) {
     return <CustomLoader />;
   }
@@ -156,117 +244,11 @@ const BookConsultation = () => {
       </Box>
 
       {view === 'list' ? (
-        loadingConsultations ? (
-          <CustomLoader />
-        ) : (
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Expert Name</TableCell>
-                  <TableCell>Booked Slot</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Booking Date</TableCell>
-                  <TableCell>Meeting Link</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {consultations.length > 0 ? (
-                  consultations.map((consultation: IConsultation) => {
-                    const userTimezone = get(user, 'time_zone') || 'UTC';
-                    const start = dayjs(consultation.event_start)
-                      .tz(userTimezone)
-                      .format('HH:mm');
-                    const end = dayjs(consultation.event_end)
-                      .tz(userTimezone)
-                      .format('HH:mm');
-                    const date = dayjs(consultation.consultation_date)
-                      .tz(userTimezone)
-                      .format('MMM D, YYYY');
-
-                    let statusLabel = 'Unknown';
-                    let statusColor:
-                      | 'default'
-                      | 'primary'
-                      | 'secondary'
-                      | 'error'
-                      | 'info'
-                      | 'success'
-                      | 'warning' = 'default';
-
-                    switch (consultation.status) {
-                      case 0:
-                      case 1:
-                        statusLabel = 'Created';
-                        statusColor = 'info';
-                        break;
-                      case 2:
-                        statusLabel = 'Pending';
-                        statusColor = 'warning';
-                        break;
-                      case 3:
-                        statusLabel = 'Accepted';
-                        statusColor = 'success';
-                        break;
-                      case 4:
-                        statusLabel = 'Completed';
-                        statusColor = 'success';
-                        break;
-                      case 5:
-                        statusLabel = 'Cancelled';
-                        statusColor = 'error';
-                        break;
-                      case 6:
-                        statusLabel = 'Rescheduled';
-                        statusColor = 'warning';
-                        break;
-                      case 7:
-                        statusLabel = 'Paid';
-                        statusColor = 'success';
-                        break;
-                      default:
-                        statusLabel = `Status ${consultation.status}`;
-                    }
-
-                    return (
-                      <TableRow key={consultation.id}>
-                        <TableCell>{consultation.expert_name}</TableCell>
-                        <TableCell>{`${start} - ${end}`}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={statusLabel}
-                            color={statusColor}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>{date}</TableCell>
-                        <TableCell>
-                          {consultation.meet_link ? (
-                            <Link
-                              href={consultation.meet_link}
-                              target="_blank"
-                              rel="noopener"
-                            >
-                              Join Meeting
-                            </Link>
-                          ) : (
-                            'N/A'
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center">
-                      No consultations found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )
+        <GenericTable
+          rows={consultations}
+          columns={columns}
+          loading={loadingConsultations}
+        />
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>

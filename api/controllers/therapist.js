@@ -594,6 +594,46 @@ export const updateConsultationStatus = async (req, res) => {
   }
 }
 
+export const getTherapistPatients = async (req, res) => {
+  const { consultant_id } = req.body
+
+  if (!consultant_id) {
+    return res.status(400).json({
+      status: 400,
+      message: 'consultant_id is required'
+    })
+  }
+
+  try {
+    const query = `
+      SELECT DISTINCT u.id, u.name, u.email
+      FROM dmac_webapp_therapist_consultations c
+      JOIN dmac_webapp_users u ON c.user_id = u.id
+      WHERE c.consultant_id = ?
+      ORDER BY u.name ASC
+    `
+
+    const patients = await new Promise((resolve, reject) => {
+      db.query(query, [consultant_id], (err, result) => {
+        if (err) reject(err)
+        resolve(result)
+      })
+    })
+
+    return res.status(200).json({
+      status: 200,
+      data: patients
+    })
+  } catch (error) {
+    console.error('Error fetching therapist patients:', error)
+    return res.status(500).json({
+      status: 500,
+      message: 'Failed to fetch patients',
+      error: error.message
+    })
+  }
+}
+
 export const rescheduleTherapistConsultation = async (req, res) => {
   const { consultationId, newDate, newStartTime } = req.body
 

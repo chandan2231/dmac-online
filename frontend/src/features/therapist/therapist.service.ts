@@ -160,6 +160,26 @@ const updateConsultationStatus = async (data: {
   }
 };
 
+const getTherapistPatients = async ({
+  therapistId,
+}: {
+  therapistId: string | undefined;
+}) => {
+  try {
+    const response = await HttpService.post('/therapist/patients', {
+      consultant_id: therapistId,
+    });
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching therapist patients:', error);
+    return {
+      status: 500,
+      data: [],
+      message: 'Failed to fetch patients',
+    };
+  }
+};
+
 const TherapistService = {
   getGoogleAuthUrl,
   setAvailability,
@@ -168,6 +188,7 @@ const TherapistService = {
   updateDaySlots,
   getConsultationList,
   updateConsultationStatus,
+  getTherapistPatients,
 };
 
 export default TherapistService;

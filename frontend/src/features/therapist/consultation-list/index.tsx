@@ -12,13 +12,13 @@ import {
   Paper,
   Link,
   Chip,
-  TextField,
-  InputAdornment,
   IconButton,
   Menu,
   MenuItem,
+  Autocomplete,
+  TextField,
+  Button,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -26,10 +26,10 @@ import timezone from 'dayjs/plugin/timezone';
 import { get } from 'lodash';
 import type { RootState } from '../../../store';
 import CustomLoader from '../../../components/loader';
-import { useDebounce } from '../../../hooks/useDebouce';
 import UpdateStatusModal from './UpdateStatusModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
 import { useGetConsultations } from '../hooks/useGetConsultations';
+import { useGetTherapistPatients } from '../hooks/useGetTherapistPatients';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -48,16 +48,24 @@ interface IConsultation {
 
 const TherapistConsultationList = () => {
   const user = useSelector((state: RootState) => state.auth.user);
-  const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const [selectedPatient, setSelectedPatient] = useState<{
+    id: number;
+    name: string;
+    email: string;
+  } | null>(null);
 
   const { data: consultationsResponse, isLoading: loading } =
     useGetConsultations({
       therapistId: user?.id ? String(user.id) : undefined,
-      patientName: debouncedSearchTerm,
+      patientName: selectedPatient?.name || '',
     });
 
+  const { data: patientsResponse } = useGetTherapistPatients({
+    therapistId: user?.id ? String(user.id) : undefined,
+  });
+
   const consultations = (consultationsResponse?.data || []) as IConsultation[];
+  const patients = patientsResponse?.data || [];
 
   const { mutate: updateStatus, isPending: isUpdating } =
     useUpdateConsultationStatus();
@@ -155,20 +163,30 @@ const TherapistConsultationList = () => {
         mb={3}
       >
         <Typography variant="h4">My Consultations</Typography>
-        <TextField
-          variant="outlined"
-          placeholder="Search by Patient Name"
-          size="small"
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
+        <Box display="flex" gap={2} alignItems="center">
+          <Autocomplete
+            options={patients}
+            getOptionLabel={option => option.name}
+            value={selectedPatient}
+            onChange={(_, newValue) => setSelectedPatient(newValue)}
+            renderInput={params => (
+              <TextField
+                {...params}
+                label="Search Patient"
+                variant="outlined"
+                size="small"
+                sx={{ width: 250 }}
+              />
+            )}
+          />
+          <Button
+            variant="outlined"
+            onClick={() => setSelectedPatient(null)}
+            disabled={!selectedPatient}
+          >
+            Clear
+          </Button>
+        </Box>
       </Box>
 
       {loading ? (
