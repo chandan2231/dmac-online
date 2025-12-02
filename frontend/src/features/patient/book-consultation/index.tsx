@@ -30,6 +30,7 @@ import PatientService from '../patient.service';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { useToast } from '../../../providers/toast-provider';
 import { GenericTable } from '../../../components/table';
+import SubscriptionRequired from '../../../components/subscription-required';
 import type { GridColDef } from '@mui/x-data-grid';
 
 const BookConsultation = () => {
@@ -53,7 +54,8 @@ const BookConsultation = () => {
   const [selectedSlot, setSelectedSlot] = useState<ISlot | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
 
-  const { data: products } = useGetSubscribedProduct(user);
+  const { data: products, isLoading: loadingProducts } =
+    useGetSubscribedProduct(user);
   const productId = products && products.length > 0 ? products[0].id : null;
 
   const handleExpertChange = (event: SelectChangeEvent) => {
@@ -210,8 +212,22 @@ const BookConsultation = () => {
     },
   ];
 
-  if (isLoading) {
+  if (isLoading || loadingProducts) {
     return <CustomLoader />;
+  }
+
+  if (!productId) {
+    return (
+      <Box p={3} height="100%" width="100%">
+        <Typography variant="h5" mb={3}>
+          My Consultations
+        </Typography>
+        <SubscriptionRequired
+          title="Subscription Required"
+          description="You need to purchase a subscription to book a consultation or view your history."
+        />
+      </Box>
+    );
   }
 
   const today = dayjs();
