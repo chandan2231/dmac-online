@@ -485,7 +485,7 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     component: 'ConsultantsListingPageComponent',
     // This route will be shown in the sidebar
     showInSidebar: true,
-    sideBarTitle: 'Consultants List',
+    sideBarTitle: 'Experts List',
     sideBarIcon: 'BadgeIcon',
     isAChildOf: null,
   },
