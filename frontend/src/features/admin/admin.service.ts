@@ -278,7 +278,11 @@ const getConsultantsListing = async (): Promise<{
 
     const consultants = (get(response, 'data', []) as IConsultant[]).map(
       item => ({
-        ...item,
+        id: item.id,
+        name: item.name,
+        email: item.email,
+        mobile: item.mobile,
+        status: item.status,
         created_date: moment(get(item, 'created_date')).format('YYYY-MM-DD'),
       })
     );
@@ -611,9 +615,9 @@ const getConsultationsListing = async (
     const consultations = (get(response, 'data', []) as IConsultation[]).map(
       item => ({
         ...item,
-        consultation_date: moment(get(item, 'consultation_date')).format(
-          'YYYY-MM-DD HH:mm'
-        ),
+        // consultation_date: moment(get(item, 'consultation_date')).format(
+        //   'YYYY-MM-DD HH:mm'
+        // ),
         payment_date: item.payment_date
           ? moment(item.payment_date).format('YYYY-MM-DD HH:mm')
           : null,

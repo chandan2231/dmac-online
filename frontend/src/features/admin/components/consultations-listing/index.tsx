@@ -1,19 +1,36 @@
 import type { GridColDef } from '@mui/x-data-grid';
 import { useState } from 'react';
-import { Box, Typography, IconButton, Menu, MenuItem } from '@mui/material';
+import {
+  Box,
+  Typography,
+  IconButton,
+  Menu,
+  MenuItem,
+  Chip,
+} from '@mui/material';
 import { GenericTable } from '../../../../components/table';
 import CustomLoader from '../../../../components/loader';
 import { useGetConsultationsListing } from '../../hooks/useGetConsultationsListing';
 import { useGetConsultantsListing } from '../../hooks/useGetConsultantsListing';
 import type { IConsultation, ConsultationFilter } from '../../admin.interface';
-import { get } from 'lodash';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import GenericModal from '../../../../components/modal';
 import ModernSelect, { type IOption } from '../../../../components/select';
 import { TabHeaderLayout } from '../../../../components/tab-header';
-import ModernSwitch from '../../../../components/switch';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../../../store';
+import { get } from 'lodash';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 function ConsultationsTable() {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const userTimezone = get(user, 'time_zone') || 'UTC';
+
   const [consultantFilter, setConsultantFilter] =
     useState<ConsultationFilter>(null);
   const { data, isLoading } = useGetConsultationsListing(consultantFilter);
@@ -59,7 +76,7 @@ function ConsultationsTable() {
 
   // Prepare consultant options for filter
   const consultantOptions: IOption[] = [
-    { label: 'All Consultants', value: '' },
+    { label: 'All Experts', value: '' },
     ...(consultantsData?.data?.map(consultant => ({
       label: consultant.name,
       value: String(consultant.id),
@@ -72,42 +89,129 @@ function ConsultationsTable() {
     setConsultantFilter(parsedValue);
   };
 
-  const handleUpdateStatus = (id: number, newStatus: number) => {
-    // Here you would typically call an API to update the status
-    console.log(`Update consultation ${id} to status ${newStatus}`);
-  };
-
   const columns: GridColDef<IConsultation>[] = [
-    { field: 'consultation_id', headerName: 'Consultation ID', flex: 1 },
-    { field: 'user_name', headerName: 'User Name', flex: 1 },
-    { field: 'user_email', headerName: 'User Email', flex: 1 },
-    { field: 'consultant_name', headerName: 'Consultant Name', flex: 1 },
-    { field: 'consultant_email', headerName: 'Consultant Email', flex: 1 },
-    { field: 'product_name', headerName: 'Product Name', flex: 1 },
-    { field: 'time_slot', headerName: 'Time Slot', flex: 1 },
-    { field: 'consultation_date', headerName: 'Consultation Date', flex: 1 },
-    { field: 'consultation_country', headerName: 'Country', flex: 1 },
+    {
+      field: 'consultation_id',
+      headerName: 'Consultation ID',
+      flex: 1,
+      minWidth: 150,
+    },
+    { field: 'user_name', headerName: 'User Name', flex: 1, minWidth: 150 },
+    { field: 'user_email', headerName: 'User Email', flex: 1, minWidth: 150 },
+    {
+      field: 'consultant_name',
+      headerName: 'Consultant Name',
+      flex: 1,
+      minWidth: 150,
+    },
+    {
+      field: 'consultant_email',
+      headerName: 'Consultant Email',
+      flex: 1,
+      minWidth: 150,
+    },
+    {
+      field: 'product_name',
+      headerName: 'Product Name',
+      flex: 1,
+      minWidth: 150,
+    },
+    {
+      field: 'time_slot',
+      headerName: 'Time Slot',
+      flex: 1,
+      minWidth: 150,
+      renderCell: params => {
+        if (params.row.event_start && params.row.event_end) {
+          const start = dayjs(params.row.event_start)
+            .tz(userTimezone)
+            .format('HH:mm');
+          const end = dayjs(params.row.event_end)
+            .tz(userTimezone)
+            .format('HH:mm');
+          return `${start} - ${end}`;
+        }
+        return params.value;
+      },
+    },
+    {
+      field: 'consultation_date',
+      headerName: 'Consultation Date',
+      flex: 1,
+      minWidth: 150,
+      renderCell: params => {
+        const dateToUse =
+          params.row.event_start || params.row.consultation_date;
+        return dateToUse
+          ? dayjs(dateToUse).tz(userTimezone).format('MMM D, YYYY')
+          : '';
+      },
+    },
+    {
+      field: 'consultation_country',
+      headerName: 'Country',
+      flex: 1,
+      minWidth: 150,
+    },
     {
       field: 'consultation_status',
       headerName: 'Status',
       flex: 1,
+      minWidth: 150,
       renderCell: params => {
-        const status = get(params, 'row.consultation_status');
-        const isActive = status === 1;
-        return (
-          <Box display="flex" alignItems="center" height="100%">
-            <ModernSwitch
-              checked={isActive}
-              onChange={() =>
-                handleUpdateStatus(params.row.id, isActive ? 0 : 1)
-              }
-              trackColor={isActive ? '#4caf50' : '#ccc'}
-            />
-          </Box>
-        );
+        let label = 'Unknown';
+        let color:
+          | 'default'
+          | 'primary'
+          | 'secondary'
+          | 'error'
+          | 'info'
+          | 'success'
+          | 'warning' = 'default';
+
+        switch (params.value) {
+          case 0:
+          case 1:
+            label = 'Created';
+            color = 'info';
+            break;
+          case 2:
+            label = 'Pending';
+            color = 'warning';
+            break;
+          case 3:
+            label = 'Accepted';
+            color = 'success';
+            break;
+          case 4:
+            label = 'Completed';
+            color = 'success';
+            break;
+          case 5:
+            label = 'Cancelled';
+            color = 'error';
+            break;
+          case 6:
+            label = 'Rescheduled';
+            color = 'warning';
+            break;
+          case 7:
+            label = 'Paid';
+            color = 'success';
+            break;
+          default:
+            label = `Status ${params.value}`;
+        }
+
+        return <Chip label={label} color={color} size="small" />;
       },
     },
-    { field: 'created_date', headerName: 'Created Date', flex: 1 },
+    {
+      field: 'created_date',
+      headerName: 'Created Date',
+      flex: 1,
+      minWidth: 150,
+    },
     {
       field: 'actions',
       headerName: 'Actions',
@@ -145,7 +249,7 @@ function ConsultationsTable() {
         }
         rightNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
-            <Typography variant="body2">Filter by Consultant:</Typography>
+            <Typography variant="body2">Filter by Expert:</Typography>
             <ModernSelect
               options={consultantOptions}
               value={
@@ -154,7 +258,7 @@ function ConsultationsTable() {
                 ) || consultantOptions[0]
               }
               onChange={handleConsultantFilterChange}
-              placeholder="Select Consultant"
+              placeholder="Select Expert"
               variant="standard"
               sx={{ minWidth: 200 }}
             />

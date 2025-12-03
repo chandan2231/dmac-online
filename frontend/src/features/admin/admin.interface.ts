@@ -179,6 +179,8 @@ export interface IConsultation {
   consultation_country: string;
   product_name: string;
   product_description: string;
+  event_start?: string;
+  event_end?: string;
 }
 
 export type ConsultationFilter = number | null;
