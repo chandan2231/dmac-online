@@ -184,4 +184,7 @@ export interface IConsultation {
   user_timezone?: string;
 }
 
-export type ConsultationFilter = number | null;
+export interface ConsultationFilter {
+  consultant_id?: number | null;
+  consultant_role?: string;
+}

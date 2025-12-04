@@ -23,6 +23,7 @@ import ConsultantsListingPageComponent from '../pages/admin/consultants-listing'
 import TransactionsListingPageComponent from '../pages/admin/transactions-listing';
 import TherapistListingPageComponent from '../pages/admin/tharapist-listing';
 import ConsultationsListingPageComponent from '../pages/admin/consultations-listing';
+import TherapistsConsultationsListingPageComponent from '../pages/admin/therapists-consultations-listing';
 
 // Layouts
 import MainLayout from '../layouts/MainLayout';
@@ -88,6 +89,7 @@ export const COMPONENT_MAP = {
   TransactionsListingPageComponent,
   TherapistListingPageComponent,
   ConsultationsListingPageComponent,
+  TherapistsConsultationsListingPageComponent,
 
   // Patient Pages
   PatientRegisterPage,
@@ -152,6 +154,7 @@ export const ROUTES = {
   PRODUCTS: '/admin/products',
   THERAPISTS: '/admin/therapists',
   CONSULTATIONS: '/admin/consultations',
+  Therapists_CONSULTATIONS: '/admin/therapists-consultations',
 
   // Not Found
   NOT_FOUND: '*',
@@ -515,7 +518,17 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     component: 'ConsultationsListingPageComponent',
     // This route will be shown in the sidebar
     showInSidebar: true,
-    sideBarTitle: 'Consultations List',
+    sideBarTitle: 'Experts Consultations',
+    sideBarIcon: 'EventIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.THERAPIST_CONSULTATION_LIST,
+    layout: 'MainLayout',
+    component: 'TherapistsConsultationsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Therapists Consultations',
     sideBarIcon: 'EventIcon',
     isAChildOf: null,
   },

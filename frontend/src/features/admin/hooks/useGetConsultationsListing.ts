@@ -5,9 +5,9 @@ import {
 } from '../admin.interface';
 import AdminService from '../admin.service';
 
-export function useGetConsultationsListing(consultantId: ConsultationFilter) {
+export function useGetConsultationsListing(filter: ConsultationFilter) {
   return useQuery({
-    queryKey: [QUERY_KEYS_FOR_ADMIN.GET_CONSULTATION_LISTING, consultantId],
-    queryFn: () => AdminService.getConsultationsListing(consultantId),
+    queryKey: [QUERY_KEYS_FOR_ADMIN.GET_CONSULTATION_LISTING, filter],
+    queryFn: () => AdminService.getConsultationsListing(filter),
   });
 }

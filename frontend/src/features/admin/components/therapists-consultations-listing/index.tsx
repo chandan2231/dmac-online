@@ -11,7 +11,7 @@ import {
 import { GenericTable } from '../../../../components/table';
 import CustomLoader from '../../../../components/loader';
 import { useGetConsultationsListing } from '../../hooks/useGetConsultationsListing';
-import { useGetConsultantsListing } from '../../hooks/useGetConsultantsListing';
+import { useGetTherapistListing } from '../../hooks/useGetTherapistListing';
 import type { IConsultation } from '../../admin.interface';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import GenericModal from '../../../../components/modal';
@@ -27,16 +27,16 @@ import { get } from 'lodash';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-function ConsultationsTable() {
+function TherapistConsultationsTable() {
   const { user } = useSelector((state: RootState) => state.auth);
   const userTimezone = get(user, 'time_zone') || 'UTC';
 
   const [consultantFilter, setConsultantFilter] = useState<number | null>(null);
   const { data, isLoading } = useGetConsultationsListing({
     consultant_id: consultantFilter,
-    consultant_role: 'EXPERT',
+    consultant_role: 'THERAPIST',
   });
-  const { data: consultantsData } = useGetConsultantsListing();
+  const { data: therapistsData } = useGetTherapistListing();
 
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 10,
@@ -76,12 +76,12 @@ function ConsultationsTable() {
     setIsViewModalOpen(false);
   };
 
-  // Prepare consultant options for filter
-  const consultantOptions: IOption[] = [
-    { label: 'All Experts', value: '' },
-    ...(consultantsData?.data?.map(consultant => ({
-      label: consultant.name,
-      value: String(consultant.id),
+  // Prepare therapist options for filter
+  const therapistOptions: IOption[] = [
+    { label: 'All Therapists', value: '' },
+    ...(therapistsData?.data?.map(therapist => ({
+      label: therapist.name,
+      value: String(therapist.id),
     })) || []),
   ];
 
@@ -102,13 +102,13 @@ function ConsultationsTable() {
     { field: 'user_email', headerName: 'User Email', flex: 1, minWidth: 150 },
     {
       field: 'consultant_name',
-      headerName: 'Consultant Name',
+      headerName: 'Therapist Name',
       flex: 1,
       minWidth: 150,
     },
     {
       field: 'consultant_email',
-      headerName: 'Consultant Email',
+      headerName: 'Therapist Email',
       flex: 1,
       minWidth: 150,
     },
@@ -246,21 +246,21 @@ function ConsultationsTable() {
       <TabHeaderLayout
         leftNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
-            <Typography variant="h6">Expert Consultations List</Typography>
+            <Typography variant="h6">Therapist Consultations List</Typography>
           </Box>
         }
         rightNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
-            <Typography variant="body2">Filter by Expert:</Typography>
+            <Typography variant="body2">Filter by Therapist:</Typography>
             <ModernSelect
-              options={consultantOptions}
+              options={therapistOptions}
               value={
-                consultantOptions.find(
+                therapistOptions.find(
                   opt => opt.value === String(consultantFilter)
-                ) || consultantOptions[0]
+                ) || therapistOptions[0]
               }
               onChange={handleConsultantFilterChange}
-              placeholder="Select Expert"
+              placeholder="Select Therapist"
               variant="standard"
               sx={{ minWidth: 200 }}
             />
@@ -346,7 +346,7 @@ function ConsultationsTable() {
                   color="textSecondary"
                   minWidth={140}
                 >
-                  Consultant Name:
+                  Therapist Name:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
                   {selectedConsultation.consultant_name || ''}
@@ -360,7 +360,7 @@ function ConsultationsTable() {
                   color="textSecondary"
                   minWidth={140}
                 >
-                  Consultant Email:
+                  Therapist Email:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
                   {selectedConsultation.consultant_email || ''}
@@ -558,4 +558,4 @@ function ConsultationsTable() {
   );
 }
 
-export default ConsultationsTable;
+export default TherapistConsultationsTable;

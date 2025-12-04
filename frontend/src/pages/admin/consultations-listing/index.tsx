@@ -1,7 +1,7 @@
-import ConsultationsListing from '../../../features/admin/components/consultations-listing';
+import ConsultationsTable from '../../../features/admin/components/consultations-listing';
 
 const ConsultationsListingPageComponent = () => {
-  return <ConsultationsListing />;
+  return <ConsultationsTable />;
 };
 
 export default ConsultationsListingPageComponent;

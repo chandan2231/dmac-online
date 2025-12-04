@@ -601,7 +601,7 @@ const updateTherapist = async (
 };
 
 const getConsultationsListing = async (
-  consultantId: ConsultationFilter
+  filter: ConsultationFilter
 ): Promise<{
   success: boolean;
   data: IConsultation[] | null;
@@ -609,7 +609,8 @@ const getConsultationsListing = async (
 }> => {
   try {
     const response = await HttpService.post('/admin/consultations/list', {
-      consultant_id: consultantId,
+      consultant_id: filter?.consultant_id,
+      consultant_role: filter?.consultant_role,
     });
 
     const consultations = (get(response, 'data', []) as IConsultation[]).map(

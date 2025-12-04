@@ -358,7 +358,12 @@ export const getUsersTransactionList = (req, res) => {
 }
 
 export const getConsultationList = (req, res) => {
-  const { consultant_id } = req.body
+  const { consultant_id, consultant_role } = req.body
+
+  const tableName =
+    consultant_role === 'THERAPIST'
+      ? 'dmac_webapp_therapist_consultations'
+      : 'dmac_webapp_consultations'
 
   let que = `
     SELECT 
@@ -370,7 +375,7 @@ export const getConsultationList = (req, res) => {
       c.country AS consultation_country,
       p.product_name, 
       p.product_description
-    FROM dmac_webapp_consultations AS cons
+    FROM ${tableName} AS cons
     JOIN dmac_webapp_users AS u 
       ON cons.user_id = u.id
     JOIN dmac_webapp_users AS c
@@ -380,10 +385,33 @@ export const getConsultationList = (req, res) => {
   `
 
   const params = []
+  const conditions = []
 
   if (consultant_id) {
-    que += ` WHERE cons.consultant_id = ?`
+    conditions.push(`cons.consultant_id = ?`)
     params.push(consultant_id)
+  }
+
+  // If filtering by role, we are already selecting from the correct table based on role.
+  // But we might want to ensure the consultant user actually has that role?
+  // The join on users table will get the user, we can filter by role there too if needed.
+  // But usually the table separation is enough.
+  // However, if we are in the 'expert' table, we might want to filter by role='EXPERT' just in case?
+  // Actually, the previous code didn't filter by role in the query, just by table.
+  // But wait, the previous code I wrote added `c.role = ?`.
+  // If I switch tables, I don't necessarily need to filter by `c.role` if the table only contains that role's consultations.
+  // But let's keep it if provided, to be safe, or remove it if it causes issues (e.g. if a user changed roles).
+  // Let's remove the explicit role check on the user table for now, relying on the table separation.
+  // Or better, keep it if it was useful.
+  // Actually, for 'THERAPIST', the user role should be 'THERAPIST'.
+
+  if (consultant_role) {
+    conditions.push(`c.role = ?`)
+    params.push(consultant_role)
+  }
+
+  if (conditions.length > 0) {
+    que += ` WHERE ` + conditions.join(' AND ')
   }
 
   que += ` ORDER BY cons.id DESC`
