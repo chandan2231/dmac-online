@@ -23,8 +23,26 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 // import ColorMode from '../../providers/theme-provider/ColorMode';
 import LogoutFeature from '../../features/auth/components/logout';
 import LanguageMode from '../../i18n/LanguageMode';
+import type { IUser } from '../../features/auth/auth.interface';
 
 const navItems: string[] = [];
+
+const getTextByRole = (role: IUser['role']) => {
+  switch (role) {
+    case 'ADMIN':
+      return 'Admin Dashboard';
+    case 'SUPER_ADMIN':
+      return 'Admin Dashboard';
+    case 'EXPERT':
+      return 'Expert Dashboard';
+    case 'USER':
+      return 'User Dashboard';
+    case 'THERAPIST':
+      return 'Therapist Dashboard';
+    default:
+      return 'Dashboard';
+  }
+};
 
 const Header = () => {
   // const theme = useTheme();
@@ -69,7 +87,7 @@ const Header = () => {
         </Box>
 
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          {get(user, 'role', '').toUpperCase()} Dashboard
+          {getTextByRole(get(user, 'role') as IUser['role'])}
         </Typography>
 
         {/* Mobile */}
