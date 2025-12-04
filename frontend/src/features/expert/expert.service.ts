@@ -205,6 +205,16 @@ const getPatientDocuments = async (patientId: number) => {
   }
 };
 
+const getExpertReviews = async (expertId: string) => {
+  try {
+    const response = await HttpService.get(`/reviews/expert/list/${expertId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    throw error;
+  }
+};
+
 const ExpertService = {
   getGoogleAuthUrl,
   setAvailability,
@@ -216,6 +226,7 @@ const ExpertService = {
   getExpertPatients,
   getExpertReview,
   getPatientDocuments,
+  getExpertReviews,
 };
 
 export default ExpertService;

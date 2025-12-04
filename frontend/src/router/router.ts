@@ -49,11 +49,13 @@ import ConsultationListPage from '../pages/expert/consultation-list';
 import TransactionHistoryPage from '../pages/expert/transaction-history';
 import ExpertHomePage from '../pages/expert/home';
 import CalendarPage from '../pages/expert/calendar';
+import ExpertReviewsPage from '../pages/expert/reviews';
 
 // Therapist Pages
 import TherapistHomePage from '../pages/therapist/home';
 import CalendarPageForTherapist from '../pages/therapist/calendar';
 import TherapistConsultationListPage from '../pages/therapist/consultation-list';
+import TherapistReviewsPage from '../pages/therapist/reviews';
 
 export const LAYOUT_MAP = {
   BaseLayout,
@@ -108,11 +110,13 @@ export const COMPONENT_MAP = {
   TransactionHistoryPage,
   ExpertHomePage,
   CalendarPage,
+  ExpertReviewsPage,
 
   // Therapist Pages
   TherapistHomePage,
   CalendarPageForTherapist,
   TherapistConsultationListPage,
+  TherapistReviewsPage,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -163,10 +167,12 @@ export const ROUTES = {
   EXPERT_CONSULTATIONS: '/expert/consultations',
   EXPERT_TRANSACTIONS: '/expert/transactions',
   EXPERT_CALENDAR: '/expert/calendar',
+  EXPERT_REVIEWS: '/expert/reviews',
 
   // THERAPIST Protected routes
   THERAPIST_CALENDAR: '/therapist/calendar',
   THERAPIST_CONSULTATION_LIST: '/therapist/consultation-list',
+  THERAPIST_REVIEWS: '/therapist/reviews',
 } as const;
 
 export type ROUTES = (typeof ROUTES)[keyof typeof ROUTES];
@@ -418,6 +424,15 @@ const EXPERT_ROUTES: IAllowedRoutes[] = [
     sideBarIcon: 'ReceiptLongIcon',
     isAChildOf: null,
   },
+  {
+    path: ROUTES.EXPERT_REVIEWS,
+    layout: 'MainLayout',
+    component: 'ExpertReviewsPage',
+    showInSidebar: true,
+    sideBarTitle: 'Reviews',
+    sideBarIcon: 'RateReviewIcon',
+    isAChildOf: null,
+  },
 ];
 
 const THERAPIST_ROUTES: IAllowedRoutes[] = [
@@ -447,6 +462,15 @@ const THERAPIST_ROUTES: IAllowedRoutes[] = [
     showInSidebar: true,
     sideBarTitle: 'Consultations',
     sideBarIcon: 'EventIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.THERAPIST_REVIEWS,
+    layout: 'MainLayout',
+    component: 'TherapistReviewsPage',
+    showInSidebar: true,
+    sideBarTitle: 'Reviews',
+    sideBarIcon: 'RateReviewIcon',
     isAChildOf: null,
   },
 ];
