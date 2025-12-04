@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Box, Typography, Rating } from '@mui/material';
+import type { IAuthState } from '../../auth/auth.interface';
+import { useTherapistReviews } from '../hooks/useTherapistReviews';
+import { TabHeaderLayout } from '../../../components/tab-header';
 import Grid from '@mui/material/GridLegacy';
 import MorenCard from '../../../components/card';
 import GenericModal from '../../../components/modal';
 import ModernInput from '../../../components/input';
-import type { IAuthState } from '../../auth/auth.interface';
-import { useTherapistReviews } from '../hooks/useTherapistReviews';
 import CustomLoader from '../../../components/loader';
-import { TabHeaderLayout } from '../../../components/tab-header';
 
 interface Review {
   id: number;
