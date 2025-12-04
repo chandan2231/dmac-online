@@ -30,3 +30,45 @@ export const authenticateUser = (req, res, next) => {
     next()
   })
 }
+
+export const authenticateUserWithBearer = (req, res, next) => {
+  const authHeader = req.headers['authorization']
+
+  if (!authHeader)
+    return res
+      .status(404)
+      .json({ message: 'Access denied. No token provided.' })
+
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7, authHeader.length)
+    : authHeader
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err)
+      return res.status(404).json({ message: 'Invalid or expired token.' })
+
+    req.user = user
+    next()
+  })
+}
+
+export const authenticateUserGoogle = (req, res, next) => {
+  const authHeader = req.headers['authorization']
+
+  if (!authHeader)
+    return res
+      .status(404)
+      .json({ message: 'Access denied. No token provided.' })
+
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7, authHeader.length)
+    : authHeader
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err)
+      return res.status(404).json({ message: 'Invalid or expired token.' })
+
+    req.user = user
+    next()
+  })
+}

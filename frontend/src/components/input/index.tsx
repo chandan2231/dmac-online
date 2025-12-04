@@ -17,17 +17,28 @@ const StyledInput = styled((props: TextFieldProps) => (
     backgroundColor: 'transparent',
 
     '& fieldset': {
-      borderColor: '#ddd',
+      borderColor: theme.colors?.inputBorder || theme.palette.divider,
     },
-    '&:hover fieldset': {},
+
+    '&:hover fieldset': {
+      borderColor: theme.palette.primary.light, // Optional hover color
+    },
+
     '&.Mui-focused fieldset': {
-      borderColor: '#0072F5',
-      borderWidth: 2,
+      borderColor: theme.colors?.focusBorder || theme.palette.primary.main,
+      borderWidth: '2px',
     },
   },
 
   '& input': {
     fontWeight: 400,
+    color: theme.palette.text.primary, // Input text color
+  },
+
+  // Disabled state styles
+  // Cursor not-allowed for disabled state
+  '& .Mui-disabled': {
+    cursor: 'not-allowed',
   },
 }));
 

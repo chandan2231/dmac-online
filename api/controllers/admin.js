@@ -3,6 +3,426 @@ import bcrypt from 'bcryptjs'
 import sendEmail from '../emailService.js'
 import { getUserInfo, getUserInfoByProtocolId } from '../userData.js'
 import { v4 as uuidv4 } from 'uuid'
+import { getRoleMessage } from '../utils/roleMessages.js'
+
+export const changeProductStatus = (req, res) => {
+  const que = 'UPDATE dmac_webapp_products SET status=? WHERE id=?'
+  db.query(que, [req.body.status, req.body.id], (err, data) => {
+    if (err) {
+      return res.status(500).json(err)
+    } else {
+      let result = {}
+      result.status = 200
+      result.msg = 'Product status updated successfully'
+      result.id = req.body.id
+      result.status = req.body.status
+      return res.json(result)
+    }
+  })
+}
+
+export const updateProductDetails = async (req, res) => {
+  try {
+    const { id, product_name, product_description, product_amount, status } =
+      req.body
+
+    if (
+      !id ||
+      !product_name ||
+      !product_description ||
+      product_amount == null
+    ) {
+      return res
+        .status(400)
+        .json({ status: 400, msg: 'Missing required fields' })
+    }
+
+    const query = `
+      UPDATE dmac_webapp_products 
+      SET product_name = ?, product_description = ?, product_amount = ? 
+      WHERE id = ?
+    `
+
+    const values = [product_name, product_description, product_amount, id]
+
+    db.query(query, values, (err, result) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ status: 500, msg: 'Database error', error: err })
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ status: 404, msg: 'Product not found' })
+      }
+
+      return res.json({
+        status: 200,
+        msg: 'Product details updated successfully',
+        id,
+        product_status: status ?? null
+      })
+    })
+  } catch (error) {
+    return res.status(500).json({ status: 500, msg: 'Server error', error })
+  }
+}
+
+export const getProductList = (req, res) => {
+  const que = 'SELECT * FROM dmac_webapp_products'
+  db.query(que, [], (err, data) => {
+    if (err) return res.status(500).json(err)
+    if (data.length >= 0) {
+      return res.status(200).json(data)
+    }
+  })
+}
+
+export const createUsersByRole = async (req, res) => {
+  try {
+    // Check if the email already exists
+    const checkEmailQuery = 'SELECT * FROM dmac_webapp_users WHERE email = ?'
+    const existingUserData = await new Promise((resolve, reject) => {
+      db.query(checkEmailQuery, [req.body.email], (err, data) => {
+        if (err) reject(err)
+        resolve(data)
+      })
+    })
+    const existingUser = Array.isArray(existingUserData)
+      ? existingUserData
+      : [existingUserData]
+
+    if (existingUser.length > 0) {
+      return res
+        .status(409)
+        .json('Email already exists. Please try with another email.')
+    }
+
+    // Hash the password
+    const salt = bcrypt.genSaltSync(10)
+    const hashedPassword = bcrypt.hashSync(req.body.password, salt)
+    const verificationToken = uuidv4()
+
+    // Insert new user
+    const insertQuery = `
+      INSERT INTO dmac_webapp_users (name, mobile, email, password, role, verified, verification_token, time_zone, country, address, speciality, license_number, license_expiration, contracted_rate_per_consult, province_title, province_id, finance_manager_id, language) 
+      VALUES (?)`
+    const values = [
+      req.body.name,
+      req.body.mobile,
+      req.body.email,
+      hashedPassword,
+      req.body.role,
+      0,
+      verificationToken,
+      req.body.time_zone,
+      req.body.country,
+      req.body.address,
+      req.body.speciality,
+      req.body.license_number,
+      req.body.license_expiration,
+      req.body.contracted_rate_per_consult,
+      req.body.provinceTitle,
+      req.body.provinceValue,
+      req.body.finance_manager_id,
+      req.body.languages
+    ]
+
+    await new Promise((resolve, reject) => {
+      db.query(insertQuery, [values], (err, data) => {
+        if (err) reject(err)
+        resolve(data)
+      })
+    })
+
+    // Email setup
+    const loginUrl = `${process.env.DOMAIN}signin`
+    const verifyLink = `${process.env.DOMAIN}verify-email/${verificationToken}`
+    const to = req.body.email
+    const subject = 'Welcome to DMAC'
+
+    const greetingHtml = `<p>Dear ${req.body.name},</p>`
+    let bodyHtml = `<p>You have successfully registered with DMAC as a ${req.body.role}.</p>`
+    bodyHtml += `<p>Your login details are</p>`
+    bodyHtml += `<p>Email: ${req.body.email}</p>`
+    bodyHtml += `<p>Password: ${req.body.password}</p>`
+    bodyHtml += `<p>Login URL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">Click here</a></p>`
+    bodyHtml += `<h4>Click the link below to verify your email before login</h4><a href="${verifyLink}">Verify Email</a>`
+
+    const emailHtml = `<div>${greetingHtml}${bodyHtml}</div>`
+
+    // Send email
+    try {
+      await sendEmail(to, subject, emailHtml, emailHtml)
+      return res.status(200).json({
+        status: 200,
+        msg: getRoleMessage(req.body.role, 'created', true, true)
+      })
+    } catch (emailError) {
+      console.error('Error sending email:', emailError)
+      return res.status(500).json({
+        status: 500,
+        msg: getRoleMessage(
+          req.body.role,
+          'created but failed to send email',
+          false
+        )
+      })
+    }
+  } catch (err) {
+    console.error('Error during registration:', err)
+    return res.status(500).json({ status: 500, msg: 'Internal server error.' })
+  }
+}
+
+export const getAllUsersByRole = (req, res) => {
+  const { role } = req.body
+
+  let query
+  let values = [role]
+
+  // If the role is USER (single language)
+  if (role === 'USER') {
+    query = `
+      SELECT 
+        u.*,
+        l.language AS language_name
+      FROM dmac_webapp_users u
+      LEFT JOIN dmac_webapp_language l 
+        ON u.language = l.id
+      WHERE u.role = ?
+    `
+  }
+  // For therapist or other roles (multiple languages possible)
+  else {
+    query = `
+      SELECT 
+        u.*,
+        GROUP_CONCAT(lang.language ORDER BY lang.language SEPARATOR ', ') AS language_name
+      FROM dmac_webapp_users u
+      LEFT JOIN dmac_webapp_language lang
+        ON FIND_IN_SET(lang.id, u.language)
+      WHERE u.role = ?
+      GROUP BY u.id
+    `
+  }
+
+  db.query(query, values, (err, data) => {
+    if (err) {
+      console.error('Error fetching users:', err)
+      return res.status(500).json({
+        status: 500,
+        msg: 'Database error',
+        error: err
+      })
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(200).json({
+        status: 200,
+        msg: `No ${role} records found.`
+      })
+    }
+
+    return res.status(200).json(data)
+  })
+}
+
+export const updateUsersDetails = async (req, res) => {
+  try {
+    const {
+      id,
+      name,
+      mobile,
+      time_zone,
+      country,
+      address,
+      speciality,
+      license_number,
+      license_expiration,
+      contracted_rate_per_consult,
+      finance_manager_id,
+      languages,
+      provinceTitle,
+      provinceValue
+    } = req.body
+
+    if (!id) {
+      return res
+        .status(400)
+        .json({ status: 400, msg: 'User ID is required for update.' })
+    }
+
+    const updateQuery = `
+      UPDATE dmac_webapp_users 
+      SET 
+        name = ?, 
+        mobile = ?,
+        time_zone = ?, 
+        country = ?, 
+        address = ?, 
+        speciality = ?, 
+        license_number = ?, 
+        license_expiration = ?, 
+        contracted_rate_per_consult = ?,
+        finance_manager_id = ?,
+        language = ?,
+        province_title = ?,
+        province_id = ?
+      WHERE id = ?
+    `
+
+    const values = [
+      name,
+      mobile,
+      time_zone,
+      country,
+      address,
+      speciality,
+      license_number,
+      license_expiration,
+      contracted_rate_per_consult,
+      finance_manager_id,
+      languages,
+      provinceTitle,
+      provinceValue,
+      id
+    ]
+
+    const updateResult = await new Promise((resolve, reject) => {
+      db.query(updateQuery, values, (err, data) => {
+        if (err) reject(err)
+        resolve(data)
+      })
+    })
+
+    if (updateResult.affectedRows === 0) {
+      return res.status(404).json({ status: 404, msg: 'Consultant not found.' })
+    }
+
+    return res.json({
+      status: 200,
+      msg: 'Consultant details updated successfully',
+      id
+    })
+  } catch (err) {
+    console.error('Error updating user:', err)
+    return res.status(500).json({ status: 500, msg: 'Internal server error.' })
+  }
+}
+
+export const changeUserStatus = (req, res) => {
+  const que = 'UPDATE dmac_webapp_users SET status=? WHERE id=?'
+  db.query(que, [req.body.status, req.body.id], (err, data) => {
+    if (err) {
+      return res.status(500).json(err)
+    } else {
+      let result = {}
+      result.status = 200
+      result.msg = 'User status updated successfully'
+      result.id = req.body.id
+      result.status = req.body.status
+      return res.json(result)
+    }
+  })
+}
+
+export const changeUserPassword = (req, res) => {
+  const salt = bcrypt.genSaltSync(10)
+  const hashedPassword = bcrypt.hashSync(req.body.password, salt)
+  const que = 'UPDATE dmac_webapp_users SET password=? WHERE id=?'
+  db.query(que, [hashedPassword, req.body.id], (err, data) => {
+    if (err) {
+      return res.status(500).json(err)
+    } else {
+      return res.status(200).json('User Password Reset Successfully')
+    }
+  })
+}
+
+export const getUsersTransactionList = (req, res) => {
+  const que = `SELECT trans.*, users.name AS name, users.email, product.product_name AS product_name, product.product_description as product_description 
+       FROM dmac_webapp_users_transaction as trans 
+       JOIN dmac_webapp_users AS users ON trans.user_id = users.id 
+       JOIN dmac_webapp_products AS product ON trans.product_id = product.id 
+       ORDER BY trans.id DESC`
+
+  db.query(que, [], (err, data) => {
+    if (err) return res.status(500).json(err)
+    if (data.length > 0) {
+      return res.status(200).json(data)
+    } else {
+      return res.status(404).json({ message: 'No transactions found.' })
+    }
+  })
+}
+
+export const getConsultationList = (req, res) => {
+  const { consultant_id, consultant_role } = req.body
+
+  const tableName =
+    consultant_role === 'THERAPIST'
+      ? 'dmac_webapp_therapist_consultations'
+      : 'dmac_webapp_consultations'
+
+  let que = `
+    SELECT 
+      cons.*, 
+      u.name AS user_name, 
+      u.email AS user_email, 
+      c.name AS consultant_name,
+      c.email AS consultant_email,
+      c.country AS consultation_country,
+      p.product_name, 
+      p.product_description
+    FROM ${tableName} AS cons
+    JOIN dmac_webapp_users AS u 
+      ON cons.user_id = u.id
+    JOIN dmac_webapp_users AS c
+      ON cons.consultant_id = c.id
+    JOIN dmac_webapp_products AS p 
+      ON cons.product_id = p.id
+  `
+
+  const params = []
+  const conditions = []
+
+  if (consultant_id) {
+    conditions.push(`cons.consultant_id = ?`)
+    params.push(consultant_id)
+  }
+
+  // If filtering by role, we are already selecting from the correct table based on role.
+  // But we might want to ensure the consultant user actually has that role?
+  // The join on users table will get the user, we can filter by role there too if needed.
+  // But usually the table separation is enough.
+  // However, if we are in the 'expert' table, we might want to filter by role='EXPERT' just in case?
+  // Actually, the previous code didn't filter by role in the query, just by table.
+  // But wait, the previous code I wrote added `c.role = ?`.
+  // If I switch tables, I don't necessarily need to filter by `c.role` if the table only contains that role's consultations.
+  // But let's keep it if provided, to be safe, or remove it if it causes issues (e.g. if a user changed roles).
+  // Let's remove the explicit role check on the user table for now, relying on the table separation.
+  // Or better, keep it if it was useful.
+  // Actually, for 'THERAPIST', the user role should be 'THERAPIST'.
+
+  if (consultant_role) {
+    conditions.push(`c.role = ?`)
+    params.push(consultant_role)
+  }
+
+  if (conditions.length > 0) {
+    que += ` WHERE ` + conditions.join(' AND ')
+  }
+
+  que += ` ORDER BY cons.id DESC`
+
+  db.query(que, params, (err, data) => {
+    if (err) {
+      return res.status(500).json(err)
+    }
+    return res.status(200).json(data || [])
+  })
+}
 
 export const getAllProtocolList = (req, res) => {
   const que = `
@@ -371,93 +791,6 @@ export const chairCommitteeApprovalProtocol = async (req, res) => {
   }
 }
 
-export const createMember = async (req, res) => {
-  try {
-    // Check if the email already exists
-    const checkEmailQuery = 'SELECT * FROM users WHERE email = ?'
-    const existingUserData = await new Promise((resolve, reject) => {
-      db.query(checkEmailQuery, [req.body.email], (err, data) => {
-        if (err) reject(err)
-        resolve(data)
-      })
-    })
-    const existingUser = Array.isArray(existingUserData)
-      ? existingUserData
-      : [existingUserData]
-    // If email exists, return an error
-    if (existingUser.length > 0) {
-      return res
-        .status(409)
-        .json('Email already exists. Please try with another email.')
-    }
-
-    // Hash the password
-    const salt = bcrypt.genSaltSync(10)
-    const hashedPassword = bcrypt.hashSync(req.body.password, salt)
-    const verificationToken = uuidv4()
-
-    // Insert new user into the database
-    const insertQuery = `
-      INSERT INTO users (name, mobile, email, password, researcher_type, user_type, verified, verification_token) 
-      VALUES (?)`
-    const values = [
-      req.body.name,
-      req.body.phone,
-      req.body.email,
-      hashedPassword,
-      req.body.user_type === 'admin' ? 'admin' : 'member',
-      req.body.user_type,
-      0,
-      verificationToken
-    ]
-
-    const insertResult = await new Promise((resolve, reject) => {
-      db.query(insertQuery, [values], (err, data) => {
-        if (err) reject(err)
-        resolve(data)
-      })
-    })
-    // Now, send the welcome email
-    const loginUrl = `${process.env.DOMAIN}signin`
-    const verifyLink = `${process.env.DOMAIN}verify-email/${verificationToken}`
-
-    const to = req.body.email
-    const subject = 'Welcome to IRBHUB'
-    const greetingHtml = `<p>Dear ${req.body.name},</p>`
-    let bodyHtml = `<p>You have successfully registered with IRBHUB as a ${req.body.user_type} role.</p>`
-    bodyHtml += `<p>Your login details are</p>`
-    bodyHtml += `<p>Email: ${req.body.email}</p>`
-    bodyHtml += `<p>Password: ${req.body.password}</p>`
-    bodyHtml += `<p>Login URL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">
-              Click here
-            </a></p>`
-    bodyHtml += `<h4>Click the link below to verify your email before login</h4><a href="${verifyLink}">Verify Email</a>`
-    const emailHtml = `
-      <div>
-        ${greetingHtml}
-        ${bodyHtml}
-      </div>`
-    const text = emailHtml
-    const html = emailHtml
-
-    // Send email
-    try {
-      await sendEmail(to, subject, text, html)
-      return res
-        .status(200)
-        .json('Member has been created successfully and email sent.')
-    } catch (emailError) {
-      console.error('Error sending email:', emailError)
-      return res
-        .status(500)
-        .json({ status: 500, msg: 'Member created but failed to send email.' })
-    }
-  } catch (err) {
-    console.error('Error during registration:', err)
-    return res.status(500).json({ status: 500, msg: 'Internal server error.' })
-  }
-}
-
 export const getActiveVotingMemberList = (req, res) => {
   const que = 'SELECT * FROM users WHERE user_type IN (?, ?, ?) AND status = ?'
   db.query(
@@ -532,19 +865,6 @@ export const getEventPriceList = (req, res) => {
   })
 }
 
-export const changeUserPassword = (req, res) => {
-  const salt = bcrypt.genSaltSync(10)
-  const hashedPassword = bcrypt.hashSync(req.body.password, salt)
-  const que = 'UPDATE users SET password=? WHERE id=?'
-  db.query(que, [hashedPassword, req.body.id], (err, data) => {
-    if (err) {
-      return res.status(500).json(err)
-    } else {
-      return res.status(200).json('User Password Reset Successfully')
-    }
-  })
-}
-
 export const changeMemberPassword = (req, res) => {
   const salt = bcrypt.genSaltSync(10)
   const hashedPassword = bcrypt.hashSync(req.body.password, salt)
@@ -554,22 +874,6 @@ export const changeMemberPassword = (req, res) => {
       return res.status(500).json(err)
     } else {
       return res.status(200).json('Member Password Reset Successfully')
-    }
-  })
-}
-
-export const changeUserStatus = (req, res) => {
-  const que = 'UPDATE users SET status=? WHERE id=?'
-  db.query(que, [req.body.status, req.body.id], (err, data) => {
-    if (err) {
-      return res.status(500).json(err)
-    } else {
-      let result = {}
-      result.status = 200
-      result.msg = 'User has been deleted successfully'
-      result.id = req.body.id
-      result.status = req.body.status
-      return res.json(result)
     }
   })
 }
@@ -777,16 +1081,6 @@ export const getCreatedProtocolList = (req, res) => {
         }
       })
     })
-  })
-}
-
-export const getAllUsers = (req, res) => {
-  const que = 'select * from users where researcher_type=? AND status=?'
-  db.query(que, ['user', 1], (err, data) => {
-    if (err) return res.status(500).json(err)
-    if (data.length >= 0) {
-      return res.status(200).json(data)
-    }
   })
 }
 

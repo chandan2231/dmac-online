@@ -1,5 +1,4 @@
 import {
-  Box,
   Divider,
   Drawer,
   List,
@@ -9,80 +8,52 @@ import {
   ListItemText,
   Toolbar,
   Tooltip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import type { RootState } from '../../store';
 import { get } from 'lodash';
 import { useSidebarContext } from './provider';
 import { DRAWER_WIDTH, MINI_DRAWER_WIDTH } from '../../utils/constants';
-import { useDispatch } from 'react-redux';
-import { openLanguageModal } from '../../i18n/language.slice';
-import { openLogoutModal } from '../../features/auth/components/logout/logout.slice';
-import { useThemeContext } from '../../providers/theme-provider/ThemeContext';
 import { useSelector } from 'react-redux';
 import { getSidebarOptions } from '../../utils/functions';
 import { useLocation, useNavigate } from 'react-router-dom';
 import withAuthGuard from '../../middlewares/withAuthGuard';
-import TranslateIcon from '@mui/icons-material/Translate';
-import ColorLensIcon from '@mui/icons-material/ColorLens';
-import LogoutIcon from '@mui/icons-material/Logout';
-import LanguageMode from '../../i18n/LanguageMode';
-import ColorMode from '../../providers/theme-provider/ColorMode';
-import LogoutFeature from '../../features/auth/components/logout';
 import mappedIcons from './mapped-icons';
 
-const sidebarOptions = (
-  handleOpenLanguageModal: () => void,
-  handleLogoutModal: () => void,
-  handleThemeModal: () => void
-) => [
-  {
-    title: 'Language',
-    icon: <TranslateIcon />,
-    action: handleOpenLanguageModal,
-  },
-  {
-    title: 'Color Mode',
-    icon: <ColorLensIcon />,
-    action: handleThemeModal,
-  },
-  {
-    title: 'Logout',
-    icon: <LogoutIcon />,
-    action: handleLogoutModal,
-  },
-];
-
 const Sidebar = () => {
-  const { drawerOpen } = useSidebarContext();
-  const { setIsThemeModalOpen } = useThemeContext();
+  const { drawerOpen, toggleDrawer } = useSidebarContext();
   const { allowedRoutes } = useSelector((state: RootState) => state.auth);
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const dispatch = useDispatch();
-
-  const handleOpenLanguageModal = () => {
-    dispatch(openLanguageModal());
+  const handleDrawerToggle = () => {
+    toggleDrawer();
   };
 
-  const handleLogoutModal = () => {
-    dispatch(openLogoutModal());
-  };
-
-  const handleThemeModal = () => {
-    setIsThemeModalOpen(true);
-  };
+  const drawerWidth = isMobile
+    ? DRAWER_WIDTH
+    : drawerOpen
+      ? DRAWER_WIDTH
+      : MINI_DRAWER_WIDTH;
 
   return (
     <Drawer
-      variant="permanent"
+      variant={isMobile ? 'temporary' : 'permanent'}
+      open={isMobile ? drawerOpen : true}
+      onClose={handleDrawerToggle}
+      ModalProps={{
+        keepMounted: true, // Better open performance on mobile.
+      }}
       sx={{
-        width: drawerOpen ? DRAWER_WIDTH : MINI_DRAWER_WIDTH,
+        width: drawerWidth,
         flexShrink: 0,
         whiteSpace: 'nowrap',
         transition: 'width 0.3s',
         [`& .MuiDrawer-paper`]: {
-          width: drawerOpen ? DRAWER_WIDTH : MINI_DRAWER_WIDTH,
+          width: drawerWidth,
           transition: 'width 0.3s',
           overflowX: 'hidden',
         },
@@ -97,14 +68,18 @@ const Sidebar = () => {
           return (
             <ListItem key={index} disablePadding sx={{ display: 'block' }}>
               <Tooltip
-                title={!drawerOpen ? option.title : ''}
+                title={!drawerOpen && !isMobile ? option.title : ''}
                 placement="right"
               >
                 <ListItemButton
-                  onClick={() => navigate(String(get(option, ['path'])))}
+                  onClick={() => {
+                    navigate(String(get(option, ['path'])));
+                    if (isMobile) toggleDrawer();
+                  }}
                   sx={{
                     minHeight: 48,
-                    justifyContent: drawerOpen ? 'initial' : 'center',
+                    justifyContent:
+                      drawerOpen || isMobile ? 'initial' : 'center',
                     px: 2.5,
                     backgroundColor: isActive
                       ? theme => theme.palette.action.selected
@@ -119,13 +94,15 @@ const Sidebar = () => {
                   <ListItemIcon
                     sx={{
                       minWidth: 0,
-                      mr: drawerOpen ? 3 : 'auto',
+                      mr: drawerOpen || isMobile ? 3 : 'auto',
                       justifyContent: 'center',
                     }}
                   >
                     <IconComponent color={isActive ? 'primary' : 'inherit'} />
                   </ListItemIcon>
-                  {drawerOpen && <ListItemText primary={option.title} />}
+                  {(drawerOpen || isMobile) && (
+                    <ListItemText primary={option.title} />
+                  )}
                 </ListItemButton>
               </Tooltip>
             </ListItem>
@@ -133,49 +110,10 @@ const Sidebar = () => {
         })}
       </List>
       {getSidebarOptions(allowedRoutes).length > 0 && <Divider />}
-      <List>
-        {sidebarOptions(
-          handleOpenLanguageModal,
-          handleLogoutModal,
-          handleThemeModal
-        ).map((option, index) => (
-          <ListItem key={index} disablePadding sx={{ display: 'block' }}>
-            <Tooltip title={!drawerOpen ? option.title : ''} placement="right">
-              <ListItemButton
-                sx={{
-                  minHeight: 48,
-                  justifyContent: drawerOpen ? 'initial' : 'center',
-                  px: 2.5,
-                }}
-                onClick={() => option.action()}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: drawerOpen ? 3 : 'auto',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {option.icon}
-                </ListItemIcon>
-                {drawerOpen && <ListItemText primary={option.title} />}
-              </ListItemButton>
-            </Tooltip>
-          </ListItem>
-        ))}
-      </List>
-
-      <Box
-        sx={{
-          display: 'none',
-        }}
-      >
-        <LanguageMode />
-        <ColorMode />
-        <LogoutFeature />
-      </Box>
     </Drawer>
   );
 };
 
-export default withAuthGuard(Sidebar);
+const SidebarWithAuth = withAuthGuard(Sidebar);
+
+export default SidebarWithAuth;

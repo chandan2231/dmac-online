@@ -1,4 +1,5 @@
 import React, { type ErrorInfo, type ReactNode } from 'react';
+import { styled } from '@mui/material/styles';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -9,6 +10,12 @@ interface ErrorBoundaryState {
   error: Error | null;
   errorInfo: ErrorInfo | null;
 }
+
+const ErrorContainer = styled('div')(({ theme }) => ({
+  padding: 20,
+  backgroundColor: 'red',
+  color: theme?.colors?.errorText || '#fff',
+}));
 
 class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
@@ -33,14 +40,14 @@ class ErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: 20, backgroundColor: '#fdd', color: '#900' }}>
+        <ErrorContainer>
           <h2>Something went wrong.</h2>
           <details style={{ whiteSpace: 'pre-wrap' }}>
             {this.state.error?.toString()}
             <br />
             {this.state.errorInfo?.componentStack}
           </details>
-        </div>
+        </ErrorContainer>
       );
     }
 

@@ -1,67 +1,58 @@
 import { createTheme } from '@mui/material/styles';
+import { tokens } from './tokens';
 
 const lightTheme = createTheme({
   palette: {
     mode: 'light',
-    primary: { main: '#1976d2' },
-    background: { default: '#f5f5f5' },
+    primary: { main: tokens.primary.main },
+    success: { main: tokens.success.main },
+    error: { main: tokens.error.main },
+    warning: { main: tokens.warning.main },
+    info: { main: tokens.info.main },
+    background: { default: tokens.common.white },
   },
+  customBackgrounds: {
+    authLayout: `linear-gradient(to right, ${tokens.common.white}, ${tokens.common.white})`, // Light theme auth background
+  },
+  morenButton: {
+    height: '36px',
+    borderRadius: '999px',
+  },
+  colors: {
+    inputBorder: tokens.primary.main,
+    focusBorder: tokens.primary.main,
+    loader: tokens.primary.main,
+    errorBg: tokens.error.bg,
+    errorText: tokens.error.text,
+  },
+  landingPage: tokens.landingPage,
 });
 
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
-    primary: { main: '#90caf9' },
-    background: { default: '#121212' },
+    primary: { main: tokens.primary.main },
+    success: { main: tokens.success.main },
+    error: { main: tokens.error.main },
+    warning: { main: tokens.warning.main },
+    info: { main: tokens.info.main },
+    background: { default: tokens.primary.main },
   },
+  customBackgrounds: {
+    authLayout: `linear-gradient(to right, ${tokens.common.white}, ${tokens.common.white})`, // Light theme auth background
+  },
+  morenButton: {
+    height: '36px',
+    borderRadius: '999px',
+  },
+  colors: {
+    inputBorder: tokens.primary.main,
+    focusBorder: tokens.primary.main,
+    loader: tokens.primary.main,
+    errorBg: tokens.error.bg,
+    errorText: tokens.error.text,
+  },
+  landingPage: tokens.landingPage,
 });
 
-const greenTheme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: { main: '#2e7d32' },
-    background: { default: '#e8f5e9' },
-  },
-});
-
-const redTheme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: { main: '#d32f2f' },
-    background: { default: '#ffebee' },
-  },
-});
-
-const blueTheme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: { main: '#1976d2' },
-    background: { default: '#e3f2fd' },
-  },
-});
-
-const yellowTheme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: { main: '#fbc02d' },
-    background: { default: '#fffde7' },
-  },
-});
-
-const violetTheme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: { main: '#8e24aa' },
-    background: { default: '#f3e5f5' },
-  },
-});
-
-export {
-  lightTheme,
-  darkTheme,
-  greenTheme,
-  redTheme,
-  blueTheme,
-  yellowTheme,
-  violetTheme,
-};
+export { lightTheme, darkTheme };

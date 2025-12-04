@@ -1,47 +1,26 @@
-import type { ComponentKey } from '../../templates/protected-boundary/mapping';
+import type { LanguageCode } from '../../i18n/language.interface';
+import type { IAllowedRoutes } from '../../router/router';
 
-export const UserRole = {
-  USER: 'user',
-  ADMIN: 'admin',
-  SUPER_ADMIN: 'superadmin',
-};
-
-export type LayoutType = 'MainLayout' | 'AuthLayout';
+export type UserRole =
+  | 'USER'
+  | 'ADMIN'
+  | 'SUPER_ADMIN'
+  | 'EXPERT'
+  | 'THERAPIST';
 
 export interface IUser {
   id: string;
   name: string;
   email: string;
-  role: (typeof UserRole)[keyof typeof UserRole];
-}
-
-export const ROUTES = {
-  // Public routes
-  HOME: '/',
-
-  // Authenticated routes
-  LOGIN: '/login',
-  REGISTER: '/register',
-  FORGOT_PASSWORD: '/forgot-password',
-
-  // Protected routes
-  DASHBOARD: '/dashboard',
-
-  // Not Found
-  NOT_FOUND: '*',
-} as const;
-
-export type ROUTES = (typeof ROUTES)[keyof typeof ROUTES];
-
-export interface IUserRoute {
-  path: ROUTES;
-  layout: LayoutType;
-  component: ComponentKey;
-  // additional properties can be added as needed
-  showInSidebar: boolean;
-  sideBarIcon: string | null;
-  sideBarTitle: string | null;
-  isAChildOf: ROUTES | null;
+  role: UserRole;
+  token: string;
+  language: string;
+  phone: string;
+  languageCode: LanguageCode;
+  isPaymentDone: boolean | null;
+  google_access_token: string | null;
+  google_refresh_token: string | null;
+  time_zone: string | null;
 }
 
 export interface IAuthState {
@@ -49,7 +28,7 @@ export interface IAuthState {
   token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
-  allowedRoutes: IUserRoute[] | null;
+  allowedRoutes: IAllowedRoutes[] | null;
 }
 
 // Login payload and response types
@@ -58,10 +37,15 @@ export interface ILoginPayload {
   password: string;
 }
 
+export interface IRegisterResponse {
+  isSuccess: boolean;
+  message: string;
+}
+
 export interface ILoginResponse {
-  token: string | null;
   user: IUser | null;
-  allowedRoutes: IUserRoute[] | null;
+  token: string | null;
+  allowedRoutes: IAllowedRoutes[] | null;
   success: boolean;
   message: string;
 }
@@ -72,4 +56,10 @@ export interface IRegisterPayload {
   email: string;
   password: string;
   mobile: string;
+  state?: string;
+  zipcode?: string;
+  country?: string;
+  language?: string;
+  stateTitle?: string;
+  timeZone?: string;
 }

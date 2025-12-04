@@ -1,9 +1,8 @@
 import { Outlet } from 'react-router-dom';
 import { Box, Toolbar } from '@mui/material';
 import { SidebarProvider } from '../components/sidebar/provider';
-import Header from '../components/header';
-import Sidebar from '../components/sidebar';
-import useAuthRedirect from '../hooks/useAuthRedirect';
+import SidebarWithAuth from '../components/sidebar';
+import HeaderWithAuth from '../components/header';
 
 const styles = {
   container: {
@@ -20,12 +19,11 @@ const styles = {
 };
 
 const MainLayout = () => {
-  useAuthRedirect();
   return (
     <SidebarProvider>
       <Box sx={{ display: 'flex' }}>
-        <Header />
-        <Sidebar />
+        <HeaderWithAuth />
+        <SidebarWithAuth />
         <Box
           component="main"
           sx={{

@@ -19,13 +19,16 @@ export const TabHeaderLayout: React.FC<TabHeaderLayoutProps> = ({
   return (
     <Box>
       <Stack
-        direction="row"
-        alignItems="center"
+        direction={{ xs: 'column', sm: 'row' }}
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        justifyContent={'space-between'}
         spacing={spacing}
         padding={padding}
       >
-        <Box>{leftNode}</Box>
-        <Box>{rightNode}</Box>
+        <Box width={{ xs: '100%', sm: 'auto' }} pt={{ xs: 1, sm: 1 }}>
+          {leftNode}
+        </Box>
+        <Box width={{ xs: '100%', sm: 'auto' }}>{rightNode}</Box>
       </Stack>
       {children && <Box mt={2}>{children}</Box>}
     </Box>

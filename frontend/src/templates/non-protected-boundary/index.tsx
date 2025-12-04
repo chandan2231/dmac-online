@@ -1,6 +1,6 @@
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
-import { PUBLIC_ROUTES } from '../protected-boundary/mapping';
+import { PUBLIC_ROUTES } from '../../router/router';
 
 const NonProtectedBoundary = () => {
   return (

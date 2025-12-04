@@ -8,7 +8,10 @@ import { TanstackProvider } from './tanstack-provider';
 import { CookiesProvider } from 'react-cookie';
 import { BrowserRouter } from 'react-router-dom';
 import { ToastProvider } from './toast-provider';
-import { ROUTES } from '../features/auth/auth.interface';
+import { LanguageConstantProvider } from './language-constant-provider';
+import { ROUTES } from '../router/router';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 interface IAppProviderProps {
   children: ReactNode;
@@ -21,11 +24,15 @@ const AppProvider: React.FC<IAppProviderProps> = ({ children }) => {
         <Provider store={store}>
           <PersistGate loading={null} persistor={persistor}>
             <TanstackProvider>
-              <ThemeProvider>
-                <ToastProvider>
-                  <BrowserRouter>{children}</BrowserRouter>
-                </ToastProvider>
-              </ThemeProvider>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <LanguageConstantProvider>
+                  <ThemeProvider>
+                    <ToastProvider>
+                      <BrowserRouter>{children}</BrowserRouter>
+                    </ToastProvider>
+                  </ThemeProvider>
+                </LanguageConstantProvider>
+              </LocalizationProvider>
             </TanstackProvider>
           </PersistGate>
         </Provider>

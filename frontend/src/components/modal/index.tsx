@@ -11,6 +11,7 @@ import {
 import { styled } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import MorenButton from '../button';
+import CustomLoader from '../loader';
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialogContent-root': {
@@ -18,6 +19,9 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
   },
   '& .MuiDialogActions-root': {
     padding: theme.spacing(1),
+  },
+  '& .MuiPaper-root': {
+    borderRadius: theme.spacing(1),
   },
 }));
 
@@ -33,6 +37,10 @@ type GenericModalProps = {
   submitButtonText?: string;
   cancelButtonText?: string;
   maxWidth?: DialogProps['maxWidth'];
+  onCancel?: () => void | null;
+  isLoading?: boolean;
+  renderHtmlContent?: string;
+  submitDisabled?: boolean;
 };
 
 const GenericModal: React.FC<GenericModalProps> = ({
@@ -46,8 +54,16 @@ const GenericModal: React.FC<GenericModalProps> = ({
   hideCancelButton = false,
   submitButtonText = 'Submit',
   cancelButtonText = 'Cancel',
-  maxWidth = 'sm',
+  maxWidth = 'lg',
+  onCancel = null,
+  isLoading = false,
+  renderHtmlContent = null,
+  submitDisabled = false,
 }) => {
+  if (isLoading) {
+    return <CustomLoader />;
+  }
+
   return (
     <StyledDialog
       onClose={onClose}
@@ -58,7 +74,13 @@ const GenericModal: React.FC<GenericModalProps> = ({
     >
       <DialogTitle
         id="generic-modal-title"
-        sx={{ m: 0, p: 2, fontSize: '1.5rem' }}
+        sx={{
+          m: 0,
+          p: 2,
+          fontSize: '1.5rem',
+          backgroundColor: theme => theme.palette.primary.main,
+          color: theme => theme.palette.common.white,
+        }}
       >
         {title}
       </DialogTitle>
@@ -70,35 +92,55 @@ const GenericModal: React.FC<GenericModalProps> = ({
           position: 'absolute',
           right: 8,
           top: 8,
-          color: theme => theme.palette.grey[500],
+          color: theme => theme.palette.common.white,
+          backgroundColor: theme => theme.palette.grey[700],
+          '&:hover': {
+            backgroundColor: theme => theme.palette.grey[900],
+          },
         }}
       >
         <CloseIcon />
       </IconButton>
 
-      <DialogContent>
-        {subTitle && (
-          <Typography
-            variant="h6"
-            sx={{
-              textAlign: 'left',
-              fontSize: { xs: '0.875rem', sm: '0.875rem', md: '1rem' },
-              fontWeight: 'bold',
-              mb: 1,
-            }}
-          >
-            {subTitle}
-          </Typography>
-        )}
+      {renderHtmlContent && (
+        <DialogContent dividers sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
+          <div
+            dangerouslySetInnerHTML={{ __html: renderHtmlContent }}
+            className="ql-editor"
+          />
+        </DialogContent>
+      )}
 
-        {children}
-      </DialogContent>
+      {children || subTitle ? (
+        <DialogContent>
+          {subTitle && (
+            <Typography
+              variant="h6"
+              sx={{
+                textAlign: 'left',
+                fontSize: { xs: '0.875rem', sm: '0.875rem', md: '1rem' },
+                fontWeight: 'bold',
+                mb: 1,
+              }}
+            >
+              {subTitle}
+            </Typography>
+          )}
+
+          {children}
+        </DialogContent>
+      ) : null}
 
       {(onSubmit || !hideCancelButton) && (
         <DialogActions>
           {!hideCancelButton && (
             <MorenButton
-              onClick={onClose}
+              onClick={() => {
+                if (onCancel) {
+                  return onCancel();
+                }
+                onClose();
+              }}
               variant="outlined"
               sx={{
                 maxWidth: '150px',
@@ -111,6 +153,7 @@ const GenericModal: React.FC<GenericModalProps> = ({
             <MorenButton
               onClick={onSubmit}
               variant="contained"
+              disabled={submitDisabled}
               sx={{
                 maxWidth: '150px',
               }}

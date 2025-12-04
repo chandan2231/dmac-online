@@ -2,10 +2,10 @@ import axios from 'axios';
 import { purgeLocalStorage } from '../utils/functions';
 import { persistor, store } from '../store';
 import { get } from 'lodash';
-import { ROUTES } from '../features/auth/auth.interface';
+import { ROUTES } from '../router/router';
 
-const TIMEOUT = 5000;
-const BASE_URL = import.meta.env.VITE_API_URL;
+const TIMEOUT = 30000;
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const _axios = axios.create({
   timeout: TIMEOUT,
@@ -18,7 +18,7 @@ _axios.interceptors.request.use(
     const token = get(state, ['auth', 'token'], null);
 
     if (token) {
-      config.headers['Authorization'] = `Token ${token}`;
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
     return config;
   },

@@ -4,9 +4,10 @@ import { Box } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../auth.interface.ts';
 import { useSelector } from 'react-redux';
 import { useToast } from '../../../../providers/toast-provider';
+import { navigateUserTo } from '../../../../utils/functions.ts';
+import { ROUTES } from '../../../../router/router.ts';
 import MorenButton from '../../../../components/button';
 import ModernInput from '../../../../components/input';
 import MorenCard from '../../../../components/card/index.tsx';
@@ -43,18 +44,16 @@ const Login = () => {
   };
 
   const onSubmit = async (data: FormValues) => {
-    const { success, message } = await AuthService.loginUser(data);
+    const { success, message, user } = await AuthService.loginUser(data);
     if (!success) {
       return showToast(message, 'error');
     }
 
     showToast(message, 'success');
-    handleNavigation(ROUTES.HOME);
+    handleNavigation(navigateUserTo(user));
   };
 
-  if (loading) {
-    return <CustomLoader />;
-  }
+  if (loading) return <CustomLoader />;
 
   return (
     <MorenCard

@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
 import {
   DataGrid,
   type GridColDef,
@@ -14,6 +14,8 @@ type GenericTableProps<T> = {
   paginationModel?: GridPaginationModel;
   onPaginationModelChange?: (model: GridPaginationModel) => void;
   loading?: boolean;
+  maxHeight?: string;
+  minHeight?: string;
 };
 
 export function GenericTable<T extends { id: string | number }>({
@@ -24,32 +26,47 @@ export function GenericTable<T extends { id: string | number }>({
   paginationModel,
   onPaginationModelChange,
   loading = false,
+  maxHeight = 'calc(100vh - 150px)',
+  minHeight = 'calc(100vh - 150px)',
 }: GenericTableProps<T>) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const updatedCols = isMobile
+    ? columns.map(col => ({ ...col, width: 200, maxWidth: 200, minWidth: 200 }))
+    : columns;
+
   return (
     <Box
       sx={{
         width: '100%',
         height: '100%',
-        maxHeight: 'calc(100vh - 200px)', // Adjust based on your layout
-        minHeight: 'calc(100vh - 200px)', // Adjust based on your layout
+        maxHeight: maxHeight, // Adjust based on your layout
+        minHeight: minHeight, // Adjust based on your layout
         overflow: 'scroll',
       }}
     >
       <DataGrid
         rows={rows}
-        columns={columns}
+        columns={updatedCols}
         getRowId={row => row[rowIdKey] as string | number}
         pageSizeOptions={[5, 10, 25, 50, 100]}
         paginationModel={paginationModel}
         onPaginationModelChange={onPaginationModelChange}
         pagination
         loading={loading}
-        autoHeight
+        disableRowSelectionOnClick
         onRowClick={params => onRowClick?.(params.row)}
         sx={{
           backgroundColor: 'background.paper',
-          maxHeight: 'calc(100vh - 200px)', // Adjust based on your layout
-          minHeight: 'calc(100vh - 200px)', // Adjust based on your layout
+          maxHeight: maxHeight, // Adjust based on your layout
+          minHeight: minHeight, // Adjust based on your layout
+          '.MuiDataGrid-columnHeaderTitle': {
+            color: '#000000',
+          },
+          '& .MuiDataGrid-row:hover': {
+            backgroundColor: '#eee',
+          },
         }}
       />
     </Box>

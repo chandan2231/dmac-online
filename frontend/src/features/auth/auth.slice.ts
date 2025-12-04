@@ -1,5 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { IAuthState, IUser, IUserRoute } from './auth.interface';
+import type { IAuthState, IUser } from './auth.interface';
+import type { IUpdateLanguageDetails } from '../../i18n/language.interface';
+import type { IAllowedRoutes } from '../../router/router';
 
 const initialState: IAuthState = {
   user: null,
@@ -16,12 +18,18 @@ const authSlice = createSlice({
     loginStart: state => {
       state.loading = true;
     },
+    setLoadingTrue: state => {
+      state.loading = true;
+    },
+    setLoadingFalse: state => {
+      state.loading = false;
+    },
     loginSuccess: (
       state,
       action: PayloadAction<{
         user: IUser;
         token: string;
-        allowedRoutes: IUserRoute[];
+        allowedRoutes: IAllowedRoutes[];
       }>
     ) => {
       state.user = action.payload.user;
@@ -56,10 +64,26 @@ const authSlice = createSlice({
       state.loading = false;
       state.allowedRoutes = null;
     },
+    updateLanguageDetails: (
+      state,
+      action: PayloadAction<Partial<IUpdateLanguageDetails>>
+    ) => {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+      }
+    },
   },
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout, updateUser } =
-  authSlice.actions;
+export const {
+  loginStart,
+  setLoadingTrue,
+  setLoadingFalse,
+  loginSuccess,
+  loginFailure,
+  logout,
+  updateUser,
+  updateLanguageDetails,
+} = authSlice.actions;
 
 export default authSlice.reducer;

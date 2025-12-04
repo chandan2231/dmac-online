@@ -1,11 +1,12 @@
 import { get } from 'lodash';
-import type {
-  ILoginPayload,
-  IUserRoute,
-} from '../features/auth/auth.interface';
-import { ADMIN_CREDENTIALS, LOCAL_STORAGE_KEYS } from './constants';
-
-const DEV_MODE = import.meta.env.VITE_DEV_MODE;
+import { type IUser } from '../features/auth/auth.interface';
+import {
+  LOCAL_STORAGE_KEYS,
+  ROLES_ALLOWED_TO_CHANGE_LANGUAGE,
+} from './constants';
+import type { ILanguage, ILanguageConstants } from '../i18n/language.interface';
+import type { IOption } from '../components/select';
+import { ROUTES, type IAllowedRoutes } from '../router/router';
 
 const getCurrentYear = (): number => {
   return new Date().getFullYear();
@@ -43,26 +44,9 @@ const setLocalStorageItem = (
   localStorage.setItem(key, value);
 };
 
-const isDevModeActive = (payload: ILoginPayload) => {
-  const { email, password } = payload;
-  if (
-    email === ADMIN_CREDENTIALS.email &&
-    password === ADMIN_CREDENTIALS.password &&
-    DEV_MODE
-  ) {
-    return {
-      isDev: true,
-    };
-  }
-
-  return {
-    isDev: false,
-  };
-};
-
 const getNestedRoutes = (
   path: string | null,
-  allowedRoutes: IUserRoute[] | null
+  allowedRoutes: IAllowedRoutes[] | null
 ) => {
   if (!allowedRoutes) {
     return [];
@@ -73,7 +57,7 @@ const getNestedRoutes = (
     .map(route => get(route, ['path'], null));
 };
 
-const getSidebarOptions = (allowedRoutes: IUserRoute[] | null) => {
+const getSidebarOptions = (allowedRoutes: IAllowedRoutes[] | null) => {
   if (!allowedRoutes) {
     return [];
   }
@@ -88,8 +72,118 @@ const getSidebarOptions = (allowedRoutes: IUserRoute[] | null) => {
     }));
 };
 
+const convertLanguagesListToOptions = (
+  languages: ILanguage[] | []
+): IOption[] => {
+  return languages.map(language => ({
+    label: get(language, ['language'], ''),
+    value: String(get(language, ['id'], '')),
+  }));
+};
+
+const getLanguageText = (
+  languageConstants: ILanguageConstants | Record<string, string>,
+  text: string
+) => {
+  const languageText = get(languageConstants, [text], '');
+  return languageText || text;
+};
+
+const canWeShowChangeLanguageOption = (user: IUser | null) => {
+  const userRole = get(user, ['role'], '');
+  return ROLES_ALLOWED_TO_CHANGE_LANGUAGE.includes(userRole);
+};
+
+const navigateUserTo = (user: IUser | null) => {
+  const role = get(user, ['role'], 'USER');
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+    return ROUTES.ADMIN_DASHBOARD;
+  }
+  return ROUTES.HOME;
+};
+
+const getGeolocation = (): Promise<{
+  lat: number | null;
+  long: number | null;
+}> => {
+  return new Promise(resolve => {
+    if (!('geolocation' in navigator)) {
+      resolve({ lat: null, long: null });
+    } else {
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          resolve({
+            lat: position.coords.latitude,
+            long: position.coords.longitude,
+          });
+        },
+        error => {
+          console.error('Error getting location', error);
+          resolve({ lat: null, long: null });
+        }
+      );
+    }
+  });
+};
+
+const getNetworkInfo = () => {
+  const nav = navigator as NavigatorWithExtensions;
+  const connection =
+    nav.connection || nav.mozConnection || nav.webkitConnection;
+
+  return connection
+    ? {
+        effectiveType: connection.effectiveType,
+        rtt: connection.rtt,
+        downlink: connection.downlink,
+        saveData: connection.saveData,
+      }
+    : {};
+};
+
+const getDeviceInfo = () => {
+  const nav = navigator as NavigatorWithExtensions;
+  return {
+    userAgent: nav.userAgent,
+    platform: nav.platform,
+    vendor: nav.vendor,
+    language: nav.language,
+    deviceMemory: nav.deviceMemory,
+    hardwareConcurrency: nav.hardwareConcurrency,
+  };
+};
+
+const getIpAddress = async (): Promise<string | null> => {
+  try {
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    return get(data, ['ip'], null);
+  } catch (error) {
+    console.error('Error getting IP address', error);
+    return null;
+  }
+};
+
+const getUserEnvironmentInfo = async () => {
+  const { lat, long } = await getGeolocation();
+  const ipAddress = await getIpAddress();
+  const networkInfo = getNetworkInfo();
+  const deviceInfo = getDeviceInfo();
+  const osDetails = navigator.platform;
+
+  const userEnvironmentInfo = {
+    lat,
+    long,
+    networkInfo,
+    deviceInfo,
+    osDetails,
+    ipAddress,
+  };
+
+  return { userEnvironmentInfo };
+};
+
 export {
-  isDevModeActive,
   getCurrentYear,
   getCurrentMonth,
   getCurrentDay,
@@ -98,4 +192,9 @@ export {
   getLocalStorageItem,
   setLocalStorageItem,
   getSidebarOptions,
+  convertLanguagesListToOptions,
+  getLanguageText,
+  canWeShowChangeLanguageOption,
+  navigateUserTo,
+  getUserEnvironmentInfo,
 };
