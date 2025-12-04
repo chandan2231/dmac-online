@@ -9,8 +9,9 @@ import MorenButton from '../../../../components/button';
 import ModernInput from '../../../../components/input';
 import ModernSwitch from '../../../../components/switch';
 import type { GridColDef } from '@mui/x-data-grid';
-import { useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Rating } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 import { GenericTable } from '../../../../components/table';
 import ModernSelect, { type IOption } from '../../../../components/select';
@@ -32,7 +33,8 @@ import { IconButton, Menu, MenuItem } from '@mui/material';
 import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages';
 import ModernMultiSelect from '../../../../components/multi-select';
 import type { ILanguage } from '../../../../i18n/language.interface';
-import ReviewsModal from '../ReviewsModal';
+import { useQuery } from '@tanstack/react-query';
+import MorenCard from '../../../../components/card';
 
 const FINANCE_MANAGER_LIST = [
   {
@@ -98,8 +100,165 @@ const createConsultantSchema = Yup.object({
 });
 type CreateConsultantFormValues = Yup.InferType<typeof createConsultantSchema>;
 
+/* -------------------- REVIEWS COMPONENT -------------------- */
+interface IReview {
+  id: number;
+  patient_name: string;
+  rating: number;
+  review: string;
+  created_at: string;
+}
+
+interface ConsultantReviewsProps {
+  consultant: IConsultant;
+  onBack: () => void;
+}
+
+const ConsultantReviews = ({ consultant, onBack }: ConsultantReviewsProps) => {
+  const { data: reviews = [], isLoading } = useQuery({
+    queryKey: ['adminExpertReviews', consultant.id],
+    queryFn: async () => {
+      const result = await AdminService.getExpertReviews(consultant.id);
+      if (result.success) {
+        return result.data as IReview[];
+      }
+      return [];
+    },
+    enabled: !!consultant.id,
+  });
+
+  const [filteredReviews, setFilteredReviews] = useState<IReview[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedReview, setSelectedReview] = useState<IReview | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (reviews) {
+      if (searchQuery) {
+        const filtered = reviews.filter((review: IReview) =>
+          review.patient_name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredReviews(filtered);
+      } else {
+        setFilteredReviews(reviews);
+      }
+    }
+  }, [searchQuery, reviews]);
+
+  const handleCardClick = (review: IReview) => {
+    setSelectedReview(review);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedReview(null);
+  };
+
+  if (isLoading) {
+    return <CustomLoader />;
+  }
+
+  return (
+    <Box sx={{ p: 3, width: '100%', height: '100%' }}>
+      <TabHeaderLayout
+        leftNode={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="h5">Reviews - {consultant.name}</Typography>
+          </Box>
+        }
+        rightNode={
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+            }}
+          >
+            <ModernInput
+              label="Filter by Patient Name"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search..."
+              sx={{
+                minWidth: 250,
+              }}
+            />
+            <MorenButton variant="contained" onClick={onBack}>
+              Back
+            </MorenButton>
+          </Box>
+        }
+      />
+
+      <Grid container spacing={3}>
+        {filteredReviews.map(review => (
+          <Grid item xs={12} sm={6} md={4} lg={3} key={review.id}>
+            <Box
+              onClick={() => handleCardClick(review)}
+              sx={{ cursor: 'pointer', height: '100%' }}
+            >
+              <MorenCard title={review.patient_name} minHeight={200}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Rating value={review.rating} readOnly />
+                  <Typography
+                    variant="body2"
+                    sx={{ ml: 1, color: 'text.secondary' }}
+                  >
+                    {new Date(review.created_at).toLocaleDateString()}
+                  </Typography>
+                </Box>
+                <Typography variant="body1" sx={{}}>
+                  {review.review.length > 100
+                    ? `${review.review.substring(0, 100)}...`
+                    : review.review}
+                </Typography>
+              </MorenCard>
+            </Box>
+          </Grid>
+        ))}
+        {filteredReviews.length === 0 && (
+          <Grid item xs={12}>
+            <Typography>No reviews found.</Typography>
+          </Grid>
+        )}
+      </Grid>
+
+      <GenericModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title={`Review by ${selectedReview?.patient_name}`}
+        hideSubmitButton
+        cancelButtonText="Close"
+        onCancel={handleCloseModal}
+      >
+        {selectedReview && (
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Rating value={selectedReview.rating} readOnly />
+              <Typography
+                variant="body2"
+                sx={{ ml: 1, color: 'text.secondary' }}
+              >
+                {new Date(selectedReview.created_at).toLocaleString()}
+              </Typography>
+            </Box>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+              {selectedReview.review}
+            </Typography>
+          </Box>
+        )}
+      </GenericModal>
+    </Box>
+  );
+};
+
 /* -------------------- USER TABLE -------------------- */
-function ConsultantTable() {
+function ConsultantTable({
+  onViewReviews,
+}: {
+  onViewReviews: (consultant: IConsultant) => void;
+}) {
   const { data, isLoading, refetch } = useGetConsultantsListing();
   const { data: listingResponse } = useLanguageList({
     USER_TYPE: 'EXPERT',
@@ -111,7 +270,6 @@ function ConsultantTable() {
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
   const [selectedConsultant, setSelectedConsultant] =
     useState<IConsultant | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<IOption | null>(null);
@@ -154,16 +312,6 @@ function ConsultantTable() {
     setIsPasswordModalOpen(false);
     setSelectedConsultant(null);
     resetPassword();
-  };
-
-  const handleOpenReviewsModal = (user: IConsultant) => {
-    setSelectedConsultant(user);
-    setIsReviewsModalOpen(true);
-  };
-
-  const handleCloseReviewsModal = () => {
-    setIsReviewsModalOpen(false);
-    setSelectedConsultant(null);
   };
 
   const handleOpenEditModal = (consultant: ConsultantState) => {
@@ -368,7 +516,7 @@ function ConsultantTable() {
               <MenuItem
                 onClick={() => {
                   handleClose();
-                  handleOpenReviewsModal(params.row);
+                  onViewReviews(params.row);
                 }}
               >
                 View Ratings
@@ -875,14 +1023,6 @@ function ConsultantTable() {
           </Box>
         )}
       </GenericModal>
-
-      <ReviewsModal
-        isOpen={isReviewsModalOpen}
-        onClose={handleCloseReviewsModal}
-        userId={selectedConsultant?.id || null}
-        userType="EXPERT"
-        userName={selectedConsultant?.name || ''}
-      />
     </>
   );
 }
@@ -891,6 +1031,8 @@ function ConsultantTable() {
 const ConsultantsListing = () => {
   const [createConsultantModalOpen, setCreateConsultantModalOpen] =
     useState(false);
+  const [selectedConsultantForReviews, setSelectedConsultantForReviews] =
+    useState<IConsultant | null>(null);
   const { data: listingResponse } = useLanguageList({
     USER_TYPE: 'EXPERT',
   });
@@ -964,6 +1106,15 @@ const ConsultantsListing = () => {
 
   if (isLoadingStatus) return <CustomLoader />;
 
+  if (selectedConsultantForReviews) {
+    return (
+      <ConsultantReviews
+        consultant={selectedConsultantForReviews}
+        onBack={() => setSelectedConsultantForReviews(null)}
+      />
+    );
+  }
+
   return (
     <Box
       display="flex"
@@ -986,7 +1137,7 @@ const ConsultantsListing = () => {
         }
       />
 
-      <ConsultantTable />
+      <ConsultantTable onViewReviews={setSelectedConsultantForReviews} />
 
       {/* Create Consultant Modal */}
       <GenericModal
