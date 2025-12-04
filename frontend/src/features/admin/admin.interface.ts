@@ -181,6 +181,7 @@ export interface IConsultation {
   product_description: string;
   event_start?: string;
   event_end?: string;
+  user_timezone?: string;
 }
 
 export type ConsultationFilter = number | null;

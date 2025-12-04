@@ -403,7 +403,16 @@ function ConsultationsTable() {
                   Time Slot:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
-                  {selectedConsultation.time_slot || ''}
+                  {selectedConsultation.event_start &&
+                  selectedConsultation.event_end
+                    ? `${dayjs(selectedConsultation.event_start)
+                        .tz(selectedConsultation.time_zone || userTimezone)
+                        .format('HH:mm')} - ${dayjs(
+                        selectedConsultation.event_end
+                      )
+                        .tz(selectedConsultation.time_zone || userTimezone)
+                        .format('HH:mm')}`
+                    : selectedConsultation.time_slot || ''}
                 </Typography>
               </Box>
 
@@ -417,7 +426,11 @@ function ConsultationsTable() {
                   Consultation Date:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
-                  {selectedConsultation.consultation_date || ''}
+                  {selectedConsultation.event_start
+                    ? dayjs(selectedConsultation.event_start)
+                        .tz(selectedConsultation.time_zone || userTimezone)
+                        .format('MMM D, YYYY')
+                    : selectedConsultation.consultation_date || ''}
                 </Typography>
               </Box>
 
@@ -431,7 +444,7 @@ function ConsultationsTable() {
                   Time Zone:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
-                  {selectedConsultation.time_zone || ''}
+                  {selectedConsultation.user_timezone || ''}
                 </Typography>
               </Box>
 
