@@ -122,7 +122,6 @@ const BookTherapistForm = ({
   const selectedTherapist = therapists?.find(
     (t: IExpert) => t.id === Number(selectedTherapistId)
   );
-  const enableReviews = import.meta.env.VITE_ENABLE_REVIEWS === 'true';
 
   return (
     <Box p={3} height="100%" width="100%">
@@ -186,32 +185,31 @@ const BookTherapistForm = ({
                         {therapist.name} - {therapist.country} (
                         {therapist.province_title})
                       </Typography>
-                      {enableReviews &&
-                        (therapist.average_rating ? (
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 0.5,
-                              ml: 2,
-                            }}
-                          >
-                            <Rating
-                              value={Number(therapist.average_rating)}
-                              readOnly
-                              size="small"
-                              precision={0.5}
-                            />
-                          </Box>
-                        ) : (
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ ml: 2 }}
-                          >
-                            No reviews available
-                          </Typography>
-                        ))}
+                      {therapist.average_rating ? (
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            ml: 2,
+                          }}
+                        >
+                          <Rating
+                            value={Number(therapist.average_rating)}
+                            readOnly
+                            size="small"
+                            precision={0.5}
+                          />
+                        </Box>
+                      ) : (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ ml: 2 }}
+                        >
+                          No reviews available
+                        </Typography>
+                      )}
                     </Box>
                   </MenuItem>
                 ))
@@ -244,7 +242,7 @@ const BookTherapistForm = ({
           </Button>
         </Box>
 
-        {selectedTherapist && enableReviews && (
+        {selectedTherapist && (
           <Box display="flex" alignItems="center" gap={1}>
             <Typography variant="subtitle2">Average Rating:</Typography>
             {selectedTherapist.average_rating ? (

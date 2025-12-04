@@ -42,8 +42,6 @@ const BookTherapist = () => {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [viewReviewMode, setViewReviewMode] = useState(false);
 
-  const enableReviews = import.meta.env.VITE_ENABLE_REVIEWS === 'true';
-
   const { data: therapists } = useTherapists(
     user,
     dayjs().format('YYYY-MM-DD')
@@ -136,7 +134,7 @@ const BookTherapist = () => {
           onReviewClick={handleReviewClick}
           onRescheduleClick={handleRescheduleClick}
           user={user}
-          enableReviews={enableReviews}
+          enableReviews={true}
         />
       ) : (
         <BookTherapistForm

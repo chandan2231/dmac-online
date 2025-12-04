@@ -329,9 +329,7 @@ const ConsultationList = () => {
         >
           Edit Status
         </MenuItem>
-        {import.meta.env.VITE_ENABLE_REVIEWS === 'true' && (
-          <MenuItem onClick={handleViewReviewClick}>View Review</MenuItem>
-        )}
+        <MenuItem onClick={handleViewReviewClick}>View Review</MenuItem>
         <MenuItem onClick={handleViewDocumentsClick}>View Documents</MenuItem>
       </Menu>
     </Box>

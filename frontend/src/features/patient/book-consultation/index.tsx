@@ -37,8 +37,6 @@ const BookConsultation = () => {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [viewReviewMode, setViewReviewMode] = useState(false);
 
-  const enableReviews = import.meta.env.VITE_ENABLE_REVIEWS === 'true';
-
   const handleReviewClick = async (consultation: IConsultation) => {
     setSelectedConsultation(consultation);
     const existingReview = await PatientService.getExpertReview(
@@ -115,7 +113,7 @@ const BookConsultation = () => {
           isAddDisabled={isAddDisabled}
           onReviewClick={handleReviewClick}
           user={user}
-          enableReviews={enableReviews}
+          enableReviews={true}
         />
       ) : (
         <BookConsultationForm

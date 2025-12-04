@@ -107,7 +107,6 @@ const BookConsultationForm = ({
   };
 
   const selectedExpert = experts?.find(e => e.id === Number(selectedExpertId));
-  const enableReviews = import.meta.env.VITE_ENABLE_REVIEWS === 'true';
 
   return (
     <Box p={3} height="100%" width="100%">
@@ -160,32 +159,31 @@ const BookConsultationForm = ({
                     <Typography variant="body2">
                       {expert.name} - {expert.country} ({expert.province_title})
                     </Typography>
-                    {enableReviews &&
-                      (expert.average_rating ? (
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 0.5,
-                            ml: 2,
-                          }}
-                        >
-                          <Rating
-                            value={Number(expert.average_rating)}
-                            readOnly
-                            size="small"
-                            precision={0.5}
-                          />
-                        </Box>
-                      ) : (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ ml: 2 }}
-                        >
-                          No reviews available
-                        </Typography>
-                      ))}
+                    {expert.average_rating ? (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          ml: 2,
+                        }}
+                      >
+                        <Rating
+                          value={Number(expert.average_rating)}
+                          readOnly
+                          size="small"
+                          precision={0.5}
+                        />
+                      </Box>
+                    ) : (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ ml: 2 }}
+                      >
+                        No reviews available
+                      </Typography>
+                    )}
                   </Box>
                 </MenuItem>
               ))}
@@ -217,7 +215,7 @@ const BookConsultationForm = ({
           </Button>
         </Box>
 
-        {selectedExpert && enableReviews && (
+        {selectedExpert && (
           <Box display="flex" alignItems="center" gap={1}>
             <Typography variant="subtitle2">Average Rating:</Typography>
             {selectedExpert.average_rating ? (
