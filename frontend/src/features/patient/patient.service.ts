@@ -1,6 +1,7 @@
 import HttpService from '../../services/HttpService';
 import { get } from 'lodash';
 import type { IUser } from '../auth/auth.interface';
+import type { IProfileData } from './profile';
 
 const getSubscribedProduct = async (user: IUser | null) => {
   try {
@@ -215,10 +216,7 @@ const getProfile = async (user: IUser | null) => {
   }
 };
 
-const updateProfile = async (
-  user: IUser | null,
-  data: Record<string, unknown>
-) => {
+const updateProfile = async (user: IUser | null, data: IProfileData) => {
   try {
     const user_id = get(user, 'id');
     const response = await HttpService.getAxiosClient().post(
