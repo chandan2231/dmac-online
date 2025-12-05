@@ -26,7 +26,7 @@ import { useToast } from '../../../providers/toast-provider';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
-interface IProfileData {
+export interface IProfileData {
   name: string;
   mobile: string;
   country: string;
