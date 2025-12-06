@@ -38,7 +38,7 @@ app.use(cookieParser())
 if (process.env.NODE_ENV === 'localhost') {
   app.use(cors({ origin: 'http://localhost:3010' }))
 } else if (process.env.NODE_ENV === 'development') {
-  const allowedOrigins = ['https://dev.irbhub.org']
+  const allowedOrigins = ['http://18.220.202.114']
   const corsOptions = {
     origin: function (origin, callback) {
       if (!origin || allowedOrigins.includes(origin)) {
@@ -52,10 +52,10 @@ if (process.env.NODE_ENV === 'localhost') {
     credentials: true,
     preflightContinue: false
   }
-  app.use(cors({ origin: ['https://dev.irbhub.org'] }))
+  app.use(cors({ origin: ['http://18.220.202.114'] }))
   app.use(cors(corsOptions))
 } else {
-  const allowedOrigins = ['https://app.irbhub.org']
+  const allowedOrigins = ['http://18.220.202.114']
   const corsOptions = {
     origin: function (origin, callback) {
       if (!origin || allowedOrigins.includes(origin)) {
@@ -69,7 +69,7 @@ if (process.env.NODE_ENV === 'localhost') {
     credentials: true,
     preflightContinue: false
   }
-  app.use(cors({ origin: ['https://app.irbhub.org'] }))
+  app.use(cors({ origin: ['http://18.220.202.114'] }))
   app.use(cors(corsOptions))
 }
 
