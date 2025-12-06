@@ -35,43 +35,59 @@ app.use((req, res, next) => {
 })
 
 app.use(cookieParser())
-if (process.env.NODE_ENV === 'localhost') {
-  app.use(cors({ origin: 'http://localhost:3010' }))
-} else if (process.env.NODE_ENV === 'development') {
-  const allowedOrigins = ['http://18.220.202.114']
-  const corsOptions = {
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true)
-      } else {
-        callback(new Error('Not allowed by CORS'))
-      }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    preflightContinue: false
-  }
-  app.use(cors({ origin: ['http://18.220.202.114'] }))
-  app.use(cors(corsOptions))
-} else {
-  const allowedOrigins = ['http://18.220.202.114']
-  const corsOptions = {
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true)
-      } else {
-        callback(new Error('Not allowed by CORS'))
-      }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    preflightContinue: false
-  }
-  app.use(cors({ origin: ['http://18.220.202.114'] }))
-  app.use(cors(corsOptions))
-}
+
+// if (process.env.NODE_ENV === 'localhost') {
+//   app.use(cors({ origin: 'http://localhost:3010' }))
+// } else if (process.env.NODE_ENV === 'development') {
+//   const allowedOrigins = ['http://18.220.202.114']
+//   const corsOptions = {
+//     origin: function (origin, callback) {
+//       if (!origin || allowedOrigins.includes(origin)) {
+//         callback(null, true)
+//       } else {
+//         callback(new Error('Not allowed by CORS'))
+//       }
+//     },
+//     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+//     allowedHeaders: ['Content-Type', 'Authorization'],
+//     credentials: true,
+//     preflightContinue: false
+//   }
+//   app.use(cors({ origin: ['http://18.220.202.114'] }))
+//   app.use(cors(corsOptions))
+// } else {
+//   const allowedOrigins = ['http://18.220.202.114']
+//   const corsOptions = {
+//     origin: function (origin, callback) {
+//       if (!origin || allowedOrigins.includes(origin)) {
+//         callback(null, true)
+//       } else {
+//         callback(new Error('Not allowed by CORS'))
+//       }
+//     },
+//     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+//     allowedHeaders: ['Content-Type', 'Authorization'],
+//     credentials: true,
+//     preflightContinue: false
+//   }
+//   app.use(cors({ origin: ['http://18.220.202.114'] }))
+//   app.use(cors(corsOptions))
+// }
+
+
+const allowedOrigins = ['http://18.220.202.114', 'http://localhost:3010'] // add localhost for dev
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}))
 
 app.use('/api/language', languageRoutes)
 app.use('/api/questionar', questionarRoutes)
@@ -91,16 +107,27 @@ app.use('/api/payment', payment)
 app.use('/api/externalMonitor', externalMonitor)
 app.use('/api/reviews', reviewRoutes)
 
-if (process.env.NODE_ENV === 'localhost') {
-  app.listen(8800, () => {
-    console.log('API Working!')
-  })
-} else if (process.env.NODE_ENV === 'development') {
-  app.listen(8010, () => {
-    console.log('Dev API Working!')
-  })
-} else {
-  app.listen(8000, () => {
-    console.log('Dev API Working!')
-  })
-}
+
+// PORT setup based on environment
+let PORT = 8010 // default dev port
+if (process.env.NODE_ENV === 'localhost') PORT = 8800
+if (process.env.NODE_ENV === 'production') PORT = 8000
+
+// Listen on 0.0.0.0 so it is accessible from outside
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`API running on port ${PORT}`)
+})
+
+// if (process.env.NODE_ENV === 'localhost') {
+//   app.listen(8800, () => {
+//     console.log('API Working!')
+//   })
+// } else if (process.env.NODE_ENV === 'development') {
+//   app.listen(8010, () => {
+//     console.log('Dev API Working!')
+//   })
+// } else {
+//   app.listen(8000, () => {
+//     console.log('Dev API Working!')
+//   })
+// }
