@@ -1139,7 +1139,7 @@ const ConsultantsListing = () => {
               fontWeight: 600,
             }}
           >
-            Consultants List
+            Experts List
           </Typography>
         }
         rightNode={
@@ -1148,7 +1148,7 @@ const ConsultantsListing = () => {
             startIcon={<AddCircleOutlineRoundedIcon />}
             onClick={handleOpenCreateConsultantModal}
           >
-            Add New Consultant
+            Add New Expert
           </MorenButton>
         }
       />
