@@ -17,6 +17,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useToast } from '../../../../providers/toast-provider';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { IconButton, Menu, MenuItem } from '@mui/material';
+import { TabHeaderLayout } from '../../../../components/tab-header';
 
 type ChangePasswordFormValues = {
   password: string;
@@ -393,9 +394,19 @@ const UsersListing = () => {
       }}
       gap={1}
     >
-      <Typography variant="h6" sx={{ padding: 0 }}>
-        Users List
-      </Typography>
+      <TabHeaderLayout
+        leftNode={
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 600,
+              padding: 0,
+            }}
+          >
+            Users List
+          </Typography>
+        }
+      />
       <UsersTable />
     </Box>
   );

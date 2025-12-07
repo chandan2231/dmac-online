@@ -8,6 +8,7 @@ import type { ITransaction, TransactionFilter } from '../../admin.interface';
 import { get } from 'lodash';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import GenericModal from '../../../../components/modal';
+import { TabHeaderLayout } from '../../../../components/tab-header';
 
 function TransactionsTable() {
   const [filter] = useState<TransactionFilter>('');
@@ -290,9 +291,19 @@ const TransactionsListing = () => {
       }}
       gap={1}
     >
-      <Typography variant="h6" sx={{ padding: 0 }}>
-        Users Transaction List
-      </Typography>
+      <TabHeaderLayout
+        leftNode={
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 600,
+              padding: 0,
+            }}
+          >
+            Users Transaction List
+          </Typography>
+        }
+      />
       <TransactionsTable />
     </Box>
   );
