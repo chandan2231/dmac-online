@@ -43,7 +43,12 @@ const TherapistHome = () => {
   }, [dispatch, showToast]);
 
   return (
-    <Box>
+    <Box
+      sx={{
+        height: '100%',
+        width: '100%',
+      }}
+    >
       {get(user, 'google_access_token') && get(user, 'google_refresh_token') ? (
         <Box sx={{ fontSize: '16px', fontWeight: '500', color: 'green' }}>
           Google Calendar is already connected with your account. 🎉
