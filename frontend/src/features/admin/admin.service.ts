@@ -278,6 +278,7 @@ const getConsultantsListing = async (): Promise<{
 
     const consultants = (get(response, 'data', []) as IConsultant[]).map(
       item => ({
+        ...item,
         id: item.id,
         name: item.name,
         email: item.email,

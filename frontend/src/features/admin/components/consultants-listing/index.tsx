@@ -1023,7 +1023,11 @@ function ConsultantTable({
                   Finance Manager:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
-                  {get(selectedConsultant, 'finance_manager', '')}
+                  {FINANCE_MANAGER_LIST.find(
+                    fm =>
+                      fm.id ===
+                      Number(get(selectedConsultant, 'finance_manager_id'))
+                  )?.name || ''}
                 </Typography>
               </Box>
             </Box>
