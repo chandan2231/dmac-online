@@ -14,6 +14,36 @@ function queryDB(query, params = []) {
   })
 }
 
+const generateConsultationId = async (country, type) => {
+  const countryCode = country ? country.substring(0, 2).toUpperCase() : 'XX'
+  const prefix = `CON${countryCode}${type}`
+  const tableName =
+    type === 'EX'
+      ? 'dmac_webapp_consultations'
+      : 'dmac_webapp_therapist_consultations'
+
+  const query = `SELECT consultation_id FROM ${tableName} WHERE consultation_id LIKE '${prefix}%' ORDER BY id DESC LIMIT 1`
+
+  const result = await new Promise((resolve, reject) => {
+    db.query(query, (err, data) => {
+      if (err) reject(err)
+      resolve(data)
+    })
+  })
+
+  let nextNum = 1
+  if (result.length > 0 && result[0].consultation_id) {
+    const lastId = result[0].consultation_id
+    const lastNumStr = lastId.replace(prefix, '')
+    const lastNum = parseInt(lastNumStr, 10)
+    if (!isNaN(lastNum)) {
+      nextNum = lastNum + 1
+    }
+  }
+
+  return `${prefix}${String(nextNum).padStart(6, '0')}`
+}
+
 export const getAvailableExpertSlots = async (req, res) => {
   const { consultation_id, user_id, date } = req.body
 
@@ -287,7 +317,7 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
     consultant_timezone = fetched_consultant_timezone
 
     /* 🔹 Fetch user info + timezone */
-    const userQuery = `SELECT id, email, name, google_access_token as user_access_token, google_refresh_token as user_refresh_token, time_zone FROM dmac_webapp_users WHERE id = ?`
+    const userQuery = `SELECT id, email, name, google_access_token as user_access_token, google_refresh_token as user_refresh_token, time_zone, country FROM dmac_webapp_users WHERE id = ?`
     const user = await new Promise((resolve, reject) => {
       db.query(userQuery, [user_id], (err, result) =>
         err ? reject(err) : resolve(result)
@@ -301,7 +331,8 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
       name: user_name,
       user_access_token,
       user_refresh_token,
-      time_zone: fetched_user_timezone
+      time_zone: fetched_user_timezone,
+      country
     } = user[0]
 
     user_timezone = fetched_user_timezone
@@ -447,10 +478,14 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
     }
 
     /* 🔹 Save booking */
+    const consultation_id_generated = await generateConsultationId(
+      country,
+      'EX'
+    )
     const insertQuery = `
       INSERT INTO dmac_webapp_consultations 
-      (product_id, user_id, consultant_id, event_start, event_end, meet_link, user_timezone, consultant_timezone, consultation_date, consultation_status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (product_id, user_id, consultant_id, event_start, event_end, meet_link, user_timezone, consultant_timezone, consultation_date, consultation_status, consultation_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
     try {
       await new Promise((resolve, reject) => {
@@ -466,7 +501,8 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
             user_timezone,
             consultant_timezone,
             date,
-            1
+            1,
+            consultation_id_generated
           ],
           (err, result) => (err ? reject(err) : resolve(result))
         )
@@ -1178,7 +1214,7 @@ export const bookTherapistConsultation = async (req, res) => {
     const consultant_timezone = fetched_consultant_timezone || 'Asia/Kolkata'
 
     /* 🔹 Fetch user info + timezone */
-    const userQuery = `SELECT id, email, name, google_access_token as user_access_token, google_refresh_token as user_refresh_token, time_zone FROM dmac_webapp_users WHERE id = ?`
+    const userQuery = `SELECT id, email, name, google_access_token as user_access_token, google_refresh_token as user_refresh_token, time_zone, country FROM dmac_webapp_users WHERE id = ?`
     const user = await new Promise((resolve, reject) => {
       db.query(userQuery, [user_id], (err, result) =>
         err ? reject(err) : resolve(result)
@@ -1192,7 +1228,8 @@ export const bookTherapistConsultation = async (req, res) => {
       name: user_name,
       user_access_token,
       user_refresh_token,
-      time_zone: fetched_user_timezone
+      time_zone: fetched_user_timezone,
+      country
     } = user[0]
 
     const user_timezone = fetched_user_timezone || 'Asia/Kolkata'
@@ -1383,10 +1420,14 @@ export const bookTherapistConsultation = async (req, res) => {
 
       try {
         /* 🔹 Save booking */
+        const consultation_id_generated = await generateConsultationId(
+          country,
+          'TH'
+        )
         const insertQuery = `
           INSERT INTO dmac_webapp_therapist_consultations 
-          (product_id, user_id, consultant_id, event_start, event_end, meet_link, user_timezone, consultant_timezone, consultation_date, consultation_status)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (product_id, user_id, consultant_id, event_start, event_end, meet_link, user_timezone, consultant_timezone, consultation_date, consultation_status, consultation_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `
         await new Promise((resolve, reject) => {
           db.query(
@@ -1401,7 +1442,8 @@ export const bookTherapistConsultation = async (req, res) => {
               user_timezone,
               consultant_timezone,
               currentDate,
-              1
+              1,
+              consultation_id_generated
             ],
             (err, result) => (err ? reject(err) : resolve(result))
           )
