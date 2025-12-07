@@ -21,8 +21,11 @@ const BookConsultation = () => {
   const { showToast } = useToast();
 
   const [view, setView] = useState<'list' | 'book'>('list');
-  const { data: consultations = [], isLoading: loadingConsultations } =
-    useGetConsultations(user);
+  const {
+    data: consultations = [],
+    isLoading: loadingConsultations,
+    refetch,
+  } = useGetConsultations(user);
 
   const isAddDisabled = consultations.some((c: IConsultation) =>
     [0, 1, 2, 3, 4].includes(c.status)
@@ -120,7 +123,12 @@ const BookConsultation = () => {
           experts={experts}
           user={user}
           onCancel={() => setView('list')}
-          onSuccess={() => setView('list')}
+          onSuccess={() => {
+            setView('list');
+            showToast('Consultation booked successfully!', 'success');
+            // refetch consultations could be triggered here if needed
+            refetch();
+          }}
           productId={productId}
         />
       )}

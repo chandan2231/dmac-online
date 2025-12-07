@@ -93,7 +93,6 @@ const BookConsultationForm = ({
     );
 
     if (result && result.booked) {
-      showToast('Consultation booked successfully!', 'success');
       setSlots(prev =>
         prev.map(s =>
           s.slot_id === selectedSlot.slot_id ? { ...s, is_booked: 1 } : s
