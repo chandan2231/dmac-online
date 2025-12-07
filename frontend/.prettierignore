@@ -3,3 +3,7 @@ dist
 build
 *.log
 public
+# ENV files
+.env
+.env.local
+.env.*.local
