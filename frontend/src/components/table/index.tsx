@@ -26,8 +26,8 @@ export function GenericTable<T extends { id: string | number }>({
   paginationModel,
   onPaginationModelChange,
   loading = false,
-  maxHeight = 'calc(100vh - 150px)',
-  minHeight = 'calc(100vh - 150px)',
+  maxHeight = 'calc(100vh - 200px)',
+  minHeight = 'calc(100vh - 200px)',
 }: GenericTableProps<T>) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));

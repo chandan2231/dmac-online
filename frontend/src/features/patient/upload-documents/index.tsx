@@ -18,6 +18,7 @@ import {
   useUploadDocument,
   useDeleteDocument,
 } from '../hooks/useDocuments';
+import { TabHeaderLayout } from '../../../components/tab-header';
 
 interface Document {
   id: number;
@@ -84,9 +85,20 @@ const UploadDocuments = () => {
 
   return (
     <Box sx={{ p: 3, width: '100%', height: '100%' }}>
-      <Typography variant="h4" gutterBottom>
-        My Documents
-      </Typography>
+      <TabHeaderLayout
+        leftNode={
+          <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+              }}
+            >
+              My Documents
+            </Typography>
+          </Box>
+        }
+      />
 
       <Box sx={{ mb: 4 }}>
         {/* 🔥 Updated: UI text for new limit */}

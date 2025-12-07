@@ -264,7 +264,14 @@ const ConsultationList = () => {
       <TabHeaderLayout
         leftNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
-            <Typography variant="h6">My Consultations</Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+              }}
+            >
+              My Consultations
+            </Typography>
           </Box>
         }
         rightNode={
@@ -294,13 +301,11 @@ const ConsultationList = () => {
           </Box>
         }
       />
-      <Box mt={2} height="calc(100% - 60px)">
-        <GenericTable
-          rows={consultations}
-          columns={columns}
-          loading={isLoading}
-        />
-      </Box>
+      <GenericTable
+        rows={consultations}
+        columns={columns}
+        loading={isLoading}
+      />
       <UpdateStatusModal
         open={isModalOpen}
         onClose={handleCloseModal}

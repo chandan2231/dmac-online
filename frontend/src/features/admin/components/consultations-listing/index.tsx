@@ -246,7 +246,14 @@ function ConsultationsTable() {
       <TabHeaderLayout
         leftNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
-            <Typography variant="h6">Expert Consultations List</Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+              }}
+            >
+              Expert Consultations List
+            </Typography>
           </Box>
         }
         rightNode={

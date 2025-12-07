@@ -49,63 +49,66 @@ const ExportHome = () => {
         width: '100%',
       }}
     >
-      {get(user, 'google_access_token') && get(user, 'google_refresh_token') ? (
-        <Box sx={{ fontSize: '16px', fontWeight: '500', color: 'green', p: 4 }}>
-          Google Calendar is already connected with your account. 🎉
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
+          Why we use Google Calendar
+        </Typography>
+        <Typography variant="body1" sx={{ mb: 2 }}>
+          Connecting your Google Calendar helps make your consultations seamless
+          and organized.
+        </Typography>
+        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+          Benefits for you:
+        </Typography>
+        <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+          <li>
+            <Typography variant="body2">
+              No double bookings — we only show time slots when you're really
+              available.
+            </Typography>
+          </li>
+          <li>
+            <Typography variant="body2">
+              Automatic reminders — confirmed consultations are added to your
+              calendar instantly.
+            </Typography>
+          </li>
+          <li>
+            <Typography variant="body2">
+              Time-zone accuracy — all sessions are shown in your local time.
+            </Typography>
+          </li>
         </Box>
-      ) : (
-        <Box sx={{ p: 4 }}>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-            Why we use Google Calendar
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            Connecting your Google Calendar helps make your consultations
-            seamless and organized.
-          </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-            Benefits for you:
-          </Typography>
-          <Box component="ul" sx={{ pl: 2, mb: 2 }}>
-            <li>
-              <Typography variant="body2">
-                No double bookings — we only show time slots when you're really
-                available.
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body2">
-                Automatic reminders — confirmed consultations are added to your
-                calendar instantly.
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body2">
-                Time-zone accuracy — all sessions are shown in your local time.
-              </Typography>
-            </li>
-          </Box>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-            Your privacy matters
-          </Typography>
-          <Box component="ul" sx={{ pl: 2, mb: 2 }}>
-            <li>
-              <Typography variant="body2">
-                We only request permission to view your availability and add
-                consultation events.
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body2">
-                We never modify or delete your personal calendar events.
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body2">
-                You can disconnect anytime from settings.{' '}
-              </Typography>
-            </li>
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+          Your privacy matters
+        </Typography>
+        <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+          <li>
+            <Typography variant="body2">
+              We only request permission to view your availability and add
+              consultation events.
+            </Typography>
+          </li>
+          <li>
+            <Typography variant="body2">
+              We never modify or delete your personal calendar events.
+            </Typography>
+          </li>
+          <li>
+            <Typography variant="body2">
+              You can disconnect anytime from settings.{' '}
+            </Typography>
+          </li>
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          {get(user, 'google_access_token') &&
+          get(user, 'google_refresh_token') ? (
+            <Box
+              sx={{ fontSize: '18px', fontWeight: '600', color: 'green', p: 4 }}
+            >
+              Google Calendar is already connected with your account. 🎉
+            </Box>
+          ) : (
             <MorenButton
               variant="contained"
               onClick={() => handleGoogleAuth()}
@@ -115,9 +118,9 @@ const ExportHome = () => {
             >
               Auth With Google
             </MorenButton>
-          </Box>
+          )}
         </Box>
-      )}
+      </Box>
     </Box>
   );
 };

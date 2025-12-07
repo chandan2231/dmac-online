@@ -160,7 +160,14 @@ const TherapistReviews = ({ therapist, onBack }: TherapistReviewsProps) => {
       <TabHeaderLayout
         leftNode={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="h5">Reviews - {therapist.name}</Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+              }}
+            >
+              Reviews - {therapist.name}
+            </Typography>
           </Box>
         }
         rightNode={
@@ -1156,7 +1163,13 @@ const TherapistListing = () => {
     >
       <TabHeaderLayout
         leftNode={
-          <Typography variant="h6" sx={{ padding: 0 }}>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 600,
+              padding: 0,
+            }}
+          >
             Therapist List
           </Typography>
         }
