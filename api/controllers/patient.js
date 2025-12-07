@@ -1678,6 +1678,13 @@ export const rescheduleTherapistConsultation = async (req, res) => {
 
     const booking = data[0]
 
+    if (booking.consultation_status === 4) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Cannot reschedule a completed consultation'
+      })
+    }
+
     const {
       meet_link,
       consultant_timezone: booked_consultant_timezone,
@@ -1714,6 +1721,38 @@ export const rescheduleTherapistConsultation = async (req, res) => {
 
     const eventStartISO = consultantStart.toISOString()
     const eventEndISO = consultantEnd.toISOString()
+
+    // Check if new slot is available
+    const checkUtcDate = moment.utc(eventStartISO).format('YYYY-MM-DD')
+    const checkUtcStart = moment
+      .utc(eventStartISO)
+      .format('YYYY-MM-DD HH:mm:ss')
+
+    const checkSlotQuery = `
+        SELECT id FROM dmac_webapp_therapist_availability
+        WHERE consultant_id = ? 
+        AND slot_date = ? 
+        AND start_time = ? 
+        AND is_booked = 1
+    `
+    const slotCheck = await new Promise((resolve, reject) => {
+      db.query(
+        checkSlotQuery,
+        [booking.consultant_id, checkUtcDate, checkUtcStart],
+        (err, result) => {
+          if (err) reject(err)
+          resolve(result)
+        }
+      )
+    })
+
+    if (slotCheck.length > 0) {
+      return res.status(400).json({
+        status: 400,
+        message:
+          'The selected slot is already booked. Please choose another time.'
+      })
+    }
 
     /* 🔹 Update event in CONSULTANT Google Calendar */
     if (consultant_access && consultant_refresh) {

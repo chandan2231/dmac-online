@@ -212,12 +212,11 @@ const TherapistConsultationList = ({
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        {selectedConsultation &&
-          [5, 6].includes(selectedConsultation.status) && (
-            <MenuItem onClick={handleRescheduleClick}>
-              Reschedule Booking
-            </MenuItem>
-          )}
+        {selectedConsultation && selectedConsultation.status !== 4 && (
+          <MenuItem onClick={handleRescheduleClick}>
+            Reschedule Booking
+          </MenuItem>
+        )}
         {selectedConsultation &&
           selectedConsultation.status === 4 &&
           enableReviews && (
