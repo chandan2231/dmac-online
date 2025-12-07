@@ -783,7 +783,7 @@ export const rescheduleConsultationWithGoogleCalendar = async (req, res) => {
     /* 🔹 Update DB */
     const updateQuery = `
       UPDATE dmac_webapp_consultations
-      SET event_start = ?, event_end = ?, consultation_date = ?, status = ?, user_timezone = ?, consultant_timezone = ?
+      SET event_start = ?, event_end = ?, consultation_date = ?, consultation_status = ?, user_timezone = ?, consultant_timezone = ?
       WHERE id = ?
     `
     await new Promise((resolve, reject) =>
@@ -1011,7 +1011,7 @@ export const cancelConsultationByConsultant = async (req, res) => {
     // 4) Update DB
     const updateQuery = `
       UPDATE dmac_webapp_consultations
-      SET status = 5, event_start = NULL, event_end = NULL
+      SET consultation_status = 5, event_start = NULL, event_end = NULL
       WHERE id = ?
     `
     await queryDB(updateQuery, [consultation_id])
