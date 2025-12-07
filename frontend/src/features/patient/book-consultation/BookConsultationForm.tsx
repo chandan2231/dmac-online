@@ -19,6 +19,7 @@ import PatientService from '../patient.service';
 import { useToast } from '../../../providers/toast-provider';
 import type { IExpert, ISlot } from '../patient.interface';
 import type { IUser } from '../../auth/auth.interface';
+import CustomLoader from '../../../components/loader';
 
 interface BookConsultationFormProps {
   experts: IExpert[];
@@ -107,6 +108,10 @@ const BookConsultationForm = ({
   };
 
   const selectedExpert = experts?.find(e => e.id === Number(selectedExpertId));
+
+  if (bookingLoading) {
+    return <CustomLoader />;
+  }
 
   return (
     <Box p={3} height="100%" width="100%">
