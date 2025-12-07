@@ -186,6 +186,7 @@ export const getAllUsersByRole = (req, res) => {
     query = `
       SELECT 
         u.*,
+        u.patient_meta,
         l.language AS language_name
       FROM dmac_webapp_users u
       LEFT JOIN dmac_webapp_language l 
@@ -198,6 +199,7 @@ export const getAllUsersByRole = (req, res) => {
     query = `
       SELECT 
         u.*,
+        u.patient_meta,
         GROUP_CONCAT(lang.language ORDER BY lang.language SEPARATOR ', ') AS language_name
       FROM dmac_webapp_users u
       LEFT JOIN dmac_webapp_language lang

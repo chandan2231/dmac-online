@@ -34,9 +34,9 @@ function UsersTable() {
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<IUserDetails | null>(null);
+  const [menuUser, setMenuUser] = useState<IUserDetails | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isOtherDetailsModalOpen, setIsOtherDetailsModalOpen] = useState(false);
   const { showToast } = useToast();
 
   const handleUpdateStatus = async (id: number, status: number) => {
@@ -94,12 +94,17 @@ function UsersTable() {
     setIsLoadingStatus(false);
   };
 
-  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleMenuClick = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    user: IUserDetails
+  ) => {
     setAnchorEl(event.currentTarget);
+    setMenuUser(user);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+    setMenuUser(null);
   };
 
   const handleOpenViewModal = (user: IUserDetails) => {
@@ -109,16 +114,6 @@ function UsersTable() {
 
   const handleCloseViewModal = () => {
     setIsViewModalOpen(false);
-    setSelectedUser(null);
-  };
-
-  const handleOpenOtherDetailsModal = (user: IUserDetails) => {
-    setSelectedUser(user);
-    setIsOtherDetailsModalOpen(true);
-  };
-
-  const handleCloseOtherDetailsModal = () => {
-    setIsOtherDetailsModalOpen(false);
     setSelectedUser(null);
   };
 
@@ -158,45 +153,17 @@ function UsersTable() {
       filterable: false,
       renderCell: params => (
         <>
-          <IconButton onClick={handleMenuClick} size="small">
+          <IconButton
+            onClick={e => handleMenuClick(e, params.row)}
+            size="small"
+          >
             <MoreVertIcon />
           </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-          >
-            <MenuItem
-              onClick={() => {
-                handleMenuClose();
-                handleOpenViewModal(params.row);
-              }}
-            >
-              View Details
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                handleMenuClose();
-                handleOpenPasswordModal(params.row);
-              }}
-            >
-              Change Password
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                handleMenuClose();
-                handleOpenOtherDetailsModal(params.row);
-              }}
-            >
-              Show Other Details
-            </MenuItem>
-          </Menu>
         </>
       ),
     },
   ];
+
   if (isLoading || isLoadingStatus) {
     return <CustomLoader />;
   }
@@ -210,6 +177,35 @@ function UsersTable() {
         onPaginationModelChange={setPaginationModel}
         loading={isLoading}
       />
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem
+          onClick={() => {
+            if (menuUser) {
+              handleMenuClose();
+              handleOpenViewModal(menuUser);
+            }
+          }}
+        >
+          View Details
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (menuUser) {
+              handleMenuClose();
+              handleOpenPasswordModal(menuUser);
+            }
+          }}
+        >
+          Change Password
+        </MenuItem>
+      </Menu>
 
       <GenericModal
         isOpen={isPasswordModalOpen}
@@ -394,19 +390,8 @@ function UsersTable() {
                 </Typography>
               </Box>
             </Box>
-          </Box>
-        )}
-      </GenericModal>
 
-      {/* Other Details Modal */}
-      <GenericModal
-        isOpen={isOtherDetailsModalOpen}
-        onClose={handleCloseOtherDetailsModal}
-        title={`Other Details${selectedUser ? ` - ${selectedUser.name}` : ''}`}
-        hideCancelButton
-      >
-        {selectedUser && (
-          <Box display="flex" flexDirection="column" gap={2}>
+            {/* Other Details Section */}
             {(() => {
               try {
                 const meta = selectedUser.patient_meta
@@ -424,6 +409,15 @@ function UsersTable() {
                     flexWrap="wrap"
                     rowGap={1}
                   >
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="bold"
+                      width="100%"
+                      gutterBottom
+                    >
+                      Other Details
+                    </Typography>
+
                     {/* Latitude */}
                     <Box
                       display="flex"
