@@ -159,12 +159,8 @@ export const getExpertAvailability = async (req, res) => {
         // Convert UTC DB times to Expert Timezone
         // Ensure we handle both Date objects and strings
         // We format first to avoid MySQL driver's local timezone assumption on Date objects
-        const utcStart = moment.utc(
-          moment(slot.start_time).format('YYYY-MM-DD HH:mm:ss')
-        )
-        const utcEnd = moment.utc(
-          moment(slot.end_time).format('YYYY-MM-DD HH:mm:ss')
-        )
+        const utcStart = moment.utc(slot.start_time)
+        const utcEnd = moment.utc(slot.end_time)
 
         const localStart = utcStart.clone().tz(expertTimezone)
         const localEnd = utcEnd.clone().tz(expertTimezone)

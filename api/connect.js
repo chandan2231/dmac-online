@@ -8,7 +8,8 @@ export const db = mysql.createConnection({
   user: USER_NAME,
   password: PASSWORD,
   database: DATABASE,
-  port: PORT
+  port: PORT,
+  timezone: 'Z'
 })
 
 db.connect(function (err) {

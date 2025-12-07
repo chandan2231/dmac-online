@@ -160,12 +160,8 @@ export const getTherapistAvailability = async (req, res) => {
 
       rows.forEach((slot) => {
         // Convert UTC DB times to Therapist Timezone
-        const utcStart = moment.utc(
-          moment(slot.start_time).format('YYYY-MM-DD HH:mm:ss')
-        )
-        const utcEnd = moment.utc(
-          moment(slot.end_time).format('YYYY-MM-DD HH:mm:ss')
-        )
+        const utcStart = moment.utc(slot.start_time)
+        const utcEnd = moment.utc(slot.end_time)
 
         const localStart = utcStart.clone().tz(therapistTimezone)
         const localEnd = utcEnd.clone().tz(therapistTimezone)

@@ -26,6 +26,7 @@ import { useGetExpertSlots } from '../hooks/useGetExpertSlots';
 import type { ISlotsData } from '../expert.interface';
 import CustomLoader from '../../../components/loader';
 import CalendarListing from './calendar-listing';
+import { getUserTimezone } from '../../../utils/dateUtils';
 
 const isExpired = ({
   expertSlotsData,
@@ -68,7 +69,8 @@ const Calendar = () => {
   });
 
   // Get user timezone safely
-  const userTimezone = (get(user, ['time_zone'], 'UTC') || 'UTC') as string;
+  const userTimezone = (get(user, ['time_zone']) ||
+    getUserTimezone()) as string;
 
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
   const [shiftStart, setShiftStart] = useState<IOption | null>(null);

@@ -14,8 +14,6 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useSelector } from 'react-redux';
 import { get } from 'lodash';
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
 import type { GridColDef } from '@mui/x-data-grid';
 import type { RootState } from '../../../store';
 import { GenericTable } from '../../../components/table';
@@ -28,9 +26,7 @@ import ReviewModal from './ReviewModal';
 import DocumentsModal from './DocumentsModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
 import { useToast } from '../../../providers/toast-provider';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import { formatToTimezone, getUserTimezone } from '../../../utils/dateUtils';
 
 interface IConsultation {
   id: number;
@@ -177,7 +173,7 @@ const ConsultationList = () => {
   };
 
   const consultations = get(consultationsData, 'data', []) as IConsultation[];
-  const userTimezone = get(user, 'time_zone') || 'UTC';
+  const userTimezone = get(user, 'time_zone') || getUserTimezone();
 
   const columns: GridColDef<IConsultation>[] = [
     {
@@ -185,19 +181,23 @@ const ConsultationList = () => {
       headerName: 'Consultation Date',
       flex: 1,
       renderCell: params =>
-        dayjs(params.row.event_start).tz(userTimezone).format('MMM D, YYYY'),
+        formatToTimezone(params.row.event_start, userTimezone, 'MMM D, YYYY'),
     },
     {
       field: 'event_start',
       headerName: 'Time',
       flex: 1,
       renderCell: params => {
-        const start = dayjs(params.row.event_start)
-          .tz(userTimezone)
-          .format('HH:mm');
-        const end = dayjs(params.row.event_end)
-          .tz(userTimezone)
-          .format('HH:mm');
+        const start = formatToTimezone(
+          params.row.event_start,
+          userTimezone,
+          'HH:mm'
+        );
+        const end = formatToTimezone(
+          params.row.event_end,
+          userTimezone,
+          'HH:mm'
+        );
         return `${start} - ${end}`;
       },
     },
