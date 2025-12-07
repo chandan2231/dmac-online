@@ -182,10 +182,10 @@ const ConsultationList = () => {
   const columns: GridColDef<IConsultation>[] = [
     {
       field: 'consultation_date',
-      headerName: 'Date',
+      headerName: 'Consultation Date',
       flex: 1,
-      valueFormatter: (params: { value: string | null }) =>
-        dayjs(params.value).tz(userTimezone).format('MMM D, YYYY'),
+      renderCell: params =>
+        dayjs(params.row.event_start).tz(userTimezone).format('MMM D, YYYY'),
     },
     {
       field: 'event_start',

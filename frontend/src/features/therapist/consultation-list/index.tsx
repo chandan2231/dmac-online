@@ -249,7 +249,9 @@ const TherapistConsultationList = () => {
       flex: 1,
       renderCell: params => {
         const therapistTimezone = get(user, 'time_zone') || 'UTC';
-        return dayjs(params.value).tz(therapistTimezone).format('MMM D, YYYY');
+        return dayjs(params.row.event_start)
+          .tz(therapistTimezone)
+          .format('MMM D, YYYY');
       },
     },
     {
