@@ -57,7 +57,7 @@ const UpdateStatusModal: React.FC<UpdateStatusModalProps> = ({
             >
               <MenuItem value={4}>Completed</MenuItem>
               <MenuItem value={5}>Cancelled</MenuItem>
-              <MenuItem value={6}>Rescheduled</MenuItem>
+              <MenuItem value={6}>Reschedule</MenuItem>
             </Select>
           </FormControl>
           <TextField
