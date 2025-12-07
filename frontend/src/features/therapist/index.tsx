@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useToast } from '../../providers/toast-provider';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
@@ -49,9 +49,56 @@ const TherapistHome = () => {
           Google Calendar is already connected with your account. 🎉
         </Box>
       ) : (
-        <MorenButton variant="contained" onClick={() => handleGoogleAuth()}>
-          Auth With Google
-        </MorenButton>
+        <Box sx={{ p: 4 }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+            Why we use Google Calendar
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Connecting your Google Calendar helps make your consultations
+            seamless and organized.
+          </Typography>
+          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+            Benefits for you:
+          </Typography>
+          <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+            <li>
+              <Typography variant="body2">
+                No double bookings — we only show time slots when you're really
+                available.
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                Automatic reminders — confirmed consultations are added to your
+                calendar instantly.
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                Time-zone accuracy — all sessions are shown in your local time.
+              </Typography>
+            </li>
+          </Box>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+            Your privacy matters
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 3 }}>
+            We only request permission to view your availability and add
+            consultation events. We never modify or delete your personal
+            calendar events. You can disconnect anytime from settings.
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <MorenButton
+              variant="contained"
+              onClick={() => handleGoogleAuth()}
+              sx={{
+                maxWidth: '300px',
+              }}
+            >
+              Auth With Google
+            </MorenButton>
+          </Box>
+        </Box>
       )}
     </Box>
   );
