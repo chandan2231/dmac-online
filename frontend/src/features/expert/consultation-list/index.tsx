@@ -27,6 +27,7 @@ import UpdateStatusModal from './UpdateStatusModal';
 import ReviewModal from './ReviewModal';
 import DocumentsModal from './DocumentsModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
+import { useToast } from '../../../providers/toast-provider';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -46,6 +47,7 @@ interface IConsultation {
 
 const ConsultationList = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const { showToast } = useToast();
   const [selectedPatient, setSelectedPatient] = useState<{
     id: number;
     name: string;
@@ -144,6 +146,25 @@ const ConsultationList = () => {
 
   const handleSubmitStatus = (status: number, notes: string) => {
     if (selectedConsultation) {
+      if (status === 4) {
+        const expertTimezone = get(user, 'time_zone') || 'UTC';
+        const now = dayjs().tz(expertTimezone);
+        const start = dayjs(selectedConsultation.event_start).tz(
+          expertTimezone
+        );
+        const consultationDate = dayjs(
+          selectedConsultation.consultation_date
+        ).tz(expertTimezone);
+
+        if (now.isBefore(start) && now.isBefore(consultationDate)) {
+          showToast(
+            'meeting is not started, so you cant completed it now',
+            'error'
+          );
+          return;
+        }
+      }
+
       updateStatus(
         { consultationId: selectedConsultation.id, status, notes },
         {
@@ -264,7 +285,14 @@ const ConsultationList = () => {
       <TabHeaderLayout
         leftNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
-            <Typography variant="h6">My Consultations</Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+              }}
+            >
+              My Consultations
+            </Typography>
           </Box>
         }
         rightNode={
@@ -294,13 +322,11 @@ const ConsultationList = () => {
           </Box>
         }
       />
-      <Box mt={2} height="calc(100% - 60px)">
-        <GenericTable
-          rows={consultations}
-          columns={columns}
-          loading={isLoading}
-        />
-      </Box>
+      <GenericTable
+        rows={consultations}
+        columns={columns}
+        loading={isLoading}
+      />
       <UpdateStatusModal
         open={isModalOpen}
         onClose={handleCloseModal}

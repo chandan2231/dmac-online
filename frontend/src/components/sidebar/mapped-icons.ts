@@ -34,6 +34,7 @@ const mapperObject = {
   ShoppingCartIcon: ShoppingCartIcon,
   UploadFileIcon: UploadFileIcon,
   RateReviewIcon: RateReviewIcon,
+  GoogleIcon: ExtensionIcon, // Placeholder for Google Icon
 };
 
 export type MapperObjectKey = keyof typeof mapperObject;

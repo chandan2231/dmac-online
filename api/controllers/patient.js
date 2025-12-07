@@ -14,6 +14,36 @@ function queryDB(query, params = []) {
   })
 }
 
+const generateConsultationId = async (country, type) => {
+  const countryCode = country ? country.substring(0, 2).toUpperCase() : 'XX'
+  const prefix = `CON${countryCode}${type}`
+  const tableName =
+    type === 'EX'
+      ? 'dmac_webapp_consultations'
+      : 'dmac_webapp_therapist_consultations'
+
+  const query = `SELECT consultation_id FROM ${tableName} WHERE consultation_id LIKE '${prefix}%' ORDER BY id DESC LIMIT 1`
+
+  const result = await new Promise((resolve, reject) => {
+    db.query(query, (err, data) => {
+      if (err) reject(err)
+      resolve(data)
+    })
+  })
+
+  let nextNum = 1
+  if (result.length > 0 && result[0].consultation_id) {
+    const lastId = result[0].consultation_id
+    const lastNumStr = lastId.replace(prefix, '')
+    const lastNum = parseInt(lastNumStr, 10)
+    if (!isNaN(lastNum)) {
+      nextNum = lastNum + 1
+    }
+  }
+
+  return `${prefix}${String(nextNum).padStart(6, '0')}`
+}
+
 export const getAvailableExpertSlots = async (req, res) => {
   const { consultation_id, user_id, date } = req.body
 
@@ -287,7 +317,7 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
     consultant_timezone = fetched_consultant_timezone
 
     /* 🔹 Fetch user info + timezone */
-    const userQuery = `SELECT id, email, name, google_access_token as user_access_token, google_refresh_token as user_refresh_token, time_zone FROM dmac_webapp_users WHERE id = ?`
+    const userQuery = `SELECT id, email, name, google_access_token as user_access_token, google_refresh_token as user_refresh_token, time_zone, country FROM dmac_webapp_users WHERE id = ?`
     const user = await new Promise((resolve, reject) => {
       db.query(userQuery, [user_id], (err, result) =>
         err ? reject(err) : resolve(result)
@@ -301,7 +331,8 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
       name: user_name,
       user_access_token,
       user_refresh_token,
-      time_zone: fetched_user_timezone
+      time_zone: fetched_user_timezone,
+      country
     } = user[0]
 
     user_timezone = fetched_user_timezone
@@ -447,10 +478,14 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
     }
 
     /* 🔹 Save booking */
+    const consultation_id_generated = await generateConsultationId(
+      country,
+      'EX'
+    )
     const insertQuery = `
       INSERT INTO dmac_webapp_consultations 
-      (product_id, user_id, consultant_id, event_start, event_end, meet_link, user_timezone, consultant_timezone, consultation_date, consultation_status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (product_id, user_id, consultant_id, event_start, event_end, meet_link, user_timezone, consultant_timezone, consultation_date, consultation_status, consultation_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
     try {
       await new Promise((resolve, reject) => {
@@ -466,7 +501,8 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
             user_timezone,
             consultant_timezone,
             date,
-            1
+            1,
+            consultation_id_generated
           ],
           (err, result) => (err ? reject(err) : resolve(result))
         )
@@ -576,6 +612,13 @@ export const rescheduleConsultationWithGoogleCalendar = async (req, res) => {
 
     const booking = data[0]
 
+    if (booking.consultation_status === 4) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Cannot reschedule a completed consultation'
+      })
+    }
+
     const {
       meet_link,
       consultant_timezone: booked_consultant_timezone,
@@ -613,72 +656,66 @@ export const rescheduleConsultationWithGoogleCalendar = async (req, res) => {
     const eventStartISO = consultantStart.toISOString()
     const eventEndISO = consultantEnd.toISOString()
 
-    /* 🔹 Update event in CONSULTANT Google Calendar */
-    const consultantAuth = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_SECRET_KEY,
-      process.env.GOOGLE_REDIRECT_URL
-    )
-    consultantAuth.setCredentials({
-      access_token: consultant_access,
-      refresh_token: consultant_refresh
-    })
-    const consultantCalendar = google.calendar({
-      version: 'v3',
-      auth: consultantAuth
+    // Check if new slot is available
+    const checkUtcDate = moment.utc(eventStartISO).format('YYYY-MM-DD')
+    const checkUtcStart = moment
+      .utc(eventStartISO)
+      .format('YYYY-MM-DD HH:mm:ss')
+
+    const checkSlotQuery = `
+        SELECT id FROM dmac_webapp_expert_availability
+        WHERE consultant_id = ? 
+        AND slot_date = ? 
+        AND start_time = ? 
+        AND is_booked = 1
+    `
+    const slotCheck = await new Promise((resolve, reject) => {
+      db.query(
+        checkSlotQuery,
+        [booking.consultant_id, checkUtcDate, checkUtcStart],
+        (err, result) => {
+          if (err) reject(err)
+          resolve(result)
+        }
+      )
     })
 
-    // Fetch event by Meet link
-    const list = await consultantCalendar.events.list({
-      calendarId: consultant_email,
-      q: meet_link
-    })
-
-    if (!list.data.items.length)
-      return res.status(404).json({
-        status: 404,
-        message: 'Event not found in consultant Google Calendar'
+    if (slotCheck.length > 0) {
+      return res.status(400).json({
+        status: 400,
+        message:
+          'The selected slot is already booked. Please choose another time.'
       })
+    }
 
-    const eventId = list.data.items[0].id
-
-    await consultantCalendar.events.patch({
-      calendarId: consultant_email,
-      eventId,
-      conferenceDataVersion: 1,
-      requestBody: {
-        start: { dateTime: eventStartISO, timeZone: final_consultant_timezone },
-        end: { dateTime: eventEndISO, timeZone: final_consultant_timezone }
-      }
-    })
-
-    /* 🔹 OPTIONAL: Update event in USER Google Calendar */
-    if (user_access_token) {
-      const userAuth = new google.auth.OAuth2(
+    /* 🔹 Update event in CONSULTANT Google Calendar */
+    try {
+      const consultantAuth = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_SECRET_KEY,
         process.env.GOOGLE_REDIRECT_URL
       )
-      userAuth.setCredentials({
-        access_token: user_access_token,
-        refresh_token: user_refresh_token
+      consultantAuth.setCredentials({
+        access_token: consultant_access,
+        refresh_token: consultant_refresh
       })
-
-      const userCalendar = google.calendar({
+      const consultantCalendar = google.calendar({
         version: 'v3',
-        auth: userAuth
+        auth: consultantAuth
       })
 
-      const userEventList = await userCalendar.events.list({
-        calendarId: user_email,
+      // Fetch event by Meet link
+      const list = await consultantCalendar.events.list({
+        calendarId: consultant_email,
         q: meet_link
       })
 
-      if (userEventList.data.items.length > 0) {
-        const userEventID = userEventList.data.items[0].id
-        await userCalendar.events.patch({
-          calendarId: user_email,
-          eventId: userEventID,
+      if (list.data.items.length) {
+        const eventId = list.data.items[0].id
+
+        await consultantCalendar.events.patch({
+          calendarId: consultant_email,
+          eventId,
           conferenceDataVersion: 1,
           requestBody: {
             start: {
@@ -688,13 +725,65 @@ export const rescheduleConsultationWithGoogleCalendar = async (req, res) => {
             end: { dateTime: eventEndISO, timeZone: final_consultant_timezone }
           }
         })
+      } else {
+        console.warn('Event not found in consultant Google Calendar')
+      }
+    } catch (error) {
+      console.error('Google Calendar Error (Consultant):', error)
+      // Continue execution even if Google Calendar update fails
+    }
+
+    /* 🔹 OPTIONAL: Update event in USER Google Calendar */
+    if (user_access_token) {
+      try {
+        const userAuth = new google.auth.OAuth2(
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_SECRET_KEY,
+          process.env.GOOGLE_REDIRECT_URL
+        )
+        userAuth.setCredentials({
+          access_token: user_access_token,
+          refresh_token: user_refresh_token
+        })
+
+        const userCalendar = google.calendar({
+          version: 'v3',
+          auth: userAuth
+        })
+
+        const userEventList = await userCalendar.events.list({
+          calendarId: user_email,
+          q: meet_link
+        })
+
+        if (userEventList.data.items.length > 0) {
+          const userEventID = userEventList.data.items[0].id
+          await userCalendar.events.patch({
+            calendarId: user_email,
+            eventId: userEventID,
+            conferenceDataVersion: 1,
+            requestBody: {
+              start: {
+                dateTime: eventStartISO,
+                timeZone: final_consultant_timezone
+              },
+              end: {
+                dateTime: eventEndISO,
+                timeZone: final_consultant_timezone
+              }
+            }
+          })
+        }
+      } catch (error) {
+        console.error('Google Calendar Error (User):', error)
+        // Continue execution even if Google Calendar update fails
       }
     }
 
     /* 🔹 Update DB */
     const updateQuery = `
       UPDATE dmac_webapp_consultations
-      SET event_start = ?, event_end = ?, consultation_date = ?, status = ?, user_timezone = ?, consultant_timezone = ?
+      SET event_start = ?, event_end = ?, consultation_date = ?, consultation_status = ?, user_timezone = ?, consultant_timezone = ?
       WHERE id = ?
     `
     await new Promise((resolve, reject) =>
@@ -922,7 +1011,7 @@ export const cancelConsultationByConsultant = async (req, res) => {
     // 4) Update DB
     const updateQuery = `
       UPDATE dmac_webapp_consultations
-      SET status = 5, event_start = NULL, event_end = NULL
+      SET consultation_status = 5, event_start = NULL, event_end = NULL
       WHERE id = ?
     `
     await queryDB(updateQuery, [consultation_id])
@@ -1178,7 +1267,7 @@ export const bookTherapistConsultation = async (req, res) => {
     const consultant_timezone = fetched_consultant_timezone || 'Asia/Kolkata'
 
     /* 🔹 Fetch user info + timezone */
-    const userQuery = `SELECT id, email, name, google_access_token as user_access_token, google_refresh_token as user_refresh_token, time_zone FROM dmac_webapp_users WHERE id = ?`
+    const userQuery = `SELECT id, email, name, google_access_token as user_access_token, google_refresh_token as user_refresh_token, time_zone, country FROM dmac_webapp_users WHERE id = ?`
     const user = await new Promise((resolve, reject) => {
       db.query(userQuery, [user_id], (err, result) =>
         err ? reject(err) : resolve(result)
@@ -1192,7 +1281,8 @@ export const bookTherapistConsultation = async (req, res) => {
       name: user_name,
       user_access_token,
       user_refresh_token,
-      time_zone: fetched_user_timezone
+      time_zone: fetched_user_timezone,
+      country
     } = user[0]
 
     const user_timezone = fetched_user_timezone || 'Asia/Kolkata'
@@ -1383,10 +1473,14 @@ export const bookTherapistConsultation = async (req, res) => {
 
       try {
         /* 🔹 Save booking */
+        const consultation_id_generated = await generateConsultationId(
+          country,
+          'TH'
+        )
         const insertQuery = `
           INSERT INTO dmac_webapp_therapist_consultations 
-          (product_id, user_id, consultant_id, event_start, event_end, meet_link, user_timezone, consultant_timezone, consultation_date, consultation_status)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (product_id, user_id, consultant_id, event_start, event_end, meet_link, user_timezone, consultant_timezone, consultation_date, consultation_status, consultation_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `
         await new Promise((resolve, reject) => {
           db.query(
@@ -1401,7 +1495,8 @@ export const bookTherapistConsultation = async (req, res) => {
               user_timezone,
               consultant_timezone,
               currentDate,
-              1
+              1,
+              consultation_id_generated
             ],
             (err, result) => (err ? reject(err) : resolve(result))
           )
@@ -1636,6 +1731,13 @@ export const rescheduleTherapistConsultation = async (req, res) => {
 
     const booking = data[0]
 
+    if (booking.consultation_status === 4) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Cannot reschedule a completed consultation'
+      })
+    }
+
     const {
       meet_link,
       consultant_timezone: booked_consultant_timezone,
@@ -1672,6 +1774,38 @@ export const rescheduleTherapistConsultation = async (req, res) => {
 
     const eventStartISO = consultantStart.toISOString()
     const eventEndISO = consultantEnd.toISOString()
+
+    // Check if new slot is available
+    const checkUtcDate = moment.utc(eventStartISO).format('YYYY-MM-DD')
+    const checkUtcStart = moment
+      .utc(eventStartISO)
+      .format('YYYY-MM-DD HH:mm:ss')
+
+    const checkSlotQuery = `
+        SELECT id FROM dmac_webapp_therapist_availability
+        WHERE consultant_id = ? 
+        AND slot_date = ? 
+        AND start_time = ? 
+        AND is_booked = 1
+    `
+    const slotCheck = await new Promise((resolve, reject) => {
+      db.query(
+        checkSlotQuery,
+        [booking.consultant_id, checkUtcDate, checkUtcStart],
+        (err, result) => {
+          if (err) reject(err)
+          resolve(result)
+        }
+      )
+    })
+
+    if (slotCheck.length > 0) {
+      return res.status(400).json({
+        status: 400,
+        message:
+          'The selected slot is already booked. Please choose another time.'
+      })
+    }
 
     /* 🔹 Update event in CONSULTANT Google Calendar */
     if (consultant_access && consultant_refresh) {

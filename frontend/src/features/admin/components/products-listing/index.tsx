@@ -17,6 +17,7 @@ import { useToast } from '../../../../providers/toast-provider';
 import CustomLoader from '../../../../components/loader';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { IconButton, Menu, MenuItem } from '@mui/material';
+import { TabHeaderLayout } from '../../../../components/tab-header';
 
 // ✅ Validation schema
 const schema = Yup.object({
@@ -223,9 +224,19 @@ function ProductsTable() {
       }}
       gap={1}
     >
-      <Typography variant="h6" sx={{ padding: 0 }}>
-        Products List
-      </Typography>
+      <TabHeaderLayout
+        leftNode={
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 600,
+              padding: 0,
+            }}
+          >
+            Products List
+          </Typography>
+        }
+      />
 
       <GenericTable
         rows={get(data, 'data', []) as IProduct[]}

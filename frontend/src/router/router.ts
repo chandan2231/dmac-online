@@ -40,6 +40,7 @@ import PatientLoginPage from '../pages/auth/login/patient-login';
 import PatientPaymentSuccessPage from '../pages/payment/patient-payment-success';
 import PatientPaymentCancelledPage from '../pages/payment/patient-payment-cancel';
 import PatientProductsPage from '../pages/patient/patient-products';
+import PatientAuthWithGooglePage from '../pages/patient/auth-with-google';
 import BookConsultationPage from '../pages/patient/book-consultation';
 import BookTherapistPage from '../pages/patient/book-therapist';
 import UploadDocumentsPage from '../pages/patient/upload-documents';
@@ -104,6 +105,7 @@ export const COMPONENT_MAP = {
   BookConsultationPage,
   BookTherapistPage,
   UploadDocumentsPage,
+  PatientAuthWithGooglePage,
 
   // Expert Pages
   ConsultationListPage,
@@ -142,6 +144,7 @@ export const ROUTES = {
   PATIENT_PRODUCTS: '/patient/products',
   BOOK_THERAPIST: '/patient/book-therapist',
   UPLOAD_DOCUMENTS: '/patient/upload-documents',
+  AUTH_WITH_GOOGLE: '/patient/auth-with-google',
 
   // ADMIN, SUPER_ADMIN Authenticated routes
   LOGIN: '/login',
@@ -272,6 +275,15 @@ const USER_ROUTES: IAllowedRoutes[] = [
     showInSidebar: true,
     sideBarTitle: 'Home',
     sideBarIcon: 'HomeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.AUTH_WITH_GOOGLE,
+    layout: 'MainLayout',
+    component: 'PatientAuthWithGooglePage',
+    showInSidebar: true,
+    sideBarTitle: 'Auth With Google',
+    sideBarIcon: 'GoogleIcon',
     isAChildOf: null,
   },
   {

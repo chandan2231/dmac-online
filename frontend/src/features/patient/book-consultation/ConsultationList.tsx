@@ -29,6 +29,7 @@ interface ConsultationListProps {
   onAddClick: () => void;
   isAddDisabled: boolean;
   onReviewClick: (consultation: IConsultation) => void;
+  onRescheduleClick: (consultation: IConsultation) => void;
   user: IUser | null;
   enableReviews: boolean;
 }
@@ -39,6 +40,7 @@ const ConsultationList = ({
   onAddClick,
   isAddDisabled,
   onReviewClick,
+  onRescheduleClick,
   user,
   enableReviews,
 }: ConsultationListProps) => {
@@ -62,6 +64,13 @@ const ConsultationList = ({
   const handleRateClick = () => {
     if (selectedConsultation) {
       onReviewClick(selectedConsultation);
+    }
+    handleMenuClose();
+  };
+
+  const handleRescheduleClick = () => {
+    if (selectedConsultation) {
+      onRescheduleClick(selectedConsultation);
     }
     handleMenuClose();
   };
@@ -175,7 +184,14 @@ const ConsultationList = ({
       <TabHeaderLayout
         leftNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
-            <Typography variant="h5">Consultations</Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+              }}
+            >
+              Consultations
+            </Typography>
           </Box>
         }
         rightNode={
@@ -190,18 +206,17 @@ const ConsultationList = ({
           </Box>
         }
       />
-      <Box mt={2} height="calc(100% - 60px)">
-        <GenericTable
-          rows={consultations}
-          columns={columns}
-          loading={loading}
-        />
-      </Box>
+      <GenericTable rows={consultations} columns={columns} loading={loading} />
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
+        {selectedConsultation && selectedConsultation.status !== 4 && (
+          <MenuItem onClick={handleRescheduleClick}>
+            Reschedule Booking
+          </MenuItem>
+        )}
         {selectedConsultation &&
           selectedConsultation.status === 4 &&
           enableReviews && (

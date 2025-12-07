@@ -24,6 +24,8 @@ export const TabHeaderLayout: React.FC<TabHeaderLayoutProps> = ({
         justifyContent={'space-between'}
         spacing={spacing}
         padding={padding}
+        marginBottom={5}
+        height={40}
       >
         <Box width={{ xs: '100%', sm: 'auto' }} pt={{ xs: 1, sm: 1 }}>
           {leftNode}

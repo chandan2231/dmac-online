@@ -1,16 +1,7 @@
 import './index.css';
 import { get } from 'lodash';
 import type { IProduct } from '../../admin/admin.interface';
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  Chip,
-  Divider,
-  Stack,
-} from '@mui/material';
+import { Box, Button, Typography, Chip, Stack } from '@mui/material';
 import { useGetProductListing } from '../../admin/hooks/useGetProductListing';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -18,6 +9,8 @@ import type { RootState } from '../../../store';
 import { useGetSubscribedProduct } from '../hooks/useGetSubscribedProduct';
 import { ROUTES } from '../../../router/router';
 import CustomLoader from '../../../components/loader';
+import moment from 'moment';
+import { TabHeaderLayout } from '../../../components/tab-header';
 
 const ProductCard = ({ ...args }: IProduct) => {
   const navigate = useNavigate();
@@ -121,7 +114,7 @@ const PatientProducts = () => {
       <Box
         sx={{
           height: '100%',
-          p: 4,
+          p: 3,
           overflowY: 'auto',
         }}
       >
@@ -157,18 +150,26 @@ const PatientProducts = () => {
           justifyContent: 'start',
           width: '100%',
           height: '100%',
-          gap: 4,
-          p: 4,
+          p: 3,
         }}
       >
-        <Typography
-          sx={{
-            fontWeight: 'bold',
-          }}
-          variant="h5"
-        >
-          Subscribed Product Details
-        </Typography>
+        <TabHeaderLayout
+          leftNode={
+            <Box
+              sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}
+            >
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 600,
+                }}
+              >
+                Subscribed Product Details
+              </Typography>
+            </Box>
+          }
+        />
+
         <Box>
           {subscribedProducts.map(
             (
@@ -186,115 +187,109 @@ const PatientProducts = () => {
                 payment_id,
                 payment_date,
                 status,
+                subscription_list,
               } = product;
               return (
-                <Card
-                  key={index}
-                  elevation={0}
-                  sx={{
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 4,
-                    transition: '0.3s',
-                    '&:hover': { borderColor: 'primary.main' },
-                    width: '100%',
-                    mb: 2,
-                  }}
-                >
-                  <CardContent sx={{ p: 3 }}>
-                    <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="flex-start"
-                      mb={2}
+                <div className="plan" key={index}>
+                  <div className="inner">
+                    <span className="pricing">
+                      <span>${product_amount}</span>
+                    </span>
+                    <p className="title">{product_name}</p>
+                    <p className="info">{product_description}</p>
+                    <ul className="features">
+                      {subscription_list.split(',').map((feature, index) => (
+                        <li key={index}>
+                          <span className="icon">
+                            <svg
+                              height="24"
+                              width="24"
+                              viewBox="0 0 24 24"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path d="M0 0h24v24H0z" fill="none"></path>
+                              <path
+                                fill="currentColor"
+                                d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
+                              ></path>
+                            </svg>
+                          </span>
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Stack
+                      direction={{ xs: 'column', sm: 'row' }}
+                      spacing={1}
+                      width="100%"
                     >
-                      <Box>
+                      <Box flex={1}>
                         <Typography
-                          variant="overline"
+                          variant="caption"
                           color="text.secondary"
-                          fontWeight="bold"
-                          letterSpacing={1}
+                          display="block"
+                          sx={{
+                            fontSize: '16px',
+                          }}
                         >
-                          SUBSCRIPTION
-                        </Typography>
-                        <Typography variant="h5" fontWeight="800" gutterBottom>
-                          {product_name}
+                          Subscription Status
                         </Typography>
                         <Chip
                           label={status}
                           size="small"
                           color={
-                            String(status).toLowerCase() === 'succeeded' ||
-                            String(status).toLowerCase() === 'active'
+                            String(status).toLowerCase() === 'completed'
                               ? 'success'
-                              : 'default'
+                              : 'warning'
                           }
-                          sx={{ fontWeight: 600, borderRadius: 1 }}
+                          sx={{
+                            fontWeight: 600,
+                            borderRadius: 1,
+                            mb: 2,
+                            color: '#fff',
+                          }}
                         />
                       </Box>
-                      <Typography
-                        variant="h4"
-                        color="primary.main"
-                        fontWeight="bold"
-                      >
-                        ${product_amount}
-                      </Typography>
-                    </Box>
+                      <Box flex={1}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                          sx={{
+                            fontSize: '16px',
+                          }}
+                        >
+                          Transaction ID
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          fontWeight="medium"
+                          sx={{ fontFamily: 'monospace' }}
+                        >
+                          {payment_id}
+                        </Typography>
+                      </Box>
+                      <Box flex={1}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                          sx={{
+                            fontSize: '16px',
+                          }}
+                        >
+                          Payment Date
+                        </Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {moment(payment_date).format('Do MMMM, YYYY')}
+                        </Typography>
+                      </Box>
+                    </Stack>
 
-                    <Divider sx={{ my: 2 }} />
-
-                    <Typography
-                      variant="body1"
-                      color="text.secondary"
-                      paragraph
-                    >
-                      {product_description}
-                    </Typography>
-
-                    <Box
-                      sx={{
-                        bgcolor: 'grey.50',
-                        p: 2,
-                        borderRadius: 2,
-                        mt: 2,
-                      }}
-                    >
-                      <Stack
-                        direction={{ xs: 'column', sm: 'row' }}
-                        spacing={2}
-                      >
-                        <Box flex={1}>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            display="block"
-                          >
-                            Transaction ID
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            fontWeight="medium"
-                            sx={{ fontFamily: 'monospace' }}
-                          >
-                            {payment_id}
-                          </Typography>
-                        </Box>
-                        <Box flex={1}>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            display="block"
-                          >
-                            Payment Date
-                          </Typography>
-                          <Typography variant="body2" fontWeight="medium">
-                            {payment_date}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </Box>
-                  </CardContent>
-                </Card>
+                    <div className="action"></div>
+                  </div>
+                </div>
               );
             }
           )}

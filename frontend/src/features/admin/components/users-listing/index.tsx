@@ -17,6 +17,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useToast } from '../../../../providers/toast-provider';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { IconButton, Menu, MenuItem } from '@mui/material';
+import { TabHeaderLayout } from '../../../../components/tab-header';
 
 type ChangePasswordFormValues = {
   password: string;
@@ -33,6 +34,7 @@ function UsersTable() {
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<IUserDetails | null>(null);
+  const [menuUser, setMenuUser] = useState<IUserDetails | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const { showToast } = useToast();
@@ -92,12 +94,17 @@ function UsersTable() {
     setIsLoadingStatus(false);
   };
 
-  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleMenuClick = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    user: IUserDetails
+  ) => {
     setAnchorEl(event.currentTarget);
+    setMenuUser(user);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+    setMenuUser(null);
   };
 
   const handleOpenViewModal = (user: IUserDetails) => {
@@ -146,37 +153,17 @@ function UsersTable() {
       filterable: false,
       renderCell: params => (
         <>
-          <IconButton onClick={handleMenuClick} size="small">
+          <IconButton
+            onClick={e => handleMenuClick(e, params.row)}
+            size="small"
+          >
             <MoreVertIcon />
           </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-          >
-            <MenuItem
-              onClick={() => {
-                handleMenuClose();
-                handleOpenViewModal(params.row);
-              }}
-            >
-              View Details
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                handleMenuClose();
-                handleOpenPasswordModal(params.row);
-              }}
-            >
-              Change Password
-            </MenuItem>
-          </Menu>
         </>
       ),
     },
   ];
+
   if (isLoading || isLoadingStatus) {
     return <CustomLoader />;
   }
@@ -190,6 +177,35 @@ function UsersTable() {
         onPaginationModelChange={setPaginationModel}
         loading={isLoading}
       />
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem
+          onClick={() => {
+            if (menuUser) {
+              handleMenuClose();
+              handleOpenViewModal(menuUser);
+            }
+          }}
+        >
+          View Details
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (menuUser) {
+              handleMenuClose();
+              handleOpenPasswordModal(menuUser);
+            }
+          }}
+        >
+          Change Password
+        </MenuItem>
+      </Menu>
 
       <GenericModal
         isOpen={isPasswordModalOpen}
@@ -374,6 +390,160 @@ function UsersTable() {
                 </Typography>
               </Box>
             </Box>
+
+            {/* Other Details Section */}
+            {(() => {
+              try {
+                const meta = selectedUser.patient_meta
+                  ? JSON.parse(selectedUser.patient_meta)
+                  : {};
+                return (
+                  <Box
+                    display="flex"
+                    flexDirection="row"
+                    p={2}
+                    border="1px solid #e0e0e0"
+                    borderRadius="8px"
+                    bgcolor="#fafafa"
+                    width="100%"
+                    flexWrap="wrap"
+                    rowGap={1}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="bold"
+                      width="100%"
+                      gutterBottom
+                    >
+                      Other Details
+                    </Typography>
+
+                    {/* Latitude */}
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      gap={1}
+                      width={'50%'}
+                    >
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        minWidth={100}
+                      >
+                        Latitude:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="600">
+                        {meta.lat || 'N/A'}
+                      </Typography>
+                    </Box>
+
+                    {/* Longitude */}
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      gap={1}
+                      width={'50%'}
+                    >
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        minWidth={100}
+                      >
+                        Longitude:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="600">
+                        {meta.long || 'N/A'}
+                      </Typography>
+                    </Box>
+
+                    {/* OS Details */}
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      gap={1}
+                      width={'50%'}
+                    >
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        minWidth={100}
+                      >
+                        OS Details:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="600">
+                        {meta.osDetails || 'N/A'}
+                      </Typography>
+                    </Box>
+
+                    {/* IP Address */}
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      gap={1}
+                      width={'50%'}
+                    >
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        minWidth={100}
+                      >
+                        IP Address:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="600">
+                        {meta.ipAddress || 'N/A'}
+                      </Typography>
+                    </Box>
+
+                    {/* Network Info */}
+                    <Box width={'100%'} mt={1}>
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight="bold"
+                        gutterBottom
+                      >
+                        Network Info
+                      </Typography>
+                      <Box pl={2}>
+                        <Typography variant="body2">
+                          Effective Type:{' '}
+                          {meta.networkInfo?.effectiveType || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          RTT: {meta.networkInfo?.rtt || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          Downlink: {meta.networkInfo?.downlink || 'N/A'}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Device Info */}
+                    <Box width={'100%'} mt={1}>
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight="bold"
+                        gutterBottom
+                      >
+                        Device Info
+                      </Typography>
+                      <Box pl={2}>
+                        <Typography variant="body2">
+                          Platform: {meta.deviceInfo?.platform || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          Vendor: {meta.deviceInfo?.vendor || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          User Agent: {meta.deviceInfo?.userAgent || 'N/A'}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                );
+              } catch {
+                return <Typography color="error">Invalid Meta Data</Typography>;
+              }
+            })()}
           </Box>
         )}
       </GenericModal>
@@ -393,9 +563,19 @@ const UsersListing = () => {
       }}
       gap={1}
     >
-      <Typography variant="h6" sx={{ padding: 0 }}>
-        Users List
-      </Typography>
+      <TabHeaderLayout
+        leftNode={
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 600,
+              padding: 0,
+            }}
+          >
+            Users List
+          </Typography>
+        }
+      />
       <UsersTable />
     </Box>
   );

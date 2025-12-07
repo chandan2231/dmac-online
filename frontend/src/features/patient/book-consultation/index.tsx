@@ -14,6 +14,7 @@ import SubscriptionRequired from '../../../components/subscription-required';
 import ConsultationList from './ConsultationList';
 import BookConsultationForm from './BookConsultationForm';
 import ReviewModal from './ReviewModal';
+import RescheduleModal from './RescheduleModal';
 
 const BookConsultation = () => {
   const user = useSelector((state: RootState) => state.auth.user);
@@ -21,12 +22,18 @@ const BookConsultation = () => {
   const { showToast } = useToast();
 
   const [view, setView] = useState<'list' | 'book'>('list');
-  const { data: consultations = [], isLoading: loadingConsultations } =
-    useGetConsultations(user);
+  const {
+    data: consultations = [],
+    isLoading: loadingConsultations,
+    refetch,
+  } = useGetConsultations(user);
 
   const isAddDisabled = consultations.some((c: IConsultation) =>
     [0, 1, 2, 3, 4].includes(c.status)
   );
+
+  // Reschedule State
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
 
   // Review State
   const [selectedConsultation, setSelectedConsultation] =
@@ -36,6 +43,16 @@ const BookConsultation = () => {
   const [reviewText, setReviewText] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [viewReviewMode, setViewReviewMode] = useState(false);
+
+  const handleRescheduleClick = (consultation: IConsultation) => {
+    setSelectedConsultation(consultation);
+    setRescheduleModalOpen(true);
+  };
+
+  const handleRescheduleClose = () => {
+    setRescheduleModalOpen(false);
+    setSelectedConsultation(null);
+  };
 
   const handleReviewClick = async (consultation: IConsultation) => {
     setSelectedConsultation(consultation);
@@ -112,6 +129,7 @@ const BookConsultation = () => {
           onAddClick={() => setView('book')}
           isAddDisabled={isAddDisabled}
           onReviewClick={handleReviewClick}
+          onRescheduleClick={handleRescheduleClick}
           user={user}
           enableReviews={true}
         />
@@ -120,10 +138,23 @@ const BookConsultation = () => {
           experts={experts}
           user={user}
           onCancel={() => setView('list')}
-          onSuccess={() => setView('list')}
+          onSuccess={() => {
+            setView('list');
+            showToast('Consultation booked successfully!', 'success');
+            // refetch consultations could be triggered here if needed
+            refetch();
+          }}
           productId={productId}
         />
       )}
+
+      <RescheduleModal
+        open={rescheduleModalOpen}
+        onClose={handleRescheduleClose}
+        consultation={selectedConsultation}
+        experts={experts || []}
+        user={user}
+      />
 
       <ReviewModal
         open={reviewModalOpen}

@@ -20,6 +20,7 @@ import { useToast } from '../../../providers/toast-provider';
 import type { IExpert, ISlot } from '../patient.interface';
 import { useTherapists } from '../hooks/useTherapists';
 import type { IUser } from '../../auth/auth.interface';
+import CustomLoader from '../../../components/loader';
 
 interface BookTherapistFormProps {
   user: IUser | null;
@@ -105,7 +106,6 @@ const BookTherapistForm = ({
     );
 
     if (result && result.booked) {
-      showToast('Consultation booked successfully!', 'success');
       setSlots(prev =>
         prev.map(s =>
           s.slot_id === selectedSlot.slot_id ? { ...s, is_booked: 1 } : s
@@ -122,6 +122,10 @@ const BookTherapistForm = ({
   const selectedTherapist = therapists?.find(
     (t: IExpert) => t.id === Number(selectedTherapistId)
   );
+
+  if (bookingLoading) {
+    return <CustomLoader />;
+  }
 
   return (
     <Box p={3} height="100%" width="100%">

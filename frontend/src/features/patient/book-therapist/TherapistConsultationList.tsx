@@ -184,7 +184,14 @@ const TherapistConsultationList = ({
       <TabHeaderLayout
         leftNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
-            <Typography variant="h5">Therapist Consultations</Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+              }}
+            >
+              Therapist Consultations
+            </Typography>
           </Box>
         }
         rightNode={
@@ -199,24 +206,17 @@ const TherapistConsultationList = ({
           </Box>
         }
       />
-      <Box mt={2} height="calc(100% - 60px)">
-        <GenericTable
-          rows={consultations}
-          columns={columns}
-          loading={loading}
-        />
-      </Box>
+      <GenericTable rows={consultations} columns={columns} loading={loading} />
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        {selectedConsultation &&
-          [5, 6].includes(selectedConsultation.status) && (
-            <MenuItem onClick={handleRescheduleClick}>
-              Reschedule Booking
-            </MenuItem>
-          )}
+        {selectedConsultation && selectedConsultation.status !== 4 && (
+          <MenuItem onClick={handleRescheduleClick}>
+            Reschedule Booking
+          </MenuItem>
+        )}
         {selectedConsultation &&
           selectedConsultation.status === 4 &&
           enableReviews && (

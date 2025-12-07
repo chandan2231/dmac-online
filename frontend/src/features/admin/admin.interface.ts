@@ -47,6 +47,7 @@ export interface IUserDetails extends Omit<IUser, 'id'> {
   status: number; // 0/1
   created_date: string; // ISO string
   updated_date: string; // ISO string
+  patient_meta?: string;
 }
 
 export interface IChangeUserPasswordPayload {

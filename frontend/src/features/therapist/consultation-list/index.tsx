@@ -19,6 +19,7 @@ import timezone from 'dayjs/plugin/timezone';
 import { get } from 'lodash';
 import type { RootState } from '../../../store';
 import { GenericTable } from '../../../components/table';
+import { useToast } from '../../../providers/toast-provider';
 import UpdateStatusModal from './UpdateStatusModal';
 import ReviewModal from './ReviewModal';
 import DocumentsModal from './DocumentsModal';
@@ -46,6 +47,7 @@ interface IConsultation {
 
 const TherapistConsultationList = () => {
   const user = useSelector((state: RootState) => state.auth.user);
+  const { showToast } = useToast();
   const [selectedPatient, setSelectedPatient] = useState<{
     id: number;
     name: string;
@@ -146,6 +148,28 @@ const TherapistConsultationList = () => {
 
   const handleSubmitStatus = (status: number, notes: string) => {
     if (selectedConsultation) {
+      if (status === 4) {
+        const therapistTimezone =
+          selectedConsultation.consultant_timezone ||
+          get(user, 'time_zone') ||
+          'UTC';
+        const now = dayjs().tz(therapistTimezone);
+        const start = dayjs(selectedConsultation.event_start).tz(
+          therapistTimezone
+        );
+        const consultationDate = dayjs(
+          selectedConsultation.consultation_date
+        ).tz(therapistTimezone);
+
+        if (now.isBefore(start) && now.isBefore(consultationDate)) {
+          showToast(
+            'meeting is not started, so you cant completed it now',
+            'error'
+          );
+          return;
+        }
+      }
+
       updateStatus(
         { consultationId: selectedConsultation.id, status, notes },
         {
@@ -260,7 +284,14 @@ const TherapistConsultationList = () => {
       <TabHeaderLayout
         leftNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
-            <Typography variant="h6">My Consultations</Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+              }}
+            >
+              My Consultations
+            </Typography>
           </Box>
         }
         rightNode={
@@ -291,13 +322,7 @@ const TherapistConsultationList = () => {
         }
       />
 
-      <Box mt={2} height="calc(100% - 60px)">
-        <GenericTable
-          rows={consultations}
-          columns={columns}
-          loading={loading}
-        />
-      </Box>
+      <GenericTable rows={consultations} columns={columns} loading={loading} />
       <UpdateStatusModal
         open={isModalOpen}
         onClose={handleCloseModal}

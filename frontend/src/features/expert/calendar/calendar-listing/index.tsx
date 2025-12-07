@@ -173,16 +173,24 @@ const CalendarListing = ({
       flexDirection="column"
       width="100%"
       height="100%"
-      p={2}
+      p={3}
       gap={1}
     >
       <TabHeaderLayout
         leftNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
-            <Typography variant="h6">Availability List</Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+              }}
+            >
+              Availability List
+            </Typography>
           </Box>
         }
       />
+
       <GenericTable rows={rows} columns={columns} loading={false} />
 
       <Menu

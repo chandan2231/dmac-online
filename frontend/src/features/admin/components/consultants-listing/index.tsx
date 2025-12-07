@@ -164,7 +164,14 @@ const ConsultantReviews = ({ consultant, onBack }: ConsultantReviewsProps) => {
       <TabHeaderLayout
         leftNode={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="h5">Reviews - {consultant.name}</Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+              }}
+            >
+              Reviews - {consultant.name}
+            </Typography>
           </Box>
         }
         rightNode={
@@ -1125,14 +1132,23 @@ const ConsultantsListing = () => {
       gap={1}
     >
       <TabHeaderLayout
-        leftNode={<Typography variant="h6">Consultants List</Typography>}
+        leftNode={
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 600,
+            }}
+          >
+            Experts List
+          </Typography>
+        }
         rightNode={
           <MorenButton
             variant="text"
             startIcon={<AddCircleOutlineRoundedIcon />}
             onClick={handleOpenCreateConsultantModal}
           >
-            Add New Consultant
+            Add New Expert
           </MorenButton>
         }
       />

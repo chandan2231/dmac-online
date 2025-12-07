@@ -23,8 +23,11 @@ const BookTherapist = () => {
 
   const [view, setView] = useState<'list' | 'book'>('list');
 
-  const { data: consultations = [], isLoading: loadingConsultations } =
-    useGetTherapistConsultations(user);
+  const {
+    data: consultations = [],
+    isLoading: loadingConsultations,
+    refetch,
+  } = useGetTherapistConsultations(user);
 
   const isAddDisabled = consultations.some((c: IConsultation) =>
     [0, 1, 2, 3, 4].includes(c.status)
@@ -140,7 +143,12 @@ const BookTherapist = () => {
         <BookTherapistForm
           user={user}
           onCancel={() => setView('list')}
-          onSuccess={() => setView('list')}
+          onSuccess={() => {
+            setView('list');
+            showToast('Consultation booked successfully!', 'success');
+            // refetch consultations could be triggered here if needed
+            refetch();
+          }}
           productId={productId}
         />
       )}
