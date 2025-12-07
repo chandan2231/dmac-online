@@ -96,6 +96,8 @@ export type ConsultantState = IConsultant & {
   province_id: string;
   province_title: string;
   language: string;
+  language_name?: string;
+  finance_manager_id?: number | null;
 };
 
 export interface ICreateConsultantPayload {
