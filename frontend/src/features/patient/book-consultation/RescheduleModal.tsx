@@ -42,6 +42,7 @@ const RescheduleModal = ({
     useState<ISlot | null>(null);
   const [rescheduleLoadingSlots, setRescheduleLoadingSlots] = useState(false);
   const [rescheduleSubmitting, setRescheduleSubmitting] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const today = dayjs();
   const maxDate = today.add(6, 'day');
@@ -50,6 +51,7 @@ const RescheduleModal = ({
     if (rescheduleExpertId && rescheduleDate) {
       setRescheduleLoadingSlots(true);
       setRescheduleSelectedSlot(null);
+      setHasSearched(true);
       const dateStr = rescheduleDate.format('YYYY-MM-DD');
       const fetchedSlots = await PatientService.getExpertSlots(
         user,
@@ -115,6 +117,7 @@ const RescheduleModal = ({
               setRescheduleExpertId(e.target.value as string);
               setRescheduleSlots([]);
               setRescheduleSelectedSlot(null);
+              setHasSearched(false);
             }}
           >
             {experts?.map((expert: IExpert) => (
@@ -132,6 +135,7 @@ const RescheduleModal = ({
             setRescheduleDate(newValue);
             setRescheduleSlots([]);
             setRescheduleSelectedSlot(null);
+            setHasSearched(false);
           }}
           minDate={today}
           maxDate={maxDate}
@@ -176,6 +180,14 @@ const RescheduleModal = ({
             </Stack>
           </Box>
         )}
+
+        {hasSearched &&
+          rescheduleSlots.length === 0 &&
+          !rescheduleLoadingSlots && (
+            <Typography variant="body1" color="textSecondary">
+              No slots available for this date.
+            </Typography>
+          )}
 
         <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
           <Button onClick={onClose} disabled={rescheduleSubmitting}>

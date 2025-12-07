@@ -689,71 +689,33 @@ export const rescheduleConsultationWithGoogleCalendar = async (req, res) => {
     }
 
     /* 🔹 Update event in CONSULTANT Google Calendar */
-    const consultantAuth = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_SECRET_KEY,
-      process.env.GOOGLE_REDIRECT_URL
-    )
-    consultantAuth.setCredentials({
-      access_token: consultant_access,
-      refresh_token: consultant_refresh
-    })
-    const consultantCalendar = google.calendar({
-      version: 'v3',
-      auth: consultantAuth
-    })
-
-    // Fetch event by Meet link
-    const list = await consultantCalendar.events.list({
-      calendarId: consultant_email,
-      q: meet_link
-    })
-
-    if (!list.data.items.length)
-      return res.status(404).json({
-        status: 404,
-        message: 'Event not found in consultant Google Calendar'
-      })
-
-    const eventId = list.data.items[0].id
-
-    await consultantCalendar.events.patch({
-      calendarId: consultant_email,
-      eventId,
-      conferenceDataVersion: 1,
-      requestBody: {
-        start: { dateTime: eventStartISO, timeZone: final_consultant_timezone },
-        end: { dateTime: eventEndISO, timeZone: final_consultant_timezone }
-      }
-    })
-
-    /* 🔹 OPTIONAL: Update event in USER Google Calendar */
-    if (user_access_token) {
-      const userAuth = new google.auth.OAuth2(
+    try {
+      const consultantAuth = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_SECRET_KEY,
         process.env.GOOGLE_REDIRECT_URL
       )
-      userAuth.setCredentials({
-        access_token: user_access_token,
-        refresh_token: user_refresh_token
+      consultantAuth.setCredentials({
+        access_token: consultant_access,
+        refresh_token: consultant_refresh
       })
-
-      const userCalendar = google.calendar({
+      const consultantCalendar = google.calendar({
         version: 'v3',
-        auth: userAuth
+        auth: consultantAuth
       })
 
-      const userEventList = await userCalendar.events.list({
-        calendarId: user_email,
+      // Fetch event by Meet link
+      const list = await consultantCalendar.events.list({
+        calendarId: consultant_email,
         q: meet_link
       })
 
-      if (userEventList.data.items.length > 0) {
-        const userEventID = userEventList.data.items[0].id
-        await userCalendar.events.patch({
-          calendarId: user_email,
-          eventId: userEventID,
+      if (list.data.items.length) {
+        const eventId = list.data.items[0].id
+
+        await consultantCalendar.events.patch({
+          calendarId: consultant_email,
+          eventId,
           conferenceDataVersion: 1,
           requestBody: {
             start: {
@@ -763,6 +725,58 @@ export const rescheduleConsultationWithGoogleCalendar = async (req, res) => {
             end: { dateTime: eventEndISO, timeZone: final_consultant_timezone }
           }
         })
+      } else {
+        console.warn('Event not found in consultant Google Calendar')
+      }
+    } catch (error) {
+      console.error('Google Calendar Error (Consultant):', error)
+      // Continue execution even if Google Calendar update fails
+    }
+
+    /* 🔹 OPTIONAL: Update event in USER Google Calendar */
+    if (user_access_token) {
+      try {
+        const userAuth = new google.auth.OAuth2(
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_SECRET_KEY,
+          process.env.GOOGLE_REDIRECT_URL
+        )
+        userAuth.setCredentials({
+          access_token: user_access_token,
+          refresh_token: user_refresh_token
+        })
+
+        const userCalendar = google.calendar({
+          version: 'v3',
+          auth: userAuth
+        })
+
+        const userEventList = await userCalendar.events.list({
+          calendarId: user_email,
+          q: meet_link
+        })
+
+        if (userEventList.data.items.length > 0) {
+          const userEventID = userEventList.data.items[0].id
+          await userCalendar.events.patch({
+            calendarId: user_email,
+            eventId: userEventID,
+            conferenceDataVersion: 1,
+            requestBody: {
+              start: {
+                dateTime: eventStartISO,
+                timeZone: final_consultant_timezone
+              },
+              end: {
+                dateTime: eventEndISO,
+                timeZone: final_consultant_timezone
+              }
+            }
+          })
+        }
+      } catch (error) {
+        console.error('Google Calendar Error (User):', error)
+        // Continue execution even if Google Calendar update fails
       }
     }
 
