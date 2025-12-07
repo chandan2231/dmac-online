@@ -36,6 +36,7 @@ function UsersTable() {
   const [selectedUser, setSelectedUser] = useState<IUserDetails | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isOtherDetailsModalOpen, setIsOtherDetailsModalOpen] = useState(false);
   const { showToast } = useToast();
 
   const handleUpdateStatus = async (id: number, status: number) => {
@@ -111,6 +112,16 @@ function UsersTable() {
     setSelectedUser(null);
   };
 
+  const handleOpenOtherDetailsModal = (user: IUserDetails) => {
+    setSelectedUser(user);
+    setIsOtherDetailsModalOpen(true);
+  };
+
+  const handleCloseOtherDetailsModal = () => {
+    setIsOtherDetailsModalOpen(false);
+    setSelectedUser(null);
+  };
+
   const columns: GridColDef<IUserDetails>[] = [
     { field: 'name', headerName: 'Name', width: 150 },
     { field: 'email', headerName: 'Email', width: 300 },
@@ -172,6 +183,14 @@ function UsersTable() {
               }}
             >
               Change Password
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                handleMenuClose();
+                handleOpenOtherDetailsModal(params.row);
+              }}
+            >
+              Show Other Details
             </MenuItem>
           </Menu>
         </>
@@ -375,6 +394,162 @@ function UsersTable() {
                 </Typography>
               </Box>
             </Box>
+          </Box>
+        )}
+      </GenericModal>
+
+      {/* Other Details Modal */}
+      <GenericModal
+        isOpen={isOtherDetailsModalOpen}
+        onClose={handleCloseOtherDetailsModal}
+        title={`Other Details${selectedUser ? ` - ${selectedUser.name}` : ''}`}
+        hideCancelButton
+      >
+        {selectedUser && (
+          <Box display="flex" flexDirection="column" gap={2}>
+            {(() => {
+              try {
+                const meta = selectedUser.patient_meta
+                  ? JSON.parse(selectedUser.patient_meta)
+                  : {};
+                return (
+                  <Box
+                    display="flex"
+                    flexDirection="row"
+                    p={2}
+                    border="1px solid #e0e0e0"
+                    borderRadius="8px"
+                    bgcolor="#fafafa"
+                    width="100%"
+                    flexWrap="wrap"
+                    rowGap={1}
+                  >
+                    {/* Latitude */}
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      gap={1}
+                      width={'50%'}
+                    >
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        minWidth={100}
+                      >
+                        Latitude:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="600">
+                        {meta.lat || 'N/A'}
+                      </Typography>
+                    </Box>
+
+                    {/* Longitude */}
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      gap={1}
+                      width={'50%'}
+                    >
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        minWidth={100}
+                      >
+                        Longitude:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="600">
+                        {meta.long || 'N/A'}
+                      </Typography>
+                    </Box>
+
+                    {/* OS Details */}
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      gap={1}
+                      width={'50%'}
+                    >
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        minWidth={100}
+                      >
+                        OS Details:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="600">
+                        {meta.osDetails || 'N/A'}
+                      </Typography>
+                    </Box>
+
+                    {/* IP Address */}
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      gap={1}
+                      width={'50%'}
+                    >
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        minWidth={100}
+                      >
+                        IP Address:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="600">
+                        {meta.ipAddress || 'N/A'}
+                      </Typography>
+                    </Box>
+
+                    {/* Network Info */}
+                    <Box width={'100%'} mt={1}>
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight="bold"
+                        gutterBottom
+                      >
+                        Network Info
+                      </Typography>
+                      <Box pl={2}>
+                        <Typography variant="body2">
+                          Effective Type:{' '}
+                          {meta.networkInfo?.effectiveType || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          RTT: {meta.networkInfo?.rtt || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          Downlink: {meta.networkInfo?.downlink || 'N/A'}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Device Info */}
+                    <Box width={'100%'} mt={1}>
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight="bold"
+                        gutterBottom
+                      >
+                        Device Info
+                      </Typography>
+                      <Box pl={2}>
+                        <Typography variant="body2">
+                          Platform: {meta.deviceInfo?.platform || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          Vendor: {meta.deviceInfo?.vendor || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          User Agent: {meta.deviceInfo?.userAgent || 'N/A'}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                );
+              } catch {
+                return <Typography color="error">Invalid Meta Data</Typography>;
+              }
+            })()}
           </Box>
         )}
       </GenericModal>
