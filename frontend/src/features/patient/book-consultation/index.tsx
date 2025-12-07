@@ -14,6 +14,7 @@ import SubscriptionRequired from '../../../components/subscription-required';
 import ConsultationList from './ConsultationList';
 import BookConsultationForm from './BookConsultationForm';
 import ReviewModal from './ReviewModal';
+import RescheduleModal from './RescheduleModal';
 
 const BookConsultation = () => {
   const user = useSelector((state: RootState) => state.auth.user);
@@ -31,6 +32,9 @@ const BookConsultation = () => {
     [0, 1, 2, 3, 4].includes(c.status)
   );
 
+  // Reschedule State
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+
   // Review State
   const [selectedConsultation, setSelectedConsultation] =
     useState<IConsultation | null>(null);
@@ -39,6 +43,16 @@ const BookConsultation = () => {
   const [reviewText, setReviewText] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [viewReviewMode, setViewReviewMode] = useState(false);
+
+  const handleRescheduleClick = (consultation: IConsultation) => {
+    setSelectedConsultation(consultation);
+    setRescheduleModalOpen(true);
+  };
+
+  const handleRescheduleClose = () => {
+    setRescheduleModalOpen(false);
+    setSelectedConsultation(null);
+  };
 
   const handleReviewClick = async (consultation: IConsultation) => {
     setSelectedConsultation(consultation);
@@ -115,6 +129,7 @@ const BookConsultation = () => {
           onAddClick={() => setView('book')}
           isAddDisabled={isAddDisabled}
           onReviewClick={handleReviewClick}
+          onRescheduleClick={handleRescheduleClick}
           user={user}
           enableReviews={true}
         />
@@ -132,6 +147,14 @@ const BookConsultation = () => {
           productId={productId}
         />
       )}
+
+      <RescheduleModal
+        open={rescheduleModalOpen}
+        onClose={handleRescheduleClose}
+        consultation={selectedConsultation}
+        experts={experts || []}
+        user={user}
+      />
 
       <ReviewModal
         open={reviewModalOpen}

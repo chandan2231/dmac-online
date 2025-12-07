@@ -29,6 +29,7 @@ interface ConsultationListProps {
   onAddClick: () => void;
   isAddDisabled: boolean;
   onReviewClick: (consultation: IConsultation) => void;
+  onRescheduleClick: (consultation: IConsultation) => void;
   user: IUser | null;
   enableReviews: boolean;
 }
@@ -39,6 +40,7 @@ const ConsultationList = ({
   onAddClick,
   isAddDisabled,
   onReviewClick,
+  onRescheduleClick,
   user,
   enableReviews,
 }: ConsultationListProps) => {
@@ -62,6 +64,13 @@ const ConsultationList = ({
   const handleRateClick = () => {
     if (selectedConsultation) {
       onReviewClick(selectedConsultation);
+    }
+    handleMenuClose();
+  };
+
+  const handleRescheduleClick = () => {
+    if (selectedConsultation) {
+      onRescheduleClick(selectedConsultation);
     }
     handleMenuClose();
   };
@@ -203,6 +212,11 @@ const ConsultationList = ({
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
+        {selectedConsultation && selectedConsultation.status !== 4 && (
+          <MenuItem onClick={handleRescheduleClick}>
+            Reschedule Booking
+          </MenuItem>
+        )}
         {selectedConsultation &&
           selectedConsultation.status === 4 &&
           enableReviews && (
