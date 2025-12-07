@@ -62,7 +62,7 @@ const ExportHome = () => {
             Connecting your Google Calendar helps make your consultations
             seamless and organized.
           </Typography>
-          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
             Benefits for you:
           </Typography>
           <Box component="ul" sx={{ pl: 2, mb: 2 }}>
@@ -87,11 +87,24 @@ const ExportHome = () => {
           <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
             Your privacy matters
           </Typography>
-          <Typography variant="body1" sx={{ mb: 3 }}>
-            We only request permission to view your availability and add
-            consultation events. We never modify or delete your personal
-            calendar events. You can disconnect anytime from settings.
-          </Typography>
+          <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+            <li>
+              <Typography variant="body2">
+                We only request permission to view your availability and add
+                consultation events.
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                We never modify or delete your personal calendar events.
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                You can disconnect anytime from settings.{' '}
+              </Typography>
+            </li>
+          </Box>
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
             <MorenButton
               variant="contained"
