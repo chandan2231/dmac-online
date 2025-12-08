@@ -13,7 +13,6 @@ import {
   FormControl,
   FormLabel,
   Paper,
-  Modal,
   CircularProgress,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
@@ -22,6 +21,7 @@ import {
   useSubmitAssessmentTab,
 } from '../hooks/useAssessment';
 import CustomLoader from '../../../components/loader';
+import GenericModal from '../../../components/modal';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -85,12 +85,22 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
   const [depressionData, setDepressionData] = useState<FormData>({});
   const [sleepData, setSleepData] = useState<FormData>({});
   const [consentAccepted, setConsentAccepted] = useState(false);
+  const [signature, setSignature] = useState('');
   const [openModal, setOpenModal] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (status) {
+      if (status.adl) setAdlData(status.adl);
+      if (status.fall_risk) setFallRiskData(status.fall_risk);
+      if (status.depression) setDepressionData(status.depression);
+      if (status.sleep) setSleepData(status.sleep);
+      if (status.consent) {
+        setConsentAccepted(status.consent.accepted);
+        setSignature(status.consent.signature || '');
+      }
+
       // Check if all tabs are completed
       if (
         status.adl &&
@@ -170,14 +180,20 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
   };
 
   const handleSubmit = async (tab: string) => {
-    let data: FormData | { accepted: boolean } = {};
+    let data: FormData | { accepted: boolean; signature?: string } = {};
     if (tab === 'adl') data = adlData;
     else if (tab === 'fall_risk') data = fallRiskData;
     else if (tab === 'depression') data = depressionData;
     else if (tab === 'sleep') data = sleepData;
-    else if (tab === 'consent') data = { accepted: consentAccepted };
+    else if (tab === 'consent') data = { accepted: consentAccepted, signature };
 
     if (tab !== 'consent' && !validateTab(tab, data as FormData)) return;
+    if (tab === 'consent' && !signature) {
+      enqueueSnackbar('Please provide electronic signature', {
+        variant: 'error',
+      });
+      return;
+    }
 
     try {
       await submitTab({ tab, data });
@@ -338,11 +354,22 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
             label="I have read and agree to the disclaimer"
           />
           <Box sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Electronic Signature"
+              value={signature}
+              onChange={e => setSignature(e.target.value)}
+              variant="outlined"
+              size="small"
+              helperText="Please type your full name as signature"
+            />
+          </Box>
+          <Box sx={{ mt: 2 }}>
             <Button
               variant="contained"
               color="primary"
               onClick={() => handleSubmit('consent')}
-              disabled={!consentAccepted || submitting}
+              disabled={!consentAccepted || !signature || submitting}
             >
               {submitting ? <CircularProgress size={24} /> : 'Submit'}
             </Button>
@@ -350,42 +377,19 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         </Box>
       </TabPanel>
 
-      <Modal
-        open={openModal}
+      <GenericModal
+        isOpen={openModal}
         onClose={() => setOpenModal(false)}
-        aria-labelledby="disclaimer-modal-title"
-        aria-describedby="disclaimer-modal-description"
+        title="Disclaimer"
+        submitButtonText="Close"
+        onSubmit={() => setOpenModal(false)}
+        hideCancelButton
       >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: 400,
-            bgcolor: 'background.paper',
-            boxShadow: 24,
-            p: 4,
-            borderRadius: 2,
-          }}
-        >
-          <Typography id="disclaimer-modal-title" variant="h6" component="h2">
-            Disclaimer
-          </Typography>
-          <Typography id="disclaimer-modal-description" sx={{ mt: 2 }}>
-            This is a generic disclaimer. Please read carefully before
-            proceeding. By checking the box, you agree to the terms and
-            conditions.
-          </Typography>
-          <Button
-            onClick={() => setOpenModal(false)}
-            sx={{ mt: 2 }}
-            variant="contained"
-          >
-            Close
-          </Button>
-        </Box>
-      </Modal>
+        <Typography>
+          This is a generic disclaimer. Please read carefully before proceeding.
+          By checking the box, you agree to the terms and conditions.
+        </Typography>
+      </GenericModal>
     </Paper>
   );
 };

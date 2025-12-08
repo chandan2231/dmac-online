@@ -2186,11 +2186,11 @@ export const getAssessmentStatus = async (req, res) => {
 
     const assessment = result[0]
     res.status(200).json({
-      adl: !!assessment.adl_data,
-      fall_risk: !!assessment.fall_risk_data,
-      depression: !!assessment.depression_data,
-      sleep: !!assessment.sleep_data,
-      consent: !!assessment.consent_data
+      adl: assessment.adl_data || null,
+      fall_risk: assessment.fall_risk_data || null,
+      depression: assessment.depression_data || null,
+      sleep: assessment.sleep_data || null,
+      consent: assessment.consent_data || null
     })
   } catch (error) {
     console.error(error)
