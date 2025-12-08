@@ -188,11 +188,29 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
     else if (tab === 'consent') data = { accepted: consentAccepted, signature };
 
     if (tab !== 'consent' && !validateTab(tab, data as FormData)) return;
-    if (tab === 'consent' && !signature) {
-      enqueueSnackbar('Please provide electronic signature', {
-        variant: 'error',
-      });
-      return;
+    if (tab === 'consent') {
+      if (!signature) {
+        enqueueSnackbar('Please provide electronic signature', {
+          variant: 'error',
+        });
+        return;
+      }
+
+      if (
+        !status?.adl ||
+        !status?.fall_risk ||
+        !status?.depression ||
+        !status?.sleep
+      ) {
+        enqueueSnackbar(
+          'Please submit all other forms before submitting consent',
+          {
+            variant: 'error',
+            autoHideDuration: 10000,
+          }
+        );
+        return;
+      }
     }
 
     try {

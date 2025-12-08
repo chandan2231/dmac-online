@@ -101,38 +101,8 @@ const UploadDocuments = () => {
     assessmentStatus.sleep &&
     assessmentStatus.consent;
 
-  if (!isAssessmentComplete) {
-    return (
-      <Box sx={{ p: 3, width: '100%', height: '100%' }}>
-        <TabHeaderLayout
-          leftNode={
-            <Box
-              sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}
-            >
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 600,
-                }}
-              >
-                Patient Assessment
-              </Typography>
-            </Box>
-          }
-        />
-        <AssessmentForm
-          onComplete={() => {
-            queryClient.invalidateQueries({
-              queryKey: [ASSESSMENT_QUERY_KEYS.GET_ASSESSMENT_STATUS],
-            });
-          }}
-        />
-      </Box>
-    );
-  }
-
   return (
-    <Box sx={{ p: 3, width: '100%', height: '100%' }}>
+    <Box sx={{ p: 3, width: '100%', height: '100%', overflowY: 'auto' }}>
       <TabHeaderLayout
         leftNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
@@ -142,92 +112,107 @@ const UploadDocuments = () => {
                 fontWeight: 600,
               }}
             >
-              My Documents
+              Patient Assessment & Documents
             </Typography>
           </Box>
         }
       />
 
-      <Box sx={{ mb: 4 }}>
-        {/* 🔥 Updated: UI text for new limit */}
-        <Typography variant="body1" color="textSecondary" gutterBottom>
-          Upload up to 10 documents (PDF, Image, Doc). Max 5MB each.
-        </Typography>
-        <Typography variant="subtitle1" gutterBottom>
-          Documents Uploaded: {documents.length} / 10
-        </Typography>
+      <AssessmentForm
+        onComplete={() => {
+          queryClient.invalidateQueries({
+            queryKey: [ASSESSMENT_QUERY_KEYS.GET_ASSESSMENT_STATUS],
+          });
+        }}
+      />
 
-        {/* 🔥 Updated: show upload button until 10 */}
-        {documents.length < 10 && (
-          <Button
-            component="label"
-            variant="contained"
-            startIcon={<CloudUploadIcon />}
-            disabled={uploading}
-          >
-            {uploading ? 'Uploading...' : 'Upload Document'}
-            <input
-              type="file"
-              hidden
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              onChange={handleFileUpload}
-            />
-          </Button>
-        )}
-      </Box>
+      {isAssessmentComplete && (
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
+            My Documents
+          </Typography>
+          <Box sx={{ mb: 4 }}>
+            {/* 🔥 Updated: UI text for new limit */}
+            <Typography variant="body1" color="textSecondary" gutterBottom>
+              Upload up to 10 documents (PDF, Image, Doc). Max 5MB each.
+            </Typography>
+            <Typography variant="subtitle1" gutterBottom>
+              Documents Uploaded: {documents.length} / 10
+            </Typography>
 
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-        {documents.map((doc: Document) => (
-          <Box
-            key={doc.id}
-            sx={{
-              width: {
-                xs: '100%',
-                sm: 'calc(50% - 12px)',
-                md: 'calc(33.33% - 16px)',
-              },
-            }}
-          >
-            <Card>
-              <CardContent>
-                <Typography variant="h6" noWrap title={doc.file_name}>
-                  {doc.file_name}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  {(doc.file_size / 1024 / 1024).toFixed(2)} MB
-                </Typography>
-                <Typography variant="caption" display="block" gutterBottom>
-                  {new Date(doc.created_at).toLocaleDateString()}
-                </Typography>
-              </CardContent>
-              <CardActions>
-                <Button
-                  size="small"
-                  startIcon={<VisibilityIcon />}
-                  href={doc.file_url}
-                  target="_blank"
-                >
-                  View
-                </Button>
-                <Button
-                  size="small"
-                  color="error"
-                  startIcon={<DeleteIcon />}
-                  onClick={() => handleDelete(doc.id)}
-                >
-                  Delete
-                </Button>
-              </CardActions>
-            </Card>
+            {/* 🔥 Updated: show upload button until 10 */}
+            {documents.length < 10 && (
+              <Button
+                component="label"
+                variant="contained"
+                startIcon={<CloudUploadIcon />}
+                disabled={uploading}
+              >
+                {uploading ? 'Uploading...' : 'Upload Document'}
+                <input
+                  type="file"
+                  hidden
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  onChange={handleFileUpload}
+                />
+              </Button>
+            )}
           </Box>
-        ))}
 
-        {documents.length === 0 && (
-          <Box sx={{ width: '100%' }}>
-            <Alert severity="info">No documents uploaded yet.</Alert>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+            {documents.map((doc: Document) => (
+              <Box
+                key={doc.id}
+                sx={{
+                  width: {
+                    xs: '100%',
+                    sm: 'calc(50% - 12px)',
+                    md: 'calc(33.33% - 16px)',
+                  },
+                }}
+              >
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" noWrap title={doc.file_name}>
+                      {doc.file_name}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {(doc.file_size / 1024 / 1024).toFixed(2)} MB
+                    </Typography>
+                    <Typography variant="caption" display="block" gutterBottom>
+                      {new Date(doc.created_at).toLocaleDateString()}
+                    </Typography>
+                  </CardContent>
+                  <CardActions>
+                    <Button
+                      size="small"
+                      startIcon={<VisibilityIcon />}
+                      href={doc.file_url}
+                      target="_blank"
+                    >
+                      View
+                    </Button>
+                    <Button
+                      size="small"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDelete(doc.id)}
+                    >
+                      Delete
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Box>
+            ))}
+
+            {documents.length === 0 && (
+              <Box sx={{ width: '100%' }}>
+                <Alert severity="info">No documents uploaded yet.</Alert>
+              </Box>
+            )}
           </Box>
-        )}
-      </Box>
+        </Box>
+      )}
     </Box>
   );
 };
