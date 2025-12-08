@@ -111,11 +111,17 @@ const BookTherapist = () => {
     useGetSubscribedProduct(user);
   const productId = products && products.length > 0 ? products[0].id : null;
 
+  const productPackageSubscriptionListString =
+    products && products.length > 0 ? products[0].subscription_list : null;
+
   if (loadingProducts) {
     return <CustomLoader />;
   }
 
-  if (!productId) {
+  if (
+    !productPackageSubscriptionListString ||
+    !productPackageSubscriptionListString.includes('Supervised 6 Session')
+  ) {
     return (
       <Box p={3} height="100%" width="100%">
         <SubscriptionRequired

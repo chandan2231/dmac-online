@@ -344,6 +344,31 @@ const getGoogleAuthUrl = async (): Promise<{
   }
 };
 
+const getAssessmentStatus = async () => {
+  try {
+    const response = await HttpService.getAxiosClient().get(
+      `patient/assessment-status`
+    );
+    return response;
+  } catch (error: unknown) {
+    console.error('Error fetching assessment status:', error);
+    throw error;
+  }
+};
+
+const submitAssessmentTab = async (tab: string, data: any) => {
+  try {
+    const response = await HttpService.getAxiosClient().post(
+      `patient/assessment-submit`,
+      { tab, data }
+    );
+    return response;
+  } catch (error: unknown) {
+    console.error('Error submitting assessment:', error);
+    throw error;
+  }
+};
+
 const PatientService = {
   getSubscribedProduct,
   getExpertList,
@@ -366,6 +391,8 @@ const PatientService = {
   getUserDocuments,
   deleteDocument,
   getGoogleAuthUrl,
+  getAssessmentStatus,
+  submitAssessmentTab,
 };
 
 export default PatientService;

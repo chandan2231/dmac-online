@@ -20,7 +20,9 @@ import {
   updateProfile,
   uploadDocument,
   getUserDocuments,
-  deleteUserDocument
+  deleteUserDocument,
+  getAssessmentStatus,
+  submitAssessmentTab
 } from '../controllers/patient.js'
 
 const router = express.Router()
@@ -33,6 +35,17 @@ router.post(
 )
 router.get('/documents', authenticateUserWithBearer, getUserDocuments)
 router.delete('/documents/:id', authenticateUserWithBearer, deleteUserDocument)
+
+router.get(
+  '/assessment-status',
+  authenticateUserWithBearer,
+  getAssessmentStatus
+)
+router.post(
+  '/assessment-submit',
+  authenticateUserWithBearer,
+  submitAssessmentTab
+)
 
 router.post('/therapist-list', getTherapistListByLanguage)
 router.post('/expert-list', getExpertListByLanguage)
