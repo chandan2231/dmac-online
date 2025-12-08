@@ -19,7 +19,7 @@ export const saveRiskAssessment = (req, res) => {
         req.body.criteria_report_explain,
         req.body.irb_report,
         req.body.irb_report_explain,
-        datetime.toISOString().slice(0, 10), // updated_at
+        datetime, // updated_at
         req.user.userId, // updated_by
         req.body.protocol_id // protocol_id
       ]
@@ -47,8 +47,8 @@ export const saveRiskAssessment = (req, res) => {
         req.body.criteria_report_explain,
         req.body.irb_report,
         req.body.irb_report_explain,
-        datetime.toISOString().slice(0, 10),
-        datetime.toISOString().slice(0, 10),
+        datetime,
+        datetime,
         req.user.userId
       ]
 
@@ -114,7 +114,7 @@ export const saveInformedConsent = (req, res) => {
         req.body.ensuring_list_explain,
         req.body.icf_version,
         req.body.performing_consent,
-        datetime.toISOString().slice(0, 10),
+        datetime,
         req.user.userId,
         req.body.protocol_id
       ]
@@ -151,8 +151,8 @@ export const saveInformedConsent = (req, res) => {
         req.body.ensuring_list_explain,
         req.body.icf_version,
         req.body.performing_consent,
-        datetime.toISOString().slice(0, 10),
-        datetime.toISOString().slice(0, 10),
+        datetime,
+        datetime,
         req.user.userId
       ]
       db.query(que, [values], (err, data) => {
@@ -223,7 +223,7 @@ export const saveInvestigatorAndinstuation = (req, res) => {
         req.body.inv_or_comp_explain,
         req.body.inv_sit_quali,
         req.body.investigator_changes.toString(),
-        datetime.toISOString().slice(0, 10),
+        datetime,
         req.user.userId,
         req.body.protocol_id
       ]
@@ -265,8 +265,8 @@ export const saveInvestigatorAndinstuation = (req, res) => {
         req.body.inv_or_comp_explain,
         req.body.inv_sit_quali,
         req.body.investigator_changes.toString(),
-        datetime.toISOString().slice(0, 10),
-        datetime.toISOString().slice(0, 10),
+        datetime,
+        datetime,
         req.user.userId
       ]
       db.query(que, [values], (err, data) => {
@@ -338,7 +338,7 @@ export const saveResearchProcess = (req, res) => {
         req.body.subjects_enrolled,
         req.body.termination_reason_explain,
         req.body.withdrawal_reason_explain,
-        datetime.toISOString().slice(0, 10),
+        datetime,
         req.user.userId,
         req.body.protocol_id
       ]
@@ -381,8 +381,8 @@ export const saveResearchProcess = (req, res) => {
         req.body.subjects_enrolled,
         req.body.termination_reason_explain,
         req.body.withdrawal_reason_explain,
-        datetime.toISOString().slice(0, 10),
-        datetime.toISOString().slice(0, 10),
+        datetime,
+        datetime,
         req.user.userId
       ]
       db.query(que, [values], (err, data) => {

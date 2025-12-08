@@ -732,7 +732,7 @@ export const chairCommitteeApprovalProtocol = async (req, res) => {
           protocolStatus,
           req.body.comment,
           req.body.electronic_signature,
-          datetime.toISOString().slice(0, 10),
+          datetime,
           req.body.protocol_id
         ],
         (err, data) => {
@@ -1746,7 +1746,7 @@ export const votingMemberApprovalProtocol = (req, res) => {
       req.body.supported_documents,
       req.body.comment,
       req.body.electronic_signature,
-      datetime.toISOString().slice(0, 10),
+      datetime,
       2,
       req.body.id
     ],

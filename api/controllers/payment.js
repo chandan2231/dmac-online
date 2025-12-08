@@ -3,6 +3,7 @@ import { client } from '../paypalConfig.js'
 import paypal from '@paypal/checkout-server-sdk'
 import { getUserInfo, getUserInfoByProtocolId } from '../userData.js'
 import sendEmail from '../emailService.js'
+import moment from 'moment-timezone'
 
 export const capturePaymentAdditionClinicSite = async (req, res) => {
   const {
@@ -80,8 +81,9 @@ export const capturePaymentAdditionClinicSite = async (req, res) => {
           )
         })
         // Prepare email content
-        const transactionDate = new Date().toLocaleDateString() // MM/DD/YYYY
-        const transactionTime = new Date().toLocaleTimeString() // HH:MM AM/PM
+        const userTimezone = user.time_zone || 'UTC'
+        const transactionDate = moment().tz(userTimezone).format('MM/DD/YYYY')
+        const transactionTime = moment().tz(userTimezone).format('hh:mm A')
 
         const emailSubject =
           'Protocol Submission Confirmation & Protocol Approval & Processing Receipt'
@@ -298,8 +300,9 @@ export const capturePayment = async (req, res) => {
           )
         })
         // Prepare email content
-        const transactionDate = new Date().toLocaleDateString() // MM/DD/YYYY
-        const transactionTime = new Date().toLocaleTimeString() // HH:MM AM/PM
+        const userTimezone = user.time_zone || 'UTC'
+        const transactionDate = moment().tz(userTimezone).format('MM/DD/YYYY')
+        const transactionTime = moment().tz(userTimezone).format('hh:mm A')
 
         const emailSubject =
           'Protocol Submission Confirmation & Protocol Approval & Processing Receipt'
@@ -357,8 +360,9 @@ export const capturePayment = async (req, res) => {
       const user = await getUserInfo(userId)
       if (user) {
         // Prepare email content
-        const transactionDate = new Date().toLocaleDateString() // MM/DD/YYYY
-        const transactionTime = new Date().toLocaleTimeString() // HH:MM AM/PM
+        const userTimezone = user.time_zone || 'UTC'
+        const transactionDate = moment().tz(userTimezone).format('MM/DD/YYYY')
+        const transactionTime = moment().tz(userTimezone).format('hh:mm A')
 
         const emailSubject =
           'Protocol Submission Confirmation & Protocol Approval & Processing Receipt'

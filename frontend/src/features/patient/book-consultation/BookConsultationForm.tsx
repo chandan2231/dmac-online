@@ -20,6 +20,7 @@ import { useToast } from '../../../providers/toast-provider';
 import type { IExpert, ISlot } from '../patient.interface';
 import type { IUser } from '../../auth/auth.interface';
 import CustomLoader from '../../../components/loader';
+import { formatToTimezone, getUserTimezone } from '../../../utils/dateUtils';
 
 interface BookConsultationFormProps {
   experts: IExpert[];
@@ -66,7 +67,23 @@ const BookConsultationForm = ({
         Number(selectedExpertId),
         dateStr
       );
-      setSlots(fetchedSlots);
+
+      // Convert slots to user's timezone for display
+      const userTimezone = getUserTimezone();
+      const processedSlots = fetchedSlots.map((slot: ISlot) => {
+        // Assuming slot.start is in UTC or server time, we need to be careful here.
+        // The backend returns slots based on the query.
+        // If the backend returns UTC times, we should convert them.
+        // Let's assume the backend returns UTC times as per our previous fixes.
+
+        return {
+          ...slot,
+          displayStart: formatToTimezone(slot.start, userTimezone, 'h:mm A'),
+          displayEnd: formatToTimezone(slot.end, userTimezone, 'h:mm A'),
+        };
+      });
+
+      setSlots(processedSlots);
       setLoadingSlots(false);
     }
   };
@@ -82,6 +99,12 @@ const BookConsultationForm = ({
 
     setBookingLoading(true);
     const dateStr = selectedDate.format('YYYY-MM-DD');
+    // We send the start time as is, or we might need to send the full ISO string.
+    // The backend expects 'startTime' which it uses to find the slot.
+    // If we send the time part only, it might be ambiguous if we don't send the timezone.
+    // However, the backend `bookConsultation` logic (which I haven't seen yet but can infer)
+    // likely uses the slot ID or the exact time to book.
+    // Let's stick to the existing logic but ensure we are consistent.
     const startTime = selectedSlot.start.split(' ')[1];
 
     const result = await PatientService.bookConsultation(
@@ -251,14 +274,14 @@ const BookConsultationForm = ({
                 Available Slots:
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Timezone: {get(user, 'time_zone', 'UTC')}
+                Timezone: {get(user, 'time_zone') || getUserTimezone()}
               </Typography>
             </Box>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               {slots.map((slot: ISlot) => (
                 <Chip
                   key={slot.slot_id}
-                  label={`${slot.start.split(' ')[1]} - ${slot.end.split(' ')[1]}`}
+                  label={`${slot.displayStart || slot.start.split(' ')[1]} - ${slot.displayEnd || slot.end.split(' ')[1]}`}
                   color={
                     slot.is_booked
                       ? 'default'

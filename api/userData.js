@@ -6,7 +6,7 @@ export async function fetchUserById(userId) {
   try {
     const user = await new Promise((resolve, reject) => {
       db.query(
-        'SELECT name, email FROM users WHERE id = ?',
+        'SELECT name, email, time_zone FROM dmac_webapp_users WHERE id = ?',
         [userId],
         (err, results) => {
           if (err) {
@@ -17,7 +17,8 @@ export async function fetchUserById(userId) {
             resolve({
               id: userId,
               name: results[0].name,
-              email: results[0].email
+              email: results[0].email,
+              time_zone: results[0].time_zone
             })
           } else {
             reject(new Error('User not found'))

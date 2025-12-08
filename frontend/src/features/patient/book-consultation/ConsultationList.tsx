@@ -10,18 +10,13 @@ import {
   MenuItem,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
 import { get } from 'lodash';
 import { GenericTable } from '../../../components/table';
 import type { IConsultation } from '../patient.interface';
 import type { GridColDef } from '@mui/x-data-grid';
 import type { IUser } from '../../auth/auth.interface';
 import { TabHeaderLayout } from '../../../components/tab-header';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import { formatToTimezone, getUserTimezone } from '../../../utils/dateUtils';
 
 interface ConsultationListProps {
   consultations: IConsultation[];
@@ -82,13 +77,17 @@ const ConsultationList = ({
       headerName: 'Booked Slot',
       flex: 1,
       renderCell: params => {
-        const userTimezone = get(user, 'time_zone') || 'UTC';
-        const start = dayjs(params.row.event_start)
-          .tz(userTimezone)
-          .format('HH:mm');
-        const end = dayjs(params.row.event_end)
-          .tz(userTimezone)
-          .format('HH:mm');
+        const userTimezone = get(user, 'time_zone') || getUserTimezone();
+        const start = formatToTimezone(
+          params.row.event_start,
+          userTimezone,
+          'HH:mm'
+        );
+        const end = formatToTimezone(
+          params.row.event_end,
+          userTimezone,
+          'HH:mm'
+        );
         return `${start} - ${end}`;
       },
     },
@@ -148,8 +147,8 @@ const ConsultationList = ({
       headerName: 'Booking Date',
       flex: 1,
       renderCell: params => {
-        const userTimezone = get(user, 'time_zone') || 'UTC';
-        return dayjs(params.value).tz(userTimezone).format('MMM D, YYYY');
+        const userTimezone = get(user, 'time_zone') || getUserTimezone();
+        return formatToTimezone(params.value, userTimezone, 'MMM D, YYYY');
       },
     },
     {

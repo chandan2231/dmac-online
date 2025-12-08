@@ -9,6 +9,7 @@ import { get } from 'lodash';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import GenericModal from '../../../../components/modal';
 import { TabHeaderLayout } from '../../../../components/tab-header';
+import { formatToUserLocal } from '../../../../utils/dateUtils';
 
 function TransactionsTable() {
   const [filter] = useState<TransactionFilter>('');
@@ -66,7 +67,12 @@ function TransactionsTable() {
     { field: 'currency', headerName: 'Currency', flex: 1 },
     { field: 'payment_type', headerName: 'Payment Type', flex: 1 },
     { field: 'status', headerName: 'Status', flex: 1 },
-    { field: 'created_date', headerName: 'Created Date', flex: 1 },
+    {
+      field: 'created_date',
+      headerName: 'Created Date',
+      flex: 1,
+      renderCell: params => formatToUserLocal(params.value),
+    },
     {
       field: 'actions',
       headerName: 'Actions',

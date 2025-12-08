@@ -514,7 +514,7 @@ export const updateConsultationStatus = async (req, res) => {
     if (status === 5 || status === 6) {
       // Fetch consultation details to get user email
       const getConsultationQuery = `
-        SELECT c.*, u.email as user_email, u.name as user_name 
+        SELECT c.*, u.email as user_email, u.name as user_name, u.time_zone as user_timezone 
         FROM dmac_webapp_therapist_consultations c
         JOIN dmac_webapp_users u ON c.user_id = u.id
         WHERE c.id = ?
@@ -533,7 +533,8 @@ export const updateConsultationStatus = async (req, res) => {
           user_name,
           consultation_date,
           consultant_id,
-          event_start
+          event_start,
+          user_timezone
         } = consultation
         let subject = ''
         let htmlContent = ''
@@ -564,7 +565,9 @@ export const updateConsultationStatus = async (req, res) => {
           subject = 'Consultation Cancelled'
           htmlContent = `
             <p>Dear ${user_name},</p>
-            <p>Your consultation scheduled for ${consultation_date} has been cancelled.</p>
+            <p>Your consultation scheduled for ${moment(event_start)
+              .tz(user_timezone || 'UTC')
+              .format('MMM DD, YYYY h:mm A')} has been cancelled.</p>
             <p><b>Reason:</b> ${notes}</p>
             <p>Please login to reschedule if needed.</p>
           `
@@ -572,7 +575,9 @@ export const updateConsultationStatus = async (req, res) => {
           subject = 'Consultation Reschedule Requested'
           htmlContent = `
             <p>Dear ${user_name},</p>
-            <p>Your consultation scheduled for ${consultation_date} needs to be rescheduled.</p>
+            <p>Your consultation scheduled for ${moment(event_start)
+              .tz(user_timezone || 'UTC')
+              .format('MMM DD, YYYY h:mm A')} needs to be rescheduled.</p>
             <p><b>Reason:</b> ${notes}</p>
             <p>Please login to reschedule your appointment.</p>
           `

@@ -123,8 +123,8 @@ const handleExternalMonitorProtocol = async (
       protocolType,
       createdBy,
       externalMonitorId,
-      datetime.toISOString().slice(0, 10),
-      datetime.toISOString().slice(0, 10)
+      datetime,
+      datetime
     ]
     await queryAsync(insertQuery, [insertValues]) // Insert new record
   }
@@ -1022,8 +1022,8 @@ export const saveInvestigatorAndProtocolInformation = (req, res) => {
         req.body.pending_or_active_research,
         req.body.pending_or_active_research_explain,
         req.user.userId,
-        datetime.toISOString().slice(0, 10),
-        datetime.toISOString().slice(0, 10)
+        datetime,
+        datetime
       ]
       db.query(que, [values], (err, data) => {
         if (err) {
@@ -1089,8 +1089,8 @@ export const saveClinicalInformedConsent = (req, res) => {
         req.body.always_primary_phone,
         req.body.site_electronic_consent,
         req.user.userId,
-        datetime.toISOString().slice(0, 10),
-        datetime.toISOString().slice(0, 10)
+        datetime,
+        datetime
       ]
       db.query(que, [values], (err, data) => {
         if (err) {

@@ -512,7 +512,7 @@ export const saveFile = async (req, res) => {
     return res.status(400).json({ message: 'No file uploaded' })
   }
 
-  const datetime = new Date().toISOString().slice(0, 10)
+  const datetime = new Date()
   let tableName = 'protocol_documents' // Default table
   let query = ''
   let values = []

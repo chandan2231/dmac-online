@@ -64,7 +64,7 @@ export const saveAdverseEvent = (req, res) => {
           req.body.email,
           req.body.phone,
           req.body.your_name,
-          datetime.toISOString().slice(0, 10),
+          datetime,
           req.user.userId,
           req.body.protocol_id
         ]
@@ -115,8 +115,8 @@ export const saveAdverseEvent = (req, res) => {
           req.body.phone,
           req.body.your_name,
           req.user.userId,
-          datetime.toISOString().slice(0, 10),
-          datetime.toISOString().slice(0, 10)
+          datetime,
+          datetime
         ]
 
         db.query(insertQuery, [insertValues], (err, data) => {
@@ -175,7 +175,7 @@ export const saveProtocolAmendmentRequest = (req, res) => {
           req.body.email,
           req.body.phone,
           req.body.your_name,
-          datetime.toISOString().slice(0, 10),
+          datetime,
           req.user.userId,
           req.body.protocol_id
         ]
@@ -212,8 +212,8 @@ export const saveProtocolAmendmentRequest = (req, res) => {
           req.body.phone,
           req.body.your_name,
           req.user.userId,
-          datetime.toISOString().slice(0, 10),
-          datetime.toISOString().slice(0, 10)
+          datetime,
+          datetime
         ]
 
         db.query(insertQuery, [insertValues], (err, data) => {
@@ -293,7 +293,7 @@ export const savePromptlyReportableEvent = (req, res) => {
           req.body.phone,
           req.body.your_name,
           req.user.userId,
-          datetime.toISOString().slice(0, 10),
+          datetime,
           req.body.protocol_id
         ]
 
@@ -340,8 +340,8 @@ export const savePromptlyReportableEvent = (req, res) => {
           req.body.phone,
           req.body.your_name,
           req.user.userId,
-          datetime.toISOString().slice(0, 10),
-          datetime.toISOString().slice(0, 10)
+          datetime,
+          datetime
         ]
 
         db.query(insertQuery, [insertValues], (err, data) => {
@@ -415,7 +415,7 @@ export const saveStudyCloseoutRequest = (req, res) => {
           req.body.adverse_event_info,
           req.body.your_name,
           req.user.userId,
-          datetime.toISOString().slice(0, 10),
+          datetime,
           req.body.protocol_id
         ]
 
@@ -454,8 +454,8 @@ export const saveStudyCloseoutRequest = (req, res) => {
           req.body.adverse_event_info,
           req.body.your_name,
           req.user.userId,
-          datetime.toISOString().slice(0, 10),
-          datetime.toISOString().slice(0, 10)
+          datetime,
+          datetime
         ]
         db.query(que, [values], (err, data) => {
           if (err) {

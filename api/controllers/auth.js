@@ -626,14 +626,10 @@ export const capturePatientPayment = async (req, res) => {
           SET patient_payment = ?, patient_payment_date = ? 
           WHERE id = ?
         `
-        db.query(
-          updateQuery,
-          [1, datetime.toISOString().slice(0, 10), userId],
-          (err, result) => {
-            if (err) return reject(err)
-            resolve(result)
-          }
-        )
+        db.query(updateQuery, [1, datetime, userId], (err, result) => {
+          if (err) return reject(err)
+          resolve(result)
+        })
       })
 
       const subject = 'Payment Receipt — Payment Approved'

@@ -1502,7 +1502,10 @@ export const bookTherapistConsultation = async (req, res) => {
           )
         })
 
-        bookings.push({ date: currentDate, status: 'booked', meetLink })
+        const formattedTime = moment(slot.eventStartISO)
+          .tz(user_timezone)
+          .format('YYYY-MM-DD hh:mm A')
+        bookings.push({ date: formattedTime, status: 'booked', meetLink })
       } catch (dbError) {
         console.error('DB Insert Error:', dbError)
         errors.push({ date: currentDate, error: 'Database error' })

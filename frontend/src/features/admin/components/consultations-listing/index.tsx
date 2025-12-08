@@ -17,19 +17,14 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import GenericModal from '../../../../components/modal';
 import ModernSelect, { type IOption } from '../../../../components/select';
 import { TabHeaderLayout } from '../../../../components/tab-header';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../store';
 import { get } from 'lodash';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import { formatToTimezone, getUserTimezone } from '../../../../utils/dateUtils';
 
 function ConsultationsTable() {
   const { user } = useSelector((state: RootState) => state.auth);
-  const userTimezone = get(user, 'time_zone') || 'UTC';
+  const userTimezone = get(user, 'time_zone') || getUserTimezone();
 
   const [consultantFilter, setConsultantFilter] = useState<number | null>(null);
   const { data, isLoading } = useGetConsultationsListing({
@@ -125,12 +120,16 @@ function ConsultationsTable() {
       minWidth: 150,
       renderCell: params => {
         if (params.row.event_start && params.row.event_end) {
-          const start = dayjs(params.row.event_start)
-            .tz(userTimezone)
-            .format('HH:mm');
-          const end = dayjs(params.row.event_end)
-            .tz(userTimezone)
-            .format('HH:mm');
+          const start = formatToTimezone(
+            params.row.event_start,
+            userTimezone,
+            'HH:mm'
+          );
+          const end = formatToTimezone(
+            params.row.event_end,
+            userTimezone,
+            'HH:mm'
+          );
           return `${start} - ${end}`;
         }
         return params.value;
@@ -145,7 +144,7 @@ function ConsultationsTable() {
         const dateToUse =
           params.row.event_start || params.row.consultation_date;
         return dateToUse
-          ? dayjs(dateToUse).tz(userTimezone).format('MMM D, YYYY')
+          ? formatToTimezone(dateToUse, userTimezone, 'MMM D, YYYY')
           : '';
       },
     },
@@ -414,13 +413,15 @@ function ConsultationsTable() {
                 <Typography variant="body1" fontWeight="600">
                   {selectedConsultation.event_start &&
                   selectedConsultation.event_end
-                    ? `${dayjs(selectedConsultation.event_start)
-                        .tz(selectedConsultation.time_zone || userTimezone)
-                        .format('HH:mm')} - ${dayjs(
-                        selectedConsultation.event_end
-                      )
-                        .tz(selectedConsultation.time_zone || userTimezone)
-                        .format('HH:mm')}`
+                    ? `${formatToTimezone(
+                        selectedConsultation.event_start,
+                        selectedConsultation.time_zone || userTimezone,
+                        'HH:mm'
+                      )} - ${formatToTimezone(
+                        selectedConsultation.event_end,
+                        selectedConsultation.time_zone || userTimezone,
+                        'HH:mm'
+                      )}`
                     : selectedConsultation.time_slot || ''}
                 </Typography>
               </Box>
@@ -436,9 +437,11 @@ function ConsultationsTable() {
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
                   {selectedConsultation.event_start
-                    ? dayjs(selectedConsultation.event_start)
-                        .tz(selectedConsultation.time_zone || userTimezone)
-                        .format('MMM D, YYYY')
+                    ? formatToTimezone(
+                        selectedConsultation.event_start,
+                        selectedConsultation.time_zone || userTimezone,
+                        'MMM D, YYYY'
+                      )
                     : selectedConsultation.consultation_date || ''}
                 </Typography>
               </Box>

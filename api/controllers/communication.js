@@ -24,8 +24,8 @@ export const saveEnquiryRequest = async (req, res) => {
       req.body.status,
       req.body.reply_thread_parent_id ?? '',
       req.user.userId,
-      datetime.toISOString(),
-      datetime.toISOString()
+      datetime,
+      datetime
     ]
 
     // Perform the insert query

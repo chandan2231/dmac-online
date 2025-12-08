@@ -14,8 +14,6 @@ import {
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
 import { get } from 'lodash';
 import type { RootState } from '../../../store';
 import { GenericTable } from '../../../components/table';
@@ -28,9 +26,7 @@ import { useGetConsultations } from '../hooks/useGetConsultations';
 import { useGetTherapistPatients } from '../hooks/useGetTherapistPatients';
 import type { GridColDef } from '@mui/x-data-grid';
 import { TabHeaderLayout } from '../../../components/tab-header';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import { formatToTimezone, getUserTimezone } from '../../../utils/dateUtils';
 
 interface IConsultation {
   id: number;
@@ -224,13 +220,17 @@ const TherapistConsultationList = () => {
       flex: 1,
       renderCell: params => {
         const consultation = params.row;
-        const therapistTimezone = get(user, 'time_zone') || 'UTC';
-        const start = dayjs(consultation.event_start)
-          .tz(therapistTimezone)
-          .format('HH:mm');
-        const end = dayjs(consultation.event_end)
-          .tz(therapistTimezone)
-          .format('HH:mm');
+        const therapistTimezone = get(user, 'time_zone') || getUserTimezone();
+        const start = formatToTimezone(
+          consultation.event_start,
+          therapistTimezone,
+          'HH:mm'
+        );
+        const end = formatToTimezone(
+          consultation.event_end,
+          therapistTimezone,
+          'HH:mm'
+        );
         return `${start} - ${end}`;
       },
     },
@@ -248,10 +248,12 @@ const TherapistConsultationList = () => {
       headerName: 'Date',
       flex: 1,
       renderCell: params => {
-        const therapistTimezone = get(user, 'time_zone') || 'UTC';
-        return dayjs(params.row.event_start)
-          .tz(therapistTimezone)
-          .format('MMM D, YYYY');
+        const therapistTimezone = get(user, 'time_zone') || getUserTimezone();
+        return formatToTimezone(
+          params.row.event_start,
+          therapistTimezone,
+          'MMM D, YYYY'
+        );
       },
     },
     {
