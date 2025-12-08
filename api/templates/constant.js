@@ -1,6 +1,6 @@
 const continuingReviewQuestions = {
   riskAssessment: {
-    title: `Risk Assessment`,
+    title: `Risk Assessment yash`,
     question1: {
       text: `Since the date of the last approval, has any regulatory agency
                 including, but not limited to, the sponsor, statistical agency,
