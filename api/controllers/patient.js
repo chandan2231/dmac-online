@@ -2167,3 +2167,66 @@ export const deleteUserDocument = async (req, res) => {
     res.status(500).json({ message: 'Error deleting document' })
   }
 }
+
+export const getAssessmentStatus = async (req, res) => {
+  const userId = req.user.userId
+  try {
+    const query = 'SELECT * FROM patient_assessments WHERE user_id = ?'
+    const result = await queryDB(query, [userId])
+
+    if (result.length === 0) {
+      return res.status(200).json({
+        adl: false,
+        fall_risk: false,
+        depression: false,
+        sleep: false,
+        consent: false
+      })
+    }
+
+    const assessment = result[0]
+    res.status(200).json({
+      adl: !!assessment.adl_data,
+      fall_risk: !!assessment.fall_risk_data,
+      depression: !!assessment.depression_data,
+      sleep: !!assessment.sleep_data,
+      consent: !!assessment.consent_data
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error fetching assessment status' })
+  }
+}
+
+export const submitAssessmentTab = async (req, res) => {
+  const userId = req.user.userId
+  const { tab, data } = req.body
+
+  if (!['adl', 'fall_risk', 'depression', 'sleep', 'consent'].includes(tab)) {
+    return res.status(400).json({ message: 'Invalid tab' })
+  }
+
+  const columnMap = {
+    adl: 'adl_data',
+    fall_risk: 'fall_risk_data',
+    depression: 'depression_data',
+    sleep: 'sleep_data',
+    consent: 'consent_data'
+  }
+
+  const column = columnMap[tab]
+  const jsonData = JSON.stringify(data)
+
+  try {
+    const query = `
+      INSERT INTO patient_assessments (user_id, ${column})
+      VALUES (?, ?)
+      ON DUPLICATE KEY UPDATE ${column} = VALUES(${column})
+    `
+    await queryDB(query, [userId, jsonData])
+    res.status(200).json({ message: 'Assessment submitted successfully' })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error submitting assessment' })
+  }
+}

@@ -19,6 +19,12 @@ import {
   useDeleteDocument,
 } from '../hooks/useDocuments';
 import { TabHeaderLayout } from '../../../components/tab-header';
+import AssessmentForm from './AssessmentForm';
+import {
+  useGetAssessmentStatus,
+  ASSESSMENT_QUERY_KEYS,
+} from '../hooks/useAssessment';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Document {
   id: number;
@@ -31,6 +37,10 @@ interface Document {
 
 const UploadDocuments = () => {
   const { data: documents = [], isLoading: loading } = useGetUserDocuments();
+  const { data: assessmentStatus, isLoading: assessmentLoading } =
+    useGetAssessmentStatus();
+  const queryClient = useQueryClient();
+
   const { mutateAsync: uploadDocument, isPending: uploading } =
     useUploadDocument();
   const { mutateAsync: deleteDocument } = useDeleteDocument();
@@ -81,7 +91,45 @@ const UploadDocuments = () => {
     }
   };
 
-  if (loading) return <CustomLoader />;
+  if (loading || assessmentLoading) return <CustomLoader />;
+
+  const isAssessmentComplete =
+    assessmentStatus &&
+    assessmentStatus.adl &&
+    assessmentStatus.fall_risk &&
+    assessmentStatus.depression &&
+    assessmentStatus.sleep &&
+    assessmentStatus.consent;
+
+  if (!isAssessmentComplete) {
+    return (
+      <Box sx={{ p: 3, width: '100%', height: '100%' }}>
+        <TabHeaderLayout
+          leftNode={
+            <Box
+              sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}
+            >
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 600,
+                }}
+              >
+                Patient Assessment
+              </Typography>
+            </Box>
+          }
+        />
+        <AssessmentForm
+          onComplete={() => {
+            queryClient.invalidateQueries({
+              queryKey: [ASSESSMENT_QUERY_KEYS.GET_ASSESSMENT_STATUS],
+            });
+          }}
+        />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3, width: '100%', height: '100%' }}>
