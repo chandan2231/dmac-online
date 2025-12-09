@@ -3,9 +3,272 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import sendEmail from '../emailService.js'
 import { v4 as uuidv4 } from 'uuid'
-import { createHash } from 'crypto'
 import { client } from '../paypalConfig.js'
 import paypal from '@paypal/checkout-server-sdk'
+import crypto from "crypto"
+import moment from "moment";
+
+export const capturePatientPayment = async (req, res) => {
+  const {
+    orderId,
+    payerId,
+    amount,
+    currencyCode,
+    productId,
+    userId,
+    userName,
+    userEmail,
+    productName,
+  } = req.body;
+
+  const transactionDate = moment().format("YYYY-MM-DD");
+  const transactionTime = moment().format("HH:mm:ss");
+  const datetime = moment().format("YYYY-MM-DD");
+
+  const captureOrderRequest = new paypal.orders.OrdersCaptureRequest(orderId);
+  captureOrderRequest.requestBody({ payer_id: payerId });
+
+  try {
+    /* Attempt to capture PayPal payment */
+    const captureResult = await client().execute(captureOrderRequest);
+    const paymentStatus = captureResult.result.status;
+
+    /* Always insert transaction record first */
+    await db
+      .promise()
+      .query(
+        `INSERT INTO dmac_webapp_users_transaction 
+        (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          captureResult.result.id,
+          payerId,
+          amount,
+          currencyCode,
+          paymentStatus,
+          productId,
+          userId,
+          "paypal",
+        ]
+      );
+
+    /* If payment successful */
+    if (paymentStatus === "COMPLETED") {
+      await db
+        .promise()
+        .query(
+          `UPDATE dmac_webapp_users 
+           SET patient_payment = 1, patient_payment_date = ? 
+           WHERE id = ?`,
+          [datetime, userId]
+        );
+
+      /* Fetch user data */
+      const [users] = await db
+        .promise()
+        .query(`SELECT * FROM dmac_webapp_users WHERE id = ?`, [userId]);
+
+      if (!users.length) {
+        return res.status(200).json({ message: "User data not found" });
+      }
+
+      const user = users[0];
+
+      /* Convert password */
+      const originalPassword = decryptString(user.encrypted_password);
+      const md5Password = crypto
+        .createHash("md5")
+        .update(originalPassword)
+        .digest("hex");
+
+      /* Insert into users table */
+      const [insertUserResult] = await db
+        .promise()
+        .query(
+          `INSERT INTO users 
+          (user_role, username, password, firstName, address, city, state, zipCode, country, mobileNo, time_zone, clinic_id, active, is_quesionaire, is_test, dateCreated, added_from)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            "User",
+            user.email,
+            md5Password,
+            user.name,
+            user.address,
+            user.city,              // FIXED city here
+            user.state,             // FIXED state here
+            user.zip_code,
+            user.country,
+            user.mobile,
+            user.time_zone,
+            9,
+            1,
+            0,
+            0,
+            new Date(),
+            3,
+          ]
+        );
+
+      const patient_id = insertUserResult.insertId;
+
+      /* Insert into share_users_list */
+      await db.promise().query(
+        `INSERT INTO share_users_list
+        (patient_id, user_role, username, password, firstName, address, city, state, zipCode, country, mobileNo, time_zone, clinic_id, active, is_quesionaire, is_test, dateCreated, added_from)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          patient_id,
+          "User",
+          user.email,
+          md5Password,
+          user.name,
+          user.address,
+          user.city,
+          user.state,
+          user.zip_code,
+          user.country,
+          user.mobile,
+          user.time_zone,
+          9,
+          1,
+          0,
+          0,
+          new Date(),
+          3,
+        ]
+      );
+
+      /* Add Subscription Validity (90 days) */
+      const licca_product_id = 100;
+      const group_id = 100;
+      const licca_validity = 90;
+      const clinic_id = 9;
+
+      const [[lastPayment]] = await db.promise().query(
+        `SELECT * FROM user_payment_details 
+         WHERE user_id = ? 
+         ORDER BY id DESC 
+         LIMIT 1`,
+        [patient_id]
+      );
+
+      const now_ts = Math.floor(Date.now() / 1000);
+      let end_ts;
+
+      if (!lastPayment || lastPayment.end_ts <= now_ts) {
+        end_ts = moment().add(licca_validity, "days").endOf("day").unix();
+      } else {
+        end_ts = moment
+          .unix(lastPayment.end_ts)
+          .add(licca_validity, "days")
+          .endOf("day")
+          .unix();
+      }
+
+      /* Insert Payment Validity */
+      await db.promise().query(
+        `INSERT INTO user_payment_details
+        (user_id, product_group_id, product_id, start_ts, end_ts, clinic_id)
+        VALUES (?, ?, ?, ?, ?, ?)`,
+        [patient_id, group_id, licca_product_id, now_ts, end_ts, clinic_id]
+      );
+
+      /* Remove previous expiry & add new expiry */
+      await db
+        .promise()
+        .query(
+          `DELETE FROM user_product_expiry WHERE user_id = ? AND product_group_id = ?`,
+          [patient_id, group_id]
+        );
+
+      await db.promise().query(
+        `INSERT INTO user_product_expiry
+        (user_id, product_group_id, product_id, expiry_ts, is_active, clinic_id)
+        VALUES (?, ?, ?, ?, ?, ?)`,
+        [patient_id, group_id, licca_product_id, end_ts, 1, clinic_id]
+      );
+
+      /* Send success mail */
+      const subject = "Payment Receipt — Payment Approved";
+      const html = `
+        <p>Dear ${userName},</p>
+        <h3>Receipt of Successful Payment</h3>
+        <table>
+          <tr><td><strong>Status:</strong></td><td>SUCCESS</td></tr>
+          <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
+          <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
+          <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
+          <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
+        </table>
+        <p>No service tax due to Tax Exempt Status.</p>
+        <p>Please note: The above payment is non-refundable.</p>
+        <p>Regards,<br/>Admin<br/>DMAC.COM</p>
+      `;
+
+      await sendEmail(userEmail, subject, html, html);
+
+      return res.json({
+        message: "Payment captured successfully",
+        patient_id,
+      });
+    }
+
+    throw new Error("PAYMENT_NOT_COMPLETED");
+  } catch (error) {
+    console.error("PayPal CAPTURE ERROR:", error);
+
+    const failReason =
+      error?.result?.message || error?.message || "Payment failed";
+
+    /* Store failed transaction */
+    await db
+      .promise()
+      .query(
+        `INSERT INTO dmac_webapp_users_transaction 
+         (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type, failure_reason)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          orderId,
+          payerId || null,
+          amount,
+          currencyCode,
+          "FAILED",
+          productId,
+          userId,
+          "paypal",
+          failReason,
+        ]
+      );
+
+    /* Send failure email */
+    if (userEmail) {
+      const subject = "Payment Receipt — Payment Failed";
+      const html = `
+        <p>Dear ${userName},</p>
+        <h3>Payment Failed</h3>
+        <table>
+          <tr><td><strong>Status:</strong></td><td>FAILED</td></tr>
+          <tr><td><strong>Reason:</strong></td><td>${failReason}</td></tr>
+          <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
+          <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
+          <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
+          <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
+        </table>
+        <p>Please retry the payment.</p>
+        <p>Regards,<br/>Admin<br/>DMAC.COM</p>
+      `;
+      await sendEmail(userEmail, subject, html, html);
+    }
+
+    return res.status(400).json({
+      message: "Payment failed",
+      reason: failReason,
+    });
+  }
+};
+
+
+
 
 export const emailVerification = (req, res) => {
   const { token } = req.body
@@ -67,25 +330,6 @@ export const register = async (req, res) => {
       'USER',
       req.body.timeZone
     ]
-
-    // Entry for LICCA login, later will enable it for the licca login,
-
-    // const liccaPassword = createHash('md5').update(password).digest('hex');
-    // const insertQueryLicca = `
-    //   INSERT INTO users (user_role, firstName, username, mobileNo, password, country, state, zipCode, active, dmac_user_verification_token)
-    //   VALUES (?)`
-    // const liccaValues = [
-    //   'dmac_user',
-    //   req.body.name,
-    //   req.body.email,
-    //   req.body.mobile,
-    //   liccaPassword,
-    //   country,
-    //   state,
-    //   zipcode,
-    //   0,
-    //   verificationToken
-    // ]
 
     const insertResult = await new Promise((resolve, reject) => {
       db.query(insertQuery, [values], (err, data) => {
@@ -310,16 +554,18 @@ export const patinetRegistration = async (req, res) => {
     const hashedPassword = bcrypt.hashSync(req.body.password, salt)
     const verificationToken = uuidv4()
     const otherInfoJson = JSON.stringify(req.body.otherInfo ?? {})
+    const encryptedPasswordString = encryptString(req.body.password);
     // Insert new user into the database
     const insertQuery = `
       INSERT INTO dmac_webapp_users 
-      (name, email, mobile, password, country, state, zip_code, language, verified, verification_token, role, time_zone, province_title, province_id, patient_meta) 
+      (name, email, mobile, password, encrypted_password, country, state, zip_code, language, verified, verification_token, role, time_zone, province_title, province_id, patient_meta) 
       VALUES (?)`
     const values = [
       req.body.name,
       req.body.email,
       req.body.mobile,
       hashedPassword,
+      encryptedPasswordString,
       req.body.country,
       req.body.state,
       req.body.zipcode,
@@ -568,155 +814,214 @@ export const createPatientPayment = async (req, res) => {
   }
 }
 
-export const capturePatientPayment = async (req, res) => {
-  const {
-    orderId,
-    payerId,
-    amount,
-    currencyCode,
-    productId,
-    userId,
-    userName,
-    userEmail,
-    productName
-  } = req.body
+// export const capturePatientPayment = async (req, res) => {
+//   const {
+//     orderId,
+//     payerId,
+//     amount,
+//     currencyCode,
+//     productId,
+//     userId,
+//     userName,
+//     userEmail,
+//     productName
+//   } = req.body
 
-  const datetime = new Date()
-  const transactionDate = new Date().toLocaleDateString()
-  const transactionTime = new Date().toLocaleTimeString()
+//   const datetime = new Date()
+//   const transactionDate = new Date().toLocaleDateString()
+//   const transactionTime = new Date().toLocaleTimeString()
 
-  const captureOrderRequest = new paypal.orders.OrdersCaptureRequest(orderId)
-  captureOrderRequest.requestBody({
-    payer_id: payerId
-  })
+//   const captureOrderRequest = new paypal.orders.OrdersCaptureRequest(orderId)
+//   captureOrderRequest.requestBody({
+//     payer_id: payerId
+//   })
 
-  try {
-    /** 🔹 Attempt to capture payment */
-    const captureResult = await client().execute(captureOrderRequest)
-    const paymentStatus = captureResult.result.status
+//   try {
+//     /* Attempt to capture payment */
+//     const captureResult = await client().execute(captureOrderRequest)
+//     const paymentStatus = captureResult.result.status
 
-    /** 🔹 Save transaction in DB */
-    const paymentData = {
-      payment_id: captureResult.result.id,
-      payer_id: payerId,
-      amount,
-      currency: currencyCode,
-      status: paymentStatus,
-      product_id: productId,
-      user_id: userId,
-      payment_type: 'paypal'
-    }
+//     /* Save transaction in DB */
+//     const paymentData = {
+//       payment_id: captureResult.result.id,
+//       payer_id: payerId,
+//       amount,
+//       currency: currencyCode,
+//       status: paymentStatus,
+//       product_id: productId,
+//       user_id: userId,
+//       payment_type: 'paypal'
+//     }
 
-    await new Promise((resolve, reject) => {
-      db.query(
-        'INSERT INTO dmac_webapp_users_transaction SET ?',
-        paymentData,
-        (err, result) => {
-          if (err) return reject(err)
-          resolve(result)
-        }
-      )
-    })
+//     await new Promise((resolve, reject) => {
+//       db.query(
+//         'INSERT INTO dmac_webapp_users_transaction SET ?',
+//         paymentData,
+//         (err, result) => {
+//           if (err) return reject(err)
+//           resolve(result)
+//         }
+//       )
+//     })
 
-    /** 🔹 If success — update user & send success email */
-    if (paymentStatus === 'COMPLETED') {
-      await new Promise((resolve, reject) => {
-        const updateQuery = `
-          UPDATE dmac_webapp_users 
-          SET patient_payment = ?, patient_payment_date = ? 
-          WHERE id = ?
-        `
-        db.query(
-          updateQuery,
-          [1, datetime.toISOString().slice(0, 10), userId],
-          (err, result) => {
-            if (err) return reject(err)
-            resolve(result)
-          }
-        )
-      })
+//     /* If success — update user & send success email */
+//     if (paymentStatus === 'COMPLETED') {
+//       await new Promise((resolve, reject) => {
+//         const updateQuery = `
+//           UPDATE dmac_webapp_users 
+//           SET patient_payment = ?, patient_payment_date = ? 
+//           WHERE id = ?
+//         `
+//         db.query(
+//           updateQuery,
+//           [1, datetime.toISOString().slice(0, 10), userId],
+//           (err, result) => {
+//             if (err) return reject(err)
+//             resolve(result)
+//           }
+//         )
+//       })
 
-      const subject = 'Payment Receipt — Payment Approved'
-      const html = `
-      <p>Dear ${userName},</p>
-      <h3>Receipt of Successful Payment</h3>
-      <table>
-        <tr><td><strong>Status:</strong></td><td>SUCCESS</td></tr>
-        <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
-        <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
-        <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
-        <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
-      </table>
-      <p>No service tax due to Tax Exempt Status.</p>
-      <p>Please note: The above payment is non-refundable.</p>
-      <p>Regards,<br/>Admin<br/>DMAC.COM</p>
-      `
-      await sendEmail(userEmail, subject, html, html)
+//       /* Fetch user details */
+//       const [userRows] = await db.promise().query(
+//         `SELECT * FROM dmac_webapp_users WHERE id = ?`,
+//         [userId]
+//       )
 
-      return res.json({
-        message: 'Payment captured successfully',
-        captureResult
-      })
-    }
+//       if (userRows.length === 0) {
+//         return res.status(200).json({ message: 'User data not found' })
+//       }
 
-    /** 🔹 If PayPal capture doesn't return COMPLETED */
-    throw new Error('PAYMENT_NOT_COMPLETED')
-  } catch (error) {
-    console.error('PayPal CAPTURE ERROR:', error)
+//       const user = userRows[0]
+//       const originalPassword = decryptString(user.encrypted_password);
+//       const md5Password = crypto.createHash("md5").update(originalPassword).digest("hex");
+//       const userInsertQuery = `INSERT INTO users (user_role, username, password, firstName, address, city, state, zipCode, country, mobileNo, time_zone, clinic_id, active, is_quesionaire, is_test, dateCreated, added_from) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-    // Extract safe message from PayPal error if available
-    const failReason =
-      error?.result?.message || error?.message || 'Payment failed'
+//       const values = [
+//         'User',
+//         user.email,
+//         md5Password,
+//         user.name,
+//         user.address,
+//         user.state,
+//         user.province_title,
+//         user.zip_code,
+//         user.country,
+//         user.mobile,
+//         user.time_zone,
+//         9,
+//         1,
+//         0,
+//         0,
+//         NOW(),
+//         3
+//       ];
+//       const insertUserResult = await db.query(userInsertQuery, values);
+//       const patient_id = insertUserResult[0].insertId;
 
-    /** 🔹 Insert failed transaction record */
-    const failedPaymentData = {
-      payment_id: orderId,
-      payer_id: payerId || null,
-      amount,
-      currency: currencyCode,
-      status: 'FAILED',
-      product_id: productId,
-      user_id: userId,
-      payment_type: 'paypal',
-      failure_reason: failReason
-    }
+//       await db.query(`INSERT INTO share_users_list (patient_id, user_role, username, password, firstName, address, city, state, zipCode, country, mobileNo, time_zone, clinic_id, active, is_quesionaire, is_test, dateCreated, added_from) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//       [
+//         patient_id,
+//         'User',
+//         user.email,
+//         md5Password,
+//         user.name,
+//         user.address,
+//         user.state,
+//         user.province_title,
+//         user.zip_code,
+//         user.country,
+//         user.mobile,
+//         user.time_zone,
+//         9,
+//         1,
+//         0,
+//         0,
+//         NOW(),
+//         3]
+//     );
 
-    await new Promise((resolve) => {
-      db.query(
-        'INSERT INTO dmac_webapp_users_transaction SET ?',
-        failedPaymentData,
-        () => {
-          resolve()
-        }
-      )
-    })
+//       const subject = 'Payment Receipt — Payment Approved'
+//       const html = `
+//       <p>Dear ${userName},</p>
+//       <h3>Receipt of Successful Payment</h3>
+//       <table>
+//         <tr><td><strong>Status:</strong></td><td>SUCCESS</td></tr>
+//         <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
+//         <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
+//         <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
+//         <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
+//       </table>
+//       <p>No service tax due to Tax Exempt Status.</p>
+//       <p>Please note: The above payment is non-refundable.</p>
+//       <p>Regards,<br/>Admin<br/>DMAC.COM</p>
+//       `
+//       await sendEmail(userEmail, subject, html, html)
 
-    /** 🔹 Send failure email to the user */
-    if (userEmail) {
-      const subject = 'Payment Receipt — Payment Failed'
-      const html = `
-      <p>Dear ${userName},</p>
-      <h3>Payment Failed</h3>
-      <table>
-        <tr><td><strong>Status:</strong></td><td>FAILED</td></tr>
-        <tr><td><strong>Failure Reason:</strong></td><td>${failReason}</td></tr>
-        <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
-        <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
-        <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
-        <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
-      </table>
-      <p>Please retry the payment. If you need assistance, reply to this email.</p>
-      <p>Regards,<br/>Admin<br/>DMAC.COM</p>
-      `
-      await sendEmail(userEmail, subject, html, html)
-    }
+//       return res.json({
+//         message: 'Payment captured successfully',
+//         captureResult
+//       })
+//     }
 
-    return res.status(400).json({
-      message: 'Payment failed',
-      reason: failReason
-    })
-  }
-}
+//     /* If PayPal capture doesn't return COMPLETED */
+//     throw new Error('PAYMENT_NOT_COMPLETED')
+//   } catch (error) {
+//     console.error('PayPal CAPTURE ERROR:', error)
+
+//     // Extract safe message from PayPal error if available
+//     const failReason =
+//       error?.result?.message || error?.message || 'Payment failed'
+
+//     /* Insert failed transaction record */
+//     const failedPaymentData = {
+//       payment_id: orderId,
+//       payer_id: payerId || null,
+//       amount,
+//       currency: currencyCode,
+//       status: 'FAILED',
+//       product_id: productId,
+//       user_id: userId,
+//       payment_type: 'paypal',
+//       failure_reason: failReason
+//     }
+
+//     await new Promise((resolve) => {
+//       db.query(
+//         'INSERT INTO dmac_webapp_users_transaction SET ?',
+//         failedPaymentData,
+//         () => {
+//           resolve()
+//         }
+//       )
+//     })
+
+//     /* Send failure email to the user */
+//     if (userEmail) {
+//       const subject = 'Payment Receipt — Payment Failed'
+//       const html = `
+//       <p>Dear ${userName},</p>
+//       <h3>Payment Failed</h3>
+//       <table>
+//         <tr><td><strong>Status:</strong></td><td>FAILED</td></tr>
+//         <tr><td><strong>Failure Reason:</strong></td><td>${failReason}</td></tr>
+//         <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
+//         <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
+//         <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
+//         <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
+//       </table>
+//       <p>Please retry the payment. If you need assistance, reply to this email.</p>
+//       <p>Regards,<br/>Admin<br/>DMAC.COM</p>
+//       `
+//       await sendEmail(userEmail, subject, html, html)
+//     }
+
+//     return res.status(400).json({
+//       message: 'Payment failed',
+//       reason: failReason
+//     })
+//   }
+// }
 
 export const successPatientPayment = (req, res) => {
   let result = {}
@@ -790,4 +1095,21 @@ export const getPatientProductByUserId = async (req, res) => {
       message: 'Purchased Product'
     })
   })
+}
+
+
+function encryptString(original) {
+  
+  const cipher = crypto.createCipheriv(process.env.CRYPTO_ALGORITHM, Buffer.from(process.env.CRYPTO_SECRET_KEY), null);
+  let encrypted = cipher.update(original, "utf8", "base64");
+  encrypted += cipher.final("base64");
+  return encrypted;
+}
+
+
+function decryptString(encoded) {
+  const decipher = crypto.createDecipheriv(process.env.CRYPTO_ALGORITHM, Buffer.from(process.env.CRYPTO_SECRET_KEY), null);
+  let decrypted = decipher.update(encoded, "base64", "utf8");
+  decrypted += decipher.final("utf8");
+  return decrypted;
 }
