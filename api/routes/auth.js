@@ -15,7 +15,12 @@ import {
   patientLogin,
   getPatientProductByUserId
 } from '../controllers/auth.js'
+
+import { authenticateUser } from '../utils/middleware.js'
+
 const router = express.Router()
+
+
 router.post('/login', login)
 router.post('/register', register)
 router.post('/logout', logout)
@@ -31,6 +36,6 @@ router.post('/patient/createPayment', createPatientPayment)
 router.post('/patient/capturePayment', capturePatientPayment)
 router.post('/patient/successPayment', successPatientPayment)
 router.post('/patient/cancelPayment', canclePatientPayment)
-router.post('/patient/getProductByUserId', getPatientProductByUserId)
+router.post('/patient/getProductByUserId', authenticateUser, getPatientProductByUserId)
 
 export default router
