@@ -20,6 +20,8 @@ import communication from './routes/communication.js'
 import payment from './routes/payment.js'
 import externalMonitor from './routes/externalMonitor.js'
 import reviewRoutes from './routes/reviews.js'
+import gameRoutes from './routes/game.js'
+import moduleRoutes from './routes/modules.js'
 
 dotenv.config({ path: `.env`, override: true })
 const app = express()
@@ -106,12 +108,14 @@ app.use('/api/communication', communication)
 app.use('/api/payment', payment)
 app.use('/api/externalMonitor', externalMonitor)
 app.use('/api/reviews', reviewRoutes)
+app.use('/api/game', gameRoutes)
+app.use('/api/modules', moduleRoutes)
 
 
 // PORT setup based on environment
 let PORT = 8010 // default dev port
-if (process.env.NODE_ENV === 'localhost') PORT = 8800
-if (process.env.NODE_ENV === 'production') PORT = 8000
+if (process.env.NODE_ENV === 'localhost') PORT = 5500
+if (process.env.NODE_ENV === 'production') PORT = 4000
 
 // Listen on 0.0.0.0 so it is accessible from outside
 app.listen(PORT, '0.0.0.0', () => {
