@@ -23,224 +23,205 @@ export const capturePatientPayment = async (req, res) => {
 
   const transactionDate = moment().format("YYYY-MM-DD");
   const transactionTime = moment().format("HH:mm:ss");
-  const datetime = moment().format("YYYY-MM-DD");
+  const datetime = moment().format("YYYY-MM-DD HH:mm:ss");
 
   const captureOrderRequest = new paypal.orders.OrdersCaptureRequest(orderId);
   captureOrderRequest.requestBody({ payer_id: payerId });
 
   try {
-    /* Attempt to capture PayPal payment */
+    /* ------------------ CAPTURE PAYPAL PAYMENT ------------------ */
     const captureResult = await client().execute(captureOrderRequest);
     const paymentStatus = captureResult.result.status;
 
-    /* Always insert transaction record first */
-    await db
-      .promise()
-      .query(
-        `INSERT INTO dmac_webapp_users_transaction 
-        (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          captureResult.result.id,
-          payerId,
-          amount,
-          currencyCode,
-          paymentStatus,
-          productId,
-          userId,
-          "paypal",
-        ]
-      );
+    /* Always log transaction */
+    await db.promise().query(
+      `INSERT INTO dmac_webapp_users_transaction 
+       (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        captureResult.result.id,
+        payerId,
+        amount,
+        currencyCode,
+        paymentStatus,
+        productId,
+        userId,
+        "paypal",
+      ]
+    );
 
-    /* If payment successful */
-    if (paymentStatus === "COMPLETED") {
-      await db
-        .promise()
-        .query(
-          `UPDATE dmac_webapp_users 
-           SET patient_payment = 1, patient_payment_date = ? 
-           WHERE id = ?`,
-          [datetime, userId]
-        );
-
-      /* Fetch user data */
-      const [users] = await db
-        .promise()
-        .query(`SELECT * FROM dmac_webapp_users WHERE id = ?`, [userId]);
-
-      if (!users.length) {
-        return res.status(200).json({ message: "User data not found" });
-      }
-
-      const user = users[0];
-
-      /* Convert password */
-      const originalPassword = decryptString(user.encrypted_password);
-      const md5Password = crypto
-        .createHash("md5")
-        .update(originalPassword)
-        .digest("hex");
-
-      /* Insert into users table */
-      const [insertUserResult] = await db
-        .promise()
-        .query(
-          `INSERT INTO users 
-          (user_role, username, password, firstName, address, city, state, zipCode, country, mobileNo, time_zone, clinic_id, active, is_quesionaire, is_test, dateCreated, added_from)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            "User",
-            user.email,
-            md5Password,
-            user.name,
-            user.address,
-            user.city,              // FIXED city here
-            user.state,             // FIXED state here
-            user.zip_code,
-            user.country,
-            user.mobile,
-            user.time_zone,
-            9,
-            1,
-            0,
-            0,
-            new Date(),
-            3,
-          ]
-        );
-
-      const patient_id = insertUserResult.insertId;
-
-      /* Insert into share_users_list */
-      await db.promise().query(
-        `INSERT INTO share_users_list
-        (patient_id, user_role, username, password, firstName, address, city, state, zipCode, country, mobileNo, time_zone, clinic_id, active, is_quesionaire, is_test, dateCreated, added_from)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          patient_id,
-          "User",
-          user.email,
-          md5Password,
-          user.name,
-          user.address,
-          user.city,
-          user.state,
-          user.zip_code,
-          user.country,
-          user.mobile,
-          user.time_zone,
-          9,
-          1,
-          0,
-          0,
-          new Date(),
-          3,
-        ]
-      );
-
-      /* Add Subscription Validity (90 days) */
-      const licca_product_id = 100;
-      const group_id = 100;
-      const licca_validity = 90;
-      const clinic_id = 9;
-
-      const [[lastPayment]] = await db.promise().query(
-        `SELECT * FROM user_payment_details 
-         WHERE user_id = ? 
-         ORDER BY id DESC 
-         LIMIT 1`,
-        [patient_id]
-      );
-
-      const now_ts = Math.floor(Date.now() / 1000);
-      let end_ts;
-
-      if (!lastPayment || lastPayment.end_ts <= now_ts) {
-        end_ts = moment().add(licca_validity, "days").endOf("day").unix();
-      } else {
-        end_ts = moment
-          .unix(lastPayment.end_ts)
-          .add(licca_validity, "days")
-          .endOf("day")
-          .unix();
-      }
-
-      /* Insert Payment Validity */
-      await db.promise().query(
-        `INSERT INTO user_payment_details
-        (user_id, product_group_id, product_id, start_ts, end_ts, clinic_id)
-        VALUES (?, ?, ?, ?, ?, ?)`,
-        [patient_id, group_id, licca_product_id, now_ts, end_ts, clinic_id]
-      );
-
-      /* Remove previous expiry & add new expiry */
-      await db
-        .promise()
-        .query(
-          `DELETE FROM user_product_expiry WHERE user_id = ? AND product_group_id = ?`,
-          [patient_id, group_id]
-        );
-
-      await db.promise().query(
-        `INSERT INTO user_product_expiry
-        (user_id, product_group_id, product_id, expiry_ts, is_active, clinic_id)
-        VALUES (?, ?, ?, ?, ?, ?)`,
-        [patient_id, group_id, licca_product_id, end_ts, 1, clinic_id]
-      );
-
-      /* Send success mail */
-      const subject = "Payment Receipt — Payment Approved";
-      const html = `
-        <p>Dear ${userName},</p>
-        <h3>Receipt of Successful Payment</h3>
-        <table>
-          <tr><td><strong>Status:</strong></td><td>SUCCESS</td></tr>
-          <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
-          <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
-          <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
-          <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
-        </table>
-        <p>No service tax due to Tax Exempt Status.</p>
-        <p>Please note: The above payment is non-refundable.</p>
-        <p>Regards,<br/>Admin<br/>DMAC.COM</p>
-      `;
-
-      await sendEmail(userEmail, subject, html, html);
-
-      return res.json({
-        message: "Payment captured successfully",
-        patient_id,
-      });
+    /* ------------------ ONLY PROCEED IF COMPLETED ------------------ */
+    if (paymentStatus !== "COMPLETED") {
+      throw new Error("PAYMENT_NOT_COMPLETED");
     }
 
-    throw new Error("PAYMENT_NOT_COMPLETED");
+    /* Mark patient as paid */
+    await db.promise().query(
+      `UPDATE dmac_webapp_users 
+       SET patient_payment = 1, patient_payment_date = ? 
+       WHERE id = ?`,
+      [datetime, userId]
+    );
+
+    /* Get user info */
+    const [users] = await db
+      .promise()
+      .query(`SELECT * FROM dmac_webapp_users WHERE id = ?`, [userId]);
+
+    if (!users.length) {
+      return res.status(200).json({ message: "User data not found" });
+    }
+    const user = users[0];
+    /* ------------------ DECRYPT + CONVERT PASSWORD TO MD5 ------------------ */
+    const originalPassword = decryptString(user.encrypted_password);
+
+    const md5Password = crypto.createHash("md5").update(originalPassword).digest("hex");
+
+    /* ------------------ INSERT INTO MAIN users TABLE ------------------ */
+    const [insertUserResult] = await db.promise().query(
+      `INSERT INTO users 
+        (user_role, username, password, firstName, address, city, state, zipCode, country, mobileNo, time_zone, clinic_id, active, is_quesionaire, is_test, dateCreated, added_from)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        "User",
+        user.email,
+        md5Password,
+        user.name,
+        user.address,
+        user.state,
+        user.province_title,
+        user.zip_code,
+        user.country,
+        user.mobile,
+        user.time_zone,
+        9,
+        1,
+        0,
+        0,
+        new Date(),
+        3,
+      ]
+    );
+
+    const patient_id = insertUserResult.insertId;
+
+    /* ------------------ INSERT INTO share_users_list ------------------ */
+    await db.promise().query(
+      `INSERT INTO share_users_list
+        (patient_id, user_role, username, password, firstName, address, city, state, zipCode, country, mobileNo, time_zone, clinic_id, active, is_quesionaire, is_test, dateCreated, added_from)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        patient_id,
+        "User",
+        user.email,
+        md5Password,
+        user.name,
+        user.address,
+        user.state,
+        user.province_title,
+        user.zip_code,
+        user.country,
+        user.mobile,
+        user.time_zone,
+        9,
+        1,
+        0,
+        0,
+        new Date(),
+        3,
+      ]
+    );
+
+    /* ------------------ LICCA / PRODUCT VALIDITY ------------------ */
+    const licca_product_id = 100;
+    const group_id = 100;
+    const licca_validity = 90;
+    const clinic_id = 9;
+
+    const [[lastPayment]] = await db.promise().query(
+      `SELECT * FROM user_payment_details 
+       WHERE user_id = ? ORDER BY id DESC LIMIT 1`,
+      [patient_id]
+    );
+
+    const now_ts = moment().unix();
+    let end_ts;
+
+    if (!lastPayment || lastPayment.end_ts <= now_ts) {
+      end_ts = moment().add(licca_validity, "days").endOf("day").unix();
+    } else {
+      end_ts = moment.unix(lastPayment.end_ts).add(licca_validity, "days").endOf("day").unix();
+    }
+
+    /* Insert payment cycle */
+    await db.promise().query(
+      `INSERT INTO user_payment_details
+       (user_id, product_group_id, product_id, start_ts, end_ts, clinic_id)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [patient_id, group_id, licca_product_id, now_ts, end_ts, clinic_id]
+    );
+
+    /* Update expiry */
+    await db.promise().query(
+      `DELETE FROM user_product_expiry WHERE user_id = ? AND product_group_id = ?`,
+      [patient_id, group_id]
+    );
+
+    await db.promise().query(
+      `INSERT INTO user_product_expiry
+       (user_id, product_group_id, product_id, expiry_ts, is_active, clinic_id)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [patient_id, group_id, licca_product_id, end_ts, 1, clinic_id]
+    );
+
+    /* ------------------ SUCCESS EMAIL ------------------ */
+    const subject = "Payment Receipt — Payment Approved";
+    const html = `
+      <p>Dear ${userName},</p>
+      <h3>Receipt of Successful Payment</h3>
+      <table>
+        <tr><td><strong>Status:</strong></td><td>SUCCESS</td></tr>
+        <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
+        <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
+        <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
+        <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
+      </table>
+      <p>No service tax due to Tax Exempt Status.</p>
+      <p>Please note: The above payment is non-refundable.</p>
+      <p>Regards,<br/>Admin<br/>DMAC.COM</p>
+    `;
+
+    await sendEmail(userEmail, subject, html, html);
+
+    /* Final Response */
+    return res.json({
+      message: "Payment captured successfully",
+      patient_id,
+    });
   } catch (error) {
     console.error("PayPal CAPTURE ERROR:", error);
 
-    const failReason =
-      error?.result?.message || error?.message || "Payment failed";
+    const failReason = error?.result?.message || error?.message || "Payment failed";
 
-    /* Store failed transaction */
-    await db
-      .promise()
-      .query(
-        `INSERT INTO dmac_webapp_users_transaction 
-         (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type, failure_reason)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          orderId,
-          payerId || null,
-          amount,
-          currencyCode,
-          "FAILED",
-          productId,
-          userId,
-          "paypal",
-          failReason,
-        ]
-      );
+    /* Log failed payment */
+    await db.promise().query(
+      `INSERT INTO dmac_webapp_users_transaction 
+       (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type, failure_reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        orderId,
+        payerId || null,
+        amount,
+        currencyCode,
+        "FAILED",
+        productId,
+        userId,
+        "paypal",
+        failReason,
+      ]
+    );
 
-    /* Send failure email */
+    /* Failure email */
     if (userEmail) {
       const subject = "Payment Receipt — Payment Failed";
       const html = `
@@ -266,6 +247,7 @@ export const capturePatientPayment = async (req, res) => {
     });
   }
 };
+
 
 
 
@@ -1099,17 +1081,36 @@ export const getPatientProductByUserId = async (req, res) => {
 
 
 function encryptString(original) {
-  
-  const cipher = crypto.createCipheriv(process.env.CRYPTO_ALGORITHM, Buffer.from(process.env.CRYPTO_SECRET_KEY), null);
+  const key = Buffer.from(process.env.CRYPTO_SECRET_KEY, "utf8");
+
+  const cipher = crypto.createCipheriv(
+    process.env.CRYPTO_ALGORITHM,
+    key,
+    null
+  );
+
+  cipher.setAutoPadding(true);
+
   let encrypted = cipher.update(original, "utf8", "base64");
   encrypted += cipher.final("base64");
+
   return encrypted;
 }
 
-
 function decryptString(encoded) {
-  const decipher = crypto.createDecipheriv(process.env.CRYPTO_ALGORITHM, Buffer.from(process.env.CRYPTO_SECRET_KEY), null);
+  const key = Buffer.from(process.env.CRYPTO_SECRET_KEY, "utf8");
+
+  const decipher = crypto.createDecipheriv(
+    process.env.CRYPTO_ALGORITHM,
+    key,
+    null
+  );
+
+  decipher.setAutoPadding(true);
+
   let decrypted = decipher.update(encoded, "base64", "utf8");
   decrypted += decipher.final("utf8");
+
   return decrypted;
 }
+
