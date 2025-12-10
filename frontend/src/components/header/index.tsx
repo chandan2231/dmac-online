@@ -12,7 +12,7 @@ import {
   Button,
 } from '@mui/material';
 import { useSidebarContext } from '../sidebar/provider';
-import { canWeShowChangeLanguageOption } from '../../utils/functions';
+// import { canWeShowChangeLanguageOption } from '../../utils/functions';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import { get } from 'lodash';
@@ -22,8 +22,9 @@ import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 // import ColorMode from '../../providers/theme-provider/ColorMode';
 import LogoutFeature from '../../features/auth/components/logout';
-import LanguageMode from '../../i18n/LanguageMode';
+// import LanguageMode from '../../i18n/LanguageMode';
 import type { IUser } from '../../features/auth/auth.interface';
+import GoogleTranslateWidget from '../../i18n/GoogleTranslateWidget';
 
 const navItems: string[] = [];
 
@@ -125,7 +126,8 @@ const Header = () => {
                   {item}
                 </Button>
               ))}
-            {canWeShowChangeLanguageOption(user) && <LanguageMode />}
+            <GoogleTranslateWidget />
+            {/* {canWeShowChangeLanguageOption(user) && <LanguageMode />} */}
             {/* <ColorMode /> */}
             <LogoutFeature />
           </Box>

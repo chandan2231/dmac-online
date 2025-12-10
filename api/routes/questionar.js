@@ -4,8 +4,8 @@ import { authenticateUser } from '../utils/middleware.js'
 
 const router = express.Router()
 
-router.get('/:sequenceNo', getQuestionWithFollowUps);
-router.get('/page/:pageKey', getPageContent);
-router.get('/ui/texts/', getUiTexts);
+router.get('/:sequenceNo', authenticateUser, getQuestionWithFollowUps);
+router.get('/page/:pageKey', authenticateUser, getPageContent);
+router.get('/ui/texts/', authenticateUser, getUiTexts);
 
 export default router

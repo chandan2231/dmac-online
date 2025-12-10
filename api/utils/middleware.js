@@ -15,12 +15,16 @@ export const upload = multer({ storage })
 
 // Middleware to protect routes
 export const authenticateUser = (req, res, next) => {
-  const token = req.headers['authorization']
+  const authHeader = req.headers['authorization']
 
-  if (!token)
+  if (!authHeader)
     return res
       .status(404)
       .json({ message: 'Access denied. No token provided.' })
+
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7, authHeader.length)
+    : authHeader
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err)
