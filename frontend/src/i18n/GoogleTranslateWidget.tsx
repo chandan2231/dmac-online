@@ -8,9 +8,11 @@ import {
   TextField,
   Typography,
   InputAdornment,
+  Tooltip,
 } from '@mui/material';
 import TranslateIcon from '@mui/icons-material/Translate';
 import SearchIcon from '@mui/icons-material/Search';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 
 declare global {
   interface Window {
@@ -114,6 +116,17 @@ export default function GoogleTranslateWidget() {
     setSearchText('');
   };
 
+  const handleResetToEnglish = () => {
+    // Clear the googtrans cookie which stores the translation selection
+    document.cookie =
+      'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname}`;
+    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname}`;
+
+    // Reload the page to restore the original text
+    window.location.reload();
+  };
+
   const handleLanguageSelect = (langCode: string, langName: string) => {
     const select = document.querySelector(
       '.goog-te-combo'
@@ -188,7 +201,9 @@ export default function GoogleTranslateWidget() {
           },
         }}
       >
-        <Box sx={{ p: 2, pb: 1 }}>
+        <Box
+          sx={{ p: 2, pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}
+        >
           <TextField
             fullWidth
             size="small"
@@ -203,6 +218,11 @@ export default function GoogleTranslateWidget() {
               ),
             }}
           />
+          <Tooltip title="Reset to English">
+            <IconButton onClick={handleResetToEnglish} size="small">
+              <RestartAltIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
 
         {filteredLanguages.length > 0 ? (
