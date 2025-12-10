@@ -99,6 +99,9 @@ const navigateUserTo = (user: IUser | null) => {
   if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
     return ROUTES.ADMIN_DASHBOARD;
   }
+  if (role === 'COUNTRY_ADMIN') {
+    return ROUTES.COUNTRY_ADMIN_DASHBOARD;
+  }
   return ROUTES.HOME;
 };
 

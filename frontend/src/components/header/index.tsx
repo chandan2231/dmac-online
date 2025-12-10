@@ -40,6 +40,8 @@ const getTextByRole = (role: IUser['role']) => {
       return 'User Dashboard';
     case 'THERAPIST':
       return 'Therapist Dashboard';
+    case 'COUNTRY_ADMIN':
+      return 'Country Admin Dashboard';
     default:
       return 'Dashboard';
   }

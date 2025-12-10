@@ -179,6 +179,16 @@ export const ROUTES = {
   THERAPIST_CALENDAR: '/therapist/calendar',
   THERAPIST_CONSULTATION_LIST: '/therapist/consultation-list',
   THERAPIST_REVIEWS: '/therapist/reviews',
+
+  // COUNTRY ADMIN Protected routes
+  COUNTRY_ADMIN_DASHBOARD: '/country-admin/dashboard',
+  COUNTRY_ADMIN_USERS_LISTING: '/country-admin/users',
+  COUNTRY_ADMIN_TRANSACTIONS: '/country-admin/transactions',
+  COUNTRY_ADMIN_CONSULTANTS: '/country-admin/consultants',
+  COUNTRY_ADMIN_THERAPISTS: '/country-admin/therapists',
+  COUNTRY_ADMIN_CONSULTATIONS: '/country-admin/consultations',
+  COUNTRY_ADMIN_THERAPIST_CONSULTATIONS:
+    '/country-admin/therapists-consultations',
 } as const;
 
 export type ROUTES = (typeof ROUTES)[keyof typeof ROUTES];
@@ -613,6 +623,88 @@ const GUEST_USER_ROUTES: IAllowedRoutes[] = [
   },
 ];
 
+const COUNTRY_ADMIN_ROUTES: IAllowedRoutes[] = [
+  {
+    path: ROUTES.COUNTRY_ADMIN_DASHBOARD,
+    layout: 'MainLayout',
+    component: 'DashboardPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Dashboard',
+    sideBarIcon: 'DashboardIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.COUNTRY_ADMIN_USERS_LISTING,
+    layout: 'MainLayout',
+    component: 'UsersListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Users List',
+    sideBarIcon: 'GroupIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.COUNTRY_ADMIN_TRANSACTIONS,
+    layout: 'MainLayout',
+    component: 'TransactionsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'User’s Transactions',
+    sideBarIcon: 'ReceiptLongIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.COUNTRY_ADMIN_CONSULTANTS,
+    layout: 'MainLayout',
+    component: 'ConsultantsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Experts List',
+    sideBarIcon: 'BadgeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.COUNTRY_ADMIN_THERAPISTS,
+    layout: 'MainLayout',
+    component: 'TherapistListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Therapists List',
+    sideBarIcon: 'BadgeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.COUNTRY_ADMIN_CONSULTATIONS,
+    layout: 'MainLayout',
+    component: 'ConsultationsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Experts Consultations',
+    sideBarIcon: 'EventIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.COUNTRY_ADMIN_THERAPIST_CONSULTATIONS,
+    layout: 'MainLayout',
+    component: 'TherapistsConsultationsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Therapists Consultations',
+    sideBarIcon: 'EventIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.NOT_FOUND,
+    layout: 'ContentOnlyLayout',
+    component: 'PageNotFound',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+];
+
 export const getRoutesByRole = (role: UserRole): IAllowedRoutes[] => {
   if (role === 'USER') {
     return USER_ROUTES;
@@ -622,6 +714,9 @@ export const getRoutesByRole = (role: UserRole): IAllowedRoutes[] => {
   }
   if (role === 'THERAPIST') {
     return THERAPIST_ROUTES;
+  }
+  if (role === 'COUNTRY_ADMIN') {
+    return COUNTRY_ADMIN_ROUTES;
   }
   if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
     return ADMIN_ROUTES;
