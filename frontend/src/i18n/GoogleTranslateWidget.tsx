@@ -8,9 +8,11 @@ import {
   TextField,
   Typography,
   InputAdornment,
+  Tooltip,
 } from '@mui/material';
 import TranslateIcon from '@mui/icons-material/Translate';
 import SearchIcon from '@mui/icons-material/Search';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 
 declare global {
   interface Window {
@@ -32,10 +34,13 @@ export default function GoogleTranslateWidget() {
   const [currentLang, setCurrentLang] = useState('English');
 
   useEffect(() => {
-    // Check if the script is already loaded
-    if (window.google && window.google.translate) {
-      const element = document.getElementById('google_translate_element');
-      if (element && element.innerHTML === '') {
+    // Define the initialization function globally
+    window.googleTranslateElementInit = () => {
+      if (
+        window.google &&
+        window.google.translate &&
+        document.getElementById('google_translate_element')
+      ) {
         new window.google.translate.TranslateElement(
           {
             pageLanguage: 'en',
@@ -46,6 +51,25 @@ export default function GoogleTranslateWidget() {
           'google_translate_element'
         );
       }
+    };
+
+    // Check if the script is already loaded
+    if (window.google && window.google.translate) {
+      const element = document.getElementById('google_translate_element');
+      if (element && element.innerHTML === '') {
+        window.googleTranslateElementInit();
+      }
+    } else {
+      // Load the script if it's not already loaded
+      const scriptId = 'google-translate-script';
+      if (!document.getElementById(scriptId)) {
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src =
+          '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+        script.async = true;
+        document.body.appendChild(script);
+      }
     }
 
     // Poll for the Google Translate select element to be populated
@@ -55,10 +79,24 @@ export default function GoogleTranslateWidget() {
       ) as HTMLSelectElement;
       if (select && select.options.length > 0) {
         const langs: Language[] = [];
+        const languageNames = new Intl.DisplayNames(['en'], {
+          type: 'language',
+        });
+
         for (let i = 0; i < select.options.length; i++) {
           const option = select.options[i];
           if (option.value) {
-            langs.push({ code: option.value, name: option.text });
+            let name = option.text;
+            try {
+              // Try to get the English name using Intl.DisplayNames
+              const englishName = languageNames.of(option.value);
+              if (englishName) {
+                name = englishName;
+              }
+            } catch {
+              // Fallback to the default text if code is not supported
+            }
+            langs.push({ code: option.value, name });
           }
         }
         setLanguages(langs);
@@ -76,6 +114,17 @@ export default function GoogleTranslateWidget() {
   const handleClose = () => {
     setAnchorEl(null);
     setSearchText('');
+  };
+
+  const handleResetToEnglish = () => {
+    // Clear the googtrans cookie which stores the translation selection
+    document.cookie =
+      'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname}`;
+    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname}`;
+
+    // Reload the page to restore the original text
+    window.location.reload();
   };
 
   const handleLanguageSelect = (langCode: string, langName: string) => {
@@ -152,7 +201,9 @@ export default function GoogleTranslateWidget() {
           },
         }}
       >
-        <Box sx={{ p: 2, pb: 1 }}>
+        <Box
+          sx={{ p: 2, pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}
+        >
           <TextField
             fullWidth
             size="small"
@@ -167,6 +218,11 @@ export default function GoogleTranslateWidget() {
               ),
             }}
           />
+          <Tooltip title="Reset to English">
+            <IconButton onClick={handleResetToEnglish} size="small">
+              <RestartAltIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
 
         {filteredLanguages.length > 0 ? (

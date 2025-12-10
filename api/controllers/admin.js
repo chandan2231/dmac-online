@@ -4,6 +4,7 @@ import sendEmail from '../emailService.js'
 import { getUserInfo, getUserInfoByProtocolId } from '../userData.js'
 import { v4 as uuidv4 } from 'uuid'
 import { getRoleMessage } from '../utils/roleMessages.js'
+import crypto from 'crypto'
 
 export const changeProductStatus = (req, res) => {
   const que = 'UPDATE dmac_webapp_products SET status=? WHERE id=?'
@@ -102,17 +103,16 @@ export const createUsersByRole = async (req, res) => {
     const salt = bcrypt.genSaltSync(10)
     const hashedPassword = bcrypt.hashSync(req.body.password, salt)
     const verificationToken = uuidv4()
-    const encryptedPasswordString = encryptString(req.body.password);
+    const encryptedPasswordString = encryptString(req.body.password)
     // Insert new user
     const insertQuery = `
-      INSERT INTO dmac_webapp_users (name, mobile, email, password, encrypted_password, role, verified, verification_token, time_zone, country, address, speciality, license_number, license_expiration, contracted_rate_per_consult, province_title, province_id, finance_manager_id, language) 
+      INSERT INTO dmac_webapp_users (name, mobile, email, password, role, verified, verification_token, time_zone, country, address, speciality, license_number, license_expiration, contracted_rate_per_consult, province_title, province_id, finance_manager_id, language) 
       VALUES (?)`
     const values = [
       req.body.name,
       req.body.mobile,
       req.body.email,
       hashedPassword,
-      encryptedPasswordString,
       req.body.role,
       0,
       verificationToken,
@@ -428,20 +428,23 @@ export const getConsultationList = (req, res) => {
 }
 
 function encryptString(original) {
-  
-  const cipher = crypto.createCipheriv(process.env.CRYPTO_ALGORITHM, Buffer.from(process.env.CRYPTO_SECRET_KEY), null);
-  let encrypted = cipher.update(original, "utf8", "base64");
-  encrypted += cipher.final("base64");
-  return encrypted;
+  const cipher = crypto.createCipheriv(
+    process.env.CRYPTO_ALGORITHM,
+    Buffer.from(process.env.CRYPTO_SECRET_KEY, 'hex'),
+    Buffer.alloc(16, 0)
+  )
+  let encrypted = cipher.update(original, 'utf8', 'base64')
+  encrypted += cipher.final('base64')
+  return encrypted
 }
-
 
 function decryptString(encoded) {
-  const decipher = crypto.createDecipheriv(process.env.CRYPTO_ALGORITHM, Buffer.from(process.env.CRYPTO_SECRET_KEY), null);
-  let decrypted = decipher.update(encoded, "base64", "utf8");
-  decrypted += decipher.final("utf8");
-  return decrypted;
+  const decipher = crypto.createDecipheriv(
+    process.env.CRYPTO_ALGORITHM,
+    Buffer.from(process.env.CRYPTO_SECRET_KEY, 'hex'),
+    Buffer.alloc(16, 0)
+  )
+  let decrypted = decipher.update(encoded, 'base64', 'utf8')
+  decrypted += decipher.final('utf8')
+  return decrypted
 }
-
-
-
