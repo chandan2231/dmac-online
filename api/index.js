@@ -13,6 +13,7 @@ import theraistRoutes from './routes/therapist.js'
 import patientRoutes from './routes/patient.js'
 import payment from './routes/payment.js'
 import reviewRoutes from './routes/reviews.js'
+import countryAdminRoutes from './routes/countryAdmin.js'
 
 dotenv.config({ path: `.env`, override: true })
 const app = express()
@@ -30,31 +31,32 @@ app.use((req, res, next) => {
 app.use(cookieParser())
 
 const allowedOrigins = ['http://18.220.202.114', 'http://localhost:3010'] // add localhost for dev
-app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}))
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  })
+)
 
 app.use('/api/language', languageRoutes)
 app.use('/api/questionar', questionarRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/country-admin', countryAdminRoutes)
 app.use('/api/google', googleAuth)
 app.use('/api/expert', expertRoutes)
 app.use('/api/therapist', theraistRoutes)
 app.use('/api/patient', patientRoutes)
 app.use('/api/reviews', reviewRoutes)
 app.use('/api/payment', payment)
-
-
 
 // PORT setup based on environment
 let PORT = 8010 // default dev port
@@ -65,4 +67,3 @@ if (process.env.NODE_ENV === 'production') PORT = 8000
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API running on port ${PORT}`)
 })
-

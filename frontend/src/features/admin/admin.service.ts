@@ -679,6 +679,104 @@ const getTherapistReviews = async (therapistId: number) => {
   }
 };
 
+const createCountryAdmin = async (payload: unknown) => {
+  try {
+    const response = await HttpService.post('/country-admin/create', payload);
+    return {
+      success: true,
+      data: response.data,
+      message: 'Country Admin created successfully',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: get(
+        error,
+        'response.data.msg',
+        'Failed to create Country Admin'
+      ),
+    };
+  }
+};
+
+const getCountryAdminListing = async () => {
+  try {
+    const response = await HttpService.post('/country-admin/list', {});
+    return {
+      success: true,
+      data: response.data,
+      message: 'Country Admins fetched successfully',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: get(
+        error,
+        'response.data.msg',
+        'Failed to fetch Country Admins'
+      ),
+    };
+  }
+};
+
+const updateCountryAdmin = async (payload: unknown) => {
+  try {
+    const response = await HttpService.post('/country-admin/update', payload);
+    return {
+      success: true,
+      data: response.data,
+      message: 'Country Admin updated successfully',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: get(
+        error,
+        'response.data.msg',
+        'Failed to update Country Admin'
+      ),
+    };
+  }
+};
+
+const updateCountryAdminStatus = async (id: number, status: number) => {
+  try {
+    const response = await HttpService.post('/country-admin/status/change', {
+      id,
+      status,
+    });
+    return {
+      success: true,
+      data: response.data,
+      message: 'Status updated successfully',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: get(error, 'response.data.msg', 'Failed to update status'),
+    };
+  }
+};
+
+const updateCountryAdminPassword = async (payload: unknown) => {
+  try {
+    const response = await HttpService.post(
+      '/country-admin/reset/password',
+      payload
+    );
+    return {
+      success: true,
+      data: response.data,
+      message: 'Password updated successfully',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: get(error, 'response.data.msg', 'Failed to update password'),
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
   updateProduct, // ✅ export update service
@@ -700,6 +798,11 @@ const AdminService = {
   getConsultationsListing,
   getExpertReviews,
   getTherapistReviews,
+  createCountryAdmin,
+  getCountryAdminListing,
+  updateCountryAdmin,
+  updateCountryAdminStatus,
+  updateCountryAdminPassword,
 };
 
 export default AdminService;

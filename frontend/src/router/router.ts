@@ -44,6 +44,7 @@ import PatientAuthWithGooglePage from '../pages/patient/auth-with-google';
 import BookConsultationPage from '../pages/patient/book-consultation';
 import BookTherapistPage from '../pages/patient/book-therapist';
 import UploadDocumentsPage from '../pages/patient/upload-documents';
+import CountryAdminListingPage from '../pages/admin/country-admin-listing';
 
 // Expert Pages
 import ConsultationListPage from '../pages/expert/consultation-list';
@@ -93,6 +94,7 @@ export const COMPONENT_MAP = {
   TherapistListingPageComponent,
   ConsultationsListingPageComponent,
   TherapistsConsultationsListingPageComponent,
+  CountryAdminListingPage,
 
   // Patient Pages
   PatientRegisterPage,
@@ -161,7 +163,8 @@ export const ROUTES = {
   PRODUCTS: '/admin/products',
   THERAPISTS: '/admin/therapists',
   CONSULTATIONS: '/admin/consultations',
-  Therapists_CONSULTATIONS: '/admin/therapists-consultations',
+  THERAPIST_CONSULTATIONS: '/admin/therapists-consultations',
+  COUNTRY_ADMIN_LISTING: '/admin/countries-admin-listing',
 
   // Not Found
   NOT_FOUND: '*',
@@ -535,6 +538,16 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     // This route will be shown in the sidebar
     showInSidebar: true,
     sideBarTitle: 'Therapists List',
+    sideBarIcon: 'BadgeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.COUNTRY_ADMIN_LISTING,
+    layout: 'MainLayout',
+    component: 'CountryAdminListingPage',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Countries Admin Listing',
     sideBarIcon: 'BadgeIcon',
     isAChildOf: null,
   },

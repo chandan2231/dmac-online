@@ -6,7 +6,8 @@ export type UserRole =
   | 'ADMIN'
   | 'SUPER_ADMIN'
   | 'EXPERT'
-  | 'THERAPIST';
+  | 'THERAPIST'
+  | 'COUNTRY_ADMIN';
 
 export interface IUser {
   id: string;
