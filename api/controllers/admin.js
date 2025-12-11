@@ -178,13 +178,31 @@ export const createUsersByRole = async (req, res) => {
 
 export const getAllUsersByRole = (req, res) => {
   const { role } = req.body
+  const loggedInUserId = req.user.userId
 
-  let query
-  let values = [role]
+  const userQuery = 'SELECT role, country FROM dmac_webapp_users WHERE id = ?'
 
-  // If the role is USER (single language)
-  if (role === 'USER') {
-    query = `
+  db.query(userQuery, [loggedInUserId], (err, userData) => {
+    if (err) {
+      console.error('Error fetching logged in user:', err)
+      return res
+        .status(500)
+        .json({ status: 500, msg: 'Database error', error: err })
+    }
+
+    if (userData.length === 0) {
+      return res
+        .status(404)
+        .json({ status: 404, msg: 'Logged in user not found' })
+    }
+
+    const loggedInUser = userData[0]
+    let query
+    let values = [role]
+
+    // If the role is USER (single language)
+    if (role === 'USER') {
+      query = `
       SELECT 
         u.*,
         u.patient_meta,
@@ -194,10 +212,10 @@ export const getAllUsersByRole = (req, res) => {
         ON u.language = l.id
       WHERE u.role = ?
     `
-  }
-  // For therapist or other roles (multiple languages possible)
-  else {
-    query = `
+    }
+    // For therapist or other roles (multiple languages possible)
+    else {
+      query = `
       SELECT 
         u.*,
         u.patient_meta,
@@ -206,28 +224,37 @@ export const getAllUsersByRole = (req, res) => {
       LEFT JOIN dmac_webapp_language lang
         ON FIND_IN_SET(lang.id, u.language)
       WHERE u.role = ?
-      GROUP BY u.id
     `
-  }
-
-  db.query(query, values, (err, data) => {
-    if (err) {
-      console.error('Error fetching users:', err)
-      return res.status(500).json({
-        status: 500,
-        msg: 'Database error',
-        error: err
-      })
     }
 
-    if (!data || data.length === 0) {
-      return res.status(200).json({
-        status: 200,
-        msg: `No ${role} records found.`
-      })
+    if (loggedInUser.role === 'COUNTRY_ADMIN') {
+      query += ' AND u.country = ?'
+      values.push(loggedInUser.country)
     }
 
-    return res.status(200).json(data)
+    if (role !== 'USER') {
+      query += ' GROUP BY u.id'
+    }
+
+    db.query(query, values, (err, data) => {
+      if (err) {
+        console.error('Error fetching users:', err)
+        return res.status(500).json({
+          status: 500,
+          msg: 'Database error',
+          error: err
+        })
+      }
+
+      if (!data || data.length === 0) {
+        return res.status(200).json({
+          status: 200,
+          msg: `No ${role} records found.`
+        })
+      }
+
+      return res.status(200).json(data)
+    })
   })
 }
 
