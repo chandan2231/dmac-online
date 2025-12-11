@@ -1,9 +1,17 @@
 import * as Yup from 'yup';
 import { get } from 'lodash';
-import { Box, Typography } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  FormLabel,
+} from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '../../../../providers/toast-provider/index.tsx';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../store/index.ts';
@@ -35,6 +43,10 @@ type FormValues = {
   language: IOption;
   country: IOption;
   state: IOption;
+  weight: number;
+  weightUnit: string;
+  height: number;
+  heightUnit: string;
 };
 
 const optionShape = Yup.object({
@@ -61,6 +73,14 @@ const schema = Yup.object({
   language: optionShape,
   country: optionShape,
   state: optionShape,
+  weight: Yup.number()
+    .typeError('Weight must be a number')
+    .required('Weight is required'),
+  weightUnit: Yup.string().required('Weight unit is required'),
+  height: Yup.number()
+    .typeError('Height must be a number')
+    .required('Height is required'),
+  heightUnit: Yup.string().required('Height unit is required'),
 });
 
 const PatientRegister = () => {
@@ -78,12 +98,15 @@ const PatientRegister = () => {
     formState: { errors },
     setValue,
     watch,
+    control,
   } = useForm<FormValues>({
     resolver: yupResolver(schema),
     defaultValues: {
       language: { label: '', value: '' },
       country: { label: '', value: '' },
       state: { label: '', value: '' },
+      weightUnit: 'kg',
+      heightUnit: 'cm',
     },
   });
 
@@ -119,6 +142,10 @@ const PatientRegister = () => {
       product_id: get(state, ['id'], null),
       provinceTitle: stateTitle,
       provinceValue: stateValue,
+      weight: data.weight,
+      weight_unit: data.weightUnit,
+      height: data.height,
+      height_unit: data.heightUnit,
       timeZone,
       otherInfo: {
         ...userEnvironmentInfo,
@@ -257,6 +284,85 @@ const PatientRegister = () => {
                   {...register('mobile')}
                   error={!!errors.mobile}
                   helperText={errors.mobile?.message}
+                />
+              </Grid>
+            </Grid>
+
+            {/* Row: Weight + Height */}
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <FormControl component="fieldset" error={!!errors.weightUnit}>
+                  <FormLabel component="legend">Weight Unit</FormLabel>
+                  <Controller
+                    rules={{ required: true }}
+                    control={control}
+                    name="weightUnit"
+                    render={({ field }) => (
+                      <RadioGroup row {...field}>
+                        <FormControlLabel
+                          value="kg"
+                          control={<Radio />}
+                          label="Kg"
+                        />
+                        <FormControlLabel
+                          value="pound"
+                          control={<Radio />}
+                          label="Pound"
+                        />
+                      </RadioGroup>
+                    )}
+                  />
+                  {errors.weightUnit && (
+                    <Typography variant="caption" color="error">
+                      {errors.weightUnit.message}
+                    </Typography>
+                  )}
+                </FormControl>
+                <ModernInput
+                  label="Weight"
+                  placeholder="Enter your weight"
+                  type="number"
+                  {...register('weight')}
+                  error={!!errors.weight}
+                  helperText={errors.weight?.message}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <FormControl component="fieldset" error={!!errors.heightUnit}>
+                  <FormLabel component="legend">Height Unit</FormLabel>
+                  <Controller
+                    rules={{ required: true }}
+                    control={control}
+                    name="heightUnit"
+                    render={({ field }) => (
+                      <RadioGroup row {...field}>
+                        <FormControlLabel
+                          value="cm"
+                          control={<Radio />}
+                          label="Cm"
+                        />
+                        <FormControlLabel
+                          value="inches"
+                          control={<Radio />}
+                          label="Inches"
+                        />
+                      </RadioGroup>
+                    )}
+                  />
+                  {errors.heightUnit && (
+                    <Typography variant="caption" color="error">
+                      {errors.heightUnit.message}
+                    </Typography>
+                  )}
+                </FormControl>
+                <ModernInput
+                  label="Height"
+                  placeholder="Enter your height"
+                  type="number"
+                  {...register('height')}
+                  error={!!errors.height}
+                  helperText={errors.height?.message}
                 />
               </Grid>
             </Grid>

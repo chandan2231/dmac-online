@@ -63,4 +63,8 @@ export interface IRegisterPayload {
   language?: string;
   stateTitle?: string;
   timeZone?: string;
+  weight?: number;
+  weight_unit?: string;
+  height?: number;
+  height_unit?: string;
 }
