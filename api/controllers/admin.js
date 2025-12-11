@@ -371,31 +371,69 @@ export const changeUserPassword = (req, res) => {
 }
 
 export const getUsersTransactionList = (req, res) => {
-  const que = `SELECT trans.*, users.name AS name, users.email, product.product_name AS product_name, product.product_description as product_description 
+  const loggedInUserId = req.user.userId
+  const userQuery = 'SELECT role, country FROM dmac_webapp_users WHERE id = ?'
+
+  db.query(userQuery, [loggedInUserId], (err, userData) => {
+    if (err) {
+      console.error('Error fetching logged in user:', err)
+      return res.status(500).json(err)
+    }
+
+    if (userData.length === 0) {
+      return res.status(404).json({ message: 'Logged in user not found' })
+    }
+
+    const loggedInUser = userData[0]
+
+    let que = `SELECT trans.*, users.name AS name, users.email, product.product_name AS product_name, product.product_description as product_description 
        FROM dmac_webapp_users_transaction as trans 
        JOIN dmac_webapp_users AS users ON trans.user_id = users.id 
-       JOIN dmac_webapp_products AS product ON trans.product_id = product.id 
-       ORDER BY trans.id DESC`
+       JOIN dmac_webapp_products AS product ON trans.product_id = product.id`
 
-  db.query(que, [], (err, data) => {
-    if (err) return res.status(500).json(err)
-    if (data.length > 0) {
-      return res.status(200).json(data)
-    } else {
-      return res.status(404).json({ message: 'No transactions found.' })
+    const params = []
+
+    if (loggedInUser.role === 'COUNTRY_ADMIN') {
+      que += ' WHERE users.country = ?'
+      params.push(loggedInUser.country)
     }
+
+    que += ' ORDER BY trans.id DESC'
+
+    db.query(que, params, (err, data) => {
+      if (err) return res.status(500).json(err)
+      if (data.length > 0) {
+        return res.status(200).json(data)
+      } else {
+        return res.status(404).json({ message: 'No transactions found.' })
+      }
+    })
   })
 }
 
 export const getConsultationList = (req, res) => {
   const { consultant_id, consultant_role } = req.body
+  const loggedInUserId = req.user.userId
+  const userQuery = 'SELECT role, country FROM dmac_webapp_users WHERE id = ?'
 
-  const tableName =
-    consultant_role === 'THERAPIST'
-      ? 'dmac_webapp_therapist_consultations'
-      : 'dmac_webapp_consultations'
+  db.query(userQuery, [loggedInUserId], (err, userData) => {
+    if (err) {
+      console.error('Error fetching logged in user:', err)
+      return res.status(500).json(err)
+    }
 
-  let que = `
+    if (userData.length === 0) {
+      return res.status(404).json({ message: 'Logged in user not found' })
+    }
+
+    const loggedInUser = userData[0]
+
+    const tableName =
+      consultant_role === 'THERAPIST'
+        ? 'dmac_webapp_therapist_consultations'
+        : 'dmac_webapp_consultations'
+
+    let que = `
     SELECT 
       cons.*, 
       u.name AS user_name, 
@@ -414,43 +452,36 @@ export const getConsultationList = (req, res) => {
       ON cons.product_id = p.id
   `
 
-  const params = []
-  const conditions = []
+    const params = []
+    const conditions = []
 
-  if (consultant_id) {
-    conditions.push(`cons.consultant_id = ?`)
-    params.push(consultant_id)
-  }
-
-  // If filtering by role, we are already selecting from the correct table based on role.
-  // But we might want to ensure the consultant user actually has that role?
-  // The join on users table will get the user, we can filter by role there too if needed.
-  // But usually the table separation is enough.
-  // However, if we are in the 'expert' table, we might want to filter by role='EXPERT' just in case?
-  // Actually, the previous code didn't filter by role in the query, just by table.
-  // But wait, the previous code I wrote added `c.role = ?`.
-  // If I switch tables, I don't necessarily need to filter by `c.role` if the table only contains that role's consultations.
-  // But let's keep it if provided, to be safe, or remove it if it causes issues (e.g. if a user changed roles).
-  // Let's remove the explicit role check on the user table for now, relying on the table separation.
-  // Or better, keep it if it was useful.
-  // Actually, for 'THERAPIST', the user role should be 'THERAPIST'.
-
-  if (consultant_role) {
-    conditions.push(`c.role = ?`)
-    params.push(consultant_role)
-  }
-
-  if (conditions.length > 0) {
-    que += ` WHERE ` + conditions.join(' AND ')
-  }
-
-  que += ` ORDER BY cons.id DESC`
-
-  db.query(que, params, (err, data) => {
-    if (err) {
-      return res.status(500).json(err)
+    if (consultant_id) {
+      conditions.push(`cons.consultant_id = ?`)
+      params.push(consultant_id)
     }
-    return res.status(200).json(data || [])
+
+    if (consultant_role) {
+      conditions.push(`c.role = ?`)
+      params.push(consultant_role)
+    }
+
+    if (loggedInUser.role === 'COUNTRY_ADMIN') {
+      conditions.push(`u.country = ?`)
+      params.push(loggedInUser.country)
+    }
+
+    if (conditions.length > 0) {
+      que += ` WHERE ` + conditions.join(' AND ')
+    }
+
+    que += ` ORDER BY cons.id DESC`
+
+    db.query(que, params, (err, data) => {
+      if (err) {
+        return res.status(500).json(err)
+      }
+      return res.status(200).json(data || [])
+    })
   })
 }
 
