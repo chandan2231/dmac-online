@@ -22,6 +22,10 @@ export interface IUser {
   google_access_token: string | null;
   google_refresh_token: string | null;
   time_zone: string | null;
+  country: string;
+  state: string;
+  province_title: string;
+  province_id: string;
 }
 
 export interface IAuthState {
