@@ -421,7 +421,11 @@ export const login = (req, res) => {
       role: user.role,
       google_access_token: user.google_access_token,
       google_refresh_token: user.google_refresh_token,
-      time_zone: user.time_zone
+      time_zone: user.time_zone,
+      country: user.country,
+      province_title: user.province_title,
+      province_id: user.province_id,
+      state: user.state
     }
 
     res.status(200).json({
@@ -546,7 +550,7 @@ export const patinetRegistration = async (req, res) => {
     // Insert new user into the database
     const insertQuery = `
       INSERT INTO dmac_webapp_users 
-      (name, email, mobile, password, encrypted_password, country, state, zip_code, language, verified, verification_token, role, time_zone, province_title, province_id, patient_meta) 
+      (name, email, mobile, password, encrypted_password, country, state, zip_code, language, verified, verification_token, role, time_zone, province_title, province_id, patient_meta, weight, weight_unit, height, height_unit) 
       VALUES (?)`
     const values = [
       req.body.name,
@@ -564,7 +568,11 @@ export const patinetRegistration = async (req, res) => {
       req.body.timeZone,
       req.body.provinceTitle,
       req.body.provinceValue,
-      otherInfoJson
+      otherInfoJson,
+      req.body.weight,
+      req.body.weight_unit,
+      req.body.height,
+      req.body.height_unit
     ]
 
     const insertResult = await new Promise((resolve, reject) => {
@@ -759,7 +767,11 @@ export const patientLogin = (req, res) => {
       patient_payment: user.patient_payment,
       google_access_token: user.google_access_token,
       google_refresh_token: user.google_refresh_token,
-      time_zone: user.time_zone
+      time_zone: user.time_zone,
+      country: user.country,
+      province_title: user.province_title,
+      province_id: user.province_id,
+      state: user.state
     }
 
     res.status(200).json({
