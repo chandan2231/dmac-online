@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { Box, Typography, TextField, InputAdornment, IconButton, Chip } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Typography } from '@mui/material';
 import MorenButton from '../../../../../components/button';
 import GenericModal from '../../../../../components/modal';
-import type { SessionData } from '../../../../../services/gameApi'; // Adjusted path
+import type { SessionData } from '../../../../../services/gameApi';
 import AudioPlayer from './Shared/AudioPlayer';
-import MicIcon from '@mui/icons-material/Mic';
-import MicOffIcon from '@mui/icons-material/MicOff';
+import SpeechInput from '../../../../../components/SpeechInput';
 
 // Assets
 import Bird from '../../../../../assets/ImageRecal/bird.webp';
@@ -56,29 +55,37 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
     const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
-    // Input state
+    // Input state - single text field for all answers
     const [inputText, setInputText] = useState('');
-    const [collectedAnswers, setCollectedAnswers] = useState<string[]>([]);
-    const [isListening, setIsListening] = useState(false);
+    const [validationError, setValidationError] = useState('');
 
-    const recognitionRef = useRef<any>(null);
-    const isInitializedRef = useRef(false);
+    // Configuration: Set to false when images are uploaded to S3
+    const USE_STATIC_IMAGES = true; // TODO: Change to false once S3 images are ready
 
-    // Construct items list from API but override URLs
+    // Construct items list from API but override URLs if using static images
     const items = (session.question?.items || []).map((item, index) => {
-        // Try to find image by key (lowercase)
-        const key = (item.image_key || '').toLowerCase();
+        if (USE_STATIC_IMAGES) {
+            // STATIC MODE: Use local images
+            const key = (item.image_key || '').toLowerCase();
 
-        // Robust fallback
-        const localImg = IMAGE_MAP[key] ||
-            IMAGE_MAP[Object.keys(IMAGE_MAP).find(k => key.includes(k)) || ''] ||
-            ALL_IMAGES[index % ALL_IMAGES.length];
+            // Robust fallback
+            const localImg = IMAGE_MAP[key] ||
+                IMAGE_MAP[Object.keys(IMAGE_MAP).find(k => key.includes(k)) || ''] ||
+                ALL_IMAGES[index % ALL_IMAGES.length];
 
-        return {
-            ...item,
-            image_url: localImg, // Force local image
-            audio_url: AudioFile // Force local audio
-        };
+            return {
+                ...item,
+                image_url: localImg,      // Use local static image
+                audio_url: AudioFile      // Use local static audio
+            };
+        } else {
+            // API MODE: Use URLs from backend (S3)
+            return {
+                ...item,
+                image_url: item.image_url,  // Use API URL
+                audio_url: item.audio_url   // Use API URL
+            };
+        }
     });
 
     const [gameItems, setGameItems] = useState<any[]>([]);
@@ -98,130 +105,18 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
         }
     }, [session]);
 
-    // Initialize speech recognition once
+    // Clear input when language changes
     useEffect(() => {
-        if (isInitializedRef.current) return;
-
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = true;
-            recognition.lang = languageCode || 'en-US';
-
-            recognition.onresult = (event: any) => {
-                let interimTranscript = '';
-                let finalTranscript = '';
-
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
-                    }
-                }
-
-                if (interimTranscript) {
-                    setInputText(interimTranscript);
-                }
-
-                if (finalTranscript) {
-                    const text = finalTranscript.trim();
-                    if (text && !collectedAnswers.includes(text.toUpperCase())) {
-                        setCollectedAnswers(prev => [...prev, text.toUpperCase()]);
-                        setInputText('');
-                    }
-                }
-            };
-
-            recognition.onend = () => {
-                if (isListening) {
-                    setTimeout(() => {
-                        try {
-                            recognition.start();
-                        } catch (e) {
-                            console.log("Recognition restart skipped");
-                        }
-                    }, 100); // Small delay before restart
-                }
-            };
-
-            recognition.onerror = (event: any) => {
-                console.log("Speech recognition error:", event.error);
-                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                    alert('Microphone access denied. Please enable microphone permissions.');
-                    setIsListening(false);
-                } else if (event.error === 'aborted') {
-                    // Common when recognition restarts, just log it
-                    console.log('Recognition aborted (normal during restart)');
-                } else if (event.error === 'no-speech') {
-                    console.log('No speech detected, waiting...');
-                }
-            };
-
-            recognitionRef.current = recognition;
-            isInitializedRef.current = true;
-        } else {
-            console.warn("Speech Recognition API not supported in this browser.");
-        }
-
-        return () => {
-            if (recognitionRef.current) {
-                try {
-                    recognitionRef.current.stop();
-                } catch (e) {
-                    // Ignore
-                }
-            }
-        };
+        setInputText('');
+        setValidationError('');
     }, [languageCode]);
-
-    // Toggle listening
-    const toggleListening = () => {
-        if (!recognitionRef.current) {
-            alert('Speech recognition not available in this browser');
-            return;
-        }
-
-        if (isListening) {
-            setIsListening(false);
-            try {
-                recognitionRef.current.stop();
-            } catch (e) {
-                console.log('Stop failed:', e);
-            }
-        } else {
-            setIsListening(true);
-            try {
-                recognitionRef.current.start();
-            } catch (e) {
-                console.error("Start failed", e);
-                setIsListening(false);
-            }
-        }
-    };
-
-    const addAnswer = (text: string) => {
-        if (text && !collectedAnswers.includes(text.toUpperCase())) {
-            setCollectedAnswers(prev => [...prev, text.toUpperCase()]);
-            setInputText('');
-        }
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            addAnswer(inputText);
-        }
-    };
-
-    const handleRemoveAnswer = (answer: string) => {
-        setCollectedAnswers(prev => prev.filter(a => a !== answer));
-    };
 
     const handleStart = () => {
         setPhase('playing');
         setCurrentItemIndex(0);
-        setIsPlayingAudio(true); // Start audio for first item
+        setIsPlayingAudio(true);
+        setInputText(''); // Clear any previous answers
+        setValidationError('');
     };
 
     const handleAudioEnded = () => {
@@ -232,31 +127,38 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
         let timer: any;
         if (phase === 'playing') {
             if (currentItemIndex < gameItems.length - 1) {
-                // Not the last image yet - continue auto-advancing
                 setIsPlayingAudio(true);
-
                 timer = setTimeout(() => {
                     setCurrentItemIndex((prev) => prev + 1);
-                }, 5000); // 5 seconds per image
+                }, 5000);
             } else if (currentItemIndex === gameItems.length - 1) {
-                // This is the last image - play audio and then show buttons
                 setIsPlayingAudio(true);
-
                 timer = setTimeout(() => {
                     setPhase('lastImageWithButtons');
-                }, 5000); // Wait 5 seconds then show buttons
+                }, 5000);
             }
         }
         return () => clearTimeout(timer);
     }, [phase, currentItemIndex, gameItems.length]);
 
     const handleRepeat = () => {
-        setCollectedAnswers([]);
+        setInputText('');
+        setValidationError('');
         handleStart();
     };
 
     const handleSubmit = () => {
-        onComplete(collectedAnswers.join(', '));
+        const trimmedInput = inputText.trim().toLowerCase();
+
+        // Validation
+        if (!trimmedInput) {
+            setValidationError('Please enter at least one answer before submitting.');
+            return;
+        }
+
+        setValidationError(''); // Clear error
+        console.log('ImageFlash submitting answers:', trimmedInput);
+        onComplete(trimmedInput);
     };
 
     const currentItem = gameItems[currentItemIndex];
@@ -355,44 +257,39 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
 
                     <Typography variant="h6" sx={{ textAlign: 'center', color: '#666' }}>Enter Answers</Typography>
 
-                    <TextField
+                    <SpeechInput
                         fullWidth
-                        placeholder="Enter Answers"
                         value={inputText}
-                        onChange={(e) => setInputText(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <IconButton onClick={toggleListening} edge="end">
-                                        {isListening ? <MicIcon color="primary" /> : <MicOffIcon />}
-                                    </IconButton>
-                                </InputAdornment>
-                            ),
+                        onChange={(value) => {
+                            setInputText(value);
+                            setValidationError(''); // Clear error when typing
                         }}
+                        onSpeechResult={(transcript) => {
+                            // Append to existing text with space (no comma)
+                            const currentText = inputText.trim();
+                            const newText = currentText
+                                ? `${currentText} ${transcript.toLowerCase()}`
+                                : transcript.toLowerCase();
+                            setInputText(newText);
+                            setValidationError(''); // Clear error when speaking
+                        }}
+                        languageCode={languageCode}
+                        placeholder="Enter answers separated by spaces (e.g., bird car tree)"
                     />
 
-                    {/* Collected Answers (Chips/Buttons) */}
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center', minHeight: '100px' }}>
-                        {collectedAnswers.map((answer, idx) => (
-                            <Chip
-                                key={idx}
-                                label={answer}
-                                onDelete={() => handleRemoveAnswer(answer)}
-                                sx={{
-                                    backgroundColor: '#4caf50',
-                                    color: 'white',
-                                    fontWeight: 'bold',
-                                    fontSize: '1rem',
-                                    borderRadius: '4px',
-                                    '& .MuiChip-deleteIcon': {
-                                        color: 'white',
-                                        '&:hover': { color: '#e0e0e0' }
-                                    }
-                                }}
-                            />
-                        ))}
-                    </Box>
+                    {/* Validation Error Message */}
+                    {validationError && (
+                        <Typography
+                            sx={{
+                                color: '#d32f2f',
+                                fontSize: '0.875rem',
+                                textAlign: 'center',
+                                fontWeight: 500
+                            }}
+                        >
+                            {validationError}
+                        </Typography>
+                    )}
 
                     {/* Navigation Buttons */}
 

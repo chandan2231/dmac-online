@@ -70,11 +70,13 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
 
     const handleImageFlashComplete = (answerText: string) => {
         if (!session?.question) return;
-        handleModuleSubmit({
+        const payload = {
             question_id: session.question.question_id,
             language_code: languageCode,
             answer_text: answerText
-        });
+        };
+        console.log('Submitting ImageFlash payload to API:', payload);
+        handleModuleSubmit(payload);
     };
 
     const handleVisualSpatialComplete = (answers: { question_id: number, selected_option_key: string }[]) => {
