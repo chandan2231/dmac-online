@@ -11,6 +11,8 @@ import CustomLoader from '../../../../components/loader';
 import GenericModal from '../../../../components/modal';
 import MorenRadio from '../../../../components/radio-input';
 import { ROUTES } from '../../../../router/router';
+// import ModuleRunner from './GameModules/ModuleRunner'; 
+// Reverted to original behavior (or simply remove import)
 
 type IQuestionsProps = {
   setIsQuestionerClosed: (value: boolean) => void;
@@ -32,7 +34,6 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
   >(null);
   const cancelButtonText = getLanguageText(languageConstants, 'cancel');
   const continueButtonText = getLanguageText(languageConstants, 'start');
-
   const { data: questionsDetails, isPending: isLoadingQuestionsDetails } =
     useGetQuestions(currentSequenceNumber, get(user, 'languageCode', 'en'));
 
@@ -125,10 +126,12 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
   const handleNavigateToHome = () => {
     navigate(ROUTES.HOME);
   };
-
   if (isLoadingQuestionsDetails) {
     return <CustomLoader />;
   }
+
+  // Removed ModuleRunner hijack to allow survey to flow naturally
+  // if (showGame) { ... }
 
   return (
     <Box>

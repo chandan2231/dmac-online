@@ -4,10 +4,16 @@ import Disclaimer from './components/Disclaimer';
 import FalsePositive from './components/FalsePositive';
 import Questions from './components/Questioners';
 
+import ModuleRunner from './components/GameModules/ModuleRunner'; // Import ModuleRunner
+import { useSelector } from 'react-redux'; // Import useSelector
+import type { RootState } from '../../../../store'; // Import RootState
+import { get } from 'lodash'; // Import get
+
 const Questioners = () => {
   const [isQuestionerClosed, setIsQuestionerClosed] = useState(false);
   const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(false);
   const [falsePositive, setFalsePositive] = useState(false);
+  const { user } = useSelector((state: RootState) => state.auth);
 
   return (
     <Box
@@ -30,6 +36,14 @@ const Questioners = () => {
 
       {isQuestionerClosed && isDisclaimerAccepted && !falsePositive ? (
         <FalsePositive setFalsePositive={setFalsePositive} />
+      ) : null}
+
+      {isQuestionerClosed && isDisclaimerAccepted && falsePositive ? (
+        <ModuleRunner
+          userId={Number(get(user, 'id', 0))}
+          languageCode={get(user, 'languageCode', 'en')}
+          onAllModulesComplete={() => { /* Handle completion, maybe navigate home? */ }}
+        />
       ) : null}
     </Box>
   );
