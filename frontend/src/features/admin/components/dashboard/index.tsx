@@ -1,7 +1,29 @@
 import { Box, Typography } from '@mui/material';
 import { TabHeaderLayout } from '../../../../components/tab-header';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../../../store';
+
+const getTextByRole = (role: string | undefined) => {
+  switch (role) {
+    case 'ADMIN':
+      return 'Admin';
+    case 'SUPER_ADMIN':
+      return 'Super Admin';
+    case 'COUNTRY_ADMIN':
+      return 'Country Admin';
+    case 'THERAPIST':
+      return 'Therapist';
+    case 'EXPERT':
+      return 'Expert';
+    case 'USER':
+      return 'User';
+    default:
+      return '';
+  }
+};
 
 const Dashboard = () => {
+  const { user } = useSelector((state: RootState) => state.auth);
   return (
     <Box
       display="flex"
@@ -22,7 +44,7 @@ const Dashboard = () => {
               padding: 0,
             }}
           >
-            Welcome to Admin Dashboard
+            Welcome to {getTextByRole(user?.role)} Dashboard
           </Typography>
         }
       />
