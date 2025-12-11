@@ -546,7 +546,7 @@ export const patinetRegistration = async (req, res) => {
     // Insert new user into the database
     const insertQuery = `
       INSERT INTO dmac_webapp_users 
-      (name, email, mobile, password, country, state, zip_code, language, verified, verification_token, role, time_zone, province_title, province_id, patient_meta) 
+      (name, email, mobile, password, country, state, zip_code, language, verified, verification_token, role, time_zone, province_title, province_id, patient_meta, weight, weight_unit, height, height_unit) 
       VALUES (?)`
     const values = [
       req.body.name,
@@ -563,7 +563,11 @@ export const patinetRegistration = async (req, res) => {
       req.body.timeZone,
       req.body.provinceTitle,
       req.body.provinceValue,
-      otherInfoJson
+      otherInfoJson,
+      req.body.weight,
+      req.body.weight_unit,
+      req.body.height,
+      req.body.height_unit
     ]
 
     const insertResult = await new Promise((resolve, reject) => {
