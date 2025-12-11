@@ -466,8 +466,10 @@ export const getConsultationList = (req, res) => {
     }
 
     if (loggedInUser.role === 'COUNTRY_ADMIN') {
-      conditions.push(`u.country = ?`)
-      params.push(loggedInUser.country)
+      if (!consultant_id) {
+        conditions.push(`c.country = ?`)
+        params.push(loggedInUser.country)
+      }
     }
 
     if (conditions.length > 0) {
