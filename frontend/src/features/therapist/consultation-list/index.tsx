@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -22,12 +23,12 @@ import { GenericTable } from '../../../components/table';
 import { useToast } from '../../../providers/toast-provider';
 import UpdateStatusModal from './UpdateStatusModal';
 import ReviewModal from './ReviewModal';
-import DocumentsModal from './DocumentsModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
 import { useGetConsultations } from '../hooks/useGetConsultations';
 import { useGetTherapistPatients } from '../hooks/useGetTherapistPatients';
 import type { GridColDef } from '@mui/x-data-grid';
 import { TabHeaderLayout } from '../../../components/tab-header';
+import { ROUTES } from '../../../router/router';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -46,6 +47,7 @@ interface IConsultation {
 }
 
 const TherapistConsultationList = () => {
+  const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const { showToast } = useToast();
   const [selectedPatient, setSelectedPatient] = useState<{
@@ -80,12 +82,6 @@ const TherapistConsultationList = () => {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedReviewConsultationId, setSelectedReviewConsultationId] =
     useState<number | null>(null);
-
-  const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
-  const [selectedPatientForDocs, setSelectedPatientForDocs] = useState<{
-    id: number;
-    name: string;
-  } | null>(null);
 
   const handleOpenModal = (consultation: IConsultation) => {
     setSelectedConsultation(consultation);
@@ -127,11 +123,12 @@ const TherapistConsultationList = () => {
 
   const handleViewDocumentsClick = () => {
     if (menuConsultation) {
-      setSelectedPatientForDocs({
-        id: menuConsultation.patient_id,
-        name: menuConsultation.patient_name,
-      });
-      setDocumentsModalOpen(true);
+      navigate(
+        ROUTES.THERAPIST_PATIENT_ASSESSMENT.replace(
+          ':patientId',
+          String(menuConsultation.patient_id)
+        )
+      );
     }
     handleMenuClose();
   };
@@ -139,11 +136,6 @@ const TherapistConsultationList = () => {
   const handleCloseReviewModal = () => {
     setReviewModalOpen(false);
     setSelectedReviewConsultationId(null);
-  };
-
-  const handleCloseDocumentsModal = () => {
-    setDocumentsModalOpen(false);
-    setSelectedPatientForDocs(null);
   };
 
   const handleSubmitStatus = (status: number, notes: string) => {
@@ -335,12 +327,6 @@ const TherapistConsultationList = () => {
         open={reviewModalOpen}
         onClose={handleCloseReviewModal}
         consultationId={selectedReviewConsultationId}
-      />
-      <DocumentsModal
-        open={documentsModalOpen}
-        onClose={handleCloseDocumentsModal}
-        patientId={selectedPatientForDocs?.id || null}
-        patientName={selectedPatientForDocs?.name || ''}
       />
       <Menu
         anchorEl={menuAnchor}

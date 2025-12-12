@@ -96,6 +96,9 @@ const TransactionHistoryPage = lazy(
 const ExpertHomePage = lazy(() => import('../pages/expert/home'));
 const CalendarPage = lazy(() => import('../pages/expert/calendar'));
 const ExpertReviewsPage = lazy(() => import('../pages/expert/reviews'));
+const PatientAssessmentPage = lazy(
+  () => import('../pages/expert/patient-assessment')
+);
 
 // Therapist Pages
 const TherapistHomePage = lazy(() => import('../pages/therapist/home'));
@@ -106,6 +109,11 @@ const TherapistConsultationListPage = lazy(
   () => import('../pages/therapist/consultation-list')
 );
 const TherapistReviewsPage = lazy(() => import('../pages/therapist/reviews'));
+const TherapistPatientAssessmentPage = lazy(
+  () => import('../pages/therapist/patient-assessment')
+);
+
+// Developer Pages
 
 export const LAYOUT_MAP = {
   BaseLayout,
@@ -163,12 +171,14 @@ export const COMPONENT_MAP = {
   ExpertHomePage,
   CalendarPage,
   ExpertReviewsPage,
+  PatientAssessmentPage,
 
   // Therapist Pages
   TherapistHomePage,
   CalendarPageForTherapist,
   TherapistConsultationListPage,
   TherapistReviewsPage,
+  TherapistPatientAssessmentPage,
 
   // Developer Pages
   DeveloperPageComponent,
@@ -222,6 +232,7 @@ export const ROUTES = {
 
   // EXPERT Protected routes
   EXPERT_CONSULTATIONS: '/expert/consultations',
+  EXPERT_PATIENT_ASSESSMENT: '/expert/patient-assessment/:patientId',
   EXPERT_TRANSACTIONS: '/expert/transactions',
   EXPERT_CALENDAR: '/expert/calendar',
   EXPERT_REVIEWS: '/expert/reviews',
@@ -229,6 +240,8 @@ export const ROUTES = {
   // THERAPIST Protected routes
   THERAPIST_CALENDAR: '/therapist/calendar',
   THERAPIST_CONSULTATION_LIST: '/therapist/consultation-list',
+  THERAPIST_PATIENT_ASSESSMENT:
+    '/therapist/consultation-list/:patientId/assessment',
   THERAPIST_REVIEWS: '/therapist/reviews',
 
   // COUNTRY ADMIN Protected routes
@@ -500,6 +513,15 @@ const EXPERT_ROUTES: IAllowedRoutes[] = [
     isAChildOf: null,
   },
   {
+    path: ROUTES.EXPERT_PATIENT_ASSESSMENT,
+    layout: 'MainLayout',
+    component: 'PatientAssessmentPage',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: ROUTES.EXPERT_CONSULTATIONS,
+  },
+  {
     path: ROUTES.EXPERT_TRANSACTIONS,
     layout: 'MainLayout',
     component: 'TransactionHistoryPage',
@@ -556,6 +578,15 @@ const THERAPIST_ROUTES: IAllowedRoutes[] = [
     sideBarTitle: 'Reviews',
     sideBarIcon: 'RateReviewIcon',
     isAChildOf: null,
+  },
+  {
+    path: ROUTES.THERAPIST_PATIENT_ASSESSMENT,
+    layout: 'MainLayout',
+    component: 'TherapistPatientAssessmentPage',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: ROUTES.THERAPIST_CONSULTATION_LIST,
   },
 ];
 
