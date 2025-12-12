@@ -361,9 +361,9 @@ const PatientAssessment = () => {
           variant="scrollable"
           scrollButtons="auto"
         >
-          <Tab label="SAT" />
-          <Tab label="DAT" />
-          <Tab label="ADT" />
+          <Tab label="Sleep Apnea Test" />
+          <Tab label="Depression Diagnostic Test" />
+          <Tab label="Anxiety Diagnostic Test" />
           <Tab label="Disclaimer" />
           <Tab label="Consent" />
         </Tabs>

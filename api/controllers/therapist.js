@@ -810,19 +810,19 @@ export const getPatientAssessmentStatus = async (req, res) => {
 
   try {
     const tables = [
-      'assessment_sat',
-      'assessment_dat',
-      'assessment_adt',
-      'assessment_disclaimer',
-      'assessment_research_consent'
+      'dmac_webapp_assessment_sat',
+      'dmac_webapp_assessment_dat',
+      'dmac_webapp_assessment_adt',
+      'dmac_webapp_assessment_disclaimer',
+      'dmac_webapp_assessment_research_consent'
     ]
     const results = {}
     const keyMap = {
-      assessment_sat: 'sat',
-      assessment_dat: 'dat',
-      assessment_adt: 'adt',
-      assessment_disclaimer: 'disclaimer',
-      assessment_research_consent: 'consent'
+      dmac_webapp_assessment_sat: 'sat',
+      dmac_webapp_assessment_dat: 'dat',
+      dmac_webapp_assessment_adt: 'adt',
+      dmac_webapp_assessment_disclaimer: 'disclaimer',
+      dmac_webapp_assessment_research_consent: 'consent'
     }
 
     for (const table of tables) {

@@ -2172,19 +2172,19 @@ export const getAssessmentStatus = async (req, res) => {
   const userId = req.user.userId
   try {
     const tables = [
-      'assessment_sat',
-      'assessment_dat',
-      'assessment_adt',
-      'assessment_disclaimer',
-      'assessment_research_consent'
+      'dmac_webapp_assessment_sat',
+      'dmac_webapp_assessment_dat',
+      'dmac_webapp_assessment_adt',
+      'dmac_webapp_assessment_disclaimer',
+      'dmac_webapp_assessment_research_consent'
     ]
     const results = {}
     const keyMap = {
-      assessment_sat: 'sat',
-      assessment_dat: 'dat',
-      assessment_adt: 'adt',
-      assessment_disclaimer: 'disclaimer',
-      assessment_research_consent: 'consent'
+      dmac_webapp_assessment_sat: 'sat',
+      dmac_webapp_assessment_dat: 'dat',
+      dmac_webapp_assessment_adt: 'adt',
+      dmac_webapp_assessment_disclaimer: 'disclaimer',
+      dmac_webapp_assessment_research_consent: 'consent'
     }
 
     for (const table of tables) {
@@ -2205,11 +2205,11 @@ export const submitAssessmentTab = async (req, res) => {
   const { tab, data } = req.body
 
   const tableMap = {
-    sat: 'assessment_sat',
-    dat: 'assessment_dat',
-    adt: 'assessment_adt',
-    disclaimer: 'assessment_disclaimer',
-    consent: 'assessment_research_consent'
+    sat: 'dmac_webapp_assessment_sat',
+    dat: 'dmac_webapp_assessment_dat',
+    adt: 'dmac_webapp_assessment_adt',
+    disclaimer: 'dmac_webapp_assessment_disclaimer',
+    consent: 'dmac_webapp_assessment_research_consent'
   }
 
   if (!tableMap[tab]) {

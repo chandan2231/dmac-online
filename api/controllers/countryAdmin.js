@@ -48,7 +48,7 @@ export const createCountryAdmin = async (req, res) => {
 
     // Insert new user - Removed license_number and license_expiration
     const insertQuery = `
-      INSERT INTO dmac_webapp_users (name, mobile, email, password, role, verified, verification_token, time_zone, country, address, speciality, contracted_rate_per_consult, province_title, province_id, finance_manager_id, language) 
+      INSERT INTO dmac_webapp_users (name, mobile, email, password, role, verified, verification_token, time_zone, country, address, province_title, province_id, finance_manager_id, language) 
       VALUES (?)`
     const values = [
       req.body.name,
@@ -61,8 +61,6 @@ export const createCountryAdmin = async (req, res) => {
       req.body.time_zone,
       req.body.country,
       req.body.address,
-      req.body.speciality,
-      req.body.contracted_rate_per_consult,
       req.body.provinceTitle,
       req.body.provinceValue,
       req.body.finance_manager_id,

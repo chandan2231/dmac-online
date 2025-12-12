@@ -186,6 +186,7 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
   };
 
   const handleSubmit = async (tab: string) => {
+    console.log('tabtabtab', tab)
       let payload: unknown = null;
 
       if (tab === 'sat') {
@@ -269,9 +270,9 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         variant="scrollable"
         scrollButtons="auto"
       >
-        <Tab label="SAT" />
-        <Tab label="DAT" />
-        <Tab label="ADT" />
+        <Tab label="Sleep Apnea Test" />
+        <Tab label="Depression Diagnostic Test" />
+        <Tab label="Anxiety Diagnostic Test" />
         <Tab label="Disclaimer" />
         <Tab label="Consent" />
       </Tabs>
@@ -384,7 +385,7 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
                   label="Name ; Type electronic signature"
                   value={disclaimerSignature}
                   onChange={(e) => setDisclaimerSignature(e.target.value)}
-                  fullWidth
+                  style={{width: '50%'}}
               />
               <TextField
                   label="Date"
@@ -392,6 +393,7 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
                   value={disclaimerDate}
                   onChange={(e) => setDisclaimerDate(e.target.value)}
                   InputLabelProps={{ shrink: true }}
+                  style={{width: '50%'}}
               />
           </Box>
           <Button variant="contained" sx={{ mt: 2 }} onClick={() => handleSubmit('disclaimer')} disabled={submitting}>
