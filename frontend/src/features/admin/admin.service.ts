@@ -777,6 +777,37 @@ const updateCountryAdminPassword = async (payload: unknown) => {
   }
 };
 
+const getPatientDocuments = async (patientId: number) => {
+  try {
+    const response = await HttpService.post('/admin/patient-documents', {
+      patient_id: patientId,
+    });
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching patient documents:', error);
+    return {
+      status: 500,
+      data: [],
+      message: 'Failed to fetch documents',
+    };
+  }
+};
+
+const getPatientAssessmentStatus = async (patientId: number) => {
+  try {
+    const response = await HttpService.post(
+      '/admin/patient-assessment-status',
+      {
+        patient_id: patientId,
+      }
+    );
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching patient assessment status:', error);
+    return null;
+  }
+};
+
 const AdminService = {
   getProductsListing,
   updateProduct, // ✅ export update service
@@ -803,6 +834,8 @@ const AdminService = {
   updateCountryAdmin,
   updateCountryAdminStatus,
   updateCountryAdminPassword,
+  getPatientDocuments,
+  getPatientAssessmentStatus,
 };
 
 export default AdminService;

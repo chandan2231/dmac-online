@@ -508,3 +508,68 @@ function decryptString(encoded) {
   decrypted += decipher.final('utf8')
   return decrypted
 }
+
+export const getPatientDocuments = async (req, res) => {
+  const { patient_id } = req.body
+
+  if (!patient_id) {
+    return res.status(400).json({ message: 'Patient ID is required' })
+  }
+
+  try {
+    const query =
+      'SELECT * FROM dmac_webapp_patient_documents WHERE user_id = ? ORDER BY created_at DESC'
+    const documents = await new Promise((resolve, reject) => {
+      db.query(query, [patient_id], (err, result) => {
+        if (err) reject(err)
+        resolve(result)
+      })
+    })
+    res.status(200).json({ status: 200, data: documents })
+  } catch (error) {
+    console.error('Error fetching patient documents:', error)
+    res.status(500).json({ message: 'Error fetching documents' })
+  }
+}
+
+export const getPatientAssessmentStatus = async (req, res) => {
+  const { patient_id } = req.body
+
+  if (!patient_id) {
+    return res.status(400).json({ message: 'Patient ID is required' })
+  }
+
+  try {
+    const tables = [
+      'assessment_sat',
+      'assessment_dat',
+      'assessment_adt',
+      'assessment_disclaimer',
+      'assessment_research_consent'
+    ]
+    const results = {}
+    const keyMap = {
+      assessment_sat: 'sat',
+      assessment_dat: 'dat',
+      assessment_adt: 'adt',
+      assessment_disclaimer: 'disclaimer',
+      assessment_research_consent: 'consent'
+    }
+
+    for (const table of tables) {
+      const query = `SELECT data FROM ${table} WHERE user_id = ? ORDER BY id DESC LIMIT 1`
+      const result = await new Promise((resolve, reject) => {
+        db.query(query, [patient_id], (err, data) => {
+          if (err) reject(err)
+          resolve(data)
+        })
+      })
+      results[keyMap[table]] = result.length > 0 ? result[0].data : null
+    }
+
+    res.status(200).json(results)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error fetching assessment status' })
+  }
+}

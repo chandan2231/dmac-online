@@ -9,11 +9,12 @@ import {
   updateUsersDetails,
   changeUserPassword,
   getUsersTransactionList,
-  getConsultationList
+  getConsultationList,
+  getPatientDocuments,
+  getPatientAssessmentStatus
 } from '../controllers/admin.js'
 
 import { authenticateUser } from '../utils/middleware.js'
-
 
 const router = express.Router()
 
@@ -25,7 +26,17 @@ router.get('/products/list', getProductList)
 router.post('/products/update', authenticateUser, updateProductDetails)
 router.post('/products/status/change', authenticateUser, changeProductStatus)
 router.post('/user/reset/password', authenticateUser, changeUserPassword)
-router.post('/user/transactions/list', authenticateUser, getUsersTransactionList)
+router.post(
+  '/user/transactions/list',
+  authenticateUser,
+  getUsersTransactionList
+)
 router.post('/consultations/list', authenticateUser, getConsultationList)
+router.post('/patient-documents', authenticateUser, getPatientDocuments)
+router.post(
+  '/patient-assessment-status',
+  authenticateUser,
+  getPatientAssessmentStatus
+)
 
 export default router

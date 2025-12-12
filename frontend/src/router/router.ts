@@ -39,6 +39,9 @@ const ConsultationsListingPageComponent = lazy(
 const TherapistsConsultationsListingPageComponent = lazy(
   () => import('../pages/admin/therapists-consultations-listing')
 );
+const AdminPatientAssessmentPage = lazy(
+  () => import('../pages/admin/patient-assessment')
+);
 
 // Developer Pages
 const DeveloperPageComponent = lazy(() => import('../pages/developer'));
@@ -151,6 +154,7 @@ export const COMPONENT_MAP = {
   ConsultationsListingPageComponent,
   TherapistsConsultationsListingPageComponent,
   CountryAdminListingPage,
+  AdminPatientAssessmentPage,
 
   // Patient Pages
   PatientRegisterPage,
@@ -226,6 +230,7 @@ export const ROUTES = {
   CONSULTATIONS: '/admin/consultations',
   THERAPIST_CONSULTATIONS: '/admin/therapists-consultations',
   COUNTRY_ADMIN_LISTING: '/admin/countries-admin-listing',
+  ADMIN_PATIENT_ASSESSMENT: '/admin/consultations/:patientId/assessment',
 
   // Not Found
   NOT_FOUND: '*',
@@ -680,6 +685,15 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     sideBarTitle: 'Therapists Consultations',
     sideBarIcon: 'EventIcon',
     isAChildOf: null,
+  },
+  {
+    path: ROUTES.ADMIN_PATIENT_ASSESSMENT,
+    layout: 'MainLayout',
+    component: 'AdminPatientAssessmentPage',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: ROUTES.CONSULTATIONS,
   },
   {
     path: ROUTES.NOT_FOUND,
