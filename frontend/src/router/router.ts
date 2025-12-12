@@ -40,6 +40,9 @@ const TherapistsConsultationsListingPageComponent = lazy(
   () => import('../pages/admin/therapists-consultations-listing')
 );
 
+// Developer Pages
+const DeveloperPageComponent = lazy(() => import('../pages/developer'));
+
 // Layouts
 import MainLayout from '../layouts/MainLayout';
 import AuthLayout from '../layouts/AuthLayout';
@@ -166,6 +169,9 @@ export const COMPONENT_MAP = {
   CalendarPageForTherapist,
   TherapistConsultationListPage,
   TherapistReviewsPage,
+
+  // Developer Pages
+  DeveloperPageComponent,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -234,6 +240,9 @@ export const ROUTES = {
   COUNTRY_ADMIN_CONSULTATIONS: '/country-admin/consultations',
   COUNTRY_ADMIN_THERAPIST_CONSULTATIONS:
     '/country-admin/therapists-consultations',
+
+  // Developer Route
+  DEVELOPER: '/developer',
 } as const;
 
 export type ROUTES = (typeof ROUTES)[keyof typeof ROUTES];
@@ -318,6 +327,11 @@ export const PUBLIC_ROUTES = [
     path: ROUTES.PATIENT_LOGIN,
     layout: LAYOUT_MAP['PatientLayout'],
     component: COMPONENT_MAP['PatientLoginPage'],
+  },
+  {
+    path: ROUTES.DEVELOPER,
+    layout: LAYOUT_MAP['BaseLayout'],
+    component: COMPONENT_MAP['DeveloperPageComponent'],
   },
 ];
 
