@@ -486,12 +486,7 @@ function CountryAdminTable() {
               error={!!errors.address}
               helperText={errors.address?.message}
             />
-            <ModernInput
-              label="Speciality"
-              {...register('speciality')}
-              error={!!errors.speciality}
-              helperText={errors.speciality?.message}
-            />
+            
           </Box>
 
           <Box display="flex" flexDirection="row" gap={2}>
@@ -548,12 +543,7 @@ function CountryAdminTable() {
             </Box>
           </Box>
 
-          <ModernInput
-            label="Rate per Consult"
-            {...register('contracted_rate_per_consult')}
-            error={!!errors.contracted_rate_per_consult}
-            helperText={errors.contracted_rate_per_consult?.message}
-          />
+          
 
           <MorenButton
             type="submit"
@@ -995,13 +985,6 @@ const CountryAdminListing = () => {
               error={!!errors.address}
               helperText={errors.address?.message}
             />
-            <ModernInput
-              label="Speciality"
-              placeholder="Enter speciality"
-              {...register('speciality')}
-              error={!!errors.speciality}
-              helperText={errors.speciality?.message}
-            />
           </Box>
 
           <Box display="flex" flexDirection="row" gap={2}>
@@ -1057,15 +1040,6 @@ const CountryAdminListing = () => {
               )}
             </Box>
           </Box>
-
-          <ModernInput
-            label="Rate per Consult"
-            placeholder="Enter rate"
-            {...register('contracted_rate_per_consult')}
-            error={!!errors.contracted_rate_per_consult}
-            helperText={errors.contracted_rate_per_consult?.message}
-          />
-
           <MorenButton
             type="submit"
             variant="contained"

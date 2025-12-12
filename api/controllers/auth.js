@@ -511,7 +511,7 @@ export const logout = (req, res) => {
 }
 
 // Customers registration and login journey
-export const patinetRegistration = async (req, res) => {
+export const patientRegistration = async (req, res) => {
   try {
     // 🔍 Check if product is selected
     if (
