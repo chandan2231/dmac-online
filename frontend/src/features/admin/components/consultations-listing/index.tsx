@@ -1,5 +1,6 @@
 import type { GridColDef } from '@mui/x-data-grid';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -23,11 +24,13 @@ import timezone from 'dayjs/plugin/timezone';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../store';
 import { get } from 'lodash';
+import { ROUTES } from '../../../../router/router';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 function ConsultationsTable() {
+  const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
   const userTimezone = get(user, 'time_zone') || 'UTC';
 
@@ -74,6 +77,18 @@ function ConsultationsTable() {
   const handleCloseViewModal = () => {
     setSelectedConsultation(null);
     setIsViewModalOpen(false);
+  };
+
+  const handleViewDocuments = () => {
+    if (menuConsultation) {
+      navigate(
+        ROUTES.ADMIN_PATIENT_ASSESSMENT.replace(
+          ':patientId',
+          String(menuConsultation.user_id)
+        )
+      );
+    }
+    handleMenuClose();
   };
 
   // Prepare consultant options for filter
@@ -560,6 +575,7 @@ function ConsultationsTable() {
         >
           View Details
         </MenuItem>
+        <MenuItem onClick={handleViewDocuments}>View Documents</MenuItem>
       </Menu>
     </Box>
   );
