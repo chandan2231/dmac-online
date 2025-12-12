@@ -23,6 +23,8 @@ import timezone from 'dayjs/plugin/timezone';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../store';
 import { get } from 'lodash';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../../router/router';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -30,6 +32,7 @@ dayjs.extend(timezone);
 function TherapistConsultationsTable() {
   const { user } = useSelector((state: RootState) => state.auth);
   const userTimezone = get(user, 'time_zone') || 'UTC';
+  const navigate = useNavigate();
 
   const [consultantFilter, setConsultantFilter] = useState<number | null>(null);
   const { data, isLoading } = useGetConsultationsListing({
@@ -74,6 +77,18 @@ function TherapistConsultationsTable() {
   const handleCloseViewModal = () => {
     setSelectedConsultation(null);
     setIsViewModalOpen(false);
+  };
+
+  const handleViewDocuments = () => {
+    if (menuConsultation) {
+      navigate(
+        ROUTES.ADMIN_PATIENT_ASSESSMENT.replace(
+          ':patientId',
+          String(menuConsultation.user_id)
+        )
+      );
+      handleMenuClose();
+    }
   };
 
   // Prepare therapist options for filter
@@ -560,6 +575,7 @@ function TherapistConsultationsTable() {
         >
           View Details
         </MenuItem>
+        <MenuItem onClick={handleViewDocuments}>View Documents</MenuItem>
       </Menu>
     </Box>
   );
