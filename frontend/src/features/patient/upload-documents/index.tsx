@@ -95,10 +95,10 @@ const UploadDocuments = () => {
 
   const isAssessmentComplete =
     assessmentStatus &&
-    assessmentStatus.adl &&
-    assessmentStatus.fall_risk &&
-    assessmentStatus.depression &&
-    assessmentStatus.sleep &&
+    assessmentStatus.sat &&
+    assessmentStatus.dat &&
+    assessmentStatus.adt &&
+    assessmentStatus.disclaimer &&
     assessmentStatus.consent;
 
   return (
