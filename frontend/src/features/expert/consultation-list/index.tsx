@@ -25,9 +25,9 @@ import { useGetExpertPatients } from '../hooks/useGetExpertPatients';
 import { useState } from 'react';
 import UpdateStatusModal from './UpdateStatusModal';
 import ReviewModal from './ReviewModal';
-import DocumentsModal from './DocumentsModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
 import { useToast } from '../../../providers/toast-provider';
+import { useNavigate } from 'react-router-dom';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -46,6 +46,7 @@ interface IConsultation {
 }
 
 const ConsultationList = () => {
+  const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
   const { showToast } = useToast();
   const [selectedPatient, setSelectedPatient] = useState<{
@@ -78,12 +79,6 @@ const ConsultationList = () => {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedReviewConsultationId, setSelectedReviewConsultationId] =
     useState<number | null>(null);
-
-  const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
-  const [selectedPatientForDocs, setSelectedPatientForDocs] = useState<{
-    id: number;
-    name: string;
-  } | null>(null);
 
   const handleOpenModal = (consultation: IConsultation) => {
     setSelectedConsultation(consultation);
@@ -125,11 +120,7 @@ const ConsultationList = () => {
 
   const handleViewDocumentsClick = () => {
     if (menuConsultation) {
-      setSelectedPatientForDocs({
-        id: menuConsultation.patient_id,
-        name: menuConsultation.patient_name,
-      });
-      setDocumentsModalOpen(true);
+      navigate(`/expert/patient-assessment/${menuConsultation.patient_id}`);
     }
     handleMenuClose();
   };
@@ -137,11 +128,6 @@ const ConsultationList = () => {
   const handleCloseReviewModal = () => {
     setReviewModalOpen(false);
     setSelectedReviewConsultationId(null);
-  };
-
-  const handleCloseDocumentsModal = () => {
-    setDocumentsModalOpen(false);
-    setSelectedPatientForDocs(null);
   };
 
   const handleSubmitStatus = (status: number, notes: string) => {
@@ -338,12 +324,6 @@ const ConsultationList = () => {
         onClose={handleCloseReviewModal}
         consultationId={selectedReviewConsultationId}
       />
-      <DocumentsModal
-        open={documentsModalOpen}
-        onClose={handleCloseDocumentsModal}
-        patientId={selectedPatientForDocs?.id || null}
-        patientName={selectedPatientForDocs?.name || ''}
-      />
       <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
@@ -356,7 +336,9 @@ const ConsultationList = () => {
           Edit Status
         </MenuItem>
         <MenuItem onClick={handleViewReviewClick}>View Review</MenuItem>
-        <MenuItem onClick={handleViewDocumentsClick}>View Documents</MenuItem>
+        <MenuItem onClick={handleViewDocumentsClick}>
+          View Assessment & Documents
+        </MenuItem>
       </Menu>
     </Box>
   );

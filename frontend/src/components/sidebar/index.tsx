@@ -17,7 +17,7 @@ import { useSidebarContext } from './provider';
 import { DRAWER_WIDTH, MINI_DRAWER_WIDTH } from '../../utils/constants';
 import { useSelector } from 'react-redux';
 import { getSidebarOptions } from '../../utils/functions';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, matchPath } from 'react-router-dom';
 import withAuthGuard from '../../middlewares/withAuthGuard';
 import mappedIcons from './mapped-icons';
 
@@ -63,7 +63,13 @@ const Sidebar = () => {
       <Toolbar />
       <List>
         {getSidebarOptions(allowedRoutes).map((option, index) => {
-          const isActive = location.pathname === get(option, ['path']);
+          const isActive =
+            location.pathname === get(option, ['path']) ||
+            (get(option, ['nestedRoutes'], []) as string[]).some(
+              route =>
+                typeof route === 'string' &&
+                !!matchPath(route, location.pathname)
+            );
           const IconComponent = mappedIcons(String(get(option, ['icon'])));
           return (
             <ListItem key={index} disablePadding sx={{ display: 'block' }}>

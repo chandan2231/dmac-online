@@ -2171,27 +2171,29 @@ export const deleteUserDocument = async (req, res) => {
 export const getAssessmentStatus = async (req, res) => {
   const userId = req.user.userId
   try {
-    const query = 'SELECT * FROM patient_assessments WHERE user_id = ?'
-    const result = await queryDB(query, [userId])
-
-    if (result.length === 0) {
-      return res.status(200).json({
-        adl: false,
-        fall_risk: false,
-        depression: false,
-        sleep: false,
-        consent: false
-      })
+    const tables = [
+      'assessment_sat',
+      'assessment_dat',
+      'assessment_adt',
+      'assessment_disclaimer',
+      'assessment_research_consent'
+    ]
+    const results = {}
+    const keyMap = {
+      assessment_sat: 'sat',
+      assessment_dat: 'dat',
+      assessment_adt: 'adt',
+      assessment_disclaimer: 'disclaimer',
+      assessment_research_consent: 'consent'
     }
 
-    const assessment = result[0]
-    res.status(200).json({
-      adl: assessment.adl_data || null,
-      fall_risk: assessment.fall_risk_data || null,
-      depression: assessment.depression_data || null,
-      sleep: assessment.sleep_data || null,
-      consent: assessment.consent_data || null
-    })
+    for (const table of tables) {
+      const query = `SELECT data FROM ${table} WHERE user_id = ? ORDER BY id DESC LIMIT 1`
+      const result = await queryDB(query, [userId])
+      results[keyMap[table]] = result.length > 0 ? result[0].data : null
+    }
+
+    res.status(200).json(results)
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: 'Error fetching assessment status' })
@@ -2202,27 +2204,23 @@ export const submitAssessmentTab = async (req, res) => {
   const userId = req.user.userId
   const { tab, data } = req.body
 
-  if (!['adl', 'fall_risk', 'depression', 'sleep', 'consent'].includes(tab)) {
+  const tableMap = {
+    sat: 'assessment_sat',
+    dat: 'assessment_dat',
+    adt: 'assessment_adt',
+    disclaimer: 'assessment_disclaimer',
+    consent: 'assessment_research_consent'
+  }
+
+  if (!tableMap[tab]) {
     return res.status(400).json({ message: 'Invalid tab' })
   }
 
-  const columnMap = {
-    adl: 'adl_data',
-    fall_risk: 'fall_risk_data',
-    depression: 'depression_data',
-    sleep: 'sleep_data',
-    consent: 'consent_data'
-  }
-
-  const column = columnMap[tab]
+  const tableName = tableMap[tab]
   const jsonData = JSON.stringify(data)
 
   try {
-    const query = `
-      INSERT INTO patient_assessments (user_id, ${column})
-      VALUES (?, ?)
-      ON DUPLICATE KEY UPDATE ${column} = VALUES(${column})
-    `
+    const query = `INSERT INTO ${tableName} (user_id, data) VALUES (?, ?)`
     await queryDB(query, [userId, jsonData])
     res.status(200).json({ message: 'Assessment submitted successfully' })
   } catch (error) {

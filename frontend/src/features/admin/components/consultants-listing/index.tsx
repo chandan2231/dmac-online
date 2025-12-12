@@ -35,6 +35,8 @@ import ModernMultiSelect from '../../../../components/multi-select';
 import type { ILanguage } from '../../../../i18n/language.interface';
 import { useQuery } from '@tanstack/react-query';
 import MorenCard from '../../../../components/card';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../../../store';
 
 const FINANCE_MANAGER_LIST = [
   {
@@ -267,6 +269,8 @@ function ConsultantTable({
   onViewReviews: (consultant: IConsultant) => void;
 }) {
   const { data, isLoading, refetch } = useGetConsultantsListing();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const isCountryAdmin = user?.role === 'COUNTRY_ADMIN';
   const { data: listingResponse } = useLanguageList({
     USER_TYPE: 'EXPERT',
   });
@@ -638,6 +642,7 @@ function ConsultantTable({
                 }}
                 fullWidth
                 searchable
+                disabled={isCountryAdmin}
               />
               {errors.country && (
                 <Typography color="error">{errors.country.message}</Typography>
@@ -1040,6 +1045,8 @@ function ConsultantTable({
 
 /* -------------------- CONSULTANTS LISTING -------------------- */
 const ConsultantsListing = () => {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const isCountryAdmin = user?.role === 'COUNTRY_ADMIN';
   const [createConsultantModalOpen, setCreateConsultantModalOpen] =
     useState(false);
   const [selectedConsultantForReviews, setSelectedConsultantForReviews] =
@@ -1066,8 +1073,24 @@ const ConsultantsListing = () => {
     defaultValues: { state: '', languages: [] },
   });
 
-  const handleOpenCreateConsultantModal = () =>
+  const handleOpenCreateConsultantModal = () => {
     setCreateConsultantModalOpen(true);
+    if (isCountryAdmin && user) {
+      const countryOpt = COUNTRIES_LIST.find(c => c.label === user.country);
+      if (countryOpt) {
+        setSelectedCountry(countryOpt);
+        setValue('country', countryOpt.label, { shouldValidate: true });
+
+        const stateOpt = countryOpt.states.find(
+          s => s.value === user.province_id
+        );
+        if (stateOpt) {
+          setSelectedState(stateOpt);
+          setValue('state', stateOpt.value, { shouldValidate: true });
+        }
+      }
+    }
+  };
   const handleCloseCreateConsultantModal = () => {
     setCreateConsultantModalOpen(false);
     reset();
@@ -1221,6 +1244,7 @@ const ConsultantsListing = () => {
                 }}
                 fullWidth
                 searchable
+                disabled={isCountryAdmin}
               />
               {errors.country && (
                 <Typography color="error">{errors.country.message}</Typography>

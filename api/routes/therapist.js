@@ -9,7 +9,8 @@ import {
   updateConsultationStatus,
   rescheduleTherapistConsultation,
   getTherapistPatients,
-  getPatientDocuments
+  getPatientDocuments,
+  getPatientAssessmentStatus
 } from '../controllers/therapist.js'
 
 import { authenticateUser } from '../utils/middleware.js'
@@ -26,5 +27,10 @@ router.post('/update-status', authenticateUser, updateConsultationStatus)
 router.post('/reschedule', authenticateUser, rescheduleTherapistConsultation)
 router.post('/patients', authenticateUser, getTherapistPatients)
 router.post('/patient-documents', authenticateUser, getPatientDocuments)
+router.post(
+  '/patient-assessment-status',
+  authenticateUser,
+  getPatientAssessmentStatus
+)
 
 export default router
