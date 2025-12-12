@@ -636,6 +636,16 @@ export const capturePatientPayment = async (req, res) => {
         )
       })
 
+      // Generate JWT token for game access
+      const gameAccessToken = jwt.sign(
+        { userId: userId, userType: 'USER' },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      )
+
+      // Build game URL with token
+      const gameUrl = `${process.env.DOMAIN}questioners?token=${gameAccessToken}`
+
       const subject = 'Payment Receipt — Payment Approved'
       const html = `
       <p>Dear ${userName},</p>
@@ -649,6 +659,16 @@ export const capturePatientPayment = async (req, res) => {
       </table>
       <p>No service tax due to Tax Exempt Status.</p>
       <p>Please note: The above payment is non-refundable.</p>
+      
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+      
+      <h3>Ready to Start Playing?</h3>
+      <p>Click the button below to access your game:</p>
+      <div style="text-align: center; margin: 20px 0;">
+        <a href="${gameUrl}" style="display: inline-block; padding: 12px 30px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">Start Playing Now</a>
+      </div>
+      <p style="font-size: 12px; color: #666;">Or copy and paste this link into your browser:<br/><a href="${gameUrl}">${gameUrl}</a></p>
+      
       <p>Regards,<br/>Admin<br/>DMAC.COM</p>
       `
       await sendEmail(userEmail, subject, html, html)
@@ -788,6 +808,89 @@ export const getPatientProductByUserId = async (req, res) => {
       purchased: true,
       product: result,
       message: 'Purchased Product'
+    })
+  })
+}
+
+export const validateTokenAndGetUser = (req, res) => {
+  const { token } = req.body
+
+  if (!token) {
+    return res.status(400).json({
+      status: 400,
+      isValid: false,
+      message: 'Token is required'
+    })
+  }
+
+  // Verify the JWT token
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({
+        status: 401,
+        isValid: false,
+        message: 'Invalid or expired token'
+      })
+    }
+
+    const userId = decoded.userId
+
+    // Fetch user details from database
+    const query = `
+      SELECT 
+        u.*,
+        l.code AS language_code
+      FROM dmac_webapp_users u
+      LEFT JOIN dmac_webapp_language l
+        ON l.id = u.language
+      WHERE u.id = ? 
+        AND u.status = ?;
+    `
+
+    db.query(query, [userId, 1], (err, data) => {
+      if (err) {
+        console.error('Database Error:', err)
+        return res.status(500).json({
+          status: 500,
+          isValid: false,
+          message: 'Internal Server Error'
+        })
+      }
+
+      if (data.length === 0) {
+        return res.status(404).json({
+          status: 404,
+          isValid: false,
+          message: 'User not found or inactive'
+        })
+      }
+
+      const user = data[0]
+
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user
+
+      const userData = {
+        name: user.name,
+        email: user.email,
+        id: user.id,
+        token: token,
+        language: user.language,
+        phone: user.mobile,
+        languageCode: user.language_code,
+        role: user.role,
+        patient_payment: user.patient_payment,
+        google_access_token: user.google_access_token,
+        google_refresh_token: user.google_refresh_token,
+        time_zone: user.time_zone
+      }
+
+      return res.status(200).json({
+        status: 200,
+        isValid: true,
+        message: 'Token is valid',
+        user: userData
+      })
     })
   })
 }

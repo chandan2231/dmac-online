@@ -24,8 +24,10 @@ export const getModules = async (req, res) => {
 export const startSession = async (req, res) => {
   const { moduleId } = req.params
   const { user_id, language_code } = req.body
+  console.log(`[StartSession] starting for module ${moduleId}, user ${user_id}, lang ${language_code}`);
 
   if (!user_id || !language_code) {
+    console.error('[StartSession] Missing user_id or language_code');
     return res.status(400).json({ error: 'Missing user_id or language_code' })
   }
 
@@ -33,25 +35,32 @@ export const startSession = async (req, res) => {
     const modules = await query('SELECT * FROM modules WHERE id = ?', [
       moduleId
     ])
-    if (modules.length === 0)
+    if (modules.length === 0) {
+      console.error('[StartSession] Module not found');
       return res.status(404).json({ error: 'Module not found' })
+    }
     const module = modules[0]
+    console.log(`[StartSession] Found module: ${module.code}`);
 
     const result = await query(
       'INSERT INTO sessions (user_id, module_id, score, status) VALUES (?, ?, 0, "in_progress")',
       [user_id, module.id]
     )
     const sessionId = result.insertId
+    console.log(`[StartSession] Created session ${sessionId}`);
 
     if (module.code === 'IMAGE_FLASH') {
+      console.log('[StartSession] Loading IMAGE_FLASH data');
       const questions = await query(
         'SELECT * FROM questions WHERE module_id = ? AND question_type = "flash_recall"',
         [module.id]
       )
-      if (questions.length === 0)
+      if (questions.length === 0) {
+        console.error('[StartSession] No questions found for IMAGE_FLASH');
         return res
           .status(500)
           .json({ error: 'No questions found for module' })
+      }
       const question = questions[0]
 
       const items = await query(
@@ -63,6 +72,7 @@ export const startSession = async (req, res) => {
          ORDER BY qi.item_order`,
         [question.id, language_code]
       )
+      console.log(`[StartSession] Loaded ${items.length} items`);
 
       res.json({
         session_id: sessionId,
@@ -88,10 +98,13 @@ export const startSession = async (req, res) => {
           'You will see 5 images displayed one at a time for 5 seconds each. Then you will be asked to recall them.'
       })
     } else if (module.code === 'VISUAL_SPATIAL') {
+      console.log('[StartSession] Loading VISUAL_SPATIAL data');
       const questions = await query(
         'SELECT * FROM questions WHERE module_id = ? ORDER BY order_index',
         [module.id]
       )
+
+      console.log(`[StartSession] Found ${questions.length} questions`);
 
       const rounds = []
       for (const q of questions) {
@@ -112,6 +125,7 @@ export const startSession = async (req, res) => {
           }))
         })
       }
+      console.log(`[StartSession] Prepared ${rounds.length} rounds`);
 
       res.json({
         session_id: sessionId,
@@ -127,123 +141,137 @@ export const startSession = async (req, res) => {
           'You will be shown an image. Then select the same image from 4 choices.'
       })
     } else {
+      console.error(`[StartSession] Unknown module code: ${module.code}`);
       res.status(400).json({ error: 'Unknown module code' })
     }
   } catch (err) {
-    console.error(err)
+    console.error('[StartSession] Error:', err);
     res.status(500).json({ error: err.message })
   }
 }
 
 export const submitSession = async (req, res) => {
   const { moduleId, sessionId } = req.params
-  
+  console.log(`[SubmitSession] Module ${moduleId}, Session ${sessionId}`);
+
   // We should verify the module ID exists and maybe check if session matches module
   // But for now we rely on module.code retrieved from ID to decide logic
-  
+
   try {
     const modules = await query('SELECT * FROM modules WHERE id = ?', [moduleId])
     if (modules.length === 0) return res.status(404).json({ error: 'Module not found' })
     const module = modules[0]
+    console.log(`[SubmitSession] Module Code: ${module.code}`);
 
     if (module.code === 'IMAGE_FLASH') {
-        const { question_id, language_code, answer_text } = req.body
-        
-        // 1. Get items and acceptable answers
-        const items = await query(
-            `SELECT qi.id, t.accepted_answers 
+      const { question_id, language_code, answer_text } = req.body
+      console.log(`[SubmitSession] Processing IMAGE_FLASH answer: ${answer_text}`);
+
+      // 1. Get items and acceptable answers
+      const items = await query(
+        `SELECT qi.id, t.accepted_answers 
              FROM question_items qi
              JOIN question_item_i18n t ON qi.id = t.question_item_id
              WHERE qi.question_id = ? AND t.language_code = ?`,
-            [question_id, language_code]
-        )
+        [question_id, language_code]
+      )
 
-        // 2. Process user answers
-        const userWords = (answer_text || '').toLowerCase().split(/[\s,]+/).filter(Boolean)
-        
-        let correctCount = 0
-        const matchedItems = new Set()
+      // 2. Process user answers
+      const userWords = (answer_text || '').toLowerCase().split(/[\s,]+/).filter(Boolean)
 
-        for (const word of userWords) {
-            for (const item of items) {
-                if (matchedItems.has(item.id)) continue; 
+      let correctCount = 0
+      const matchedItems = new Set()
 
-                const synonyms = (item.accepted_answers || '').toLowerCase().split(',').map(s => s.trim().replace(/\.$/, ''))
-                if (synonyms.includes(word)) {
-                    correctCount++
-                    matchedItems.add(item.id)
-                    break 
-                }
-            }
-            if (correctCount >= 5) break 
+      for (const word of userWords) {
+        for (const item of items) {
+          if (matchedItems.has(item.id)) continue;
+
+          const synonyms = (item.accepted_answers || '').toLowerCase().split(',').map(s => s.trim().replace(/\.$/, ''))
+          if (synonyms.includes(word)) {
+            correctCount++
+            matchedItems.add(item.id)
+            break
+          }
         }
+        if (correctCount >= 5) break
+      }
+      console.log(`[SubmitSession] Correct Count: ${correctCount}`);
 
-        const score = Math.min(correctCount, 5) 
+      const score = Math.min(correctCount, 5)
 
-        // 3. Update session
-        await query(
-            'UPDATE sessions SET score = ?, status = "completed" WHERE id = ?',
-            [score, sessionId]
-        )
+      // 3. Update session
+      await query(
+        'UPDATE sessions SET score = ?, status = "completed" WHERE id = ?',
+        [score, sessionId]
+      )
 
-        // 4. Save response
-        await query(
-            'INSERT INTO responses (session_id, question_id, answer_text, is_correct) VALUES (?, ?, ?, ?)',
-            [sessionId, question_id, answer_text, score > 0 ? 1 : 0] 
-        )
+      // 4. Save response
+      await query(
+        'INSERT INTO responses (session_id, question_id, answer_text, is_correct) VALUES (?, ?, ?, ?)',
+        [sessionId, question_id, answer_text, score > 0 ? 1 : 0]
+      )
 
-        res.json({
-            session_id: parseInt(sessionId),
-            module_id: module.id,
-            module_code: module.code,
-            language_code,
-            score,
-            max_score: 5,
-            correct_count: correctCount,
-            total_items: items.length,
-            status: 'completed',
-            next_module_code: 'VISUAL_SPATIAL' // This logic might need to be dynamic later
-        })
+      // 5. Get next module by order_index
+      const nextModules = await query(
+        'SELECT id FROM modules WHERE is_active = 1 AND order_index > ? ORDER BY order_index LIMIT 1',
+        [module.order_index]
+      )
+      const next_module_id = nextModules.length > 0 ? nextModules[0].id : null
+      console.log(`[SubmitSession] Next module ID: ${next_module_id}`);
+
+      res.json({
+        session_id: parseInt(sessionId),
+        module_id: module.id,
+        module_code: module.code,
+        language_code,
+        score,
+        max_score: 5,
+        correct_count: correctCount,
+        total_items: items.length,
+        status: 'completed',
+        next_module_id
+      })
 
     } else if (module.code === 'VISUAL_SPATIAL') {
-        const { answers } = req.body 
+      const { answers } = req.body
+      console.log(`[SubmitSession] Processing VISUAL_SPATIAL answers: ${answers.length}`);
 
-        let score = 0
-        
-        for (const ans of answers) {
-            const options = await query(
-                'SELECT is_correct FROM question_options WHERE question_id = ? AND option_key = ?',
-                [ans.question_id, ans.selected_option_key]
-            )
-            
-            const isCorrect = (options.length > 0 && options[0].is_correct === 1) ? 1 : 0
-            score += isCorrect
+      let score = 0
 
-            await query(
-                'INSERT INTO responses (session_id, question_id, selected_option_key, is_correct) VALUES (?, ?, ?, ?)',
-                [sessionId, ans.question_id, ans.selected_option_key, isCorrect]
-            )
-        }
-
-        await query(
-            'UPDATE sessions SET score = ?, status = "completed" WHERE id = ?',
-            [score, sessionId]
+      for (const ans of answers) {
+        const options = await query(
+          'SELECT is_correct FROM question_options WHERE question_id = ? AND option_key = ?',
+          [ans.question_id, ans.selected_option_key]
         )
 
-        res.json({
-            session_id: parseInt(sessionId),
-            module_id: module.id,
-            module_code: module.code,
-            score,
-            max_score: 5, 
-            status: 'completed',
-            next_module_code: null
-        })
+        const isCorrect = (options.length > 0 && options[0].is_correct === 1) ? 1 : 0
+        score += isCorrect
+
+        await query(
+          'INSERT INTO responses (session_id, question_id, selected_option_key, is_correct) VALUES (?, ?, ?, ?)',
+          [sessionId, ans.question_id, ans.selected_option_key, isCorrect]
+        )
+      }
+
+      await query(
+        'UPDATE sessions SET score = ?, status = "completed" WHERE id = ?',
+        [score, sessionId]
+      )
+
+      res.json({
+        session_id: parseInt(sessionId),
+        module_id: module.id,
+        module_code: module.code,
+        score,
+        max_score: 5,
+        status: 'completed',
+        next_module_id: null
+      })
     } else {
-        res.status(400).json({ error: 'Unknown module code' })
+      res.status(400).json({ error: 'Unknown module code' })
     }
   } catch (err) {
-      console.error(err)
-      res.status(500).json({ error: err.message })
+    console.error(err)
+    res.status(500).json({ error: err.message })
   }
 }

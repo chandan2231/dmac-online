@@ -34,8 +34,11 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
   >(null);
   const cancelButtonText = getLanguageText(languageConstants, 'cancel');
   const continueButtonText = getLanguageText(languageConstants, 'start');
+  const userLang = get(user, 'languageCode');
+  const safeLanguageCode = typeof userLang === 'string' ? userLang : 'en';
+
   const { data: questionsDetails, isPending: isLoadingQuestionsDetails } =
-    useGetQuestions(currentSequenceNumber, get(user, 'languageCode', 'en'));
+    useGetQuestions(currentSequenceNumber, safeLanguageCode);
 
   // Extract Main Question values for clarity
   const mainQuestion = get(questionsDetails, 'main_question', {});

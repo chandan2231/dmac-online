@@ -5,11 +5,13 @@ import {
   submitSession
 } from '../controllers/modules.js'
 
+import { authenticateUserWithBearer } from '../utils/middleware.js'
+
 const router = express.Router()
 
-router.get('/', getModules)
-router.post('/:moduleId/session/start', startSession)
-router.post('/:moduleId/session/:sessionId/submit', submitSession)
+router.get('/', authenticateUserWithBearer, getModules)
+router.post('/:moduleId/session/start', authenticateUserWithBearer, startSession)
+router.post('/:moduleId/session/:sessionId/submit', authenticateUserWithBearer, submitSession)
 
 export default router
 

@@ -77,9 +77,9 @@ app.use(cookieParser())
 // }
 
 
-const allowedOrigins = ['http://18.220.202.114', 'http://localhost:3010'] // add localhost for dev
+const allowedOrigins = ['http://18.220.202.114', 'http://localhost:3010', 'http://localhost:3011'] // add localhost for dev
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true)
     } else {

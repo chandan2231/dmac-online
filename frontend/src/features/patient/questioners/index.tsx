@@ -41,7 +41,7 @@ const Questioners = () => {
       {isQuestionerClosed && isDisclaimerAccepted && falsePositive ? (
         <ModuleRunner
           userId={Number(get(user, 'id', 0))}
-          languageCode={get(user, 'languageCode', 'en')}
+          languageCode={typeof get(user, 'languageCode') === 'string' ? get(user, 'languageCode') : 'en'}
           onAllModulesComplete={() => { /* Handle completion, maybe navigate home? */ }}
         />
       ) : null}

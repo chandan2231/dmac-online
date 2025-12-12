@@ -92,6 +92,8 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
 
     useEffect(() => {
         if (items.length > 0) {
+            console.log('[ImageFlash] Session items from API:', session.question?.items);
+            console.log('[ImageFlash] Processed items with local images:', items);
             setGameItems(items);
         } else {
             // Fallback for testing or if API returns nothing
@@ -101,6 +103,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                 image_url: img,
                 audio_url: AudioFile
             }));
+            console.log('[ImageFlash] Using fallback dummy items:', dummyItems);
             setGameItems(dummyItems);
         }
     }, [session]);

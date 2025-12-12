@@ -569,6 +569,15 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     isAChildOf: null,
   },
   {
+    path: ROUTES.QUESTIONERS,
+    layout: 'MainLayout',
+    component: 'QuestionersPage',
+    showInSidebar: true,
+    sideBarTitle: 'Questioners',
+    sideBarIcon: 'QuizIcon',
+    isAChildOf: null,
+  },
+  {
     path: ROUTES.NOT_FOUND,
     layout: 'ContentOnlyLayout',
     component: 'PageNotFound',
