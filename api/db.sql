@@ -17,7 +17,9 @@ DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS question_options;
 DROP TABLE IF EXISTS question_item_i18n;
 DROP TABLE IF EXISTS question_items;
+DROP TABLE IF EXISTS questions_i18n;
 DROP TABLE IF EXISTS questions;
+DROP TABLE IF EXISTS modules_i18n;
 DROP TABLE IF EXISTS modules;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -37,6 +39,20 @@ CREATE TABLE modules (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- =====================================================================
+-- 1b) MODULES_I18N
+--     Multilingual module names and descriptions
+-- =====================================================================
+CREATE TABLE modules_i18n (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    module_id     INT NOT NULL,
+    language_code VARCHAR(10) NOT NULL,           -- 'en', 'hi', 'es', 'ar', etc.
+    name          VARCHAR(150) NOT NULL,          -- translated module name
+    description   TEXT NULL,                      -- translated description
+    FOREIGN KEY (module_id) REFERENCES modules(id),
+    UNIQUE KEY uq_module_lang (module_id, language_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- =====================================================================
 -- 2) QUESTIONS
 --    One row per logical question / round
 -- =====================================================================
@@ -49,6 +65,19 @@ CREATE TABLE questions (
     prompt_text          TEXT NULL,          -- instructions / text prompt
     correct_answer_text  VARCHAR(255) NULL,  -- optional, for text-based questions
     FOREIGN KEY (module_id) REFERENCES modules(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- =====================================================================
+-- 2b) QUESTIONS_I18N
+--     Multilingual question prompts and instructions
+-- =====================================================================
+CREATE TABLE questions_i18n (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    question_id   INT NOT NULL,
+    language_code VARCHAR(10) NOT NULL,           -- 'en', 'hi', 'es', 'ar', etc.
+    prompt_text   TEXT NULL,                      -- translated prompt/instructions
+    FOREIGN KEY (question_id) REFERENCES questions(id),
+    UNIQUE KEY uq_question_lang (question_id, language_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- =====================================================================
@@ -131,12 +160,37 @@ CREATE TABLE responses (
 -- ---------------------------------------------------------------------
 INSERT INTO modules (code, name, description, order_index, max_score, is_active)
 VALUES
-('IMAGE_FLASH', 'Image Flash Memory', 'Show 5 images and then ask user to recall them.', 1, 5, 1),
-('VISUAL_SPATIAL', 'Visual Spatial Selection', 'Show target image then 4 options; user selects matching image.', 2, 5, 1);
+('IMAGE_FLASH', 'Image Flash Memory', 'The picture will flash for 5 second one after another. Remember the pictures, you will be asked to recall them immediately after and later.', 1, 5, 1),
+('VISUAL_SPATIAL', 'Visual Spatial Selection', 'Remember the image. Select the same image from the choice in next screen.', 2, 5, 1);
 
 -- At this point (fresh DB):
 -- IMAGE_FLASH    => id = 1
 -- VISUAL_SPATIAL => id = 2
+
+-- Multilingual module descriptions
+-- ENGLISH
+INSERT INTO modules_i18n (module_id, language_code, name, description)
+VALUES
+(1, 'en', 'Image Flash Memory', 'The picture will flash for 5 second one after another. Remember the pictures, you will be asked to recall them immediately after and later.'),
+(2, 'en', 'Visual Spatial Selection', 'Remember the image. Select the same image from the choice in next screen.');
+
+-- HINDI
+INSERT INTO modules_i18n (module_id, language_code, name, description)
+VALUES
+(1, 'hi', 'छवि फ्लैश स्मृति', 'तस्वीर एक के बाद एक 5 सेकंड के लिए फ्लैश होगी। तस्वीरों को याद रखें, आपसे तुरंत बाद और बाद में उन्हें याद करने के लिए कहा जाएगा।'),
+(2, 'hi', 'दृश्य स्थानिक चयन', 'छवि को याद रखें। अगली स्क्रीन में विकल्प में से उसी छवि का चयन करें।');
+
+-- SPANISH
+INSERT INTO modules_i18n (module_id, language_code, name, description)
+VALUES
+(1, 'es', 'Memoria Flash de Imágenes', 'La imagen parpadeará durante 5 segundos una tras otra. Recuerde las imágenes, se le pedirá que las recuerde inmediatamente después y más tarde.'),
+(2, 'es', 'Selección Espacial Visual', 'Recuerde la imagen. Seleccione la misma imagen de la opción en la siguiente pantalla.');
+
+-- ARABIC
+INSERT INTO modules_i18n (module_id, language_code, name, description)
+VALUES
+(1, 'ar', 'ذاكرة الصور السريعة', 'ستومض الصورة لمدة 5 ثوانٍ واحدة تلو الأخرى. تذكر الصور، سيُطلب منك تذكرها فورًا وبعد ذلك.'),
+(2, 'ar', 'اختيار المكان البصري', 'تذكر الصورة. حدد نفس الصورة من الخيار في الشاشة التالية.');
 
 -- ---------------------------------------------------------------------
 -- MODULE 1: Image Flash (one question with a sequence of 5 items)
@@ -144,7 +198,7 @@ VALUES
 INSERT INTO questions (module_id, code, question_type, order_index, prompt_text, correct_answer_text)
 VALUES
 (1, 'M1_MAIN', 'flash_recall', 1,
- 'Please name as many images as you can remember.',
+ 'Please recall the picture you have been asked to remember in beginning of the exam. Examiner please take the tablet to enter the answers.',
  NULL);
 
 -- This question gets id = 1
@@ -178,6 +232,45 @@ VALUES
 (3, 'hi', 'https://cdn.example.com/audio/hi/panchi.mp3','पंछी','panchi,panchi.'),
 (4, 'hi', 'https://cdn.example.com/audio/hi/naav.mp3',  'नाव',  'naav,nav,naao'),
 (5, 'hi', 'https://cdn.example.com/audio/hi/bas.mp3',   'बस',   'bas,bus');
+
+-- SPANISH translations + audio + accepted answers
+INSERT INTO question_item_i18n (question_item_id, language_code, audio_url, display_text, accepted_answers)
+VALUES
+(1, 'es', 'https://cdn.example.com/audio/es/coche.mp3',   'coche',   'coche,carro,auto'),
+(2, 'es', 'https://cdn.example.com/audio/es/pluma.mp3',   'pluma',   'pluma,bolígrafo,boli'),
+(3, 'es', 'https://cdn.example.com/audio/es/pajaro.mp3',  'pájaro',  'pájaro,pajaro,ave'),
+(4, 'es', 'https://cdn.example.com/audio/es/barco.mp3',   'barco',   'barco,bote,barca'),
+(5, 'es', 'https://cdn.example.com/audio/es/autobus.mp3', 'autobús', 'autobús,autobus,bus,camion');
+
+-- ARABIC translations + audio + accepted answers
+INSERT INTO question_item_i18n (question_item_id, language_code, audio_url, display_text, accepted_answers)
+VALUES
+(1, 'ar', 'https://cdn.example.com/audio/ar/sayyara.mp3', 'سيارة', 'سيارة,عربية,sayyara,arabiya'),
+(2, 'ar', 'https://cdn.example.com/audio/ar/qalam.mp3',   'قلم',   'قلم,qalam'),
+(3, 'ar', 'https://cdn.example.com/audio/ar/tair.mp3',    'طائر',  'طائر,عصفور,tair,asfur'),
+(4, 'ar', 'https://cdn.example.com/audio/ar/qarib.mp3',   'قارب',  'قارب,مركب,qarib,markab'),
+(5, 'ar', 'https://cdn.example.com/audio/ar/hafila.mp3',  'حافلة', 'حافلة,باص,hafila,bas');
+
+-- Multilingual question prompts for Module 1
+-- ENGLISH
+INSERT INTO questions_i18n (question_id, language_code, prompt_text)
+VALUES
+(1, 'en', 'Please recall the picture you have been asked to remember in beginning of the exam. Examiner please take the tablet to enter the answers.');
+
+-- HINDI
+INSERT INTO questions_i18n (question_id, language_code, prompt_text)
+VALUES
+(1, 'hi', 'कृपया उस तस्वीर को याद करें जिसे आपसे परीक्षा की शुरुआत में याद रखने के लिए कहा गया था। परीक्षक कृपया उत्तर दर्ज करने के लिए टैबलेट लें।');
+
+-- SPANISH
+INSERT INTO questions_i18n (question_id, language_code, prompt_text)
+VALUES
+(1, 'es', 'Por favor recuerde la imagen que se le pidió recordar al comienzo del examen. Examinador, por favor tome la tableta para ingresar las respuestas.');
+
+-- ARABIC
+INSERT INTO questions_i18n (question_id, language_code, prompt_text)
+VALUES
+(1, 'ar', 'يرجى تذكر الصورة التي طُلب منك تذكرها في بداية الامتحان. الفاحص يرجى أخذ الجهاز اللوحي لإدخال الإجابات.');
 
 -- ---------------------------------------------------------------------
 -- MODULE 2: Visual Spatial Selection (5 rounds = 5 questions)
@@ -214,6 +307,43 @@ VALUES
 -- 4: VS_R3
 -- 5: VS_R4
 -- 6: VS_R5
+
+-- Multilingual question prompts for Module 2 (Visual Spatial)
+-- ENGLISH
+INSERT INTO questions_i18n (question_id, language_code, prompt_text)
+VALUES
+(2, 'en', 'Select the same cube as shown.'),
+(3, 'en', 'Select the same bee as shown.'),
+(4, 'en', 'Select the same star as shown.'),
+(5, 'en', 'Select the same face as shown.'),
+(6, 'en', 'Select the same cube as shown.');
+
+-- HINDI
+INSERT INTO questions_i18n (question_id, language_code, prompt_text)
+VALUES
+(2, 'hi', 'दिखाए गए समान घन का चयन करें।'),
+(3, 'hi', 'दिखाई गई समान मधुमक्खी का चयन करें।'),
+(4, 'hi', 'दिखाए गए समान तारे का चयन करें।'),
+(5, 'hi', 'दिखाए गए समान चेहरे का चयन करें।'),
+(6, 'hi', 'दिखाए गए समान घन का चयन करें।');
+
+-- SPANISH
+INSERT INTO questions_i18n (question_id, language_code, prompt_text)
+VALUES
+(2, 'es', 'Selecciona el mismo cubo que se muestra.'),
+(3, 'es', 'Selecciona la misma abeja que se muestra.'),
+(4, 'es', 'Selecciona la misma estrella que se muestra.'),
+(5, 'es', 'Selecciona la misma cara que se muestra.'),
+(6, 'es', 'Selecciona el mismo cubo que se muestra.');
+
+-- ARABIC
+INSERT INTO questions_i18n (question_id, language_code, prompt_text)
+VALUES
+(2, 'ar', 'اختر نفس المكعب كما هو موضح.'),
+(3, 'ar', 'اختر نفس النحلة كما هو موضح.'),
+(4, 'ar', 'اختر نفس النجمة كما هو موضح.'),
+(5, 'ar', 'اختر نفس الوجه كما هو موضح.'),
+(6, 'ar', 'اختر نفس المكعب كما هو موضح.');
 
 -- ---------------------------------------------------------------------
 -- QUESTION OPTIONS for each Visual Spatial round

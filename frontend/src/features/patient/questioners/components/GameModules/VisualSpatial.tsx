@@ -3,6 +3,8 @@ import { Box, Typography } from '@mui/material';
 import MorenButton from '../../../../../components/button';
 import GenericModal from '../../../../../components/modal';
 import type { SessionData } from '../../../../../services/gameApi';
+import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
+import { getLanguageText } from '../../../../../utils/functions';
 
 // Static image imports
 import cube_first from '../../../../../assets/visualSpatial/cube_first.webp';
@@ -47,6 +49,14 @@ interface VisualSpatialProps {
 }
 
 const VisualSpatial = ({ session, onComplete }: VisualSpatialProps) => {
+    const { languageConstants } = useLanguageConstantContext();
+
+    // Get translations
+    const t = {
+        instruction: getLanguageText(languageConstants, 'game_instruction'),
+        start: getLanguageText(languageConstants, 'game_start')
+    };
+
     const [phase, setPhase] = useState<'instruction' | 'target' | 'selection'>('instruction');
     const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
     const [answers, setAnswers] = useState<{ question_id: number, selected_option_key: string }[]>([]);
@@ -160,13 +170,13 @@ const VisualSpatial = ({ session, onComplete }: VisualSpatialProps) => {
             <GenericModal
                 isOpen={phase === 'instruction'}
                 onClose={() => { }}
-                title="Visual Spatial Assessment"
+                title={t.instruction}
                 hideCancelButton={true}
-                submitButtonText="Start"
+                submitButtonText={t.start}
                 onSubmit={handleStart}
             >
                 <Typography sx={{ fontSize: '1.1rem', lineHeight: 1.6, color: '#d32f2f', fontWeight: 500 }}>
-                    {session.instructions || "Watch each image carefully. After it disappears, select the matching image from the choices shown."}
+                    {session.instructions}
                 </Typography>
             </GenericModal>
 
@@ -179,12 +189,12 @@ const VisualSpatial = ({ session, onComplete }: VisualSpatialProps) => {
                     width: '100%',
                     maxWidth: '800px'
                 }}>
-                    <Typography variant="h5" sx={{ mb: 2, color: '#666', fontWeight: 600 }}>
+                    {/* <Typography variant="h5" sx={{ mb: 2, color: '#666', fontWeight: 600 }}>
                         Remember this image
                     </Typography>
                     <Typography variant="h6" sx={{ mb: 3, color: '#999' }}>
                         Round {currentRoundIndex + 1} of {totalRounds}
-                    </Typography>
+                    </Typography> */}
 
                     <Box sx={{ position: 'relative', width: '100%', maxWidth: '600px' }}>
                         <Box
@@ -226,12 +236,12 @@ const VisualSpatial = ({ session, onComplete }: VisualSpatialProps) => {
             {/* Selection Phase - Choose matching image */}
             {phase === 'selection' && currentRound && (
                 <Box sx={{ width: '100%', maxWidth: '800px' }}>
-                    <Typography variant="h5" sx={{ mb: 2, textAlign: 'center', color: '#666', fontWeight: 600 }}>
+                    {/* <Typography variant="h5" sx={{ mb: 2, textAlign: 'center', color: '#666', fontWeight: 600 }}>
                         Select the matching image
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 3, textAlign: 'center', color: '#999' }}>
                         Round {currentRoundIndex + 1} of {totalRounds}
-                    </Typography>
+                    </Typography> */}
 
                     <Box sx={{
                         display: 'grid',

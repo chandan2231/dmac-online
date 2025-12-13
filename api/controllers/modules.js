@@ -11,8 +11,18 @@ const query = (sql, args) => {
 
 export const getModules = async (req, res) => {
   try {
+    const language = req.query.language || 'en'
+    console.log(`[GetModules] Fetching modules for language: ${language}`)
+
     const modules = await query(
-      'SELECT * FROM modules WHERE is_active = 1 ORDER BY order_index'
+      `SELECT m.id, m.code, m.order_index, m.max_score, m.is_active,
+              COALESCE(mi.name, m.name) as name,
+              COALESCE(mi.description, m.description) as description
+       FROM modules m
+       LEFT JOIN modules_i18n mi ON m.id = mi.module_id AND mi.language_code = ?
+       WHERE m.is_active = 1 
+       ORDER BY m.order_index`,
+      [language]
     )
     res.json({ modules })
   } catch (err) {
@@ -32,9 +42,15 @@ export const startSession = async (req, res) => {
   }
 
   try {
-    const modules = await query('SELECT * FROM modules WHERE id = ?', [
-      moduleId
-    ])
+    const modules = await query(
+      `SELECT m.id, m.code, m.order_index, m.max_score,
+              COALESCE(mi.name, m.name) as name,
+              COALESCE(mi.description, m.description) as description
+       FROM modules m
+       LEFT JOIN modules_i18n mi ON m.id = mi.module_id AND mi.language_code = ?
+       WHERE m.id = ?`,
+      [language_code, moduleId]
+    )
     if (modules.length === 0) {
       console.error('[StartSession] Module not found');
       return res.status(404).json({ error: 'Module not found' })
@@ -52,8 +68,12 @@ export const startSession = async (req, res) => {
     if (module.code === 'IMAGE_FLASH') {
       console.log('[StartSession] Loading IMAGE_FLASH data');
       const questions = await query(
-        'SELECT * FROM questions WHERE module_id = ? AND question_type = "flash_recall"',
-        [module.id]
+        `SELECT q.id, q.module_id, q.code, q.question_type, q.order_index, q.correct_answer_text,
+                COALESCE(qi.prompt_text, q.prompt_text) as prompt_text
+         FROM questions q
+         LEFT JOIN questions_i18n qi ON q.id = qi.question_id AND qi.language_code = ?
+         WHERE q.module_id = ? AND q.question_type = "flash_recall"`,
+        [language_code, module.id]
       )
       if (questions.length === 0) {
         console.error('[StartSession] No questions found for IMAGE_FLASH');
@@ -94,14 +114,17 @@ export const startSession = async (req, res) => {
             audio_url: i.audio_url
           }))
         },
-        instructions:
-          'You will see 5 images displayed one at a time for 5 seconds each. Then you will be asked to recall them.'
+        instructions: module.description || 'You will see 5 images displayed one at a time for 5 seconds each. Then you will be asked to recall them.'
       })
     } else if (module.code === 'VISUAL_SPATIAL') {
       console.log('[StartSession] Loading VISUAL_SPATIAL data');
       const questions = await query(
-        'SELECT * FROM questions WHERE module_id = ? ORDER BY order_index',
-        [module.id]
+        `SELECT q.id, q.module_id, q.code, q.question_type, q.order_index, q.correct_answer_text,
+                COALESCE(qi.prompt_text, q.prompt_text) as prompt_text
+         FROM questions q
+         LEFT JOIN questions_i18n qi ON q.id = qi.question_id AND qi.language_code = ?
+         WHERE q.module_id = ? ORDER BY q.order_index`,
+        [language_code, module.id]
       )
 
       console.log(`[StartSession] Found ${questions.length} questions`);
@@ -137,8 +160,7 @@ export const startSession = async (req, res) => {
         },
         language_code,
         rounds,
-        instructions:
-          'You will be shown an image. Then select the same image from 4 choices.'
+        instructions: module.description || 'You will be shown an image. Then select the same image from 4 choices.'
       })
     } else {
       console.error(`[StartSession] Unknown module code: ${module.code}`);

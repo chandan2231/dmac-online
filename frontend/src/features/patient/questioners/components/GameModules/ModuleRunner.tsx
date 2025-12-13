@@ -4,6 +4,11 @@ import GameApi, { type Module, type SessionData } from '../../../../../services/
 import CustomLoader from '../../../../../components/loader';
 import ImageFlash from './ImageFlash';
 import VisualSpatial from './VisualSpatial';
+import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
+import { getLanguageText } from '../../../../../utils/functions';
+import GenericModal from '../../../../../components/modal';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../../../router/router';
 
 interface ModuleRunnerProps {
     userId: number; // Actually userId might come from auth context inside here or passed down
@@ -12,11 +17,25 @@ interface ModuleRunnerProps {
 }
 
 const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunnerProps) => {
+    const { languageConstants } = useLanguageConstantContext();
+    const navigate = useNavigate();
+
+    // Get error message translations
+    const t = {
+        noModulesFound: getLanguageText(languageConstants, 'game_no_modules_found'),
+        fetchError: getLanguageText(languageConstants, 'game_fetch_error'),
+        sessionError: getLanguageText(languageConstants, 'game_session_error'),
+        completionTitle: getLanguageText(languageConstants, 'game_completion_title'),
+        completionMessage: getLanguageText(languageConstants, 'game_completion_message'),
+        homeButton: getLanguageText(languageConstants, 'game_home_button')
+    };
+
     const [modules, setModules] = useState<Module[]>([]);
     const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
     const [session, setSession] = useState<SessionData | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showCompletion, setShowCompletion] = useState(false);
 
     useEffect(() => {
         const fetchModules = async () => {
@@ -28,12 +47,12 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
                     startModuleSession(sorted[0].id);
                 } else {
                     console.warn("No active game modules found.");
-                    setError("No active game modules found.");
+                    setError(t.noModulesFound);
                     onAllModulesComplete();
                 }
             } catch (error) {
                 console.error("Failed to fetch modules", error);
-                setError("Failed to fetch game modules.");
+                setError(t.fetchError);
             }
         };
         fetchModules();
@@ -49,7 +68,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             setSession(sess);
         } catch (error) {
             console.error("Failed to start session", error);
-            setError("Failed to start game session. Please check your connection.");
+            setError(t.sessionError);
         } finally {
             setLoading(false);
         }
@@ -66,7 +85,8 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
                 const nextIdx = modules.findIndex(m => m.id === res.next_module_id);
                 if (nextIdx !== -1) setCurrentModuleIndex(nextIdx);
             } else {
-                onAllModulesComplete();
+                // All modules completed - show completion screen
+                setShowCompletion(true);
             }
         } catch (error) {
             console.error("Submit failed", error);
@@ -92,6 +112,10 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
         });
     };
 
+    const handleGoHome = () => {
+        navigate(ROUTES.HOME);
+    };
+
 
 
     if (error) {
@@ -110,10 +134,24 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
 
     return (
         <Box sx={{ width: '100%', height: '100%' }}>
-            {moduleCode === 'IMAGE_FLASH' && (
+            {/* Completion Modal */}
+            <GenericModal
+                isOpen={showCompletion}
+                onClose={() => { }}
+                title={t.completionTitle}
+                hideCancelButton={true}
+                submitButtonText={t.homeButton}
+                onSubmit={handleGoHome}
+            >
+                <Typography sx={{ fontSize: '1.2rem', textAlign: 'center', color: '#4caf50', fontWeight: 500 }}>
+                    {t.completionMessage}
+                </Typography>
+            </GenericModal>
+
+            {!showCompletion && moduleCode === 'IMAGE_FLASH' && (
                 <ImageFlash session={session} onComplete={handleImageFlashComplete} languageCode={languageCode} />
             )}
-            {moduleCode === 'VISUAL_SPATIAL' && (
+            {!showCompletion && moduleCode === 'VISUAL_SPATIAL' && (
                 <VisualSpatial session={session} onComplete={handleVisualSpatialComplete} />
             )}
         </Box>

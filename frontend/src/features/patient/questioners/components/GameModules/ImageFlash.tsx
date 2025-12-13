@@ -5,6 +5,8 @@ import GenericModal from '../../../../../components/modal';
 import type { SessionData } from '../../../../../services/gameApi';
 import AudioPlayer from './Shared/AudioPlayer';
 import SpeechInput from '../../../../../components/SpeechInput';
+import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
+import { getLanguageText } from '../../../../../utils/functions';
 
 // Assets
 import Bird from '../../../../../assets/ImageRecal/bird.webp';
@@ -51,6 +53,20 @@ declare global {
 }
 
 const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
+    const { languageConstants } = useLanguageConstantContext();
+
+    // Get all translations
+    const t = {
+        instructions: getLanguageText(languageConstants, 'game_instructions'),
+        instruction: getLanguageText(languageConstants, 'game_instruction'),
+        start: getLanguageText(languageConstants, 'game_start'),
+        repeat: getLanguageText(languageConstants, 'game_repeat'),
+        next: getLanguageText(languageConstants, 'game_next'),
+        enterAnswers: getLanguageText(languageConstants, 'game_enter_answers'),
+        inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder'),
+        validationError: getLanguageText(languageConstants, 'game_validation_error')
+    };
+
     const [phase, setPhase] = useState<'instruction' | 'playing' | 'lastImageWithButtons' | 'beforeInput' | 'input'>('instruction');
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
     const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -155,7 +171,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
 
         // Validation
         if (!trimmedInput) {
-            setValidationError('Please enter at least one answer before submitting.');
+            setValidationError(t.validationError);
             return;
         }
 
@@ -171,9 +187,9 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
             <GenericModal
                 isOpen={phase === 'instruction'}
                 onClose={() => { }}
-                title="Instructions"
+                title={t.instructions}
                 hideCancelButton={true}
-                submitButtonText="Start"
+                submitButtonText={t.start}
                 onSubmit={handleStart}
             >
                 <Typography>{session.instructions || session.question?.prompt_text}</Typography>
@@ -221,7 +237,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                                 fontWeight: 'bold'
                             }}
                         >
-                            REPEAT
+                            {t.repeat}
                         </MorenButton>
 
                         <MorenButton
@@ -235,7 +251,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                                 fontWeight: 'bold'
                             }}
                         >
-                            NEXT
+                            {t.next}
                         </MorenButton>
                     </Box>
                 </Box>
@@ -245,20 +261,20 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
             <GenericModal
                 isOpen={phase === 'beforeInput'}
                 onClose={() => { }}
-                title="Instruction"
+                title={t.instruction}
                 hideCancelButton={true}
-                submitButtonText="Next"
+                submitButtonText={t.next}
                 onSubmit={() => setPhase('input')}
             >
                 <Typography sx={{ color: '#d32f2f', fontSize: '1.1rem' }}>
-                    {session.question?.prompt_text || 'Please recall the pictures you have been asked to remember.'}
+                    {session.question?.prompt_text}
                 </Typography>
             </GenericModal>
 
             {phase === 'input' && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', maxWidth: '600px', px: 2 }}>
 
-                    <Typography variant="h6" sx={{ textAlign: 'center', color: '#666' }}>Enter Answers</Typography>
+                    <Typography variant="h6" sx={{ textAlign: 'center', color: '#666' }}>{t.enterAnswers}</Typography>
 
                     <SpeechInput
                         fullWidth
@@ -277,7 +293,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                             setValidationError(''); // Clear error when speaking
                         }}
                         languageCode={languageCode}
-                        placeholder="Enter answers separated by spaces (e.g., bird car tree)"
+                        placeholder={t.inputPlaceholder}
                     />
 
                     {/* Validation Error Message */}
@@ -307,7 +323,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                                 fontSize: '1.1rem'
                             }}
                         >
-                            NEXT
+                            {t.next}
                         </MorenButton>
                     </Box>
                 </Box>
