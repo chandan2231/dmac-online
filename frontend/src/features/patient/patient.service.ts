@@ -369,6 +369,31 @@ const submitAssessmentTab = async (tab: string, data: any) => {
   }
 };
 
+const getLatestMedicalHistory = async () => {
+  try {
+    const response = await HttpService.getAxiosClient().get(
+      `patient/medical-history/latest`
+    );
+    return response;
+  } catch (error: unknown) {
+    console.error('Error fetching medical history:', error);
+    throw error;
+  }
+};
+
+const submitMedicalHistory = async (data: unknown) => {
+  try {
+    const response = await HttpService.getAxiosClient().post(
+      `patient/medical-history`,
+      { data }
+    );
+    return response;
+  } catch (error: unknown) {
+    console.error('Error submitting medical history:', error);
+    throw error;
+  }
+};
+
 const PatientService = {
   getSubscribedProduct,
   getExpertList,
@@ -393,6 +418,8 @@ const PatientService = {
   getGoogleAuthUrl,
   getAssessmentStatus,
   submitAssessmentTab,
+  getLatestMedicalHistory,
+  submitMedicalHistory,
 };
 
 export default PatientService;

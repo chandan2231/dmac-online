@@ -20,6 +20,7 @@ import {
 } from '../hooks/useDocuments';
 import { TabHeaderLayout } from '../../../components/tab-header';
 import AssessmentForm from './AssessmentForm';
+import MedicalHistoryForm from './MedicalHistoryForm';
 import {
   useGetAssessmentStatus,
   ASSESSMENT_QUERY_KEYS,
@@ -36,6 +37,9 @@ interface Document {
 }
 
 const UploadDocuments = () => {
+  const [activeView, setActiveView] = React.useState<
+    'assessment-documents' | 'medical-history'
+  >('assessment-documents');
   const { data: documents = [], isLoading: loading } = useGetUserDocuments();
   const { data: assessmentStatus, isLoading: assessmentLoading } =
     useGetAssessmentStatus();
@@ -101,6 +105,38 @@ const UploadDocuments = () => {
     assessmentStatus.disclaimer &&
     assessmentStatus.consent;
 
+  if (activeView === 'medical-history') {
+    return (
+      <Box sx={{ p: 3, width: '100%', height: '100%', overflowY: 'auto' }}>
+        <TabHeaderLayout
+          leftNode={
+            <Box
+              sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}
+            >
+              <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                Medical History Form
+              </Typography>
+            </Box>
+          }
+          rightNode={
+            <Button
+              variant="outlined"
+              onClick={() => setActiveView('assessment-documents')}
+            >
+              Back
+            </Button>
+          }
+        />
+
+        <Box sx={{ mt: 2 }}>
+          <MedicalHistoryForm
+            onSubmitted={() => setActiveView('assessment-documents')}
+          />
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ p: 3, width: '100%', height: '100%', overflowY: 'auto' }}>
       <TabHeaderLayout
@@ -115,6 +151,14 @@ const UploadDocuments = () => {
               Patient Assessment & Documents
             </Typography>
           </Box>
+        }
+        rightNode={
+          <Button
+            variant="outlined"
+            onClick={() => setActiveView('medical-history')}
+          >
+            Medical History form
+          </Button>
         }
       />
 
