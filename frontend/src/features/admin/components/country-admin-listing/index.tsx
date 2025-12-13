@@ -152,8 +152,6 @@ function CountryAdminTable() {
       email: admin.email,
       mobile: admin.mobile,
       address: admin.address,
-      speciality: admin.speciality,
-      contracted_rate_per_consult: admin.contracted_rate_per_consult,
       country: admin.country,
       state: admin.province_id,
       finance_manager_id: String(get(admin, 'finance_manager_id', '')),
@@ -482,7 +480,6 @@ function CountryAdminTable() {
               error={!!errors.address}
               helperText={errors.address?.message}
             />
-            
           </Box>
 
           <Box display="flex" flexDirection="row" gap={2}>
@@ -538,8 +535,6 @@ function CountryAdminTable() {
               )}
             </Box>
           </Box>
-
-          
 
           <MorenButton
             type="submit"
