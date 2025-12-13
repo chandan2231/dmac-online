@@ -29,7 +29,7 @@ function AppAppBar() {
             href={ROUTES.HOME}
             sx={{ fontSize: 24 }}
           >
-            {'DMAC'}
+            {'RM360 Global'}
           </Link>
           <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
             <Button

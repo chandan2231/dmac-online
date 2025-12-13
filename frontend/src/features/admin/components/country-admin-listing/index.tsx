@@ -55,8 +55,6 @@ const editCountryAdminSchema = Yup.object({
   email: Yup.string().email('Invalid email').required('Email is required'),
   country: Yup.string().required('Country is required'),
   address: Yup.string().required('Address is required'),
-  speciality: Yup.string().required('Speciality is required'),
-  contracted_rate_per_consult: Yup.string().required('Rate is required'),
   state: Yup.string().required('State is required'),
   finance_manager_id: Yup.string().required('Finance Manager is required'),
   languages: Yup.array()
@@ -76,8 +74,6 @@ const createCountryAdminSchema = Yup.object({
   country: Yup.string().required('Country is required'),
   state: Yup.string().required('State is required'),
   address: Yup.string().required('Address is required'),
-  speciality: Yup.string().required('Speciality is required'),
-  contracted_rate_per_consult: Yup.string().required('Rate is required'),
   languages: Yup.array()
     .min(1, 'Select at least one language')
     .required('Languages are required'),

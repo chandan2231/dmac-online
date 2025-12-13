@@ -85,7 +85,7 @@ const Header = () => {
             ) : null}
           </Box>
           <Box>
-            <Typography variant="h6">DMAC</Typography>
+            <Typography variant="h6">RM360 Global</Typography>
           </Box>
         </Box>
 

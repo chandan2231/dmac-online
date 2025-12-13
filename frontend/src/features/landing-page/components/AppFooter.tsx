@@ -11,7 +11,7 @@ function Copyright() {
     <React.Fragment>
       {'© '}
       <Link color="inherit" href="https://mui.com/">
-        DMAC Online
+        RM360 Global
       </Link>{' '}
       {new Date().getFullYear()}
     </React.Fragment>
