@@ -11,7 +11,8 @@ import {
   getUsersTransactionList,
   getConsultationList,
   getPatientDocuments,
-  getPatientAssessmentStatus
+  getPatientAssessmentStatus,
+  getPatientMedicalHistory
 } from '../controllers/admin.js'
 
 import { authenticateUser } from '../utils/middleware.js'
@@ -33,6 +34,11 @@ router.post(
 )
 router.post('/consultations/list', authenticateUser, getConsultationList)
 router.post('/patient-documents', authenticateUser, getPatientDocuments)
+router.post(
+  '/patient-medical-history',
+  authenticateUser,
+  getPatientMedicalHistory
+)
 router.post(
   '/patient-assessment-status',
   authenticateUser,

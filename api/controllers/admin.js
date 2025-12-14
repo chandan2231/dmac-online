@@ -573,3 +573,29 @@ export const getPatientAssessmentStatus = async (req, res) => {
     res.status(500).json({ message: 'Error fetching assessment status' })
   }
 }
+
+export const getPatientMedicalHistory = async (req, res) => {
+  const { patient_id } = req.body
+
+  if (!patient_id) {
+    return res.status(400).json({ message: 'Patient ID is required' })
+  }
+
+  try {
+    const query =
+      'SELECT id, user_id, data, created_at FROM dmac_webapp_medical_history WHERE user_id = ? ORDER BY id DESC LIMIT 1'
+
+    const rows = await new Promise((resolve, reject) => {
+      db.query(query, [patient_id], (err, result) => {
+        if (err) reject(err)
+        resolve(result)
+      })
+    })
+
+    const latest = Array.isArray(rows) && rows.length > 0 ? rows[0] : null
+    return res.status(200).json({ status: 200, data: latest })
+  } catch (error) {
+    console.error('Error fetching patient medical history:', error)
+    return res.status(500).json({ message: 'Error fetching medical history' })
+  }
+}
