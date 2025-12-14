@@ -459,23 +459,15 @@ const PatientAssessment = () => {
         </TabPanel>
 
         <TabPanel value={value} index={1}>
-          <Typography variant="h6" gutterBottom>
-            Sleep Apnea Test (SAT)
-          </Typography>
           {renderQuestionTab(satQuestions, satData)}
         </TabPanel>
 
         <TabPanel value={value} index={2}>
-          <Typography variant="h6" gutterBottom>
-            Depression Diagnostic Test (DAT)
-          </Typography>
+          
           {renderQuestionTab(datQuestions, datData)}
         </TabPanel>
 
         <TabPanel value={value} index={3}>
-          <Typography variant="h6" gutterBottom>
-            Anxiety diagnostic test (ADT)
-          </Typography>
           {renderQuestionTab(adtQuestions, adtData)}
         </TabPanel>
 

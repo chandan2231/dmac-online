@@ -435,9 +435,6 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
 
       <TabPanel value={value} index={1}>
         <Typography variant="h6" gutterBottom>
-          Sleep Apnea Test (SAT)
-        </Typography>
-        <Typography variant="body2" gutterBottom>
           Please read each question carefully and indicate whether the statement
           applies to you.
         </Typography>
@@ -445,10 +442,8 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
       </TabPanel>
 
       <TabPanel value={value} index={2}>
+        
         <Typography variant="h6" gutterBottom>
-          Depression Diagnostic Test (DAT)
-        </Typography>
-        <Typography variant="body2" gutterBottom>
           Please read each question carefully and indicate whether the statement
           applies to you.
         </Typography>
@@ -457,9 +452,6 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
 
       <TabPanel value={value} index={3}>
         <Typography variant="h6" gutterBottom>
-          Anxiety diagnostic test (ADT)
-        </Typography>
-        <Typography variant="body2" gutterBottom>
           Please read each question carefully and indicate whether the statement
           applies to you.
         </Typography>
