@@ -116,6 +116,7 @@ const UploadDocuments = () => {
             </Typography>
           </Box>
         }
+        rightNode={null}
       />
 
       <AssessmentForm

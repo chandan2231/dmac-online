@@ -223,6 +223,21 @@ const getPatientAssessmentStatus = async (patientId: number) => {
   }
 };
 
+const getPatientMedicalHistory = async (patientId: number) => {
+  try {
+    const response = await HttpService.post(
+      '/therapist/patient-medical-history',
+      {
+        patient_id: patientId,
+      }
+    );
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching patient medical history:', error);
+    return null;
+  }
+};
+
 const getTherapistReviews = async (therapistId: string) => {
   try {
     const response = await HttpService.get(
@@ -247,6 +262,7 @@ const TherapistService = {
   getTherapistReview,
   getPatientDocuments,
   getPatientAssessmentStatus,
+  getPatientMedicalHistory,
   getTherapistReviews,
 };
 

@@ -808,6 +808,22 @@ const getPatientAssessmentStatus = async (patientId: number) => {
   }
 };
 
+const getPatientMedicalHistory = async (patientId: number) => {
+  try {
+    const response = await HttpService.post('/admin/patient-medical-history', {
+      patient_id: patientId,
+    });
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching patient medical history:', error);
+    return {
+      status: 500,
+      data: null,
+      message: 'Failed to fetch medical history',
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
   updateProduct, // ✅ export update service
@@ -836,6 +852,7 @@ const AdminService = {
   updateCountryAdminPassword,
   getPatientDocuments,
   getPatientAssessmentStatus,
+  getPatientMedicalHistory,
 };
 
 export default AdminService;
