@@ -20,6 +20,7 @@ import {
   useSubmitAssessmentTab,
 } from '../hooks/useAssessment';
 import CustomLoader from '../../../components/loader';
+import MedicalHistoryForm from './MedicalHistoryForm';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -372,7 +373,7 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
     try {
       await submitTab({ tab, data: payload });
       enqueueSnackbar('Submitted successfully', { variant: 'success' });
-      if (value < 4) setValue(value + 1);
+      if (value < 5) setValue(value + 1);
     } catch (error) {
       console.error(error);
       enqueueSnackbar('Error submitting', { variant: 'error' });
@@ -420,6 +421,7 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         variant="scrollable"
         scrollButtons="auto"
       >
+        <Tab label="Medical History" />
         <Tab label="Sleep Apnea Test" />
         <Tab label="Depression Diagnostic Test" />
         <Tab label="Anxiety Diagnostic Test" />
@@ -428,6 +430,10 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
       </Tabs>
 
       <TabPanel value={value} index={0}>
+        <MedicalHistoryForm onSubmitted={() => setValue(1)} />
+      </TabPanel>
+
+      <TabPanel value={value} index={1}>
         <Typography variant="h6" gutterBottom>
           Sleep Apnea Test (SAT)
         </Typography>
@@ -438,7 +444,7 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         {renderQuestionTab(satQuestions, satData, 'sat')}
       </TabPanel>
 
-      <TabPanel value={value} index={1}>
+      <TabPanel value={value} index={2}>
         <Typography variant="h6" gutterBottom>
           Depression Diagnostic Test (DAT)
         </Typography>
@@ -449,7 +455,7 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         {renderQuestionTab(datQuestions, datData, 'dat')}
       </TabPanel>
 
-      <TabPanel value={value} index={2}>
+      <TabPanel value={value} index={3}>
         <Typography variant="h6" gutterBottom>
           Anxiety diagnostic test (ADT)
         </Typography>
@@ -460,7 +466,7 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         {renderQuestionTab(adtQuestions, adtData, 'adt')}
       </TabPanel>
 
-      <TabPanel value={value} index={3}>
+      <TabPanel value={value} index={4}>
         <Box
           sx={{
             maxHeight: '400px',
@@ -512,7 +518,6 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
             failure to follow usage instructions or for any resulting financial
             losses.
           </Typography>
-
           <Typography variant="h6" sx={{ mt: 2 }}>
             SECTION 2 — LICCA, DMAC & RELATED APPLICATIONS
           </Typography>
@@ -737,7 +742,7 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         </Button>
       </TabPanel>
 
-      <TabPanel value={value} index={4}>
+      <TabPanel value={value} index={5}>
         <Box
           sx={{
             maxHeight: '400px',

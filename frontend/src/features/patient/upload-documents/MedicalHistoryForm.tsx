@@ -4,18 +4,14 @@ import {
   Button,
   Checkbox,
   CircularProgress,
-  Divider,
   FormControl,
   FormControlLabel,
   FormGroup,
   FormLabel,
-  MenuItem,
   Paper,
   Radio,
   RadioGroup,
-  Select,
   TextField,
-  Typography,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import CustomLoader from '../../../components/loader';
@@ -27,6 +23,9 @@ import {
 type YesNo = 'yes' | 'no' | '';
 
 type AlcoholFrequency = 'everyday' | 'weekends' | 'occasional' | '';
+
+type WeightUnit = 'kg' | 'lb' | '';
+type HeightUnit = 'cm' | 'ft' | 'in' | '';
 
 type MedicalHistoryPayload = {
   memoryDuration: string;
@@ -44,11 +43,11 @@ type MedicalHistoryPayload = {
     systolic: string;
     diastolic: string;
     heartRate: string;
-    weightUnit: string;
+    weightUnit: WeightUnit;
     weight: string;
-    heightUnit: string;
+    heightUnit: HeightUnit;
     height: string;
-    bmi: string;
+    bmi?: string;
   };
   socialHabits: {
     exercise: YesNo;
@@ -81,7 +80,6 @@ const DEFAULT_PAYLOAD: MedicalHistoryPayload = {
     weight: '',
     heightUnit: '',
     height: '',
-    bmi: '',
   },
   socialHabits: {
     exercise: '',
@@ -157,7 +155,7 @@ const YesNoRadioGroup = ({
   onChange: (v: YesNo) => void;
 }) => {
   return (
-    <FormControl sx={{ mt: 3 }}>
+    <FormControl sx={{ mt: 3, display: 'block' }}>
       <FormLabel sx={{ fontWeight: 600 }}>{label}</FormLabel>
       <RadioGroup
         row
@@ -319,8 +317,18 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
       return;
     }
 
+    const vitalsWithoutBmi: MedicalHistoryPayload['vitals'] = {
+      ...form.vitals,
+    };
+    delete (vitalsWithoutBmi as { bmi?: string }).bmi;
+
+    const payload: MedicalHistoryPayload = {
+      ...form,
+      vitals: vitalsWithoutBmi,
+    };
+
     try {
-      await submitMedicalHistory(form);
+      await submitMedicalHistory(payload);
       enqueueSnackbar('Medical history submitted successfully', {
         variant: 'success',
       });
@@ -337,20 +345,7 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
   if (isLoading) return <CustomLoader />;
 
   return (
-    <Paper sx={{ p: 3, width: '100%' }}>
-      <Box>
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          Medical History
-        </Typography>
-        {latest?.created_at && (
-          <Typography variant="body2" color="textSecondary">
-            Last submitted: {new Date(latest.created_at).toLocaleString()}
-          </Typography>
-        )}
-      </Box>
-
-      <Divider sx={{ my: 2 }} />
-
+    <Paper sx={{ width: '100%', boxShadow: 'none' }}>
       <FormControl sx={{ mt: 1 }}>
         <FormLabel sx={{ fontWeight: 600 }}>
           Ques 1: Memory loss or cognitive impairment Duration
@@ -474,13 +469,14 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
         <FormLabel sx={{ fontWeight: 600 }}>Ques 12: Vital sign</FormLabel>
         <Box
           sx={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            display: 'flex',
+            flexDirection: 'column',
             gap: 2,
             mt: 1,
           }}
         >
           <TextField
+            fullWidth
             label="Systolic"
             value={form.vitals.systolic}
             onChange={e =>
@@ -491,6 +487,7 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
             }
           />
           <TextField
+            fullWidth
             label="Diastolic"
             value={form.vitals.diastolic}
             onChange={e =>
@@ -501,6 +498,7 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
             }
           />
           <TextField
+            fullWidth
             label="Heart rate"
             value={form.vitals.heartRate}
             onChange={e =>
@@ -510,40 +508,25 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               }))
             }
           />
-          <TextField
-            label="BMI"
-            value={form.vitals.bmi}
-            onChange={e =>
-              setForm(prev => ({
-                ...prev,
-                vitals: { ...prev.vitals, bmi: e.target.value },
-              }))
-            }
-          />
 
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <FormControl fullWidth>
-              <FormLabel sx={{ fontSize: 12, mb: 0.5 }}>Weight unit</FormLabel>
-              <Select
-                value={form.vitals.weightUnit}
-                onChange={e =>
-                  setForm(prev => ({
-                    ...prev,
-                    vitals: {
-                      ...prev.vitals,
-                      weightUnit: String(e.target.value),
-                    },
-                  }))
-                }
-                displayEmpty
-              >
-                <MenuItem value="">
-                  <em>Select</em>
-                </MenuItem>
-                <MenuItem value="kg">kg</MenuItem>
-                <MenuItem value="lb">lb</MenuItem>
-              </Select>
-            </FormControl>
+          <FormControl>
+            <FormLabel sx={{ fontWeight: 600 }}>Weight</FormLabel>
+            <RadioGroup
+              row
+              value={form.vitals.weightUnit}
+              onChange={e =>
+                setForm(prev => ({
+                  ...prev,
+                  vitals: {
+                    ...prev.vitals,
+                    weightUnit: e.target.value as WeightUnit,
+                  },
+                }))
+              }
+            >
+              <FormControlLabel value="kg" control={<Radio />} label="kg" />
+              <FormControlLabel value="lb" control={<Radio />} label="lb" />
+            </RadioGroup>
             <TextField
               fullWidth
               label="Weight"
@@ -555,32 +538,27 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
                 }))
               }
             />
-          </Box>
+          </FormControl>
 
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <FormControl fullWidth>
-              <FormLabel sx={{ fontSize: 12, mb: 0.5 }}>Height unit</FormLabel>
-              <Select
-                value={form.vitals.heightUnit}
-                onChange={e =>
-                  setForm(prev => ({
-                    ...prev,
-                    vitals: {
-                      ...prev.vitals,
-                      heightUnit: String(e.target.value),
-                    },
-                  }))
-                }
-                displayEmpty
-              >
-                <MenuItem value="">
-                  <em>Select</em>
-                </MenuItem>
-                <MenuItem value="cm">cm</MenuItem>
-                <MenuItem value="ft">ft</MenuItem>
-                <MenuItem value="in">in</MenuItem>
-              </Select>
-            </FormControl>
+          <FormControl>
+            <FormLabel sx={{ fontWeight: 600 }}>Height</FormLabel>
+            <RadioGroup
+              row
+              value={form.vitals.heightUnit}
+              onChange={e =>
+                setForm(prev => ({
+                  ...prev,
+                  vitals: {
+                    ...prev.vitals,
+                    heightUnit: e.target.value as HeightUnit,
+                  },
+                }))
+              }
+            >
+              <FormControlLabel value="cm" control={<Radio />} label="cm" />
+              <FormControlLabel value="ft" control={<Radio />} label="ft" />
+              <FormControlLabel value="in" control={<Radio />} label="in" />
+            </RadioGroup>
             <TextField
               fullWidth
               label="Height"
@@ -592,7 +570,7 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
                 }))
               }
             />
-          </Box>
+          </FormControl>
         </Box>
       </Box>
 
@@ -632,9 +610,10 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
           }
         />
 
-        <FormControl sx={{ mt: 2, minWidth: 260 }}>
+        <FormControl sx={{ mt: 3 }}>
           <FormLabel sx={{ fontWeight: 600 }}>Alcohol</FormLabel>
-          <Select
+          <RadioGroup
+            row
             value={form.socialHabits.alcohol}
             onChange={e =>
               setForm(prev => ({
@@ -645,15 +624,23 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
                 },
               }))
             }
-            displayEmpty
           >
-            <MenuItem value="">
-              <em>Select</em>
-            </MenuItem>
-            <MenuItem value="everyday">Every day</MenuItem>
-            <MenuItem value="weekends">Weekends</MenuItem>
-            <MenuItem value="occasional">Occasional</MenuItem>
-          </Select>
+            <FormControlLabel
+              value="everyday"
+              control={<Radio />}
+              label="Every day"
+            />
+            <FormControlLabel
+              value="weekends"
+              control={<Radio />}
+              label="Weekends"
+            />
+            <FormControlLabel
+              value="occasional"
+              control={<Radio />}
+              label="Occasional"
+            />
+          </RadioGroup>
         </FormControl>
 
         <YesNoRadioGroup
