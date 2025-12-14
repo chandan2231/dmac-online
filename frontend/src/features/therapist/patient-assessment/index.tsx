@@ -27,6 +27,7 @@ import CustomLoader from '../../../components/loader';
 import { TabHeaderLayout } from '../../../components/tab-header';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import MedicalHistoryReadOnly from '../../patient/upload-documents/MedicalHistoryReadOnly';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -257,17 +258,6 @@ const parseMaybeJson = (value: unknown): unknown => {
   return value;
 };
 
-const formatYesNo = (v: unknown) => {
-  if (v === 'yes') return 'Yes';
-  if (v === 'no') return 'No';
-  return '—';
-};
-
-const formatList = (v: unknown) => {
-  if (Array.isArray(v) && v.length) return v.join(', ');
-  return '—';
-};
-
 const PatientAssessment = () => {
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
@@ -419,188 +409,7 @@ const PatientAssessment = () => {
             {new Date(medicalHistory.created_at).toLocaleString()}
           </Typography>
         )}
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>
-            Ques 1: Memory loss or cognitive impairment Duration
-          </FormLabel>
-          <Typography sx={{ mt: 0.5 }}>
-            {medicalHistoryPayload?.memoryDuration || '—'}
-          </Typography>
-        </Box>
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>
-            Ques 2: Attention problem
-          </FormLabel>
-          <Typography sx={{ mt: 0.5 }}>
-            {formatYesNo(medicalHistoryPayload?.attentionProblem)}
-          </Typography>
-        </Box>
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>
-            Ques 3: Neurological Conditions (select all that apply)
-          </FormLabel>
-          <Typography sx={{ mt: 0.5 }}>
-            {formatList(medicalHistoryPayload?.neurologicalConditions)}
-          </Typography>
-        </Box>
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>
-            Ques 4: Sleep-Related Disorders (select all that apply)
-          </FormLabel>
-          <Typography sx={{ mt: 0.5 }}>
-            {formatList(medicalHistoryPayload?.sleepRelatedDisorders)}
-          </Typography>
-        </Box>
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>
-            Ques 5: Psychiatric & Emotional Conditions (select all that apply)
-          </FormLabel>
-          <Typography sx={{ mt: 0.5 }}>
-            {formatList(medicalHistoryPayload?.psychiatricEmotionalConditions)}
-          </Typography>
-        </Box>
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>
-            Ques 6: Cardiovascular & Metabolic Disorders (select all that apply)
-          </FormLabel>
-          <Typography sx={{ mt: 0.5 }}>
-            {formatList(
-              medicalHistoryPayload?.cardiovascularMetabolicDisorders
-            )}
-          </Typography>
-        </Box>
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>
-            Ques 7: Endocrine & Hormonal Disorders (select all that apply)
-          </FormLabel>
-          <Typography sx={{ mt: 0.5 }}>
-            {formatList(medicalHistoryPayload?.endocrineHormonalDisorders)}
-          </Typography>
-        </Box>
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>
-            Ques 8: Respiratory & Systemic Conditions (select all that apply)
-          </FormLabel>
-          <Typography sx={{ mt: 0.5 }}>
-            {formatList(medicalHistoryPayload?.respiratorySystemicConditions)}
-          </Typography>
-        </Box>
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>
-            Ques 9: Medication-Related Causes (select all that apply)
-          </FormLabel>
-          <Typography sx={{ mt: 0.5 }}>
-            {formatList(medicalHistoryPayload?.medicationRelatedCauses)}
-          </Typography>
-        </Box>
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>
-            Ques 10: Substance-Related Causes (select all that apply)
-          </FormLabel>
-          <Typography sx={{ mt: 0.5 }}>
-            {formatList(medicalHistoryPayload?.substanceRelatedCauses)}
-          </Typography>
-        </Box>
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>
-            Ques 11: Current medication list
-          </FormLabel>
-          <TextField
-            value={medicalHistoryPayload?.currentMedicationList || ''}
-            multiline
-            minRows={3}
-            fullWidth
-            disabled
-            sx={{ mt: 1 }}
-          />
-        </Box>
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>Ques 12: Vital sign</FormLabel>
-          <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Typography>
-              Systolic: {medicalHistoryPayload?.vitals?.systolic || '—'}
-            </Typography>
-            <Typography>
-              Diastolic: {medicalHistoryPayload?.vitals?.diastolic || '—'}
-            </Typography>
-            <Typography>
-              Heart rate: {medicalHistoryPayload?.vitals?.heartRate || '—'}
-            </Typography>
-            <Typography>
-              Weight:{' '}
-              {(medicalHistoryPayload?.vitals?.weight || '—') +
-                (medicalHistoryPayload?.vitals?.weightUnit
-                  ? ` ${medicalHistoryPayload.vitals.weightUnit}`
-                  : '')}
-            </Typography>
-            <Typography>
-              Height:{' '}
-              {(medicalHistoryPayload?.vitals?.height || '—') +
-                (medicalHistoryPayload?.vitals?.heightUnit
-                  ? ` ${medicalHistoryPayload.vitals.heightUnit}`
-                  : '')}
-            </Typography>
-          </Box>
-        </Box>
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>Ques 13: Social habits</FormLabel>
-          <Box
-            sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}
-          >
-            <Typography>
-              Exercise:{' '}
-              {formatYesNo(medicalHistoryPayload?.socialHabits?.exercise)}
-            </Typography>
-            <Typography>
-              Walking:{' '}
-              {formatYesNo(medicalHistoryPayload?.socialHabits?.walking)}
-            </Typography>
-            <Typography>
-              Sleep &gt; 6 hours:{' '}
-              {formatYesNo(
-                medicalHistoryPayload?.socialHabits?.sleepMoreThan6Hours
-              )}
-            </Typography>
-            <Typography>
-              Alcohol: {medicalHistoryPayload?.socialHabits?.alcohol || '—'}
-            </Typography>
-            <Typography>
-              Drug abuse (present):{' '}
-              {formatYesNo(
-                medicalHistoryPayload?.socialHabits?.drugAbusePresent
-              )}
-            </Typography>
-            <Typography>
-              Drug abuse (past):{' '}
-              {formatYesNo(medicalHistoryPayload?.socialHabits?.drugAbusePast)}
-            </Typography>
-          </Box>
-        </Box>
-
-        <Box>
-          <FormLabel sx={{ fontWeight: 600 }}>Concerns</FormLabel>
-          <TextField
-            value={medicalHistoryPayload?.concerns || ''}
-            multiline
-            minRows={4}
-            fullWidth
-            disabled
-            sx={{ mt: 1 }}
-          />
-        </Box>
+        <MedicalHistoryReadOnly payload={medicalHistoryPayload} />
       </Box>
     );
   };
@@ -648,23 +457,14 @@ const PatientAssessment = () => {
         </TabPanel>
 
         <TabPanel value={value} index={1}>
-          <Typography variant="h6" gutterBottom>
-            Sleep Apnea Test (SAT)
-          </Typography>
           {renderQuestionTab(satQuestions, satData)}
         </TabPanel>
 
         <TabPanel value={value} index={2}>
-          <Typography variant="h6" gutterBottom>
-            Depression Diagnostic Test (DAT)
-          </Typography>
           {renderQuestionTab(datQuestions, datData)}
         </TabPanel>
 
         <TabPanel value={value} index={3}>
-          <Typography variant="h6" gutterBottom>
-            Anxiety diagnostic test (ADT)
-          </Typography>
           {renderQuestionTab(adtQuestions, adtData)}
         </TabPanel>
 
