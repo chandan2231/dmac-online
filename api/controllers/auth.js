@@ -110,7 +110,7 @@ export const capturePatientPayment = async (req, res) => {
 
     /* ------------------ INSERT INTO mapping ------------------ */
 
-    await db.promise().query(`INSERT INTO dmac_webapp_licca_user_mapping (webapp_user_id, licca_user_id) VALUES (?, ?, ?)`, [userId, patient_id])
+    await db.promise().query(`INSERT INTO dmac_webapp_licca_user_mapping (webapp_user_id, licca_user_id) VALUES (?, ?)`, [userId, patient_id])
 
     /* ------------------ INSERT INTO share_users_list ------------------ */
     await db.promise().query(
