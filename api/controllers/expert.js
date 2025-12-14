@@ -831,3 +831,38 @@ export const getPatientAssessmentStatus = async (req, res) => {
     res.status(500).json({ message: 'Error fetching assessment status' })
   }
 }
+
+export const getPatientMedicalHistory = async (req, res) => {
+  const { patient_id } = req.body
+
+  if (!patient_id) {
+    return res.status(400).json({ message: 'Patient ID is required' })
+  }
+
+  try {
+    const query = `
+      SELECT id, data, created_at
+      FROM dmac_webapp_medical_history
+      WHERE user_id = ?
+      ORDER BY id DESC
+      LIMIT 1
+    `
+    const rows = await new Promise((resolve, reject) => {
+      db.query(query, [patient_id], (err, result) => {
+        if (err) reject(err)
+        resolve(result)
+      })
+    })
+
+    res.status(200).json(rows.length ? rows[0] : null)
+  } catch (error) {
+    console.error('Error fetching patient medical history:', error)
+    if (error?.code === 'ER_NO_SUCH_TABLE') {
+      return res.status(500).json({
+        message:
+          'Medical history table is missing. Run create_medical_history_table.js (or your DB migration) to create dmac_webapp_medical_history.'
+      })
+    }
+    res.status(500).json({ message: 'Error fetching medical history' })
+  }
+}

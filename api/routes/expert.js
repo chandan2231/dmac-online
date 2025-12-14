@@ -10,7 +10,8 @@ import {
   rescheduleConsultation,
   getExpertPatients,
   getPatientDocuments,
-  getPatientAssessmentStatus
+  getPatientAssessmentStatus,
+  getPatientMedicalHistory
 } from '../controllers/expert.js'
 
 import { authenticateUser } from '../utils/middleware.js'
@@ -31,6 +32,11 @@ router.post(
   '/patient-assessment-status',
   authenticateUser,
   getPatientAssessmentStatus
+)
+router.post(
+  '/patient-medical-history',
+  authenticateUser,
+  getPatientMedicalHistory
 )
 
 export default router

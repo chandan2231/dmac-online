@@ -21,6 +21,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   useGetPatientAssessmentStatus,
   useGetPatientDocuments,
+  useGetPatientMedicalHistory,
 } from '../hooks/usePatientAssessment';
 import CustomLoader from '../../../components/loader';
 import { TabHeaderLayout } from '../../../components/tab-header';
@@ -208,15 +209,84 @@ interface Document {
   created_at: string;
 }
 
+type YesNo = 'yes' | 'no' | '';
+type AlcoholFrequency = 'everyday' | 'weekends' | 'occasional' | '';
+
+type MedicalHistoryPayload = {
+  memoryDuration: string;
+  attentionProblem: YesNo;
+  neurologicalConditions: string[];
+  sleepRelatedDisorders: string[];
+  psychiatricEmotionalConditions: string[];
+  cardiovascularMetabolicDisorders: string[];
+  endocrineHormonalDisorders: string[];
+  respiratorySystemicConditions: string[];
+  medicationRelatedCauses: string[];
+  substanceRelatedCauses: string[];
+  currentMedicationList: string;
+  vitals: {
+    systolic: string;
+    diastolic: string;
+    heartRate: string;
+    weightUnit?: string;
+    weight?: string;
+    heightUnit?: string;
+    height?: string;
+    bmi?: string;
+  };
+  socialHabits: {
+    exercise: YesNo;
+    walking: YesNo;
+    sleepMoreThan6Hours: YesNo;
+    alcohol: AlcoholFrequency;
+    drugAbusePresent: YesNo;
+    drugAbusePast: YesNo;
+  };
+  concerns: string;
+};
+
+const parseMaybeJson = (value: unknown): unknown => {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  return value;
+};
+
+const formatYesNo = (v: unknown) => {
+  if (v === 'yes') return 'Yes';
+  if (v === 'no') return 'No';
+  return '—';
+};
+
+const formatList = (v: unknown) => {
+  if (Array.isArray(v) && v.length) return v.join(', ');
+  return '—';
+};
+
 const PatientAssessment = () => {
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
   const [value, setValue] = useState(0);
 
+  const patientIdNum = patientId ? parseInt(patientId) : null;
+
   const { data: status, isLoading: assessmentLoading } =
-    useGetPatientAssessmentStatus(patientId ? parseInt(patientId) : null);
+    useGetPatientAssessmentStatus(patientIdNum);
   const { data: documents, isLoading: documentsLoading } =
-    useGetPatientDocuments(patientId ? parseInt(patientId) : null);
+    useGetPatientDocuments(patientIdNum);
+  const { data: medicalHistory, isLoading: medicalHistoryLoading } =
+    useGetPatientMedicalHistory(patientIdNum);
+
+  const medicalHistoryPayload = React.useMemo(() => {
+    const parsed = parseMaybeJson(medicalHistory?.data);
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed as Partial<MedicalHistoryPayload>;
+  }, [medicalHistory]);
 
   const [satData, setSatData] = useState<Record<string, string>>({});
   const [datData, setDatData] = useState<Record<string, string>>({});
@@ -332,7 +402,211 @@ const PatientAssessment = () => {
     </Box>
   );
 
-  if (assessmentLoading || documentsLoading) return <CustomLoader />;
+  const renderMedicalHistoryTab = () => {
+    if (!medicalHistory) {
+      return (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          No medical history submitted.
+        </Alert>
+      );
+    }
+
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {medicalHistory?.created_at && (
+          <Typography variant="body2" color="textSecondary">
+            Last submitted:{' '}
+            {new Date(medicalHistory.created_at).toLocaleString()}
+          </Typography>
+        )}
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>
+            Ques 1: Memory loss or cognitive impairment Duration
+          </FormLabel>
+          <Typography sx={{ mt: 0.5 }}>
+            {medicalHistoryPayload?.memoryDuration || '—'}
+          </Typography>
+        </Box>
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>
+            Ques 2: Attention problem
+          </FormLabel>
+          <Typography sx={{ mt: 0.5 }}>
+            {formatYesNo(medicalHistoryPayload?.attentionProblem)}
+          </Typography>
+        </Box>
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>
+            Ques 3: Neurological Conditions (select all that apply)
+          </FormLabel>
+          <Typography sx={{ mt: 0.5 }}>
+            {formatList(medicalHistoryPayload?.neurologicalConditions)}
+          </Typography>
+        </Box>
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>
+            Ques 4: Sleep-Related Disorders (select all that apply)
+          </FormLabel>
+          <Typography sx={{ mt: 0.5 }}>
+            {formatList(medicalHistoryPayload?.sleepRelatedDisorders)}
+          </Typography>
+        </Box>
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>
+            Ques 5: Psychiatric & Emotional Conditions (select all that apply)
+          </FormLabel>
+          <Typography sx={{ mt: 0.5 }}>
+            {formatList(medicalHistoryPayload?.psychiatricEmotionalConditions)}
+          </Typography>
+        </Box>
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>
+            Ques 6: Cardiovascular & Metabolic Disorders (select all that apply)
+          </FormLabel>
+          <Typography sx={{ mt: 0.5 }}>
+            {formatList(
+              medicalHistoryPayload?.cardiovascularMetabolicDisorders
+            )}
+          </Typography>
+        </Box>
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>
+            Ques 7: Endocrine & Hormonal Disorders (select all that apply)
+          </FormLabel>
+          <Typography sx={{ mt: 0.5 }}>
+            {formatList(medicalHistoryPayload?.endocrineHormonalDisorders)}
+          </Typography>
+        </Box>
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>
+            Ques 8: Respiratory & Systemic Conditions (select all that apply)
+          </FormLabel>
+          <Typography sx={{ mt: 0.5 }}>
+            {formatList(medicalHistoryPayload?.respiratorySystemicConditions)}
+          </Typography>
+        </Box>
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>
+            Ques 9: Medication-Related Causes (select all that apply)
+          </FormLabel>
+          <Typography sx={{ mt: 0.5 }}>
+            {formatList(medicalHistoryPayload?.medicationRelatedCauses)}
+          </Typography>
+        </Box>
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>
+            Ques 10: Substance-Related Causes (select all that apply)
+          </FormLabel>
+          <Typography sx={{ mt: 0.5 }}>
+            {formatList(medicalHistoryPayload?.substanceRelatedCauses)}
+          </Typography>
+        </Box>
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>
+            Ques 11: Current medication list
+          </FormLabel>
+          <TextField
+            value={medicalHistoryPayload?.currentMedicationList || ''}
+            multiline
+            minRows={3}
+            fullWidth
+            disabled
+            sx={{ mt: 1 }}
+          />
+        </Box>
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>Ques 12: Vital sign</FormLabel>
+          <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Typography>
+              Systolic: {medicalHistoryPayload?.vitals?.systolic || '—'}
+            </Typography>
+            <Typography>
+              Diastolic: {medicalHistoryPayload?.vitals?.diastolic || '—'}
+            </Typography>
+            <Typography>
+              Heart rate: {medicalHistoryPayload?.vitals?.heartRate || '—'}
+            </Typography>
+            <Typography>
+              Weight:{' '}
+              {(medicalHistoryPayload?.vitals?.weight || '—') +
+                (medicalHistoryPayload?.vitals?.weightUnit
+                  ? ` ${medicalHistoryPayload.vitals.weightUnit}`
+                  : '')}
+            </Typography>
+            <Typography>
+              Height:{' '}
+              {(medicalHistoryPayload?.vitals?.height || '—') +
+                (medicalHistoryPayload?.vitals?.heightUnit
+                  ? ` ${medicalHistoryPayload.vitals.heightUnit}`
+                  : '')}
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>Ques 13: Social habits</FormLabel>
+          <Box
+            sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}
+          >
+            <Typography>
+              Exercise:{' '}
+              {formatYesNo(medicalHistoryPayload?.socialHabits?.exercise)}
+            </Typography>
+            <Typography>
+              Walking:{' '}
+              {formatYesNo(medicalHistoryPayload?.socialHabits?.walking)}
+            </Typography>
+            <Typography>
+              Sleep &gt; 6 hours:{' '}
+              {formatYesNo(
+                medicalHistoryPayload?.socialHabits?.sleepMoreThan6Hours
+              )}
+            </Typography>
+            <Typography>
+              Alcohol: {medicalHistoryPayload?.socialHabits?.alcohol || '—'}
+            </Typography>
+            <Typography>
+              Drug abuse (present):{' '}
+              {formatYesNo(
+                medicalHistoryPayload?.socialHabits?.drugAbusePresent
+              )}
+            </Typography>
+            <Typography>
+              Drug abuse (past):{' '}
+              {formatYesNo(medicalHistoryPayload?.socialHabits?.drugAbusePast)}
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box>
+          <FormLabel sx={{ fontWeight: 600 }}>Concerns</FormLabel>
+          <TextField
+            value={medicalHistoryPayload?.concerns || ''}
+            multiline
+            minRows={4}
+            fullWidth
+            disabled
+            sx={{ mt: 1 }}
+          />
+        </Box>
+      </Box>
+    );
+  };
+
+  if (assessmentLoading || documentsLoading || medicalHistoryLoading)
+    return <CustomLoader />;
 
   return (
     <Box sx={{ p: 3, width: '100%', height: '100%', overflowY: 'auto' }}>
@@ -361,6 +635,7 @@ const PatientAssessment = () => {
           variant="scrollable"
           scrollButtons="auto"
         >
+          <Tab label="Medical History" />
           <Tab label="Sleep Apnea Test" />
           <Tab label="Depression Diagnostic Test" />
           <Tab label="Anxiety Diagnostic Test" />
@@ -369,27 +644,31 @@ const PatientAssessment = () => {
         </Tabs>
 
         <TabPanel value={value} index={0}>
+          {renderMedicalHistoryTab()}
+        </TabPanel>
+
+        <TabPanel value={value} index={1}>
           <Typography variant="h6" gutterBottom>
             Sleep Apnea Test (SAT)
           </Typography>
           {renderQuestionTab(satQuestions, satData)}
         </TabPanel>
 
-        <TabPanel value={value} index={1}>
+        <TabPanel value={value} index={2}>
           <Typography variant="h6" gutterBottom>
             Depression Diagnostic Test (DAT)
           </Typography>
           {renderQuestionTab(datQuestions, datData)}
         </TabPanel>
 
-        <TabPanel value={value} index={2}>
+        <TabPanel value={value} index={3}>
           <Typography variant="h6" gutterBottom>
             Anxiety diagnostic test (ADT)
           </Typography>
           {renderQuestionTab(adtQuestions, adtData)}
         </TabPanel>
 
-        <TabPanel value={value} index={3}>
+        <TabPanel value={value} index={4}>
           {!disclaimerAccepted && (
             <Alert severity="info" sx={{ mb: 2 }}>
               No disclaimer submitted.
@@ -416,7 +695,7 @@ const PatientAssessment = () => {
           </Box>
         </TabPanel>
 
-        <TabPanel value={value} index={4}>
+        <TabPanel value={value} index={5}>
           {!consentAccepted && (
             <Alert severity="info" sx={{ mb: 2 }}>
               No consent submitted.

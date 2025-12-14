@@ -220,6 +220,18 @@ const getPatientAssessmentStatus = async (patientId: number) => {
   }
 };
 
+const getPatientMedicalHistory = async (patientId: number) => {
+  try {
+    const response = await HttpService.post('/expert/patient-medical-history', {
+      patient_id: patientId,
+    });
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching patient medical history:', error);
+    return null;
+  }
+};
+
 const getExpertReviews = async (expertId: string) => {
   try {
     const response = await HttpService.get(`/reviews/expert/list/${expertId}`);
@@ -242,6 +254,7 @@ const ExpertService = {
   getExpertReview,
   getPatientDocuments,
   getPatientAssessmentStatus,
+  getPatientMedicalHistory,
   getExpertReviews,
 };
 
