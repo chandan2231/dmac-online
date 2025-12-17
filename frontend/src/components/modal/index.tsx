@@ -1,4 +1,4 @@
-import React, { type ReactNode } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -11,6 +11,7 @@ import {
 import { styled } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import MorenButton from '../button';
+import TextToSpeech from '../TextToSpeech';
 import CustomLoader from '../loader';
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
@@ -25,17 +26,20 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
   },
 }));
 
-type GenericModalProps = {
+interface GenericModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
-  subTitle?: string;
-  children?: ReactNode;
   onSubmit?: () => void;
-  hideSubmitButton?: boolean;
-  hideCancelButton?: boolean;
+  title?: string;
   submitButtonText?: string;
   cancelButtonText?: string;
+  hideCancelButton?: boolean;
+  children: React.ReactNode;
+  enableAudio?: boolean;
+  instructionText?: string;
+  languageCode?: string;
+  subTitle?: string;
+  hideSubmitButton?: boolean;
   maxWidth?: DialogProps['maxWidth'];
   onCancel?: () => void | null;
   isLoading?: boolean;
@@ -59,6 +63,9 @@ const GenericModal: React.FC<GenericModalProps> = ({
   isLoading = false,
   renderHtmlContent = null,
   submitDisabled = false,
+  enableAudio = false,
+  instructionText = '',
+  languageCode = 'en',
 }) => {
   if (isLoading) {
     return <CustomLoader />;
@@ -132,7 +139,15 @@ const GenericModal: React.FC<GenericModalProps> = ({
       ) : null}
 
       {(onSubmit || !hideCancelButton) && (
-        <DialogActions>
+        <DialogActions sx={{ justifyContent: 'flex-end', gap: 1 }}>
+          {enableAudio && instructionText && (
+            <TextToSpeech
+              text={instructionText}
+              languageCode={languageCode}
+              iconSize="large"
+              color="primary"
+            />
+          )}
           {!hideCancelButton && (
             <MorenButton
               onClick={() => {
@@ -155,7 +170,8 @@ const GenericModal: React.FC<GenericModalProps> = ({
               variant="contained"
               disabled={submitDisabled}
               sx={{
-                maxWidth: '150px',
+                minWidth: '150px',
+                width: 'auto',
               }}
             >
               {submitButtonText}

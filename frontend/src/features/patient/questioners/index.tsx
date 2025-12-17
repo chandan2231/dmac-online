@@ -1,19 +1,34 @@
 import { Box } from '@mui/material';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Disclaimer from './components/Disclaimer';
 import FalsePositive from './components/FalsePositive';
 import Questions from './components/Questioners';
 
-import ModuleRunner from './components/GameModules/ModuleRunner'; // Import ModuleRunner
-import { useSelector } from 'react-redux'; // Import useSelector
-import type { RootState } from '../../../../store'; // Import RootState
-import { get } from 'lodash'; // Import get
+import ModuleRunner from './components/GameModules/ModuleRunner';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState } from '../../../store';
+import { get } from 'lodash';
+import { disableLanguageSelector, enableLanguageSelector } from '../../../i18n/language.slice';
 
 const Questioners = () => {
+  const dispatch = useDispatch();
   const [isQuestionerClosed, setIsQuestionerClosed] = useState(false);
   const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(false);
   const [falsePositive, setFalsePositive] = useState(false);
   const { user } = useSelector((state: RootState) => state.auth);
+
+  // Disable language selector when game starts
+  useEffect(() => {
+    if (isQuestionerClosed) {
+      dispatch(disableLanguageSelector());
+    }
+  }, [isQuestionerClosed, dispatch]);
+
+  const handleAllModulesComplete = () => {
+    // Re-enable language selector when game completes
+    dispatch(enableLanguageSelector());
+    // Handle completion, maybe navigate home?
+  };
 
   return (
     <Box
@@ -41,8 +56,8 @@ const Questioners = () => {
       {isQuestionerClosed && isDisclaimerAccepted && falsePositive ? (
         <ModuleRunner
           userId={Number(get(user, 'id', 0))}
-          languageCode={typeof get(user, 'languageCode') === 'string' ? get(user, 'languageCode') : 'en'}
-          onAllModulesComplete={() => { /* Handle completion, maybe navigate home? */ }}
+          languageCode={(get(user, 'languageCode') as string) || 'en'}
+          onAllModulesComplete={handleAllModulesComplete}
         />
       ) : null}
     </Box>

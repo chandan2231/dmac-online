@@ -26,7 +26,7 @@ export default function LanguageMode() {
   const dispatch = useDispatch();
   // const { i18n } = useTranslation();
   // const currentLang = i18n.language;
-  const { isLanguageModalOpen } = useSelector(
+  const { isLanguageModalOpen, isLanguageSelectorDisabled } = useSelector(
     (state: RootState) => state.language
   );
   const { user } = useSelector((state: RootState) => state.auth);
@@ -73,19 +73,24 @@ export default function LanguageMode() {
   };
 
   const handleOpen = () => {
-    dispatch(openLanguageModal());
+    if (!isLanguageSelectorDisabled) {
+      dispatch(openLanguageModal());
+    }
   };
 
   return (
     <>
-      <Tooltip title="Change Language">
-        <IconButton
-          onClick={() => handleOpen()}
-          aria-label="change language"
-          color="inherit"
-        >
-          <TranslateIcon />
-        </IconButton>
+      <Tooltip title={isLanguageSelectorDisabled ? "Language locked during assessment" : "Change Language"}>
+        <span>
+          <IconButton
+            onClick={() => handleOpen()}
+            aria-label="change language"
+            color="inherit"
+            disabled={isLanguageSelectorDisabled}
+          >
+            <TranslateIcon />
+          </IconButton>
+        </span>
       </Tooltip>
 
       <GenericModal

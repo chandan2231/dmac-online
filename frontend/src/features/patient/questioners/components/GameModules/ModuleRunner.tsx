@@ -87,6 +87,8 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             } else {
                 // All modules completed - show completion screen
                 setShowCompletion(true);
+                // Re-enable language selector
+                onAllModulesComplete();
             }
         } catch (error) {
             console.error("Submit failed", error);

@@ -46,9 +46,10 @@ import dis34 from '../../../../../assets/visualSpatial/dis34.webp';
 interface VisualSpatialProps {
     session: SessionData;
     onComplete: (answers: { question_id: number, selected_option_key: string }[]) => void;
+    languageCode: string;
 }
 
-const VisualSpatial = ({ session, onComplete }: VisualSpatialProps) => {
+const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps) => {
     const { languageConstants } = useLanguageConstantContext();
 
     // Get translations
@@ -109,7 +110,7 @@ const VisualSpatial = ({ session, onComplete }: VisualSpatialProps) => {
 
     const startRound = () => {
         setPhase('target');
-        setCountdown(3);
+        setCountdown(5);
         setSelectedOption(null);
     };
 
@@ -174,6 +175,9 @@ const VisualSpatial = ({ session, onComplete }: VisualSpatialProps) => {
                 hideCancelButton={true}
                 submitButtonText={t.start}
                 onSubmit={handleStart}
+                enableAudio={true}
+                instructionText={session.instructions || ''}
+                languageCode={languageCode}
             >
                 <Typography sx={{ fontSize: '1.1rem', lineHeight: 1.6, color: '#d32f2f', fontWeight: 500 }}>
                     {session.instructions}

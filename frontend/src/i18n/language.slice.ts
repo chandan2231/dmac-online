@@ -2,10 +2,12 @@ import { createSlice } from '@reduxjs/toolkit';
 
 export interface ILanguageState {
   isLanguageModalOpen: boolean;
+  isLanguageSelectorDisabled: boolean;
 }
 
 const initialState: ILanguageState = {
   isLanguageModalOpen: false,
+  isLanguageSelectorDisabled: false,
 };
 
 const languageSlice = createSlice({
@@ -15,8 +17,14 @@ const languageSlice = createSlice({
     openLanguageModal: state => {
       state.isLanguageModalOpen = true;
     },
-    closeLanguageModal: state => {
+    closeLanguageModal: (state) => {
       state.isLanguageModalOpen = false;
+    },
+    disableLanguageSelector: (state) => {
+      state.isLanguageSelectorDisabled = true;
+    },
+    enableLanguageSelector: (state) => {
+      state.isLanguageSelectorDisabled = false;
     },
     toggleLanguageModal: state => {
       state.isLanguageModalOpen = !state.isLanguageModalOpen;
@@ -24,7 +32,7 @@ const languageSlice = createSlice({
   },
 });
 
-export const { openLanguageModal, closeLanguageModal, toggleLanguageModal } =
+export const { openLanguageModal, closeLanguageModal, toggleLanguageModal, disableLanguageSelector, enableLanguageSelector } =
   languageSlice.actions;
 
 export default languageSlice.reducer;

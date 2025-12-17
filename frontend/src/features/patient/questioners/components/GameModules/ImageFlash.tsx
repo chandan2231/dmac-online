@@ -3,7 +3,6 @@ import { Box, Typography } from '@mui/material';
 import MorenButton from '../../../../../components/button';
 import GenericModal from '../../../../../components/modal';
 import type { SessionData } from '../../../../../services/gameApi';
-import AudioPlayer from './Shared/AudioPlayer';
 import SpeechInput from '../../../../../components/SpeechInput';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
@@ -19,9 +18,10 @@ import Key from '../../../../../assets/ImageRecal/key.webp';
 import Tree from '../../../../../assets/ImageRecal/tree.webp';
 import Flower from '../../../../../assets/ImageRecal/flower.webp';
 import Pen from '../../../../../assets/ImageRecal/pen.webp';
-import AudioFile from '../../../../../assets/ImageRecal/forAll.mp3';
 
-// Map for quick lookup if we want to match API keys
+
+
+// Map for quick lookup - images only
 const IMAGE_MAP: Record<string, string> = {
     'bird': Bird,
     'boat': Boat,
@@ -69,37 +69,31 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
 
     const [phase, setPhase] = useState<'instruction' | 'playing' | 'lastImageWithButtons' | 'beforeInput' | 'input'>('instruction');
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
-    const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
     // Input state - single text field for all answers
     const [inputText, setInputText] = useState('');
     const [validationError, setValidationError] = useState('');
 
-    // Configuration: Set to false when images are uploaded to S3
-    const USE_STATIC_IMAGES = true; // TODO: Change to false once S3 images are ready
-
-    // Construct items list from API but override URLs if using static images
+    // Construct items list from API using static images only
     const items = (session.question?.items || []).map((item, index) => {
-        if (USE_STATIC_IMAGES) {
-            // STATIC MODE: Use local images
-            const key = (item.image_key || '').toLowerCase();
+        const key = (item.image_key || '').toLowerCase();
+        console.log(`[ImageFlash] Processing item: key="${key}"`);
 
-            // Robust fallback
-            const localImg = IMAGE_MAP[key] ||
-                IMAGE_MAP[Object.keys(IMAGE_MAP).find(k => key.includes(k)) || ''] ||
-                ALL_IMAGES[index % ALL_IMAGES.length];
+        // Direct lookup in IMAGE_MAP
+        const mappedImage = IMAGE_MAP[key];
 
+        if (mappedImage) {
+            console.log(`[ImageFlash] Found mapping for "${key}": image=${mappedImage.substring(mappedImage.lastIndexOf('/') + 1)}`);
             return {
                 ...item,
-                image_url: localImg,      // Use local static image
-                audio_url: AudioFile      // Use local static audio
+                image_url: mappedImage
             };
         } else {
-            // API MODE: Use URLs from backend (S3)
+            // No mapping found - use defaults from arrays by index
+            console.warn(`[ImageFlash] No mapping found for "${key}", using fallback at index ${index}`);
             return {
                 ...item,
-                image_url: item.image_url,  // Use API URL
-                audio_url: item.audio_url   // Use API URL
+                image_url: ALL_IMAGES[index % ALL_IMAGES.length]
             };
         }
     });
@@ -109,15 +103,14 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
     useEffect(() => {
         if (items.length > 0) {
             console.log('[ImageFlash] Session items from API:', session.question?.items);
-            console.log('[ImageFlash] Processed items with local images:', items);
+            console.log('[ImageFlash] Processed items with images:', items);
             setGameItems(items);
         } else {
             // Fallback for testing or if API returns nothing
             const shuffled = [...ALL_IMAGES].sort(() => 0.5 - Math.random()).slice(0, 5);
             const dummyItems = shuffled.map((img, idx) => ({
                 question_item_id: idx,
-                image_url: img,
-                audio_url: AudioFile
+                image_url: img
             }));
             console.log('[ImageFlash] Using fallback dummy items:', dummyItems);
             setGameItems(dummyItems);
@@ -133,25 +126,18 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
     const handleStart = () => {
         setPhase('playing');
         setCurrentItemIndex(0);
-        setIsPlayingAudio(true);
         setInputText(''); // Clear any previous answers
         setValidationError('');
-    };
-
-    const handleAudioEnded = () => {
-        setIsPlayingAudio(false);
     };
 
     useEffect(() => {
         let timer: any;
         if (phase === 'playing') {
             if (currentItemIndex < gameItems.length - 1) {
-                setIsPlayingAudio(true);
                 timer = setTimeout(() => {
                     setCurrentItemIndex((prev) => prev + 1);
                 }, 5000);
             } else if (currentItemIndex === gameItems.length - 1) {
-                setIsPlayingAudio(true);
                 timer = setTimeout(() => {
                     setPhase('lastImageWithButtons');
                 }, 5000);
@@ -183,7 +169,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
     const currentItem = gameItems[currentItemIndex];
 
     return (
-        <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: phase === 'playing' ? 'center' : 'flex-start', pt: phase === 'input' ? 4 : 0 }}>
+        <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: phase === 'input' ? 'flex-start' : 'center', pt: phase === 'input' ? 4 : 0 }}>
             <GenericModal
                 isOpen={phase === 'instruction'}
                 onClose={() => { }}
@@ -191,23 +177,20 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                 hideCancelButton={true}
                 submitButtonText={t.start}
                 onSubmit={handleStart}
+                enableAudio={true}
+                instructionText={session.instructions || session.question?.prompt_text || ''}
+                languageCode={languageCode}
             >
                 <Typography>{session.instructions || session.question?.prompt_text}</Typography>
             </GenericModal>
 
             {phase === 'playing' && currentItem && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
                     <Box
                         component="img"
                         src={currentItem.image_url}
                         alt="Recall Item"
                         sx={{ maxWidth: '80%', maxHeight: '60vh', objectFit: 'contain' }}
-                    />
-                    {/* Always play the override audio */}
-                    <AudioPlayer
-                        src={currentItem.audio_url}
-                        play={isPlayingAudio}
-                        onEnded={handleAudioEnded}
                     />
                 </Box>
             )}
@@ -265,6 +248,9 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                 hideCancelButton={true}
                 submitButtonText={t.next}
                 onSubmit={() => setPhase('input')}
+                enableAudio={true}
+                instructionText={session.question?.prompt_text || ''}
+                languageCode={languageCode}
             >
                 <Typography sx={{ color: '#d32f2f', fontSize: '1.1rem' }}>
                     {session.question?.prompt_text}

@@ -28,12 +28,21 @@ const AudioPlayer = ({ src, play, onEnded }: AudioPlayerProps) => {
     }, [src, onEnded]);
 
     useEffect(() => {
+        let playTimer: NodeJS.Timeout;
+
         if (play && audioRef.current) {
-            audioRef.current.play().catch(e => console.error("Audio play failed", e));
+            // Wait 1 second before playing audio
+            playTimer = setTimeout(() => {
+                audioRef.current?.play().catch(e => console.error("Audio play failed", e));
+            }, 1000);
         } else if (!play && audioRef.current) {
             audioRef.current.pause();
             audioRef.current.currentTime = 0;
         }
+
+        return () => {
+            if (playTimer) clearTimeout(playTimer);
+        };
     }, [play]);
 
     return null; // Logic only component
