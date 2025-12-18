@@ -49,6 +49,11 @@ type MedicalHistoryPayload = {
     alcohol: AlcoholFrequency;
     drugAbusePresent: YesNo;
     drugAbusePast: YesNo;
+    tobacco: YesNo;
+    familyHistoryMembers: string[];
+    dementia: YesNo;
+    stroke: YesNo;
+    lupus: YesNo;
   };
   concerns: string;
 };
@@ -98,6 +103,11 @@ const DEFAULT_PAYLOAD: MedicalHistoryPayload = {
     alcohol: '',
     drugAbusePresent: '',
     drugAbusePast: '',
+    tobacco: '',
+    familyHistoryMembers: [],
+    dementia: '',
+    stroke: '',
+    lupus: '',
   },
   concerns: '',
 };
@@ -222,6 +232,11 @@ const MedicalHistoryReadOnly = ({
         alcohol: asAlcoholFrequency(socialRaw.alcohol),
         drugAbusePresent: asYesNo(socialRaw.drugAbusePresent),
         drugAbusePast: asYesNo(socialRaw.drugAbusePast),
+        tobacco: asYesNo(socialRaw.tobacco),
+        familyHistoryMembers: asStringArray(socialRaw.familyHistoryMembers),
+        dementia: asYesNo(socialRaw.dementia),
+        stroke: asYesNo(socialRaw.stroke),
+        lupus: asYesNo(socialRaw.lupus),
       },
       concerns: asString(payload.concerns),
     };
@@ -261,7 +276,13 @@ const MedicalHistoryReadOnly = ({
       'Chronic insomnia',
       'Restless Leg Syndrome (RLS)',
       'Circadian rhythm disorders',
+      'Asthma/COPD',
     ],
+    []
+  );
+
+  const familyHistoryOptions = useMemo(
+    () => ['Father', 'Mother', 'Grandfather/Grandmother', 'Brother/Sister'],
     []
   );
 
@@ -537,6 +558,32 @@ const MedicalHistoryReadOnly = ({
         <YesNoRadioGroupReadOnly
           label="Drug abuse: Past"
           value={form.socialHabits.drugAbusePast}
+        />
+
+        <YesNoRadioGroupReadOnly
+          label="Tobacco"
+          value={form.socialHabits.tobacco}
+        />
+
+        <CheckboxGroupReadOnly
+          title="Family History (select all that apply)"
+          options={familyHistoryOptions}
+          values={form.socialHabits.familyHistoryMembers}
+        />
+
+        <YesNoRadioGroupReadOnly
+          label="Dementia"
+          value={form.socialHabits.dementia}
+        />
+
+        <YesNoRadioGroupReadOnly
+          label="Stroke"
+          value={form.socialHabits.stroke}
+        />
+
+        <YesNoRadioGroupReadOnly
+          label="Lupus"
+          value={form.socialHabits.lupus}
         />
       </Box>
 
