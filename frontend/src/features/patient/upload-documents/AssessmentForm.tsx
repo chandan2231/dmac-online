@@ -208,7 +208,15 @@ const scrollToElement = (el: HTMLElement | null) => {
   input?.focus?.();
 };
 
-const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
+const AssessmentForm = ({
+  onComplete,
+  showLastTab,
+  tab,
+}: {
+  onComplete: () => void;
+  showLastTab: boolean;
+  tab: React.ReactNode;
+}) => {
   const [value, setValue] = useState(0);
   const { data: status, isLoading } = useGetAssessmentStatus();
   const { mutateAsync: submitTab, isPending: submitting } =
@@ -562,6 +570,7 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         <Tab label="Anxiety Diagnostic Test" />
         <Tab label="Disclaimer" />
         <Tab label="Consent" />
+        {showLastTab && <Tab label="Patient Documents" />}
       </Tabs>
 
       <TabPanel value={value} index={0}>
@@ -577,7 +586,6 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
       </TabPanel>
 
       <TabPanel value={value} index={2}>
-        
         <Typography variant="h6" gutterBottom>
           Please read each question carefully and indicate whether the statement
           applies to you.
@@ -1140,6 +1148,12 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
           {submitting ? <CircularProgress size={24} /> : 'Submit'}
         </Button>
       </TabPanel>
+
+      {showLastTab && (
+        <TabPanel value={value} index={6}>
+          {tab}
+        </TabPanel>
+      )}
     </Paper>
   );
 };
