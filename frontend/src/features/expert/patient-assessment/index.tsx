@@ -376,16 +376,8 @@ const PatientAssessment = () => {
             {q.label}
           </FormLabel>
           <RadioGroup row value={data[q.id] || ''}>
-            <FormControlLabel
-              value="Yes"
-              control={<Radio disabled />}
-              label="Yes"
-            />
-            <FormControlLabel
-              value="No"
-              control={<Radio disabled />}
-              label="No"
-            />
+            <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+            <FormControlLabel value="No" control={<Radio />} label="No" />
           </RadioGroup>
         </Box>
       ))}
@@ -480,7 +472,7 @@ const PatientAssessment = () => {
             </Alert>
           )}
           <FormControlLabel
-            control={<Checkbox checked={disclaimerAccepted} disabled />}
+            control={<Checkbox checked={disclaimerAccepted} />}
             label="I have read and agree to the disclaimer"
           />
           <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
@@ -488,14 +480,12 @@ const PatientAssessment = () => {
               label="Name ; Type electronic signature"
               value={disclaimerSignature}
               fullWidth
-              disabled
             />
             <TextField
               label="Date"
               type="date"
               value={disclaimerDate}
               InputLabelProps={{ shrink: true }}
-              disabled
             />
           </Box>
         </TabPanel>
@@ -507,7 +497,7 @@ const PatientAssessment = () => {
             </Alert>
           )}
           <FormControlLabel
-            control={<Checkbox checked={consentAccepted} disabled />}
+            control={<Checkbox checked={consentAccepted} />}
             label="I agree to the terms"
           />
 
@@ -515,25 +505,14 @@ const PatientAssessment = () => {
             Participant Information
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            <TextField
-              label="Full Name"
-              value={consentName}
-              fullWidth
-              disabled
-            />
-            <TextField
-              label="Signature"
-              value={consentSignature}
-              fullWidth
-              disabled
-            />
+            <TextField label="Full Name" value={consentName} fullWidth />
+            <TextField label="Signature" value={consentSignature} fullWidth />
             <TextField
               label="Date"
               type="date"
               value={consentDate}
               InputLabelProps={{ shrink: true }}
               fullWidth
-              disabled
             />
           </Box>
 
@@ -541,23 +520,16 @@ const PatientAssessment = () => {
             If signing as a legal guardian:
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            <TextField
-              label="Guardian Name"
-              value={guardianName}
-              fullWidth
-              disabled
-            />
+            <TextField label="Guardian Name" value={guardianName} fullWidth />
             <TextField
               label="Relationship to Participant"
               value={guardianRelation}
               fullWidth
-              disabled
             />
             <TextField
               label="Guardian Signature"
               value={guardianSignature}
               fullWidth
-              disabled
             />
             <TextField
               label="Date"
@@ -565,7 +537,6 @@ const PatientAssessment = () => {
               value={guardianDate}
               InputLabelProps={{ shrink: true }}
               fullWidth
-              disabled
             />
           </Box>
         </TabPanel>
