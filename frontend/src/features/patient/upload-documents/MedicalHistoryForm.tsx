@@ -9,17 +9,40 @@ import {
   FormGroup,
   FormLabel,
   FormHelperText,
+  IconButton,
+  InputAdornment,
   Paper,
   Radio,
   RadioGroup,
   TextField,
 } from '@mui/material';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
 import { useSnackbar } from 'notistack';
 import CustomLoader from '../../../components/loader';
 import {
   useGetLatestMedicalHistory,
   useSubmitMedicalHistory,
 } from '../hooks/useMedicalHistory';
+
+type SpeechRecognitionAlternativeLike = { transcript: string };
+type SpeechRecognitionResultLike = ArrayLike<SpeechRecognitionAlternativeLike>;
+type SpeechRecognitionEventLike = {
+  results: ArrayLike<SpeechRecognitionResultLike>;
+};
+
+type SpeechRecognitionLike = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: unknown) => void) | null;
+  onend: (() => void) | null;
+};
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
 type YesNo = 'yes' | 'no' | '';
 
@@ -191,6 +214,9 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
     useSubmitMedicalHistory();
   const { enqueueSnackbar } = useSnackbar();
 
+  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const [isRecordingMedication, setIsRecordingMedication] = useState(false);
+
   const memoryDurationRef = useRef<HTMLDivElement | null>(null);
   const attentionProblemRef = useRef<HTMLDivElement | null>(null);
 
@@ -207,6 +233,92 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
 
   const [form, setForm] = useState<MedicalHistoryPayload>(DEFAULT_PAYLOAD);
 
+  const getSpeechRecognitionCtor = () => {
+    const w = window as unknown as {
+      SpeechRecognition?: SpeechRecognitionCtor;
+      webkitSpeechRecognition?: SpeechRecognitionCtor;
+    };
+    return w.SpeechRecognition || w.webkitSpeechRecognition || null;
+  };
+
+  const stopSpeechRecognition = () => {
+    try {
+      speechRecognitionRef.current?.stop?.();
+    } catch {
+      // ignore
+    } finally {
+      speechRecognitionRef.current = null;
+      setIsRecordingMedication(false);
+    }
+  };
+
+  const toggleMedicationSpeechInput = () => {
+    if (isRecordingMedication) {
+      stopSpeechRecognition();
+      return;
+    }
+
+    const SpeechRecognitionCtor = getSpeechRecognitionCtor();
+    if (!SpeechRecognitionCtor) {
+      enqueueSnackbar(
+        'Speech input is not supported in this browser. Please type instead.',
+        { variant: 'error' }
+      );
+      return;
+    }
+
+    const recognition = new SpeechRecognitionCtor();
+    speechRecognitionRef.current = recognition;
+
+    recognition.lang = 'en-US';
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    recognition.onresult = (event: SpeechRecognitionEventLike) => {
+      const results = event?.results;
+      if (!results) return;
+
+      let transcript = '';
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const alt = result?.[0];
+        if (alt?.transcript) transcript += alt.transcript;
+      }
+
+      const nextText = transcript.trim();
+      if (!nextText) return;
+
+      setForm(prev => ({
+        ...prev,
+        currentMedicationList: prev.currentMedicationList?.trim()
+          ? `${prev.currentMedicationList.trim()} ${nextText}`
+          : nextText,
+      }));
+    };
+
+    recognition.onerror = () => {
+      enqueueSnackbar('Could not capture speech input. Please try again.', {
+        variant: 'error',
+      });
+      stopSpeechRecognition();
+    };
+
+    recognition.onend = () => {
+      speechRecognitionRef.current = null;
+      setIsRecordingMedication(false);
+    };
+
+    try {
+      recognition.start();
+      setIsRecordingMedication(true);
+    } catch {
+      enqueueSnackbar('Could not start speech input. Please try again.', {
+        variant: 'error',
+      });
+      stopSpeechRecognition();
+    }
+  };
+
   useEffect(() => {
     if (!latestPayload) return;
     setForm(prev => ({
@@ -222,6 +334,16 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
       },
     }));
   }, [latestPayload]);
+
+  useEffect(() => {
+    return () => {
+      try {
+        speechRecognitionRef.current?.stop();
+      } catch {
+        // ignore
+      }
+    };
+  }, []);
 
   const memoryDurationOptions = useMemo(
     () => [
@@ -501,6 +623,23 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
             }))
           }
           placeholder="Type your current medications"
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  edge="end"
+                  onClick={toggleMedicationSpeechInput}
+                  aria-label={
+                    isRecordingMedication
+                      ? 'Stop voice input'
+                      : 'Start voice input'
+                  }
+                >
+                  {isRecordingMedication ? <MicOffIcon /> : <MicIcon />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
           sx={{ mt: 1 }}
         />
       </Box>
