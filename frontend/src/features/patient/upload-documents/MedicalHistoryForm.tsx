@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -8,6 +8,7 @@ import {
   FormControlLabel,
   FormGroup,
   FormLabel,
+  FormHelperText,
   Paper,
   Radio,
   RadioGroup,
@@ -149,13 +150,17 @@ const YesNoRadioGroup = ({
   label,
   value,
   onChange,
+  error,
+  helperText,
 }: {
   label: string;
   value: YesNo;
   onChange: (v: YesNo) => void;
+  error?: boolean;
+  helperText?: string;
 }) => {
   return (
-    <FormControl sx={{ mt: 3, display: 'block' }}>
+    <FormControl error={!!error} sx={{ mt: 3, display: 'block' }}>
       <FormLabel sx={{ fontWeight: 600 }}>{label}</FormLabel>
       <RadioGroup
         row
@@ -165,8 +170,19 @@ const YesNoRadioGroup = ({
         <FormControlLabel value="yes" control={<Radio />} label="Yes" />
         <FormControlLabel value="no" control={<Radio />} label="No" />
       </RadioGroup>
+      {error && helperText && <FormHelperText>{helperText}</FormHelperText>}
     </FormControl>
   );
+};
+
+const scrollToElement = (el: HTMLElement | null) => {
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const input = el.querySelector('input, textarea') as
+    | HTMLInputElement
+    | HTMLTextAreaElement
+    | null;
+  input?.focus?.();
 };
 
 const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
@@ -174,6 +190,14 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
   const { mutateAsync: submitMedicalHistory, isPending: submitting } =
     useSubmitMedicalHistory();
   const { enqueueSnackbar } = useSnackbar();
+
+  const memoryDurationRef = useRef<HTMLDivElement | null>(null);
+  const attentionProblemRef = useRef<HTMLDivElement | null>(null);
+
+  const [errors, setErrors] = useState({
+    memoryDuration: false,
+    attentionProblem: false,
+  });
 
   const latestPayload = useMemo(() => {
     const parsed = parseMaybeJson(latest?.data);
@@ -304,14 +328,17 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
   );
 
   const handleSubmit = async () => {
-    if (!form.memoryDuration) {
+    const nextErrors = {
+      memoryDuration: !form.memoryDuration,
+      attentionProblem: !form.attentionProblem,
+    };
+
+    if (nextErrors.memoryDuration || nextErrors.attentionProblem) {
+      setErrors(nextErrors);
+      if (nextErrors.memoryDuration) scrollToElement(memoryDurationRef.current);
+      else scrollToElement(attentionProblemRef.current);
+
       enqueueSnackbar('Please select memory loss duration', {
-        variant: 'error',
-      });
-      return;
-    }
-    if (!form.attentionProblem) {
-      enqueueSnackbar('Please answer Attention problem (Yes/No)', {
         variant: 'error',
       });
       return;
@@ -346,32 +373,45 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
 
   return (
     <Paper sx={{ width: '100%', boxShadow: 'none' }}>
-      <FormControl sx={{ mt: 1 }}>
-        <FormLabel sx={{ fontWeight: 600 }}>
-          Ques 1: Memory loss or cognitive impairment Duration
-        </FormLabel>
-        <RadioGroup
-          value={form.memoryDuration}
-          onChange={e =>
-            setForm(prev => ({ ...prev, memoryDuration: e.target.value }))
-          }
-        >
-          {memoryDurationOptions.map(opt => (
-            <FormControlLabel
-              key={opt}
-              value={opt}
-              control={<Radio />}
-              label={opt}
-            />
-          ))}
-        </RadioGroup>
-      </FormControl>
+      <Box ref={memoryDurationRef}>
+        <FormControl error={errors.memoryDuration} sx={{ mt: 1 }}>
+          <FormLabel sx={{ fontWeight: 600 }}>
+            Ques 1: Memory loss or cognitive impairment Duration
+          </FormLabel>
+          <RadioGroup
+            value={form.memoryDuration}
+            onChange={e => {
+              setForm(prev => ({ ...prev, memoryDuration: e.target.value }));
+              setErrors(prev => ({ ...prev, memoryDuration: false }));
+            }}
+          >
+            {memoryDurationOptions.map(opt => (
+              <FormControlLabel
+                key={opt}
+                value={opt}
+                control={<Radio />}
+                label={opt}
+              />
+            ))}
+          </RadioGroup>
+          {errors.memoryDuration && (
+            <FormHelperText>This field is required</FormHelperText>
+          )}
+        </FormControl>
+      </Box>
 
-      <YesNoRadioGroup
-        label="Ques 2: Attention problem"
-        value={form.attentionProblem}
-        onChange={v => setForm(prev => ({ ...prev, attentionProblem: v }))}
-      />
+      <Box ref={attentionProblemRef}>
+        <YesNoRadioGroup
+          label="Ques 2: Attention problem"
+          value={form.attentionProblem}
+          onChange={v => {
+            setForm(prev => ({ ...prev, attentionProblem: v }));
+            setErrors(prev => ({ ...prev, attentionProblem: false }));
+          }}
+          error={errors.attentionProblem}
+          helperText="This field is required"
+        />
+      </Box>
 
       <CheckboxGroup
         title="Ques 3: Neurological Conditions (select all that apply)"

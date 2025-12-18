@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -9,6 +9,8 @@ import {
   RadioGroup,
   FormControlLabel,
   FormLabel,
+  FormControl,
+  FormHelperText,
   Paper,
   CircularProgress,
   Checkbox,
@@ -194,6 +196,18 @@ interface AnswerPayload {
   answer: string;
 }
 
+type QuestionTabName = 'sat' | 'dat' | 'adt';
+
+const scrollToElement = (el: HTMLElement | null) => {
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const input = el.querySelector('input, textarea') as
+    | HTMLInputElement
+    | HTMLTextAreaElement
+    | null;
+  input?.focus?.();
+};
+
 const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
   const [value, setValue] = useState(0);
   const { data: status, isLoading } = useGetAssessmentStatus();
@@ -217,6 +231,36 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
   const [guardianRelation, setGuardianRelation] = useState('');
   const [guardianSignature, setGuardianSignature] = useState('');
   const [guardianDate, setGuardianDate] = useState('');
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const questionRefs = useRef<any>({});
+  const disclaimerAcceptedRef = useRef<HTMLDivElement | null>(null);
+  const disclaimerSignatureRef = useRef<HTMLDivElement | null>(null);
+  const disclaimerDateRef = useRef<HTMLDivElement | null>(null);
+  const consentAcceptedRef = useRef<HTMLDivElement | null>(null);
+  const consentNameRef = useRef<HTMLDivElement | null>(null);
+  const consentSignatureRef = useRef<HTMLDivElement | null>(null);
+  const consentDateRef = useRef<HTMLDivElement | null>(null);
+
+  const [questionErrors, setQuestionErrors] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [disclaimerErrors, setDisclaimerErrors] = useState({
+    accepted: false,
+    signature: false,
+    date: false,
+  });
+  const [consentErrors, setConsentErrors] = useState({
+    accepted: false,
+    name: false,
+    signature: false,
+    date: false,
+  });
+
+  const questionKey = useMemo(
+    () => (tab: QuestionTabName, qId: string) => `${tab}:${qId}`,
+    []
+  );
 
   useEffect(() => {
     if (status) {
@@ -297,24 +341,48 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
     if (tab === 'sat') setSatData(prev => ({ ...prev, [qId]: val }));
     if (tab === 'dat') setDatData(prev => ({ ...prev, [qId]: val }));
     if (tab === 'adt') setAdtData(prev => ({ ...prev, [qId]: val }));
+
+    if (tab === 'sat' || tab === 'dat' || tab === 'adt') {
+      const key = questionKey(tab, qId);
+      setQuestionErrors(prev => (prev[key] ? { ...prev, [key]: false } : prev));
+    }
   };
 
-  const validateQuestions = (
+  const validateQuestionTab = (
+    tab: QuestionTabName,
     questions: Question[],
     data: Record<string, string>
   ) => {
-    for (const q of questions) {
-      if (!data[q.id]) return false;
-    }
-    return true;
+    const missing = questions.filter(q => !data[q.id]);
+
+    setQuestionErrors(prev => {
+      const next = { ...prev };
+      for (const q of questions) {
+        next[questionKey(tab, q.id)] = !data[q.id];
+      }
+      return next;
+    });
+
+    return {
+      ok: missing.length === 0,
+      firstMissingId: missing[0]?.id,
+    };
   };
 
   const handleSubmit = async (tab: string) => {
     let payload: unknown = null;
 
     if (tab === 'sat') {
-      if (!validateQuestions(satQuestions, satData)) {
+      const { ok, firstMissingId } = validateQuestionTab(
+        'sat',
+        satQuestions,
+        satData
+      );
+      if (!ok) {
         enqueueSnackbar('Please answer all questions', { variant: 'error' });
+        scrollToElement(
+          questionRefs.current[questionKey('sat', firstMissingId || 'q1')]
+        );
         return;
       }
       payload = satQuestions.map(q => ({
@@ -322,8 +390,16 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         answer: satData[q.id],
       }));
     } else if (tab === 'dat') {
-      if (!validateQuestions(datQuestions, datData)) {
+      const { ok, firstMissingId } = validateQuestionTab(
+        'dat',
+        datQuestions,
+        datData
+      );
+      if (!ok) {
         enqueueSnackbar('Please answer all questions', { variant: 'error' });
+        scrollToElement(
+          questionRefs.current[questionKey('dat', firstMissingId || 'q1')]
+        );
         return;
       }
       payload = datQuestions.map(q => ({
@@ -331,8 +407,16 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         answer: datData[q.id],
       }));
     } else if (tab === 'adt') {
-      if (!validateQuestions(adtQuestions, adtData)) {
+      const { ok, firstMissingId } = validateQuestionTab(
+        'adt',
+        adtQuestions,
+        adtData
+      );
+      if (!ok) {
         enqueueSnackbar('Please answer all questions', { variant: 'error' });
+        scrollToElement(
+          questionRefs.current[questionKey('adt', firstMissingId || 'q1')]
+        );
         return;
       }
       payload = adtQuestions.map(q => ({
@@ -340,23 +424,51 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         answer: adtData[q.id],
       }));
     } else if (tab === 'disclaimer') {
-      if (!disclaimerAccepted || !disclaimerSignature || !disclaimerDate) {
+      const nextErrors = {
+        accepted: !disclaimerAccepted,
+        signature: !disclaimerSignature,
+        date: !disclaimerDate,
+      };
+      setDisclaimerErrors(nextErrors);
+
+      if (nextErrors.accepted || nextErrors.signature || nextErrors.date) {
         enqueueSnackbar('Please accept and sign the disclaimer', {
           variant: 'error',
         });
+
+        if (nextErrors.accepted) scrollToElement(disclaimerAcceptedRef.current);
+        else if (nextErrors.signature)
+          scrollToElement(disclaimerSignatureRef.current);
+        else scrollToElement(disclaimerDateRef.current);
+
         return;
       }
       payload = { signature: disclaimerSignature, date: disclaimerDate };
     } else if (tab === 'consent') {
+      const nextErrors = {
+        accepted: !consentAccepted,
+        name: !consentName,
+        signature: !consentSignature,
+        date: !consentDate,
+      };
+      setConsentErrors(nextErrors);
+
       if (
-        !consentAccepted ||
-        !consentName ||
-        !consentSignature ||
-        !consentDate
+        nextErrors.accepted ||
+        nextErrors.name ||
+        nextErrors.signature ||
+        nextErrors.date
       ) {
         enqueueSnackbar('Please fill all required fields', {
           variant: 'error',
         });
+
+        if (nextErrors.accepted) scrollToElement(consentAcceptedRef.current);
+        else if (nextErrors.name) scrollToElement(consentNameRef.current);
+        else if (nextErrors.signature)
+          scrollToElement(consentSignatureRef.current);
+        else scrollToElement(consentDateRef.current);
+
         return;
       }
       payload = {
@@ -387,18 +499,41 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
   ) => (
     <Box>
       {questions.map(q => (
-        <Box key={q.id} sx={{ mb: 3 }}>
-          <FormLabel required sx={{ whiteSpace: 'pre-line' }}>
-            {q.label}
-          </FormLabel>
-          <RadioGroup
-            row
-            value={data[q.id] || ''}
-            onChange={e => handleQuestionChange(tabName, q.id, e.target.value)}
+        <Box
+          key={q.id}
+          sx={{ mb: 3 }}
+          ref={el => {
+            if (tabName === 'sat' || tabName === 'dat' || tabName === 'adt') {
+              questionRefs.current[questionKey(tabName, q.id)] = el;
+            }
+          }}
+        >
+          <FormControl
+            error={
+              (tabName === 'sat' || tabName === 'dat' || tabName === 'adt') &&
+              !!questionErrors[questionKey(tabName, q.id)]
+            }
+            component="fieldset"
+            sx={{ width: '100%' }}
           >
-            <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
-            <FormControlLabel value="No" control={<Radio />} label="No" />
-          </RadioGroup>
+            <FormLabel required sx={{ whiteSpace: 'pre-line' }}>
+              {q.label}
+            </FormLabel>
+            <RadioGroup
+              row
+              value={data[q.id] || ''}
+              onChange={e =>
+                handleQuestionChange(tabName, q.id, e.target.value)
+              }
+            >
+              <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+              <FormControlLabel value="No" control={<Radio />} label="No" />
+            </RadioGroup>
+            {(tabName === 'sat' || tabName === 'dat' || tabName === 'adt') &&
+              questionErrors[questionKey(tabName, q.id)] && (
+                <FormHelperText>Please select an answer</FormHelperText>
+              )}
+          </FormControl>
         </Box>
       ))}
       <Button
@@ -699,30 +834,59 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
           </Typography>
         </Box>
 
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={disclaimerAccepted}
-              onChange={e => setDisclaimerAccepted(e.target.checked)}
+        <Box ref={disclaimerAcceptedRef}>
+          <FormControl error={disclaimerErrors.accepted}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={disclaimerAccepted}
+                  onChange={e => {
+                    setDisclaimerAccepted(e.target.checked);
+                    setDisclaimerErrors(prev => ({
+                      ...prev,
+                      accepted: false,
+                    }));
+                  }}
+                />
+              }
+              label="I have read and agree to the disclaimer"
             />
-          }
-          label="I have read and agree to the disclaimer"
-        />
+            {disclaimerErrors.accepted && (
+              <FormHelperText>This field is required</FormHelperText>
+            )}
+          </FormControl>
+        </Box>
         <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-          <TextField
-            label="Name ; Type electronic signature"
-            value={disclaimerSignature}
-            onChange={e => setDisclaimerSignature(e.target.value)}
-            style={{ width: '50%' }}
-          />
-          <TextField
-            label="Date"
-            type="date"
-            value={disclaimerDate}
-            onChange={e => setDisclaimerDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            style={{ width: '50%' }}
-          />
+          <Box ref={disclaimerSignatureRef} sx={{ width: '50%' }}>
+            <TextField
+              label="Name ; Type electronic signature"
+              value={disclaimerSignature}
+              onChange={e => {
+                setDisclaimerSignature(e.target.value);
+                setDisclaimerErrors(prev => ({ ...prev, signature: false }));
+              }}
+              error={disclaimerErrors.signature}
+              helperText={
+                disclaimerErrors.signature ? 'This field is required' : ''
+              }
+              fullWidth
+            />
+          </Box>
+          <Box ref={disclaimerDateRef} sx={{ width: '50%' }}>
+            <TextField
+              label="Date"
+              type="date"
+              value={disclaimerDate}
+              onChange={e => {
+                setDisclaimerDate(e.target.value);
+                setDisclaimerErrors(prev => ({ ...prev, date: false }));
+              }}
+              InputLabelProps={{ shrink: true }}
+              error={disclaimerErrors.date}
+              helperText={disclaimerErrors.date ? 'This field is required' : ''}
+              fullWidth
+            />
+          </Box>
         </Box>
         <Button
           variant="contained"
@@ -866,40 +1030,73 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
           </Typography>
         </Box>
 
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={consentAccepted}
-              onChange={e => setConsentAccepted(e.target.checked)}
+        <Box ref={consentAcceptedRef}>
+          <FormControl error={consentErrors.accepted}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={consentAccepted}
+                  onChange={e => {
+                    setConsentAccepted(e.target.checked);
+                    setConsentErrors(prev => ({ ...prev, accepted: false }));
+                  }}
+                />
+              }
+              label="I agree to the terms"
             />
-          }
-          label="I agree to the terms"
-        />
+            {consentErrors.accepted && (
+              <FormHelperText>This field is required</FormHelperText>
+            )}
+          </FormControl>
+        </Box>
 
         <Typography variant="subtitle1" sx={{ mt: 2 }}>
           Participant Information
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <TextField
-            label="Full Name"
-            value={consentName}
-            onChange={e => setConsentName(e.target.value)}
-            fullWidth
-          />
-          <TextField
-            label="Signature"
-            value={consentSignature}
-            onChange={e => setConsentSignature(e.target.value)}
-            fullWidth
-          />
-          <TextField
-            label="Date"
-            type="date"
-            value={consentDate}
-            onChange={e => setConsentDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            fullWidth
-          />
+          <Box ref={consentNameRef} sx={{ flex: 1, minWidth: 240 }}>
+            <TextField
+              label="Full Name"
+              value={consentName}
+              onChange={e => {
+                setConsentName(e.target.value);
+                setConsentErrors(prev => ({ ...prev, name: false }));
+              }}
+              error={consentErrors.name}
+              helperText={consentErrors.name ? 'This field is required' : ''}
+              fullWidth
+            />
+          </Box>
+          <Box ref={consentSignatureRef} sx={{ flex: 1, minWidth: 240 }}>
+            <TextField
+              label="Signature"
+              value={consentSignature}
+              onChange={e => {
+                setConsentSignature(e.target.value);
+                setConsentErrors(prev => ({ ...prev, signature: false }));
+              }}
+              error={consentErrors.signature}
+              helperText={
+                consentErrors.signature ? 'This field is required' : ''
+              }
+              fullWidth
+            />
+          </Box>
+          <Box ref={consentDateRef} sx={{ flex: 1, minWidth: 240 }}>
+            <TextField
+              label="Date"
+              type="date"
+              value={consentDate}
+              onChange={e => {
+                setConsentDate(e.target.value);
+                setConsentErrors(prev => ({ ...prev, date: false }));
+              }}
+              InputLabelProps={{ shrink: true }}
+              error={consentErrors.date}
+              helperText={consentErrors.date ? 'This field is required' : ''}
+              fullWidth
+            />
+          </Box>
         </Box>
 
         <Typography variant="subtitle1" sx={{ mt: 2 }}>
