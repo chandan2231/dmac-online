@@ -635,7 +635,13 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
                       : 'Start voice input'
                   }
                 >
-                  {isRecordingMedication ? <MicOffIcon /> : <MicIcon />}
+                  {isRecordingMedication ? (
+                    <MicOffIcon sx={{ color: 'red' }} />
+                  ) : (
+                    <MicIcon
+                      sx={{ color: theme => theme.palette.primary.main }}
+                    />
+                  )}
                 </IconButton>
               </InputAdornment>
             ),
