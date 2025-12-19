@@ -30,10 +30,13 @@ const AudioPlayer = ({ src, play, onEnded }: AudioPlayerProps) => {
     useEffect(() => {
         let playTimer: NodeJS.Timeout;
 
-        if (play && audioRef.current) {
+        if (play && audioRef.current && src) {
             // Wait 1 second before playing audio
             playTimer = setTimeout(() => {
-                audioRef.current?.play().catch(e => console.error("Audio play failed", e));
+                const promise = audioRef.current?.play();
+                if (promise !== undefined) {
+                    promise.catch(e => console.error("Audio play failed", e));
+                }
             }, 1000);
         } else if (!play && audioRef.current) {
             audioRef.current.pause();

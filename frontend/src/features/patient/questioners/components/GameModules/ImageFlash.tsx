@@ -155,11 +155,11 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
     const handleSubmit = () => {
         const trimmedInput = inputText.trim().toLowerCase();
 
-        // Validation
-        if (!trimmedInput) {
-            setValidationError(t.validationError);
-            return;
-        }
+        // Validation removed to allow empty answers
+        // if (!trimmedInput) {
+        //     setValidationError(t.validationError);
+        //     return;
+        // }
 
         setValidationError(''); // Clear error
         console.log('ImageFlash submitting answers:', trimmedInput);

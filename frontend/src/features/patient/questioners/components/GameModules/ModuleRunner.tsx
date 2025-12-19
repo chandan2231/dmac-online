@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Button } from '@mui/material';
 import GameApi, { type Module, type SessionData } from '../../../../../services/gameApi';
 import CustomLoader from '../../../../../components/loader';
 import ImageFlash from './ImageFlash';
 import VisualSpatial from './VisualSpatial';
+import AudioStoryRecall from './AudioStoryRecall';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 import GenericModal from '../../../../../components/modal';
@@ -114,6 +115,12 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
         });
     };
 
+    const handleAudioStoryComplete = (answers: any[]) => {
+        handleModuleSubmit({
+            answers
+        });
+    };
+
     const handleGoHome = () => {
         navigate(ROUTES.HOME);
     };
@@ -134,8 +141,50 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
 
     const moduleCode = session.module.code;
 
+    const handleDevSkip = () => {
+        console.log('[ModuleRunner] Skip button clicked');
+        if (!session) return;
+        const code = session.module.code;
+        console.log(`[ModuleRunner] Skipping module: ${code}`);
+
+        if (code === 'IMAGE_FLASH') {
+            handleImageFlashComplete('skipped');
+        } else if (code === 'VISUAL_SPATIAL') {
+            // Construct dummy answers for all rounds
+            const rounds = session.rounds || [];
+            const dummyAnswers = rounds.map(round => ({
+                question_id: round.question_id,
+                // Pick the first option key, or a fallback string if options missing
+                selected_option_key: round.options?.[0]?.option_key || 'skipped_option'
+            }));
+            console.log('[ModuleRunner] Skipping VisualSpatial with payload:', dummyAnswers);
+            handleVisualSpatialComplete(dummyAnswers);
+        } else if (code === 'AUDIO_STORY') {
+            // Construct dummy answers for stories
+            const stories = session.stories || [];
+            const dummyAnswers = stories.map(story => ({
+                question_id: story.question_id,
+                answer_text: 'skipped via dev button'
+            }));
+            console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
+            handleAudioStoryComplete(dummyAnswers);
+        }
+    };
+
     return (
         <Box sx={{ width: '100%', height: '100%' }}>
+            {/* Remove this block when deploying to production */}
+            <Box sx={{ position: 'fixed', top: 16, right: 16, zIndex: 99999 }}>
+                <Button
+                    variant="contained"
+                    color="error"
+                    size="small"
+                    onClick={handleDevSkip}
+                >
+                    Skip (Dev)
+                </Button>
+            </Box>
+
             {/* Completion Modal */}
             <GenericModal
                 isOpen={showCompletion}
@@ -154,7 +203,10 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
                 <ImageFlash session={session} onComplete={handleImageFlashComplete} languageCode={languageCode} />
             )}
             {!showCompletion && moduleCode === 'VISUAL_SPATIAL' && (
-                <VisualSpatial session={session} onComplete={handleVisualSpatialComplete} />
+                <VisualSpatial session={session} onComplete={handleVisualSpatialComplete} languageCode={languageCode} />
+            )}
+            {!showCompletion && moduleCode === 'AUDIO_STORY' && (
+                <AudioStoryRecall session={session} onComplete={handleAudioStoryComplete} languageCode={languageCode} />
             )}
         </Box>
     );

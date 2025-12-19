@@ -110,7 +110,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
 
     const startRound = () => {
         setPhase('target');
-        setCountdown(5);
+        setCountdown(2);
         setSelectedOption(null);
     };
 

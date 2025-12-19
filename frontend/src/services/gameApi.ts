@@ -2,7 +2,7 @@ import HttpService from './HttpService';
 
 export interface Module {
     id: number;
-    code: 'IMAGE_FLASH' | 'VISUAL_SPATIAL';
+    code: 'IMAGE_FLASH' | 'VISUAL_SPATIAL' | 'AUDIO_STORY';
     name: string;
     order_index: number;
     max_score: number;
@@ -24,6 +24,7 @@ export interface SessionData {
         prompt_text: string;
         items: QuestionItem[];
     };
+    stories?: any[]; // For AUDIO_STORY
     rounds?: {
         question_id: number;
         round_order: number;
