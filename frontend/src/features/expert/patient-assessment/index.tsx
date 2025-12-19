@@ -191,6 +191,74 @@ const adtQuestions = [
   },
 ];
 
+const catQuestions = [
+  {
+    id: 'q1',
+    label: '1. Did you have concussion/Traumatic brain injury?',
+  },
+  {
+    id: 'q2',
+    label:
+      '2. Did you have concussion/Traumatic brain injury less than 3 month?',
+  },
+  {
+    id: 'q3',
+    label: '3. Loss Of consciousness',
+  },
+  {
+    id: 'q4',
+    label: '4. Amnesia',
+  },
+  {
+    id: 'q5',
+    label: '5. Persistent symptoms: Memory Recall (Short term)',
+  },
+  {
+    id: 'q6',
+    label: '6. Persistent symptoms: Speech / Word Finding',
+  },
+  {
+    id: 'q7',
+    label: '7. Persistent symptoms: Concentration / Attention Problem',
+  },
+  {
+    id: 'q8',
+    label: '8. Persistent symptoms: Headache',
+  },
+  {
+    id: 'q9',
+    label: '9. Persistent symptoms: Nausea / Vomiting',
+  },
+  {
+    id: 'q10',
+    label: '10. Persistent symptoms: Dizziness / Off balance',
+  },
+  {
+    id: 'q11',
+    label: '11. Persistent symptoms: Visual focusing problem',
+  },
+  {
+    id: 'q12',
+    label: '12. Persistent symptoms: Light sensitivity',
+  },
+  {
+    id: 'q13',
+    label: '13. Persistent symptoms: Sleeping problem',
+  },
+  {
+    id: 'q14',
+    label: '14. Persistent symptoms: Mental fogg / Slowing',
+  },
+  {
+    id: 'q15',
+    label: '15. Persistent symptoms: Change in personality',
+  },
+  {
+    id: 'q16',
+    label: '16. Persistent symptoms: Irritability / Nervousness',
+  },
+];
+
 interface Question {
   id: string;
   label: string;
@@ -281,6 +349,7 @@ const PatientAssessment = () => {
   const [satData, setSatData] = useState<Record<string, string>>({});
   const [datData, setDatData] = useState<Record<string, string>>({});
   const [adtData, setAdtData] = useState<Record<string, string>>({});
+  const [catData, setCatData] = useState<Record<string, string>>({});
 
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [disclaimerSignature, setDisclaimerSignature] = useState('');
@@ -329,6 +398,17 @@ const PatientAssessment = () => {
           });
         }
         setAdtData(map);
+      }
+      if (status.cat) {
+        const parsed =
+          typeof status.cat === 'string' ? JSON.parse(status.cat) : status.cat;
+        const map: Record<string, string> = {};
+        if (Array.isArray(parsed)) {
+          parsed.forEach((item: AnswerPayload, index: number) => {
+            map[`q${index + 1}`] = item.answer;
+          });
+        }
+        setCatData(map);
       }
       if (status.disclaimer) {
         const parsed =
@@ -444,6 +524,7 @@ const PatientAssessment = () => {
           <Tab label="Sleep Apnea Test" />
           <Tab label="Depression Diagnostic Test" />
           <Tab label="Anxiety Diagnostic Test" />
+          <Tab label="Concussion Assessment Test" />
           <Tab label="Disclaimer" />
           <Tab label="Consent" />
           <Tab label="Patient Documents" />
@@ -466,6 +547,17 @@ const PatientAssessment = () => {
         </TabPanel>
 
         <TabPanel value={value} index={4}>
+          <Typography variant="h6" gutterBottom>
+            Concussion Assessment test (CAT)
+          </Typography>
+          <Typography variant="body1" gutterBottom>
+            Please read each question carefully and indicate whether the
+            statement applies to you.
+          </Typography>
+          {renderQuestionTab(catQuestions, catData)}
+        </TabPanel>
+
+        <TabPanel value={value} index={5}>
           {!disclaimerAccepted && (
             <Alert severity="info" sx={{ mb: 2 }}>
               No disclaimer submitted.
@@ -490,7 +582,7 @@ const PatientAssessment = () => {
           </Box>
         </TabPanel>
 
-        <TabPanel value={value} index={5}>
+        <TabPanel value={value} index={6}>
           {!consentAccepted && (
             <Alert severity="info" sx={{ mb: 2 }}>
               No consent submitted.
@@ -541,7 +633,7 @@ const PatientAssessment = () => {
           </Box>
         </TabPanel>
 
-        <TabPanel value={value} index={6}>
+        <TabPanel value={value} index={7}>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
             {documents && documents.length > 0 ? (
               documents.map((doc: Document) => (

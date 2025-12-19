@@ -2172,6 +2172,7 @@ export const getAssessmentStatus = async (req, res) => {
   const userId = req.user.userId
   try {
     const tables = [
+      'dmac_webapp_assessment_cat',
       'dmac_webapp_assessment_sat',
       'dmac_webapp_assessment_dat',
       'dmac_webapp_assessment_adt',
@@ -2180,6 +2181,7 @@ export const getAssessmentStatus = async (req, res) => {
     ]
     const results = {}
     const keyMap = {
+      dmac_webapp_assessment_cat: 'cat',
       dmac_webapp_assessment_sat: 'sat',
       dmac_webapp_assessment_dat: 'dat',
       dmac_webapp_assessment_adt: 'adt',
@@ -2205,6 +2207,7 @@ export const submitAssessmentTab = async (req, res) => {
   const { tab, data } = req.body
 
   const tableMap = {
+    cat: 'dmac_webapp_assessment_cat',
     sat: 'dmac_webapp_assessment_sat',
     dat: 'dmac_webapp_assessment_dat',
     adt: 'dmac_webapp_assessment_adt',

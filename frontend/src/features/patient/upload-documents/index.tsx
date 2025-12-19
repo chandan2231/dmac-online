@@ -95,6 +95,7 @@ const UploadDocuments = () => {
 
   const isAssessmentComplete =
     assessmentStatus &&
+    assessmentStatus.cat &&
     assessmentStatus.sat &&
     assessmentStatus.dat &&
     assessmentStatus.adt &&

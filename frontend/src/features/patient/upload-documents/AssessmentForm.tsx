@@ -186,6 +186,74 @@ const adtQuestions = [
   },
 ];
 
+const catQuestions = [
+  {
+    id: 'q1',
+    label: '1. Did you have concussion/Traumatic brain injury?',
+  },
+  {
+    id: 'q2',
+    label:
+      '2. Did you have concussion/Traumatic brain injury less than 3 month?',
+  },
+  {
+    id: 'q3',
+    label: '3. Loss Of consciousness',
+  },
+  {
+    id: 'q4',
+    label: '4. Amnesia',
+  },
+  {
+    id: 'q5',
+    label: '5. Persistent symptoms: Memory Recall (Short term)',
+  },
+  {
+    id: 'q6',
+    label: '6. Persistent symptoms: Speech / Word Finding',
+  },
+  {
+    id: 'q7',
+    label: '7. Persistent symptoms: Concentration / Attention Problem',
+  },
+  {
+    id: 'q8',
+    label: '8. Persistent symptoms: Headache',
+  },
+  {
+    id: 'q9',
+    label: '9. Persistent symptoms: Nausea / Vomiting',
+  },
+  {
+    id: 'q10',
+    label: '10. Persistent symptoms: Dizziness / Off balance',
+  },
+  {
+    id: 'q11',
+    label: '11. Persistent symptoms: Visual focusing problem',
+  },
+  {
+    id: 'q12',
+    label: '12. Persistent symptoms: Light sensitivity',
+  },
+  {
+    id: 'q13',
+    label: '13. Persistent symptoms: Sleeping problem',
+  },
+  {
+    id: 'q14',
+    label: '14. Persistent symptoms: Mental fogg / Slowing',
+  },
+  {
+    id: 'q15',
+    label: '15. Persistent symptoms: Change in personality',
+  },
+  {
+    id: 'q16',
+    label: '16. Persistent symptoms: Irritability / Nervousness',
+  },
+];
+
 interface Question {
   id: string;
   label: string;
@@ -197,6 +265,9 @@ interface AnswerPayload {
 }
 
 type QuestionTabName = 'sat' | 'dat' | 'adt';
+
+const isQuestionTabName = (value: string): value is QuestionTabName | 'cat' =>
+  value === 'sat' || value === 'dat' || value === 'adt' || value === 'cat';
 
 const scrollToElement = (el: HTMLElement | null) => {
   if (!el) return;
@@ -226,6 +297,7 @@ const AssessmentForm = ({
   const [satData, setSatData] = useState<Record<string, string>>({});
   const [datData, setDatData] = useState<Record<string, string>>({});
   const [adtData, setAdtData] = useState<Record<string, string>>({});
+  const [catData, setCatData] = useState<Record<string, string>>({});
 
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [disclaimerSignature, setDisclaimerSignature] = useState('');
@@ -266,7 +338,7 @@ const AssessmentForm = ({
   });
 
   const questionKey = useMemo(
-    () => (tab: QuestionTabName, qId: string) => `${tab}:${qId}`,
+    () => (tab: QuestionTabName | 'cat', qId: string) => `${tab}:${qId}`,
     []
   );
 
@@ -305,6 +377,18 @@ const AssessmentForm = ({
         }
         setAdtData(map);
       }
+
+      if (status.cat) {
+        const parsed =
+          typeof status.cat === 'string' ? JSON.parse(status.cat) : status.cat;
+        const map: Record<string, string> = {};
+        if (Array.isArray(parsed)) {
+          parsed.forEach((item: AnswerPayload, index: number) => {
+            map[`q${index + 1}`] = item.answer;
+          });
+        }
+        setCatData(map);
+      }
       if (status.disclaimer) {
         const parsed =
           typeof status.disclaimer === 'string'
@@ -330,6 +414,7 @@ const AssessmentForm = ({
       }
 
       if (
+        status.cat &&
         status.sat &&
         status.dat &&
         status.adt &&
@@ -349,15 +434,16 @@ const AssessmentForm = ({
     if (tab === 'sat') setSatData(prev => ({ ...prev, [qId]: val }));
     if (tab === 'dat') setDatData(prev => ({ ...prev, [qId]: val }));
     if (tab === 'adt') setAdtData(prev => ({ ...prev, [qId]: val }));
+    if (tab === 'cat') setCatData(prev => ({ ...prev, [qId]: val }));
 
-    if (tab === 'sat' || tab === 'dat' || tab === 'adt') {
+    if (isQuestionTabName(tab)) {
       const key = questionKey(tab, qId);
       setQuestionErrors(prev => (prev[key] ? { ...prev, [key]: false } : prev));
     }
   };
 
   const validateQuestionTab = (
-    tab: QuestionTabName,
+    tab: QuestionTabName | 'cat',
     questions: Question[],
     data: Record<string, string>
   ) => {
@@ -431,6 +517,23 @@ const AssessmentForm = ({
         label: q.label,
         answer: adtData[q.id],
       }));
+    } else if (tab === 'cat') {
+      const { ok, firstMissingId } = validateQuestionTab(
+        'cat',
+        catQuestions,
+        catData
+      );
+      if (!ok) {
+        enqueueSnackbar('Please answer all questions', { variant: 'error' });
+        scrollToElement(
+          questionRefs.current[questionKey('cat', firstMissingId || 'q1')]
+        );
+        return;
+      }
+      payload = catQuestions.map(q => ({
+        label: q.label,
+        answer: catData[q.id],
+      }));
     } else if (tab === 'disclaimer') {
       const nextErrors = {
         accepted: !disclaimerAccepted,
@@ -493,7 +596,7 @@ const AssessmentForm = ({
     try {
       await submitTab({ tab, data: payload });
       enqueueSnackbar('Submitted successfully', { variant: 'success' });
-      if (value < 5) setValue(value + 1);
+      if (value < 6) setValue(value + 1);
     } catch (error) {
       console.error(error);
       enqueueSnackbar('Error submitting', { variant: 'error' });
@@ -511,14 +614,14 @@ const AssessmentForm = ({
           key={q.id}
           sx={{ mb: 3 }}
           ref={el => {
-            if (tabName === 'sat' || tabName === 'dat' || tabName === 'adt') {
+            if (isQuestionTabName(tabName)) {
               questionRefs.current[questionKey(tabName, q.id)] = el;
             }
           }}
         >
           <FormControl
             error={
-              (tabName === 'sat' || tabName === 'dat' || tabName === 'adt') &&
+              isQuestionTabName(tabName) &&
               !!questionErrors[questionKey(tabName, q.id)]
             }
             component="fieldset"
@@ -537,7 +640,7 @@ const AssessmentForm = ({
               <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
               <FormControlLabel value="No" control={<Radio />} label="No" />
             </RadioGroup>
-            {(tabName === 'sat' || tabName === 'dat' || tabName === 'adt') &&
+            {isQuestionTabName(tabName) &&
               questionErrors[questionKey(tabName, q.id)] && (
                 <FormHelperText>Please select an answer</FormHelperText>
               )}
@@ -568,6 +671,7 @@ const AssessmentForm = ({
         <Tab label="Sleep Apnea Test" />
         <Tab label="Depression Diagnostic Test" />
         <Tab label="Anxiety Diagnostic Test" />
+        <Tab label="Concussion Assessment Test" />
         <Tab label="Disclaimer" />
         <Tab label="Consent" />
         {showLastTab && <Tab label="Patient Documents" />}
@@ -602,6 +706,17 @@ const AssessmentForm = ({
       </TabPanel>
 
       <TabPanel value={value} index={4}>
+        <Typography variant="h6" gutterBottom>
+          Concussion Assessment test (CAT)
+        </Typography>
+        <Typography variant="body1" gutterBottom>
+          Please read each question carefully and indicate whether the statement
+          applies to you.
+        </Typography>
+        {renderQuestionTab(catQuestions, catData, 'cat')}
+      </TabPanel>
+
+      <TabPanel value={value} index={5}>
         <Box
           sx={{
             maxHeight: '400px',
@@ -906,7 +1021,7 @@ const AssessmentForm = ({
         </Button>
       </TabPanel>
 
-      <TabPanel value={value} index={5}>
+      <TabPanel value={value} index={6}>
         <Box
           sx={{
             maxHeight: '400px',
@@ -1150,7 +1265,7 @@ const AssessmentForm = ({
       </TabPanel>
 
       {showLastTab && (
-        <TabPanel value={value} index={6}>
+        <TabPanel value={value} index={7}>
           {tab}
         </TabPanel>
       )}
