@@ -652,7 +652,11 @@ const AssessmentForm = ({
         onClick={() => handleSubmit(tabName)}
         disabled={submitting}
       >
-        {submitting ? <CircularProgress size={24} /> : 'Submit'}
+        {submitting ? (
+          <CircularProgress size={24} />
+        ) : (
+          <span key={`assessment-${tabName}-submit`}>Submit</span>
+        )}
       </Button>
     </Box>
   );
@@ -1017,7 +1021,11 @@ const AssessmentForm = ({
           onClick={() => handleSubmit('disclaimer')}
           disabled={submitting}
         >
-          {submitting ? <CircularProgress size={24} /> : 'ACCEPT'}
+          {submitting ? (
+            <CircularProgress size={24} />
+          ) : (
+            <span key="assessment-disclaimer-accept">ACCEPT</span>
+          )}
         </Button>
       </TabPanel>
 
@@ -1260,7 +1268,11 @@ const AssessmentForm = ({
           onClick={() => handleSubmit('consent')}
           disabled={submitting}
         >
-          {submitting ? <CircularProgress size={24} /> : 'Submit'}
+          {submitting ? (
+            <CircularProgress size={24} />
+          ) : (
+            <span key="assessment-consent-submit">Submit</span>
+          )}
         </Button>
       </TabPanel>
 

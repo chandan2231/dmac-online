@@ -149,7 +149,11 @@ const UploadDocuments = () => {
                   startIcon={<CloudUploadIcon />}
                   disabled={uploading}
                 >
-                  {uploading ? 'Uploading...' : 'Upload Document'}
+                  {uploading ? (
+                    <span key="upload-documents-uploading">Uploading...</span>
+                  ) : (
+                    <span key="upload-documents-upload">Upload Document</span>
+                  )}
                   <input
                     type="file"
                     hidden

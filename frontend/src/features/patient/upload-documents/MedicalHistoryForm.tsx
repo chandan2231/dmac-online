@@ -151,7 +151,9 @@ const CheckboxGroup = ({
 }) => {
   return (
     <Box sx={{ mt: 3 }}>
-      <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>{title}</FormLabel>
+      <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+        {title}
+      </FormLabel>
       <FormGroup sx={{ mt: 1 }}>
         {options.map(opt => {
           const checked = values.includes(opt);
@@ -669,7 +671,9 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
       </Box>
 
       <Box sx={{ mt: 3 }}>
-        <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>Ques 12: Vital sign</FormLabel>
+        <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+          Ques 12: Vital sign
+        </FormLabel>
         <Box
           sx={{
             display: 'flex',
@@ -713,7 +717,9 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
           />
 
           <FormControl>
-            <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>Weight</FormLabel>
+            <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+              Weight
+            </FormLabel>
             <RadioGroup
               row
               value={form.vitals.weightUnit}
@@ -744,7 +750,9 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
           </FormControl>
 
           <FormControl>
-            <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>Height</FormLabel>
+            <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+              Height
+            </FormLabel>
             <RadioGroup
               row
               value={form.vitals.heightUnit}
@@ -778,7 +786,9 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
       </Box>
 
       <Box sx={{ mt: 3 }}>
-        <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>Ques 13: Social habits</FormLabel>
+        <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+          Ques 13: Social habits
+        </FormLabel>
 
         <YesNoRadioGroup
           label="Exercise"
@@ -814,7 +824,9 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
         />
 
         <FormControl sx={{ mt: 3 }}>
-          <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>Alcohol</FormLabel>
+          <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+            Alcohol
+          </FormLabel>
           <RadioGroup
             row
             value={form.socialHabits.alcohol}
@@ -953,7 +965,11 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
           onClick={handleSubmit}
           disabled={submitting}
         >
-          {submitting ? <CircularProgress size={22} /> : 'Submit'}
+          {submitting ? (
+            <CircularProgress size={22} />
+          ) : (
+            <span key="medical-history-submit">Submit</span>
+          )}
         </Button>
       </Box>
     </Paper>
