@@ -810,6 +810,7 @@ export const getPatientAssessmentStatus = async (req, res) => {
 
   try {
     const tables = [
+      'dmac_webapp_assessment_cat',
       'dmac_webapp_assessment_sat',
       'dmac_webapp_assessment_dat',
       'dmac_webapp_assessment_adt',
@@ -818,6 +819,7 @@ export const getPatientAssessmentStatus = async (req, res) => {
     ]
     const results = {}
     const keyMap = {
+      dmac_webapp_assessment_cat: 'cat',
       dmac_webapp_assessment_sat: 'sat',
       dmac_webapp_assessment_dat: 'dat',
       dmac_webapp_assessment_adt: 'adt',

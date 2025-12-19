@@ -55,43 +55,43 @@ const satQuestions = [
   {
     id: 'q1',
     label:
-      '1. Snoring\nHave you been told that you snore at night, or does your snoring wake you up from sleep?',
+      '1. Snoring: Have you been told that you snore at night, or does your snoring wake you up from sleep?',
   },
-  { id: 'q2', label: '2. Gasping for air\nDo you wake up gasping for breath?' },
+  { id: 'q2', label: '2. Gasping for air: Do you wake up gasping for breath?' },
   {
     id: 'q3',
     label:
-      '3. Non-restorative sleep\nDo you wake up feeling tired or experience unrefreshing sleep?',
+      '3. Non-restorative sleep: Do you wake up feeling tired or experience unrefreshing sleep?',
   },
   {
     id: 'q4',
     label:
-      '4. Daytime sleepiness\nDo you feel tired, excessively sleepy, or have low energy during the day?',
+      '4. Daytime sleepiness: Do you feel tired, excessively sleepy, or have low energy during the day?',
   },
   {
     id: 'q5',
     label:
-      '5. Heart or reflux symptoms\nDo you experience heart palpitations, irregular heartbeat, or gastric reflux?',
+      '5. Heart or reflux symptoms: Do you experience heart palpitations, irregular heartbeat, or gastric reflux?',
   },
   {
     id: 'q6',
     label:
-      '6. Dozing off unintentionally\nDo you doze off while sitting, watching TV, or sitting in a car (not driving)?',
+      '6. Dozing off unintentionally: Do you doze off while sitting, watching TV, or sitting in a car (not driving)?',
   },
   {
     id: 'q7',
     label:
-      '7. Pain symptoms\nDo you frequently have headaches, neck pain, or back pain?',
+      '7. Pain symptoms: Do you frequently have headaches, neck pain, or back pain?',
   },
   {
     id: 'q8',
     label:
-      '8. Memory or organization difficulties\nDo you have trouble remembering things, writing information down, or making lists?',
+      '8. Memory or organization difficulties: Do you have trouble remembering things, writing information down, or making lists?',
   },
   {
     id: 'q9',
     label:
-      '9. Hypertension\nHave you been diagnosed with hypertension (high blood pressure)?',
+      '9. Hypertension: Have you been diagnosed with hypertension (high blood pressure)?',
   },
 ];
 
@@ -99,47 +99,47 @@ const datQuestions = [
   {
     id: 'q1',
     label:
-      '1. Loss of interest or pleasure\nHave you had little interest or pleasure in doing things?',
+      '1. Loss of interest or pleasure: Have you had little interest or pleasure in doing things?',
   },
   {
     id: 'q2',
     label:
-      '2. Feeling down or hopeless\nHave you felt down, depressed, or hopeless?',
+      '2. Feeling down or hopeless: Have you felt down, depressed, or hopeless?',
   },
   {
     id: 'q3',
     label:
-      '3. Sleep difficulties\nDo you have trouble falling asleep, staying asleep, or do you sleep too much?',
+      '3. Sleep difficulties: Do you have trouble falling asleep, staying asleep, or do you sleep too much?',
   },
   {
     id: 'q4',
     label:
-      '4. Low energy\nDo you feel tired, have low energy, or lack motivation to do anything?',
+      '4. Low energy: Do you feel tired, have low energy, or lack motivation to do anything?',
   },
   {
     id: 'q5',
     label:
-      '5. Appetite changes\nHave you experienced poor appetite or overeating?',
+      '5. Appetite changes: Have you experienced poor appetite or overeating?',
   },
   {
     id: 'q6',
     label:
-      '6. Negative self‑thoughts\nDo you feel bad about yourself, feel like a failure, or believe you have let yourself or your family down?',
+      '6. Negative self‑thoughts: Do you feel bad about yourself, feel like a failure, or believe you have let yourself or your family down?',
   },
   {
     id: 'q7',
     label:
-      '7. Difficulty concentrating\nDo you have trouble concentrating on things, such as reading or watching television?',
+      '7. Difficulty concentrating: Do you have trouble concentrating on things, such as reading or watching television?',
   },
   {
     id: 'q8',
     label:
-      '8. Changes in movement or activity\nHave you been moving or speaking noticeably more slowly than usual? Or the opposite—feeling fidgety or restless and moving around more than normal?',
+      '8. Changes in movement or activity: Have you been moving or speaking noticeably more slowly than usual? Or the opposite—feeling fidgety or restless and moving around more than normal?',
   },
   {
     id: 'q9',
     label:
-      '9. Self‑harm thoughts\nHave you had thoughts that you would be better off dead or thoughts of hurting yourself in any way?',
+      '9. Self‑harm thoughts: Have you had thoughts that you would be better off dead or thoughts of hurting yourself in any way?',
   },
 ];
 
@@ -147,47 +147,115 @@ const adtQuestions = [
   {
     id: 'q1',
     label:
-      '1. Feeling nervous or anxious\nDo you often feel nervous, anxious, on edge, or hypervigilant?',
+      '1. Feeling nervous or anxious: Do you often feel nervous, anxious, on edge, or hypervigilant?',
   },
   {
     id: 'q2',
     label:
-      '2. Panic symptoms\nDo you experience panic attacks, hyperventilation, difficulty breathing, or heart palpitations?',
+      '2. Panic symptoms: Do you experience panic attacks, hyperventilation, difficulty breathing, or heart palpitations?',
   },
   {
     id: 'q3',
     label:
-      '3. Excessive worrying\nDo you worry too much about different things or feel unable to stop worrying?',
+      '3. Excessive worrying: Do you worry too much about different things or feel unable to stop worrying?',
   },
   {
     id: 'q4',
     label:
-      '4. Difficulty relaxing or sleeping\nDo you have trouble relaxing, falling asleep, or "shutting down" your thoughts at night?',
+      '4. Difficulty relaxing or sleeping: Do you have trouble relaxing, falling asleep, or "shutting down" your thoughts at night?',
   },
   {
     id: 'q5',
     label:
-      '5. Restlessness\nDo you feel so restless that it is hard to sit still?',
+      '5. Restlessness: Do you feel so restless that it is hard to sit still?',
   },
   {
     id: 'q6',
     label:
-      '6. Irritability\nDo you become easily annoyed, irritable, or agitated over small things?',
+      '6. Irritability: Do you become easily annoyed, irritable, or agitated over small things?',
   },
   {
     id: 'q7',
     label:
-      '7. Fear of something bad happening\nDo you feel afraid, as if something awful might happen?',
+      '7. Fear of something bad happening: Do you feel afraid, as if something awful might happen?',
   },
   {
     id: 'q8',
     label:
-      '8. Trouble concentrating\nDo you have difficulty concentrating or remembering conversations?',
+      '8. Trouble concentrating: Do you have difficulty concentrating or remembering conversations?',
   },
   {
     id: 'q9',
     label:
-      '9. Tremors or shaking\nDo you experience tremors or shaking in your fingers?',
+      '9. Tremors or shaking: Do you experience tremors or shaking in your fingers?',
+  },
+];
+
+const catQuestions = [
+  {
+    id: 'q1',
+    label: '1. Did you have concussion/Traumatic brain injury?',
+  },
+  {
+    id: 'q2',
+    label:
+      '2. Did you have concussion/Traumatic brain injury less than 3 month?',
+  },
+  {
+    id: 'q3',
+    label: '3. Loss Of consciousness',
+  },
+  {
+    id: 'q4',
+    label: '4. Amnesia',
+  },
+  {
+    id: 'q5',
+    label: '5. Persistent symptoms: Memory Recall (Short term)',
+  },
+  {
+    id: 'q6',
+    label: '6. Persistent symptoms: Speech / Word Finding',
+  },
+  {
+    id: 'q7',
+    label: '7. Persistent symptoms: Concentration / Attention Problem',
+  },
+  {
+    id: 'q8',
+    label: '8. Persistent symptoms: Headache',
+  },
+  {
+    id: 'q9',
+    label: '9. Persistent symptoms: Nausea / Vomiting',
+  },
+  {
+    id: 'q10',
+    label: '10. Persistent symptoms: Dizziness / Off balance',
+  },
+  {
+    id: 'q11',
+    label: '11. Persistent symptoms: Visual focusing problem',
+  },
+  {
+    id: 'q12',
+    label: '12. Persistent symptoms: Light sensitivity',
+  },
+  {
+    id: 'q13',
+    label: '13. Persistent symptoms: Sleeping problem',
+  },
+  {
+    id: 'q14',
+    label: '14. Persistent symptoms: Mental fogg / Slowing',
+  },
+  {
+    id: 'q15',
+    label: '15. Persistent symptoms: Change in personality',
+  },
+  {
+    id: 'q16',
+    label: '16. Persistent symptoms: Irritability / Nervousness',
   },
 ];
 
@@ -281,6 +349,7 @@ const PatientAssessment = () => {
   const [satData, setSatData] = useState<Record<string, string>>({});
   const [datData, setDatData] = useState<Record<string, string>>({});
   const [adtData, setAdtData] = useState<Record<string, string>>({});
+  const [catData, setCatData] = useState<Record<string, string>>({});
 
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [disclaimerSignature, setDisclaimerSignature] = useState('');
@@ -330,6 +399,17 @@ const PatientAssessment = () => {
         }
         setAdtData(map);
       }
+      if (status.cat) {
+        const parsed =
+          typeof status.cat === 'string' ? JSON.parse(status.cat) : status.cat;
+        const map: Record<string, string> = {};
+        if (Array.isArray(parsed)) {
+          parsed.forEach((item: AnswerPayload, index: number) => {
+            map[`q${index + 1}`] = item.answer;
+          });
+        }
+        setCatData(map);
+      }
       if (status.disclaimer) {
         const parsed =
           typeof status.disclaimer === 'string'
@@ -376,16 +456,8 @@ const PatientAssessment = () => {
             {q.label}
           </FormLabel>
           <RadioGroup row value={data[q.id] || ''}>
-            <FormControlLabel
-              value="Yes"
-              control={<Radio disabled />}
-              label="Yes"
-            />
-            <FormControlLabel
-              value="No"
-              control={<Radio disabled />}
-              label="No"
-            />
+            <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+            <FormControlLabel value="No" control={<Radio />} label="No" />
           </RadioGroup>
         </Box>
       ))}
@@ -409,7 +481,7 @@ const PatientAssessment = () => {
             {new Date(medicalHistory.created_at).toLocaleString()}
           </Typography>
         )}
-        <MedicalHistoryReadOnly payload={medicalHistoryPayload as any} />
+        <MedicalHistoryReadOnly payload={medicalHistoryPayload} />
       </Box>
     );
   };
@@ -422,9 +494,6 @@ const PatientAssessment = () => {
       <TabHeaderLayout
         leftNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
-            <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)}>
-              Back
-            </Button>
             <Typography
               variant="h5"
               sx={{
@@ -434,6 +503,11 @@ const PatientAssessment = () => {
               Patient Assessment & Documents
             </Typography>
           </Box>
+        }
+        rightNode={
+          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)}>
+            Back
+          </Button>
         }
       />
 
@@ -448,8 +522,10 @@ const PatientAssessment = () => {
           <Tab label="Sleep Apnea Test" />
           <Tab label="Depression Diagnostic Test" />
           <Tab label="Anxiety Diagnostic Test" />
+          <Tab label="Concussion Assessment Test" />
           <Tab label="Disclaimer" />
           <Tab label="Consent" />
+          <Tab label="Patient Documents" />
         </Tabs>
 
         <TabPanel value={value} index={0}>
@@ -457,12 +533,10 @@ const PatientAssessment = () => {
         </TabPanel>
 
         <TabPanel value={value} index={1}>
-          
           {renderQuestionTab(satQuestions, satData)}
         </TabPanel>
 
         <TabPanel value={value} index={2}>
-          
           {renderQuestionTab(datQuestions, datData)}
         </TabPanel>
 
@@ -471,13 +545,24 @@ const PatientAssessment = () => {
         </TabPanel>
 
         <TabPanel value={value} index={4}>
+          <Typography variant="h6" gutterBottom>
+            Concussion Assessment test (CAT)
+          </Typography>
+          <Typography variant="body1" gutterBottom>
+            Please read each question carefully and indicate whether the
+            statement applies to you.
+          </Typography>
+          {renderQuestionTab(catQuestions, catData)}
+        </TabPanel>
+
+        <TabPanel value={value} index={5}>
           {!disclaimerAccepted && (
             <Alert severity="info" sx={{ mb: 2 }}>
               No disclaimer submitted.
             </Alert>
           )}
           <FormControlLabel
-            control={<Checkbox checked={disclaimerAccepted} disabled />}
+            control={<Checkbox checked={disclaimerAccepted} />}
             label="I have read and agree to the disclaimer"
           />
           <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
@@ -485,26 +570,24 @@ const PatientAssessment = () => {
               label="Name ; Type electronic signature"
               value={disclaimerSignature}
               fullWidth
-              disabled
             />
             <TextField
               label="Date"
               type="date"
               value={disclaimerDate}
               InputLabelProps={{ shrink: true }}
-              disabled
             />
           </Box>
         </TabPanel>
 
-        <TabPanel value={value} index={5}>
+        <TabPanel value={value} index={6}>
           {!consentAccepted && (
             <Alert severity="info" sx={{ mb: 2 }}>
               No consent submitted.
             </Alert>
           )}
           <FormControlLabel
-            control={<Checkbox checked={consentAccepted} disabled />}
+            control={<Checkbox checked={consentAccepted} />}
             label="I agree to the terms"
           />
 
@@ -512,25 +595,14 @@ const PatientAssessment = () => {
             Participant Information
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            <TextField
-              label="Full Name"
-              value={consentName}
-              fullWidth
-              disabled
-            />
-            <TextField
-              label="Signature"
-              value={consentSignature}
-              fullWidth
-              disabled
-            />
+            <TextField label="Full Name" value={consentName} fullWidth />
+            <TextField label="Signature" value={consentSignature} fullWidth />
             <TextField
               label="Date"
               type="date"
               value={consentDate}
               InputLabelProps={{ shrink: true }}
               fullWidth
-              disabled
             />
           </Box>
 
@@ -538,23 +610,16 @@ const PatientAssessment = () => {
             If signing as a legal guardian:
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            <TextField
-              label="Guardian Name"
-              value={guardianName}
-              fullWidth
-              disabled
-            />
+            <TextField label="Guardian Name" value={guardianName} fullWidth />
             <TextField
               label="Relationship to Participant"
               value={guardianRelation}
               fullWidth
-              disabled
             />
             <TextField
               label="Guardian Signature"
               value={guardianSignature}
               fullWidth
-              disabled
             />
             <TextField
               label="Date"
@@ -562,62 +627,61 @@ const PatientAssessment = () => {
               value={guardianDate}
               InputLabelProps={{ shrink: true }}
               fullWidth
-              disabled
             />
           </Box>
         </TabPanel>
-      </Paper>
 
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
-          Patient Documents
-        </Typography>
-
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-          {documents && documents.length > 0 ? (
-            documents.map((doc: Document) => (
-              <Box
-                key={doc.id}
-                sx={{
-                  width: {
-                    xs: '100%',
-                    sm: 'calc(50% - 12px)',
-                    md: 'calc(33.33% - 16px)',
-                  },
-                }}
-              >
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" noWrap title={doc.file_name}>
-                      {doc.file_name}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      {(doc.file_size / 1024 / 1024).toFixed(2)} MB
-                    </Typography>
-                    <Typography variant="caption" display="block" gutterBottom>
-                      {new Date(doc.created_at).toLocaleDateString()}
-                    </Typography>
-                  </CardContent>
-                  <CardActions>
-                    <Button
-                      size="small"
-                      startIcon={<VisibilityIcon />}
-                      href={doc.file_url}
-                      target="_blank"
-                    >
-                      View / Download
-                    </Button>
-                  </CardActions>
-                </Card>
+        <TabPanel value={value} index={7}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+            {documents && documents.length > 0 ? (
+              documents.map((doc: Document) => (
+                <Box
+                  key={doc.id}
+                  sx={{
+                    width: {
+                      xs: '100%',
+                      sm: 'calc(50% - 12px)',
+                      md: 'calc(33.33% - 16px)',
+                    },
+                  }}
+                >
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" noWrap title={doc.file_name}>
+                        {doc.file_name}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        {(doc.file_size / 1024 / 1024).toFixed(2)} MB
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        display="block"
+                        gutterBottom
+                      >
+                        {new Date(doc.created_at).toLocaleDateString()}
+                      </Typography>
+                    </CardContent>
+                    <CardActions>
+                      <Button
+                        size="small"
+                        startIcon={<VisibilityIcon />}
+                        href={doc.file_url}
+                        target="_blank"
+                      >
+                        View / Download
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Box>
+              ))
+            ) : (
+              <Box sx={{ width: '100%' }}>
+                <Alert severity="info">No documents uploaded by patient.</Alert>
               </Box>
-            ))
-          ) : (
-            <Box sx={{ width: '100%' }}>
-              <Alert severity="info">No documents uploaded by patient.</Alert>
-            </Box>
-          )}
-        </Box>
-      </Box>
+            )}
+          </Box>
+        </TabPanel>
+      </Paper>
     </Box>
   );
 };
