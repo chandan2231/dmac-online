@@ -194,7 +194,9 @@ const YesNoRadioGroup = ({
 }) => {
   return (
     <FormControl error={!!error} sx={{ mt: 3, display: 'block' }}>
-      <FormLabel sx={{ fontWeight: 600 }}>{label}</FormLabel>
+      <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+        {label}
+      </FormLabel>
       <RadioGroup
         row
         value={value}
