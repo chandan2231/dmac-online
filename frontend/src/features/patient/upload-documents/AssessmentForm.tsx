@@ -710,9 +710,7 @@ const AssessmentForm = ({
       </TabPanel>
 
       <TabPanel value={value} index={4}>
-        <Typography variant="h6" gutterBottom>
-          Concussion Assessment test (CAT)
-        </Typography>
+       
         <Typography variant="body1" gutterBottom>
           Please read each question carefully and indicate whether the statement
           applies to you.

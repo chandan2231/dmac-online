@@ -2223,14 +2223,23 @@ export const submitAssessmentTab = async (req, res) => {
   const jsonData = JSON.stringify(data)
 
   try {
-    const query = `INSERT INTO ${tableName} (user_id, data) VALUES (?, ?)`
+    const query = `
+      INSERT INTO ${tableName} (user_id, data)
+      VALUES (?, ?)
+      ON DUPLICATE KEY UPDATE
+        data = VALUES(data),
+        updated_at = CURRENT_TIMESTAMP
+    `
+
     await queryDB(query, [userId, jsonData])
-    res.status(200).json({ message: 'Assessment submitted successfully' })
+
+    res.status(200).json({ message: 'Assessment saved successfully' })
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: 'Error submitting assessment' })
   }
 }
+
 
 export const getLatestMedicalHistory = async (req, res) => {
   const userId = req.user.userId
@@ -2268,9 +2277,17 @@ export const submitMedicalHistory = async (req, res) => {
   const jsonData = typeof data === 'string' ? data : JSON.stringify(data)
 
   try {
-    const query = `INSERT INTO dmac_webapp_medical_history (user_id, data) VALUES (?, ?)`
+    const query = `
+      INSERT INTO dmac_webapp_medical_history (user_id, data)
+      VALUES (?, ?)
+      ON DUPLICATE KEY UPDATE
+        data = VALUES(data),
+        updated_at = CURRENT_TIMESTAMP
+    `
+
     await queryDB(query, [userId, jsonData])
-    res.status(200).json({ message: 'Medical history submitted successfully' })
+
+    res.status(200).json({ message: 'Medical history saved successfully' })
   } catch (error) {
     console.error('Error submitting medical history:', error)
     if (error?.code === 'ER_NO_SUCH_TABLE') {
@@ -2279,6 +2296,8 @@ export const submitMedicalHistory = async (req, res) => {
           'Medical history table is missing. Run create_medical_history_table.js (or your DB migration) to create dmac_webapp_medical_history.'
       })
     }
+
     res.status(500).json({ message: 'Error submitting medical history' })
   }
 }
+
