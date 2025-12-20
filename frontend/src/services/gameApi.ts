@@ -19,21 +19,25 @@ export interface QuestionItem {
 export interface SessionData {
     session_id: number;
     module: Module;
-    question?: {
+    questions?: {
         question_id: number;
         prompt_text: string;
-        items: QuestionItem[];
-    };
-    stories?: any[]; // For AUDIO_STORY
-    rounds?: {
-        question_id: number;
-        round_order: number;
-        prompt_text: string;
-        target_image_url: string;
-        options: {
+        // Image Flash specific
+        items?: QuestionItem[];
+        // Visual Spatial specific
+        round_order?: number;
+        target_image_url?: string;
+        options?: {
             option_key: string;
             image_url: string;
         }[];
+        // Audio Story specific
+        post_instruction_text?: string;
+        item?: {
+            question_item_id: number;
+            audio_url: string;
+            image_url: string;
+        };
     }[];
     instructions?: string;
 }

@@ -13,7 +13,8 @@ const query = (sql, args) => {
 
 const fetchQuestions = async (moduleId, languageCode) => {
   return query(
-    `SELECT q.id, q.module_id, q.code, q.question_type, q.order_index, q.correct_answer_text,
+    `SELECT q.id, q.module_id, q.code, q.question_type, q.order_index, 
+            COALESCE(qi.post_game_text, q.post_game_text) as post_game_text,
             COALESCE(qi.prompt_text, q.prompt_text) as prompt_text
      FROM questions q
      LEFT JOIN questions_i18n qi ON q.id = qi.question_id AND qi.language_code = ?
@@ -79,6 +80,77 @@ const calculateKeywordScore = (userText, items) => {
 }
 
 
+
+// --- Module Handlers ---
+
+const handleVisualSpatial = async (module, questions, languageCode) => {
+  const processedQuestions = []
+  for (const q of questions) {
+    const options = await fetchOptions(q.id)
+    const target = options.find((o) => o.is_correct === 1)
+    processedQuestions.push({
+      question_id: q.id,
+      round_order: q.order_index,
+      prompt_text: q.prompt_text,
+      target_image_url: target ? target.image_url : null,
+      options: options.map((o) => ({
+        option_key: o.option_key,
+        image_url: o.image_url
+      }))
+    })
+  }
+  return { questions: processedQuestions }
+}
+
+const handleAudioStory = async (module, questions, languageCode) => {
+  const processedQuestions = []
+  for (const q of questions) {
+    const items = await fetchItems(q.id, languageCode)
+    if (items.length > 0) {
+      processedQuestions.push({
+        question_id: q.id,
+        prompt_text: q.prompt_text,
+        post_instruction_text: q.post_game_text,
+        item: {
+          question_item_id: items[0].question_item_id,
+          audio_url: items[0].audio_url,
+          image_url: items[0].image_url
+        }
+      })
+    }
+  }
+  return { questions: processedQuestions }
+}
+
+const handleDefault = async (module, questions, languageCode) => {
+  if (questions.length > 0) {
+    const question = questions[0]
+    const items = await fetchItems(question.id, languageCode)
+
+    return {
+      questions: [{
+        question_id: question.id,
+        prompt_text: question.prompt_text,
+        items: items.map((i) => ({
+          question_item_id: i.question_item_id,
+          order: i.item_order,
+          image_key: i.image_key,
+          image_url: i.image_url,
+          audio_url: i.audio_url
+        }))
+      }]
+    }
+  }
+  return { questions: [] }
+}
+
+const moduleHandlers = {
+  'VISUAL_SPATIAL': handleVisualSpatial,
+  'AUDIO_STORY': handleAudioStory,
+  'IMAGE_FLASH': handleDefault,
+  'default': handleDefault
+}
+
 export const getModules = async (req, res) => {
   try {
     const language = req.query.language || 'en'
@@ -136,13 +208,11 @@ export const startSession = async (req, res) => {
     // 3. Fetch Questions
     const questions = await fetchQuestions(module.id, language_code)
 
-    // 4. Construct Response Payload based on Data Availability
-    // Instead of hardcoding "IF IMAGE_FLASH", "IF VISUAL_SPATIAL", we can look at the data structure.
-    // However, frontend expects specific keys: "question", "rounds", "stories".
-    // We can populate them all or use module.code to decide which one to send.
-    // Using module.code is safer for API contract stability.
+    // 4. Construct Response Payload using Strategy Pattern
+    const handler = moduleHandlers[module.code] || moduleHandlers.default
+    const modulePayload = await handler(module, questions, language_code)
 
-    let payload = {
+    const payload = {
       session_id: sessionId,
       module: {
         id: module.id,
@@ -151,65 +221,8 @@ export const startSession = async (req, res) => {
         max_score: module.max_score
       },
       language_code,
-      instructions: module.description
-    }
-
-    if (module.code === 'VISUAL_SPATIAL') {
-      const rounds = []
-      for (const q of questions) {
-        const options = await fetchOptions(q.id)
-        const target = options.find((o) => o.is_correct === 1)
-        rounds.push({
-          question_id: q.id,
-          round_order: q.order_index,
-          prompt_text: q.prompt_text,
-          target_image_url: target ? target.image_url : null,
-          options: options.map((o) => ({
-            option_key: o.option_key,
-            image_url: o.image_url
-          }))
-        })
-      }
-      payload.rounds = rounds;
-
-    } else if (module.code === 'AUDIO_STORY') {
-      // Return 'stories' array
-      const stories = []
-      for (const q of questions) {
-        const items = await fetchItems(q.id, language_code)
-        if (items.length > 0) {
-          stories.push({
-            question_id: q.id,
-            prompt_text: q.prompt_text,
-            post_instruction_text: q.correct_answer_text, // Add this line
-            item: {
-              question_item_id: items[0].question_item_id,
-              audio_url: items[0].audio_url,
-              image_url: items[0].image_url
-            }
-          })
-        }
-      }
-      payload.stories = stories;
-
-    } else {
-      // Default / IMAGE_FLASH (expects 'question' object with items)
-      if (questions.length > 0) {
-        const question = questions[0]
-        const items = await fetchItems(question.id, language_code)
-
-        payload.question = {
-          question_id: question.id,
-          prompt_text: question.prompt_text,
-          items: items.map((i) => ({
-            question_item_id: i.question_item_id,
-            order: i.item_order,
-            image_key: i.image_key,
-            image_url: i.image_url,
-            audio_url: i.audio_url
-          }))
-        }
-      }
+      instructions: module.description,
+      ...modulePayload
     }
 
     res.json(payload)

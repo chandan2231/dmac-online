@@ -75,7 +75,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
     const [validationError, setValidationError] = useState('');
 
     // Construct items list from API using static images only
-    const items = (session.question?.items || []).map((item, index) => {
+    const items = (session.questions?.[0]?.items || []).map((item, index) => {
         const key = (item.image_key || '').toLowerCase();
         console.log(`[ImageFlash] Processing item: key="${key}"`);
 
@@ -102,7 +102,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
 
     useEffect(() => {
         if (items.length > 0) {
-            console.log('[ImageFlash] Session items from API:', session.question?.items);
+            console.log('[ImageFlash] Session items from API:', session.questions?.[0]?.items);
             console.log('[ImageFlash] Processed items with images:', items);
             setGameItems(items);
         } else {
@@ -178,10 +178,10 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                 submitButtonText={t.start}
                 onSubmit={handleStart}
                 enableAudio={true}
-                instructionText={session.instructions || session.question?.prompt_text || ''}
+                instructionText={session.instructions || session.questions?.[0]?.prompt_text || ''}
                 languageCode={languageCode}
             >
-                <Typography>{session.instructions || session.question?.prompt_text}</Typography>
+                <Typography>{session.instructions || session.questions?.[0]?.prompt_text}</Typography>
             </GenericModal>
 
             {phase === 'playing' && currentItem && (
@@ -249,11 +249,11 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                 submitButtonText={t.next}
                 onSubmit={() => setPhase('input')}
                 enableAudio={true}
-                instructionText={session.question?.prompt_text || ''}
+                instructionText={session.questions?.[0]?.prompt_text || ''}
                 languageCode={languageCode}
             >
                 <Typography sx={{ color: '#d32f2f', fontSize: '1.1rem' }}>
-                    {session.question?.prompt_text}
+                    {session.questions?.[0]?.prompt_text}
                 </Typography>
             </GenericModal>
 

@@ -109,7 +109,7 @@ export const getQuestionWithFollowUps = (req, res) => {
       o.code AS option_code,
       ot.text AS option_text,
       a.id AS alert_id,
-      at.text AS alert_text
+      COALESCE(at.text, at_en.text) AS alert_text
     FROM dmac_webapp_questions q
     JOIN dmac_webapp_questions_translations qt
       ON q.id = qt.question_id AND qt.language_code = ?
@@ -119,6 +119,8 @@ export const getQuestionWithFollowUps = (req, res) => {
     LEFT JOIN dmac_webapp_question_alerts a ON q.alert_id = a.id
     LEFT JOIN dmac_webapp_question_alert_translations at
       ON a.id = at.alert_id AND at.language_code = ?
+    LEFT JOIN dmac_webapp_question_alert_translations at_en
+      ON a.id = at_en.alert_id AND at_en.language_code = 'en'
     WHERE q.sequence_no = ?
     ORDER BY q.parent_question_id IS NULL DESC, q.id ASC
   `

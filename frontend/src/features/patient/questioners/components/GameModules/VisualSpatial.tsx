@@ -92,7 +92,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
     ];
 
     // Map API rounds to use static images if configured
-    const processedRounds = (session.rounds || []).map((round, index) => {
+    const processedRounds = (session.questions || []).map((round, index) => {
         if (USE_STATIC_IMAGES && index < STATIC_IMAGE_SETS.length) {
             const staticSet = STATIC_IMAGE_SETS[index];
             return {

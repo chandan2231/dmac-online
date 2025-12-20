@@ -99,9 +99,9 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
     };
 
     const handleImageFlashComplete = (answerText: string) => {
-        if (!session?.question) return;
+        if (!session?.questions?.[0]) return;
         const payload = {
-            question_id: session.question.question_id,
+            question_id: session.questions[0].question_id,
             language_code: languageCode,
             answer_text: answerText
         };
@@ -151,7 +151,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             handleImageFlashComplete('skipped');
         } else if (code === 'VISUAL_SPATIAL') {
             // Construct dummy answers for all rounds
-            const rounds = session.rounds || [];
+            const rounds = session.questions || [];
             const dummyAnswers = rounds.map(round => ({
                 question_id: round.question_id,
                 // Pick the first option key, or a fallback string if options missing
@@ -161,7 +161,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             handleVisualSpatialComplete(dummyAnswers);
         } else if (code === 'AUDIO_STORY') {
             // Construct dummy answers for stories
-            const stories = session.stories || [];
+            const stories = session.questions || [];
             const dummyAnswers = stories.map(story => ({
                 question_id: story.question_id,
                 answer_text: 'skipped via dev button'

@@ -15,25 +15,35 @@ const TextToSpeech = ({ text, languageCode, iconSize = 'medium', color = 'primar
 
     // Map language codes to Speech Synthesis language codes
     const getVoiceLang = (code: string): string => {
+        // Normalize code to lower case
+        const cleanCode = code.toLowerCase().trim();
         const langMap: Record<string, string> = {
             'en': 'en-US',
             'hi': 'hi-IN',
             'es': 'es-ES',
             'ar': 'ar-SA',
-            'zh': 'zh-CN'
+            'zh': 'zh-CN',
+            'uk': 'en-GB' // Example for potential fallback
         };
-        return langMap[code] || 'en-US';
+        // Return mapped code, or if it's already a full code like 'ar-SA', return it, else default to 'en-US'
+        return langMap[cleanCode] || (cleanCode.includes('-') ? cleanCode : 'en-US');
     };
 
     // Load voices on mount (needed for some browsers)
     useEffect(() => {
-        if (window.speechSynthesis) {
-            // Load voices
-            window.speechSynthesis.getVoices();
+        const loadVoices = () => {
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                console.log('[TextToSpeech] Voices loaded:', voices.length);
+            }
+        };
 
+        if (window.speechSynthesis) {
+            // Load voices immediately
+            loadVoices();
             // Some browsers need this event listener
             window.speechSynthesis.onvoiceschanged = () => {
-                window.speechSynthesis.getVoices();
+                loadVoices();
             };
         }
     }, []);
@@ -52,30 +62,71 @@ const TextToSpeech = ({ text, languageCode, iconSize = 'medium', color = 'primar
             return;
         }
 
-        // Get the target language
-        const targetLang = getVoiceLang(languageCode);
+        // Get the target language (e.g., 'ar-SA' or 'en-US')
+        let targetLang = getVoiceLang(languageCode);
+
+        // Specific fix: If input code is just 'ar', ensure we aim for Arabic
+        if (languageCode.toLowerCase() === 'ar') {
+            targetLang = 'ar-SA';
+        }
 
         // Get all available voices
         const voices = window.speechSynthesis.getVoices();
-        console.log('[TextToSpeech] Available voices:', voices.map(v => `${v.name} (${v.lang})`));
-        console.log('[TextToSpeech] Target language:', targetLang, 'from code:', languageCode);
 
-        // Try to find a voice that matches the target language
-        let selectedVoice = voices.find(voice => voice.lang.startsWith(targetLang.split('-')[0]));
+        // Debugging logs
+        console.group('[TextToSpeech Debug]');
+        console.log('Language Code Prop:', languageCode);
+        console.log('Target Lang:', targetLang);
+        console.log('Available Voices Count:', voices.length);
+
+        // improved voice selection logic
+        let selectedVoice: SpeechSynthesisVoice | undefined;
+
+        // 1. Try exact match on full lang code (e.g. 'ar-SA' === 'ar-SA')
+        selectedVoice = voices.find(voice => voice.lang === targetLang);
+        if (selectedVoice) console.log('Match Strategy 1 (Exact):', selectedVoice.name);
+
+        // 2. Try match on base language (e.g. 'ar' in 'ar-EG')
+        if (!selectedVoice) {
+            const baseLang = targetLang.split('-')[0]; // 'ar'
+            selectedVoice = voices.find(voice => voice.lang.startsWith(baseLang));
+            if (selectedVoice) console.log('Match Strategy 2 (Base Lang):', selectedVoice.name);
+        }
+
+        // 3. Fallback: Search for language name in voice name (e.g. "Google Ar..." or "Arabic")
+        if (!selectedVoice && targetLang.startsWith('ar')) {
+            selectedVoice = voices.find(voice =>
+                voice.name.toLowerCase().includes('google ar') ||
+                voice.name.toLowerCase().includes('arabic') ||
+                voice.lang.includes('ar-')
+            );
+            if (selectedVoice) console.log('Match Strategy 3 (Name Search):', selectedVoice.name);
+        }
+
+        // 4. Verification: If we still picked a voice that doesn't start with 'ar', and we wanted 'ar', warn user
+        if (targetLang.startsWith('ar') && selectedVoice && !selectedVoice.lang.startsWith('ar')) {
+            console.warn('[TextToSpeech] Warning: Wanted Arabic but got non-Arabic voice:', selectedVoice.lang);
+            // Should we force undefined to let browser try its own fallback? 
+            // continued...
+        }
 
         if (!selectedVoice) {
-            console.warn(`[TextToSpeech] No voice found for ${targetLang}, using default`);
+            console.warn(`[TextToSpeech] No specific voice found for ${targetLang}, relying on browser default for lang.`);
         } else {
-            console.log('[TextToSpeech] Selected voice:', selectedVoice.name, selectedVoice.lang);
+            console.log(`[TextToSpeech] Final Selected Voice: ${selectedVoice.name} (${selectedVoice.lang})`);
         }
+        console.groupEnd();
 
         // Create speech utterance
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = targetLang;
+        utterance.lang = targetLang; // Important: set this even if voice is null
+
         if (selectedVoice) {
             utterance.voice = selectedVoice;
         }
-        utterance.rate = 0.9; // Slightly slower for clarity
+
+        // Adjust properties for better Arabic playback if needed
+        utterance.rate = 0.85; // Slightly slower
         utterance.pitch = 1;
 
         // Event handlers

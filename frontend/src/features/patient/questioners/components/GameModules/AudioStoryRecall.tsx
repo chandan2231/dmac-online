@@ -41,7 +41,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
     const [inputText, setInputText] = useState('');
     const [error, setError] = useState('');
 
-    const stories = session.stories || [];
+    const stories = session.questions || [];
     const currentStory = stories[currentStoryIndex];
 
     const resolveAudioUrl = (url: string) => {
@@ -172,110 +172,116 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
 
 
             {/* Playing Phase: Playing... */}
-            {phase === 'playing_audio' && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            {
+                phase === 'playing_audio' && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
 
-                    <Box sx={{
-                        border: '2px solid #274765', // Using a dark blue similar to screenshot or primary
-                        px: 8,
-                        py: 2,
-                        minWidth: '300px',
-                        display: 'flex',
-                        justifyContent: 'center'
-                    }}>
-                        <Typography variant="h6" sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
-                            {t.playing || 'Playing...'}
-                        </Typography>
+                        <Box sx={{
+                            border: '2px solid #274765', // Using a dark blue similar to screenshot or primary
+                            px: 8,
+                            py: 2,
+                            minWidth: '300px',
+                            display: 'flex',
+                            justifyContent: 'center'
+                        }}>
+                            <Typography variant="h6" sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                                {t.playing || 'Playing...'}
+                            </Typography>
+                        </Box>
+
+                        {currentStory.item?.audio_url && resolvedUrl && (
+                            <AudioPlayer
+                                src={resolvedUrl}
+                                play={true}
+                                onEnded={handleAudioComplete}
+                            />
+                        )}
                     </Box>
-
-                    {currentStory.item?.audio_url && resolvedUrl && (
-                        <AudioPlayer
-                            src={resolvedUrl}
-                            play={true}
-                            onEnded={handleAudioComplete}
-                        />
-                    )}
-                </Box>
-            )}
+                )
+            }
 
             {/* Playing Phase: Completed */}
-            {phase === 'playing_complete' && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            {
+                phase === 'playing_complete' && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
 
-                    <Box sx={{
-                        border: '2px solid #274765',
-                        px: 8,
-                        py: 2,
-                        minWidth: '300px',
-                        display: 'flex',
-                        justifyContent: 'center'
-                    }}>
-                        <Typography variant="h6" sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
-                            {t.completed || 'Completed'}
-                        </Typography>
+                        <Box sx={{
+                            border: '2px solid #274765',
+                            px: 8,
+                            py: 2,
+                            minWidth: '300px',
+                            display: 'flex',
+                            justifyContent: 'center'
+                        }}>
+                            <Typography variant="h6" sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                                {t.completed || 'Completed'}
+                            </Typography>
+                        </Box>
+
+                        <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
+                            <MorenButton
+                                variant="contained"
+                                onClick={handleRepeat}
+                                sx={{ width: '150px', backgroundColor: '#274765' }}
+                            >
+                                {t.repeat || 'REPEAT'}
+                            </MorenButton>
+
+                            <MorenButton
+                                variant="contained"
+                                onClick={handleNextFromComplete}
+                                sx={{ width: '150px', backgroundColor: '#274765' }}
+                            >
+                                {t.next || 'NEXT'}
+                            </MorenButton>
+                        </Box>
                     </Box>
-
-                    <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
-                        <MorenButton
-                            variant="contained"
-                            onClick={handleRepeat}
-                            sx={{ width: '150px', backgroundColor: '#274765' }}
-                        >
-                            {t.repeat || 'REPEAT'}
-                        </MorenButton>
-
-                        <MorenButton
-                            variant="contained"
-                            onClick={handleNextFromComplete}
-                            sx={{ width: '150px', backgroundColor: '#274765' }}
-                        >
-                            {t.next || 'NEXT'}
-                        </MorenButton>
-                    </Box>
-                </Box>
-            )}
+                )
+            }
 
             {/* Recall Phase */}
-            {phase === 'recall' && (
-                <Box sx={{ width: '100%', maxWidth: '600px', p: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <Typography variant="h6" sx={{ textAlign: 'center' }}>
-                        {t.enterAnswers}
-                    </Typography>
+            {
+                phase === 'recall' && (
+                    <Box sx={{ width: '100%', maxWidth: '600px', p: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <Typography variant="h6" sx={{ textAlign: 'center' }}>
+                            {t.enterAnswers}
+                        </Typography>
 
-                    {/* Show Post-instruction text again as helper? Or prompt text?
+                        {/* Show Post-instruction text again as helper? Or prompt text?
                         Request says: "answer screen". Usually we show the question/prompt.
                         But the prompt "Please increase volume..." is irrelevant now.
                         And post-instruction "Please recall..." is relevant.
                         Let's show post_instruction_text here as the prompt.
                      */}
-                    {/* Show Post-instruction text again as helper? Or prompt text?
+                        {/* Show Post-instruction text again as helper? Or prompt text?
                         Request says: "remove this selected text from answer screen"
                         So we remove the Typography showing post_instruction_text.
                      */}
 
-                    <SpeechInput
-                        fullWidth
-                        value={inputText}
-                        onChange={setInputText}
-                        onSpeechResult={(text) => setInputText(prev => prev + ' ' + text)}
-                        languageCode={languageCode}
-                        placeholder={t.inputPlaceholder}
-                    />
+                        <SpeechInput
+                            fullWidth
+                            value={inputText}
+                            onChange={setInputText}
+                            onSpeechResult={(text) => setInputText(prev => prev + ' ' + text)}
+                            languageCode={languageCode}
+                            placeholder={t.inputPlaceholder}
+                        />
 
-                    {error && (
-                        <Typography color="error" textAlign="center">{error}</Typography>
-                    )}
+                        {error && (
+                            <Typography color="error" textAlign="center">{error}</Typography>
+                        )}
 
-                    <MorenButton
-                        variant="contained"
-                        onClick={handleSubmitAnswer}
-                        sx={{ width: '100%', mt: 2 }}
-                    >
-                        {currentStoryIndex < stories.length - 1 ? t.next : 'Finish'}
-                    </MorenButton>
-                </Box>
-            )}
-        </Box>
+                        <MorenButton
+                            variant="contained"
+                            onClick={handleSubmitAnswer}
+                            sx={{ width: '100%', mt: 2 }}
+                        >
+                            {t.next}
+                        </MorenButton>
+                    </Box>
+                )
+            }
+        </Box >
     );
 };
 
