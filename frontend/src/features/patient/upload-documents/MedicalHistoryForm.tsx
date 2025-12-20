@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -8,17 +8,41 @@ import {
   FormControlLabel,
   FormGroup,
   FormLabel,
+  FormHelperText,
+  IconButton,
+  InputAdornment,
   Paper,
   Radio,
   RadioGroup,
   TextField,
 } from '@mui/material';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
 import { useSnackbar } from 'notistack';
 import CustomLoader from '../../../components/loader';
 import {
   useGetLatestMedicalHistory,
   useSubmitMedicalHistory,
 } from '../hooks/useMedicalHistory';
+
+type SpeechRecognitionAlternativeLike = { transcript: string };
+type SpeechRecognitionResultLike = ArrayLike<SpeechRecognitionAlternativeLike>;
+type SpeechRecognitionEventLike = {
+  results: ArrayLike<SpeechRecognitionResultLike>;
+};
+
+type SpeechRecognitionLike = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: unknown) => void) | null;
+  onend: (() => void) | null;
+};
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
 type YesNo = 'yes' | 'no' | '';
 
@@ -56,6 +80,11 @@ type MedicalHistoryPayload = {
     alcohol: AlcoholFrequency;
     drugAbusePresent: YesNo;
     drugAbusePast: YesNo;
+    tobacco: YesNo;
+    familyHistoryMembers: string[];
+    dementia: YesNo;
+    stroke: YesNo;
+    lupus: YesNo;
   };
   concerns: string;
 };
@@ -88,6 +117,11 @@ const DEFAULT_PAYLOAD: MedicalHistoryPayload = {
     alcohol: '',
     drugAbusePresent: '',
     drugAbusePast: '',
+    tobacco: '',
+    familyHistoryMembers: [],
+    dementia: '',
+    stroke: '',
+    lupus: '',
   },
   concerns: '',
 };
@@ -117,7 +151,9 @@ const CheckboxGroup = ({
 }) => {
   return (
     <Box sx={{ mt: 3 }}>
-      <FormLabel sx={{ fontWeight: 600 }}>{title}</FormLabel>
+      <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+        {title}
+      </FormLabel>
       <FormGroup sx={{ mt: 1 }}>
         {options.map(opt => {
           const checked = values.includes(opt);
@@ -149,14 +185,20 @@ const YesNoRadioGroup = ({
   label,
   value,
   onChange,
+  error,
+  helperText,
 }: {
   label: string;
   value: YesNo;
   onChange: (v: YesNo) => void;
+  error?: boolean;
+  helperText?: string;
 }) => {
   return (
-    <FormControl sx={{ mt: 3, display: 'block' }}>
-      <FormLabel sx={{ fontWeight: 600 }}>{label}</FormLabel>
+    <FormControl error={!!error} sx={{ mt: 3, display: 'block' }}>
+      <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+        {label}
+      </FormLabel>
       <RadioGroup
         row
         value={value}
@@ -165,8 +207,19 @@ const YesNoRadioGroup = ({
         <FormControlLabel value="yes" control={<Radio />} label="Yes" />
         <FormControlLabel value="no" control={<Radio />} label="No" />
       </RadioGroup>
+      {error && helperText && <FormHelperText>{helperText}</FormHelperText>}
     </FormControl>
   );
+};
+
+const scrollToElement = (el: HTMLElement | null) => {
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const input = el.querySelector('input, textarea') as
+    | HTMLInputElement
+    | HTMLTextAreaElement
+    | null;
+  input?.focus?.();
 };
 
 const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
@@ -175,6 +228,17 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
     useSubmitMedicalHistory();
   const { enqueueSnackbar } = useSnackbar();
 
+  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const [isRecordingMedication, setIsRecordingMedication] = useState(false);
+
+  const memoryDurationRef = useRef<HTMLDivElement | null>(null);
+  const attentionProblemRef = useRef<HTMLDivElement | null>(null);
+
+  const [errors, setErrors] = useState({
+    memoryDuration: false,
+    attentionProblem: false,
+  });
+
   const latestPayload = useMemo(() => {
     const parsed = parseMaybeJson(latest?.data);
     if (!parsed || typeof parsed !== 'object') return null;
@@ -182,6 +246,92 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
   }, [latest]);
 
   const [form, setForm] = useState<MedicalHistoryPayload>(DEFAULT_PAYLOAD);
+
+  const getSpeechRecognitionCtor = () => {
+    const w = window as unknown as {
+      SpeechRecognition?: SpeechRecognitionCtor;
+      webkitSpeechRecognition?: SpeechRecognitionCtor;
+    };
+    return w.SpeechRecognition || w.webkitSpeechRecognition || null;
+  };
+
+  const stopSpeechRecognition = () => {
+    try {
+      speechRecognitionRef.current?.stop?.();
+    } catch {
+      // ignore
+    } finally {
+      speechRecognitionRef.current = null;
+      setIsRecordingMedication(false);
+    }
+  };
+
+  const toggleMedicationSpeechInput = () => {
+    if (isRecordingMedication) {
+      stopSpeechRecognition();
+      return;
+    }
+
+    const SpeechRecognitionCtor = getSpeechRecognitionCtor();
+    if (!SpeechRecognitionCtor) {
+      enqueueSnackbar(
+        'Speech input is not supported in this browser. Please type instead.',
+        { variant: 'error' }
+      );
+      return;
+    }
+
+    const recognition = new SpeechRecognitionCtor();
+    speechRecognitionRef.current = recognition;
+
+    recognition.lang = 'en-US';
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    recognition.onresult = (event: SpeechRecognitionEventLike) => {
+      const results = event?.results;
+      if (!results) return;
+
+      let transcript = '';
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const alt = result?.[0];
+        if (alt?.transcript) transcript += alt.transcript;
+      }
+
+      const nextText = transcript.trim();
+      if (!nextText) return;
+
+      setForm(prev => ({
+        ...prev,
+        currentMedicationList: prev.currentMedicationList?.trim()
+          ? `${prev.currentMedicationList.trim()} ${nextText}`
+          : nextText,
+      }));
+    };
+
+    recognition.onerror = () => {
+      enqueueSnackbar('Could not capture speech input. Please try again.', {
+        variant: 'error',
+      });
+      stopSpeechRecognition();
+    };
+
+    recognition.onend = () => {
+      speechRecognitionRef.current = null;
+      setIsRecordingMedication(false);
+    };
+
+    try {
+      recognition.start();
+      setIsRecordingMedication(true);
+    } catch {
+      enqueueSnackbar('Could not start speech input. Please try again.', {
+        variant: 'error',
+      });
+      stopSpeechRecognition();
+    }
+  };
 
   useEffect(() => {
     if (!latestPayload) return;
@@ -198,6 +348,16 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
       },
     }));
   }, [latestPayload]);
+
+  useEffect(() => {
+    return () => {
+      try {
+        speechRecognitionRef.current?.stop();
+      } catch {
+        // ignore
+      }
+    };
+  }, []);
 
   const memoryDurationOptions = useMemo(
     () => [
@@ -233,7 +393,13 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
       'Chronic insomnia',
       'Restless Leg Syndrome (RLS)',
       'Circadian rhythm disorders',
+      'Asthma/COPD',
     ],
+    []
+  );
+
+  const familyHistoryOptions = useMemo(
+    () => ['Father', 'Mother', 'Grandfather/Grandmother', 'Brother/Sister'],
     []
   );
 
@@ -304,14 +470,17 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
   );
 
   const handleSubmit = async () => {
-    if (!form.memoryDuration) {
+    const nextErrors = {
+      memoryDuration: !form.memoryDuration,
+      attentionProblem: !form.attentionProblem,
+    };
+
+    if (nextErrors.memoryDuration || nextErrors.attentionProblem) {
+      setErrors(nextErrors);
+      if (nextErrors.memoryDuration) scrollToElement(memoryDurationRef.current);
+      else scrollToElement(attentionProblemRef.current);
+
       enqueueSnackbar('Please select memory loss duration', {
-        variant: 'error',
-      });
-      return;
-    }
-    if (!form.attentionProblem) {
-      enqueueSnackbar('Please answer Attention problem (Yes/No)', {
         variant: 'error',
       });
       return;
@@ -346,32 +515,45 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
 
   return (
     <Paper sx={{ width: '100%', boxShadow: 'none' }}>
-      <FormControl sx={{ mt: 1 }}>
-        <FormLabel sx={{ fontWeight: 600 }}>
-          Ques 1: Memory loss or cognitive impairment Duration
-        </FormLabel>
-        <RadioGroup
-          value={form.memoryDuration}
-          onChange={e =>
-            setForm(prev => ({ ...prev, memoryDuration: e.target.value }))
-          }
-        >
-          {memoryDurationOptions.map(opt => (
-            <FormControlLabel
-              key={opt}
-              value={opt}
-              control={<Radio />}
-              label={opt}
-            />
-          ))}
-        </RadioGroup>
-      </FormControl>
+      <Box ref={memoryDurationRef}>
+        <FormControl error={errors.memoryDuration} sx={{ mt: 1 }}>
+          <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+            Ques 1: Memory loss or cognitive impairment duration
+          </FormLabel>
+          <RadioGroup
+            value={form.memoryDuration}
+            onChange={e => {
+              setForm(prev => ({ ...prev, memoryDuration: e.target.value }));
+              setErrors(prev => ({ ...prev, memoryDuration: false }));
+            }}
+          >
+            {memoryDurationOptions.map(opt => (
+              <FormControlLabel
+                key={opt}
+                value={opt}
+                control={<Radio />}
+                label={opt}
+              />
+            ))}
+          </RadioGroup>
+          {errors.memoryDuration && (
+            <FormHelperText>This field is required</FormHelperText>
+          )}
+        </FormControl>
+      </Box>
 
-      <YesNoRadioGroup
-        label="Ques 2: Attention problem"
-        value={form.attentionProblem}
-        onChange={v => setForm(prev => ({ ...prev, attentionProblem: v }))}
-      />
+      <Box ref={attentionProblemRef}>
+        <YesNoRadioGroup
+          label="Ques 2: Attention problem"
+          value={form.attentionProblem}
+          onChange={v => {
+            setForm(prev => ({ ...prev, attentionProblem: v }));
+            setErrors(prev => ({ ...prev, attentionProblem: false }));
+          }}
+          error={errors.attentionProblem}
+          helperText="This field is required"
+        />
+      </Box>
 
       <CheckboxGroup
         title="Ques 3: Neurological Conditions (select all that apply)"
@@ -446,7 +628,7 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
       />
 
       <Box sx={{ mt: 3 }}>
-        <FormLabel sx={{ fontWeight: 600 }}>
+        <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
           Ques 11: Current medication list
         </FormLabel>
         <TextField
@@ -461,12 +643,37 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
             }))
           }
           placeholder="Type your current medications"
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  edge="end"
+                  onClick={toggleMedicationSpeechInput}
+                  aria-label={
+                    isRecordingMedication
+                      ? 'Stop voice input'
+                      : 'Start voice input'
+                  }
+                >
+                  {isRecordingMedication ? (
+                    <MicOffIcon sx={{ color: 'red' }} />
+                  ) : (
+                    <MicIcon
+                      sx={{ color: theme => theme.palette.primary.main }}
+                    />
+                  )}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
           sx={{ mt: 1 }}
         />
       </Box>
 
       <Box sx={{ mt: 3 }}>
-        <FormLabel sx={{ fontWeight: 600 }}>Ques 12: Vital sign</FormLabel>
+        <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+          Ques 12: Vital sign
+        </FormLabel>
         <Box
           sx={{
             display: 'flex',
@@ -510,7 +717,9 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
           />
 
           <FormControl>
-            <FormLabel sx={{ fontWeight: 600 }}>Weight</FormLabel>
+            <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+              Weight
+            </FormLabel>
             <RadioGroup
               row
               value={form.vitals.weightUnit}
@@ -541,7 +750,9 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
           </FormControl>
 
           <FormControl>
-            <FormLabel sx={{ fontWeight: 600 }}>Height</FormLabel>
+            <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+              Height
+            </FormLabel>
             <RadioGroup
               row
               value={form.vitals.heightUnit}
@@ -575,7 +786,9 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
       </Box>
 
       <Box sx={{ mt: 3 }}>
-        <FormLabel sx={{ fontWeight: 600 }}>Ques 13: Social habits</FormLabel>
+        <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+          Ques 13: Social habits
+        </FormLabel>
 
         <YesNoRadioGroup
           label="Exercise"
@@ -611,7 +824,9 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
         />
 
         <FormControl sx={{ mt: 3 }}>
-          <FormLabel sx={{ fontWeight: 600 }}>Alcohol</FormLabel>
+          <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
+            Alcohol
+          </FormLabel>
           <RadioGroup
             row
             value={form.socialHabits.alcohol}
@@ -664,10 +879,71 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
             }))
           }
         />
+
+        <YesNoRadioGroup
+          label="Tobacco"
+          value={form.socialHabits.tobacco}
+          onChange={v =>
+            setForm(prev => ({
+              ...prev,
+              socialHabits: { ...prev.socialHabits, tobacco: v },
+            }))
+          }
+        />
+
+        <CheckboxGroup
+          title="Family History (select all that apply)"
+          options={familyHistoryOptions}
+          values={form.socialHabits.familyHistoryMembers}
+          onChange={next =>
+            setForm(prev => ({
+              ...prev,
+              socialHabits: {
+                ...prev.socialHabits,
+                familyHistoryMembers: next,
+              },
+            }))
+          }
+        />
+
+        <YesNoRadioGroup
+          label="Dementia"
+          value={form.socialHabits.dementia}
+          onChange={v =>
+            setForm(prev => ({
+              ...prev,
+              socialHabits: { ...prev.socialHabits, dementia: v },
+            }))
+          }
+        />
+
+        <YesNoRadioGroup
+          label="Stroke"
+          value={form.socialHabits.stroke}
+          onChange={v =>
+            setForm(prev => ({
+              ...prev,
+              socialHabits: { ...prev.socialHabits, stroke: v },
+            }))
+          }
+        />
+
+        <YesNoRadioGroup
+          label="Lupus"
+          value={form.socialHabits.lupus}
+          onChange={v =>
+            setForm(prev => ({
+              ...prev,
+              socialHabits: { ...prev.socialHabits, lupus: v },
+            }))
+          }
+        />
       </Box>
 
+      {/*  */}
+
       <Box sx={{ mt: 3 }}>
-        <FormLabel sx={{ fontWeight: 600 }}>
+        <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
           Type questions or your concern below
         </FormLabel>
         <TextField
@@ -689,7 +965,11 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
           onClick={handleSubmit}
           disabled={submitting}
         >
-          {submitting ? <CircularProgress size={22} /> : 'Submit'}
+          {submitting ? (
+            <CircularProgress size={22} />
+          ) : (
+            <span key="medical-history-submit">Submit</span>
+          )}
         </Button>
       </Box>
     </Paper>

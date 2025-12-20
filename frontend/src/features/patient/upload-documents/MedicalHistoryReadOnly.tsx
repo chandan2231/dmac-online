@@ -49,6 +49,11 @@ type MedicalHistoryPayload = {
     alcohol: AlcoholFrequency;
     drugAbusePresent: YesNo;
     drugAbusePast: YesNo;
+    tobacco: YesNo;
+    familyHistoryMembers: string[];
+    dementia: YesNo;
+    stroke: YesNo;
+    lupus: YesNo;
   };
   concerns: string;
 };
@@ -98,6 +103,11 @@ const DEFAULT_PAYLOAD: MedicalHistoryPayload = {
     alcohol: '',
     drugAbusePresent: '',
     drugAbusePast: '',
+    tobacco: '',
+    familyHistoryMembers: [],
+    dementia: '',
+    stroke: '',
+    lupus: '',
   },
   concerns: '',
 };
@@ -118,8 +128,7 @@ const CheckboxGroupReadOnly = ({
         {options.map(opt => (
           <FormControlLabel
             key={opt}
-            disabled
-            control={<Checkbox checked={values.includes(opt)} disabled />}
+            control={<Checkbox checked={values.includes(opt)} />}
             label={opt}
           />
         ))}
@@ -139,12 +148,8 @@ const YesNoRadioGroupReadOnly = ({
     <FormControl sx={{ mt: 3, display: 'block' }}>
       <FormLabel sx={{ fontWeight: 600 }}>{label}</FormLabel>
       <RadioGroup row value={value}>
-        <FormControlLabel
-          value="yes"
-          control={<Radio disabled />}
-          label="Yes"
-        />
-        <FormControlLabel value="no" control={<Radio disabled />} label="No" />
+        <FormControlLabel value="yes" control={<Radio />} label="Yes" />
+        <FormControlLabel value="no" control={<Radio />} label="No" />
       </RadioGroup>
     </FormControl>
   );
@@ -222,6 +227,11 @@ const MedicalHistoryReadOnly = ({
         alcohol: asAlcoholFrequency(socialRaw.alcohol),
         drugAbusePresent: asYesNo(socialRaw.drugAbusePresent),
         drugAbusePast: asYesNo(socialRaw.drugAbusePast),
+        tobacco: asYesNo(socialRaw.tobacco),
+        familyHistoryMembers: asStringArray(socialRaw.familyHistoryMembers),
+        dementia: asYesNo(socialRaw.dementia),
+        stroke: asYesNo(socialRaw.stroke),
+        lupus: asYesNo(socialRaw.lupus),
       },
       concerns: asString(payload.concerns),
     };
@@ -261,7 +271,13 @@ const MedicalHistoryReadOnly = ({
       'Chronic insomnia',
       'Restless Leg Syndrome (RLS)',
       'Circadian rhythm disorders',
+      'Asthma/COPD',
     ],
+    []
+  );
+
+  const familyHistoryOptions = useMemo(
+    () => ['Father', 'Mother', 'Grandfather/Grandmother', 'Brother/Sister'],
     []
   );
 
@@ -342,7 +358,7 @@ const MedicalHistoryReadOnly = ({
             <FormControlLabel
               key={opt}
               value={opt}
-              control={<Radio disabled />}
+              control={<Radio />}
               label={opt}
             />
           ))}
@@ -411,7 +427,6 @@ const MedicalHistoryReadOnly = ({
           multiline
           minRows={3}
           value={form.currentMedicationList}
-          disabled
           placeholder="Type your current medications"
           sx={{ mt: 1 }}
         />
@@ -420,72 +435,35 @@ const MedicalHistoryReadOnly = ({
       <Box sx={{ mt: 3 }}>
         <FormLabel sx={{ fontWeight: 600 }}>Ques 12: Vital sign</FormLabel>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-          <TextField
-            fullWidth
-            label="Systolic"
-            value={form.vitals.systolic}
-            disabled
-          />
+          <TextField fullWidth label="Systolic" value={form.vitals.systolic} />
           <TextField
             fullWidth
             label="Diastolic"
             value={form.vitals.diastolic}
-            disabled
           />
           <TextField
             fullWidth
             label="Heart rate"
             value={form.vitals.heartRate}
-            disabled
           />
 
           <FormControl>
             <FormLabel sx={{ fontWeight: 600 }}>Weight</FormLabel>
             <RadioGroup row value={form.vitals.weightUnit}>
-              <FormControlLabel
-                value="kg"
-                control={<Radio disabled />}
-                label="kg"
-              />
-              <FormControlLabel
-                value="lb"
-                control={<Radio disabled />}
-                label="lb"
-              />
+              <FormControlLabel value="kg" control={<Radio />} label="kg" />
+              <FormControlLabel value="lb" control={<Radio />} label="lb" />
             </RadioGroup>
-            <TextField
-              fullWidth
-              label="Weight"
-              value={form.vitals.weight}
-              disabled
-            />
+            <TextField fullWidth label="Weight" value={form.vitals.weight} />
           </FormControl>
 
           <FormControl>
             <FormLabel sx={{ fontWeight: 600 }}>Height</FormLabel>
             <RadioGroup row value={form.vitals.heightUnit}>
-              <FormControlLabel
-                value="cm"
-                control={<Radio disabled />}
-                label="cm"
-              />
-              <FormControlLabel
-                value="ft"
-                control={<Radio disabled />}
-                label="ft"
-              />
-              <FormControlLabel
-                value="in"
-                control={<Radio disabled />}
-                label="in"
-              />
+              <FormControlLabel value="cm" control={<Radio />} label="cm" />
+              <FormControlLabel value="ft" control={<Radio />} label="ft" />
+              <FormControlLabel value="in" control={<Radio />} label="in" />
             </RadioGroup>
-            <TextField
-              fullWidth
-              label="Height"
-              value={form.vitals.height}
-              disabled
-            />
+            <TextField fullWidth label="Height" value={form.vitals.height} />
           </FormControl>
         </Box>
       </Box>
@@ -513,17 +491,17 @@ const MedicalHistoryReadOnly = ({
           <RadioGroup row value={form.socialHabits.alcohol}>
             <FormControlLabel
               value="everyday"
-              control={<Radio disabled />}
+              control={<Radio />}
               label="Every day"
             />
             <FormControlLabel
               value="weekends"
-              control={<Radio disabled />}
+              control={<Radio />}
               label="Weekends"
             />
             <FormControlLabel
               value="occasional"
-              control={<Radio disabled />}
+              control={<Radio />}
               label="Occasional"
             />
           </RadioGroup>
@@ -538,6 +516,32 @@ const MedicalHistoryReadOnly = ({
           label="Drug abuse: Past"
           value={form.socialHabits.drugAbusePast}
         />
+
+        <YesNoRadioGroupReadOnly
+          label="Tobacco"
+          value={form.socialHabits.tobacco}
+        />
+
+        <CheckboxGroupReadOnly
+          title="Family History (select all that apply)"
+          options={familyHistoryOptions}
+          values={form.socialHabits.familyHistoryMembers}
+        />
+
+        <YesNoRadioGroupReadOnly
+          label="Dementia"
+          value={form.socialHabits.dementia}
+        />
+
+        <YesNoRadioGroupReadOnly
+          label="Stroke"
+          value={form.socialHabits.stroke}
+        />
+
+        <YesNoRadioGroupReadOnly
+          label="Lupus"
+          value={form.socialHabits.lupus}
+        />
       </Box>
 
       <Box sx={{ mt: 3 }}>
@@ -549,7 +553,6 @@ const MedicalHistoryReadOnly = ({
           multiline
           minRows={4}
           value={form.concerns}
-          disabled
           sx={{ mt: 1 }}
           placeholder="Type your questions or concerns"
         />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -9,6 +9,8 @@ import {
   RadioGroup,
   FormControlLabel,
   FormLabel,
+  FormControl,
+  FormHelperText,
   Paper,
   CircularProgress,
   Checkbox,
@@ -48,43 +50,43 @@ const satQuestions = [
   {
     id: 'q1',
     label:
-      '1. Snoring\nHave you been told that you snore at night, or does your snoring wake you up from sleep?',
+      '1. Snoring: Have you been told that you snore at night, or does your snoring wake you up from sleep?',
   },
-  { id: 'q2', label: '2. Gasping for air\nDo you wake up gasping for breath?' },
+  { id: 'q2', label: '2. Gasping for air: Do you wake up gasping for breath?' },
   {
     id: 'q3',
     label:
-      '3. Non-restorative sleep\nDo you wake up feeling tired or experience unrefreshing sleep?',
+      '3. Non-restorative sleep: Do you wake up feeling tired or experience unrefreshing sleep?',
   },
   {
     id: 'q4',
     label:
-      '4. Daytime sleepiness\nDo you feel tired, excessively sleepy, or have low energy during the day?',
+      '4. Daytime sleepiness: Do you feel tired, excessively sleepy, or have low energy during the day?',
   },
   {
     id: 'q5',
     label:
-      '5. Heart or reflux symptoms\nDo you experience heart palpitations, irregular heartbeat, or gastric reflux?',
+      '5. Heart or reflux symptoms: Do you experience heart palpitations, irregular heartbeat, or gastric reflux?',
   },
   {
     id: 'q6',
     label:
-      '6. Dozing off unintentionally\nDo you doze off while sitting, watching TV, or sitting in a car (not driving)?',
+      '6. Dozing off unintentionally: Do you doze off while sitting, watching TV, or sitting in a car (not driving)?',
   },
   {
     id: 'q7',
     label:
-      '7. Pain symptoms\nDo you frequently have headaches, neck pain, or back pain?',
+      '7. Pain symptoms: Do you frequently have headaches, neck pain, or back pain?',
   },
   {
     id: 'q8',
     label:
-      '8. Memory or organization difficulties\nDo you have trouble remembering things, writing information down, or making lists?',
+      '8. Memory or organization difficulties: Do you have trouble remembering things, writing information down, or making lists?',
   },
   {
     id: 'q9',
     label:
-      '9. Hypertension\nHave you been diagnosed with hypertension (high blood pressure)?',
+      '9. Hypertension: Have you been diagnosed with hypertension (high blood pressure)?',
   },
 ];
 
@@ -92,47 +94,47 @@ const datQuestions = [
   {
     id: 'q1',
     label:
-      '1. Loss of interest or pleasure\nHave you had little interest or pleasure in doing things?',
+      '1. Loss of interest or pleasure: Have you had little interest or pleasure in doing things?',
   },
   {
     id: 'q2',
     label:
-      '2. Feeling down or hopeless\nHave you felt down, depressed, or hopeless?',
+      '2. Feeling down or hopeless: Have you felt down, depressed, or hopeless?',
   },
   {
     id: 'q3',
     label:
-      '3. Sleep difficulties\nDo you have trouble falling asleep, staying asleep, or do you sleep too much?',
+      '3. Sleep difficulties: Do you have trouble falling asleep, staying asleep, or do you sleep too much?',
   },
   {
     id: 'q4',
     label:
-      '4. Low energy\nDo you feel tired, have low energy, or lack motivation to do anything?',
+      '4. Low energy: Do you feel tired, have low energy, or lack motivation to do anything?',
   },
   {
     id: 'q5',
     label:
-      '5. Appetite changes\nHave you experienced poor appetite or overeating?',
+      '5. Appetite changes: Have you experienced poor appetite or overeating?',
   },
   {
     id: 'q6',
     label:
-      '6. Negative self‑thoughts\nDo you feel bad about yourself, feel like a failure, or believe you have let yourself or your family down?',
+      '6. Negative self‑thoughts: Do you feel bad about yourself, feel like a failure, or believe you have let yourself or your family down?',
   },
   {
     id: 'q7',
     label:
-      '7. Difficulty concentrating\nDo you have trouble concentrating on things, such as reading or watching television?',
+      '7. Difficulty concentrating: Do you have trouble concentrating on things, such as reading or watching television?',
   },
   {
     id: 'q8',
     label:
-      '8. Changes in movement or activity\nHave you been moving or speaking noticeably more slowly than usual? Or the opposite—feeling fidgety or restless and moving around more than normal?',
+      '8. Changes in movement or activity: Have you been moving or speaking noticeably more slowly than usual? Or the opposite—feeling fidgety or restless and moving around more than normal?',
   },
   {
     id: 'q9',
     label:
-      '9. Self‑harm thoughts\nHave you had thoughts that you would be better off dead or thoughts of hurting yourself in any way?',
+      '9. Self‑harm thoughts: Have you had thoughts that you would be better off dead or thoughts of hurting yourself in any way?',
   },
 ];
 
@@ -140,47 +142,115 @@ const adtQuestions = [
   {
     id: 'q1',
     label:
-      '1. Feeling nervous or anxious\nDo you often feel nervous, anxious, on edge, or hypervigilant?',
+      '1. Feeling nervous or anxious: Do you often feel nervous, anxious, on edge, or hypervigilant?',
   },
   {
     id: 'q2',
     label:
-      '2. Panic symptoms\nDo you experience panic attacks, hyperventilation, difficulty breathing, or heart palpitations?',
+      '2. Panic symptoms: Do you experience panic attacks, hyperventilation, difficulty breathing, or heart palpitations?',
   },
   {
     id: 'q3',
     label:
-      '3. Excessive worrying\nDo you worry too much about different things or feel unable to stop worrying?',
+      '3. Excessive worrying: Do you worry too much about different things or feel unable to stop worrying?',
   },
   {
     id: 'q4',
     label:
-      '4. Difficulty relaxing or sleeping\nDo you have trouble relaxing, falling asleep, or "shutting down" your thoughts at night?',
+      '4. Difficulty relaxing or sleeping: Do you have trouble relaxing, falling asleep, or "shutting down" your thoughts at night?',
   },
   {
     id: 'q5',
     label:
-      '5. Restlessness\nDo you feel so restless that it is hard to sit still?',
+      '5. Restlessness: Do you feel so restless that it is hard to sit still?',
   },
   {
     id: 'q6',
     label:
-      '6. Irritability\nDo you become easily annoyed, irritable, or agitated over small things?',
+      '6. Irritability: Do you become easily annoyed, irritable, or agitated over small things?',
   },
   {
     id: 'q7',
     label:
-      '7. Fear of something bad happening\nDo you feel afraid, as if something awful might happen?',
+      '7. Fear of something bad happening: Do you feel afraid, as if something awful might happen?',
   },
   {
     id: 'q8',
     label:
-      '8. Trouble concentrating\nDo you have difficulty concentrating or remembering conversations?',
+      '8. Trouble concentrating: Do you have difficulty concentrating or remembering conversations?',
   },
   {
     id: 'q9',
     label:
-      '9. Tremors or shaking\nDo you experience tremors or shaking in your fingers?',
+      '9. Tremors or shaking: Do you experience tremors or shaking in your fingers?',
+  },
+];
+
+const catQuestions = [
+  {
+    id: 'q1',
+    label: '1. Did you have concussion/Traumatic brain injury?',
+  },
+  {
+    id: 'q2',
+    label:
+      '2. Did you have concussion/Traumatic brain injury less than 3 month?',
+  },
+  {
+    id: 'q3',
+    label: '3. Loss Of consciousness',
+  },
+  {
+    id: 'q4',
+    label: '4. Amnesia',
+  },
+  {
+    id: 'q5',
+    label: '5. Persistent symptoms: Memory Recall (Short term)',
+  },
+  {
+    id: 'q6',
+    label: '6. Persistent symptoms: Speech / Word Finding',
+  },
+  {
+    id: 'q7',
+    label: '7. Persistent symptoms: Concentration / Attention Problem',
+  },
+  {
+    id: 'q8',
+    label: '8. Persistent symptoms: Headache',
+  },
+  {
+    id: 'q9',
+    label: '9. Persistent symptoms: Nausea / Vomiting',
+  },
+  {
+    id: 'q10',
+    label: '10. Persistent symptoms: Dizziness / Off balance',
+  },
+  {
+    id: 'q11',
+    label: '11. Persistent symptoms: Visual focusing problem',
+  },
+  {
+    id: 'q12',
+    label: '12. Persistent symptoms: Light sensitivity',
+  },
+  {
+    id: 'q13',
+    label: '13. Persistent symptoms: Sleeping problem',
+  },
+  {
+    id: 'q14',
+    label: '14. Persistent symptoms: Mental fogg / Slowing',
+  },
+  {
+    id: 'q15',
+    label: '15. Persistent symptoms: Change in personality',
+  },
+  {
+    id: 'q16',
+    label: '16. Persistent symptoms: Irritability / Nervousness',
   },
 ];
 
@@ -194,7 +264,30 @@ interface AnswerPayload {
   answer: string;
 }
 
-const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
+type QuestionTabName = 'sat' | 'dat' | 'adt';
+
+const isQuestionTabName = (value: string): value is QuestionTabName | 'cat' =>
+  value === 'sat' || value === 'dat' || value === 'adt' || value === 'cat';
+
+const scrollToElement = (el: HTMLElement | null) => {
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const input = el.querySelector('input, textarea') as
+    | HTMLInputElement
+    | HTMLTextAreaElement
+    | null;
+  input?.focus?.();
+};
+
+const AssessmentForm = ({
+  onComplete,
+  showLastTab,
+  tab,
+}: {
+  onComplete: () => void;
+  showLastTab: boolean;
+  tab: React.ReactNode;
+}) => {
   const [value, setValue] = useState(0);
   const { data: status, isLoading } = useGetAssessmentStatus();
   const { mutateAsync: submitTab, isPending: submitting } =
@@ -204,6 +297,7 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
   const [satData, setSatData] = useState<Record<string, string>>({});
   const [datData, setDatData] = useState<Record<string, string>>({});
   const [adtData, setAdtData] = useState<Record<string, string>>({});
+  const [catData, setCatData] = useState<Record<string, string>>({});
 
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [disclaimerSignature, setDisclaimerSignature] = useState('');
@@ -217,6 +311,36 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
   const [guardianRelation, setGuardianRelation] = useState('');
   const [guardianSignature, setGuardianSignature] = useState('');
   const [guardianDate, setGuardianDate] = useState('');
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const questionRefs = useRef<any>({});
+  const disclaimerAcceptedRef = useRef<HTMLDivElement | null>(null);
+  const disclaimerSignatureRef = useRef<HTMLDivElement | null>(null);
+  const disclaimerDateRef = useRef<HTMLDivElement | null>(null);
+  const consentAcceptedRef = useRef<HTMLDivElement | null>(null);
+  const consentNameRef = useRef<HTMLDivElement | null>(null);
+  const consentSignatureRef = useRef<HTMLDivElement | null>(null);
+  const consentDateRef = useRef<HTMLDivElement | null>(null);
+
+  const [questionErrors, setQuestionErrors] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [disclaimerErrors, setDisclaimerErrors] = useState({
+    accepted: false,
+    signature: false,
+    date: false,
+  });
+  const [consentErrors, setConsentErrors] = useState({
+    accepted: false,
+    name: false,
+    signature: false,
+    date: false,
+  });
+
+  const questionKey = useMemo(
+    () => (tab: QuestionTabName | 'cat', qId: string) => `${tab}:${qId}`,
+    []
+  );
 
   useEffect(() => {
     if (status) {
@@ -253,6 +377,18 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         }
         setAdtData(map);
       }
+
+      if (status.cat) {
+        const parsed =
+          typeof status.cat === 'string' ? JSON.parse(status.cat) : status.cat;
+        const map: Record<string, string> = {};
+        if (Array.isArray(parsed)) {
+          parsed.forEach((item: AnswerPayload, index: number) => {
+            map[`q${index + 1}`] = item.answer;
+          });
+        }
+        setCatData(map);
+      }
       if (status.disclaimer) {
         const parsed =
           typeof status.disclaimer === 'string'
@@ -278,6 +414,7 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
       }
 
       if (
+        status.cat &&
         status.sat &&
         status.dat &&
         status.adt &&
@@ -297,24 +434,49 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
     if (tab === 'sat') setSatData(prev => ({ ...prev, [qId]: val }));
     if (tab === 'dat') setDatData(prev => ({ ...prev, [qId]: val }));
     if (tab === 'adt') setAdtData(prev => ({ ...prev, [qId]: val }));
+    if (tab === 'cat') setCatData(prev => ({ ...prev, [qId]: val }));
+
+    if (isQuestionTabName(tab)) {
+      const key = questionKey(tab, qId);
+      setQuestionErrors(prev => (prev[key] ? { ...prev, [key]: false } : prev));
+    }
   };
 
-  const validateQuestions = (
+  const validateQuestionTab = (
+    tab: QuestionTabName | 'cat',
     questions: Question[],
     data: Record<string, string>
   ) => {
-    for (const q of questions) {
-      if (!data[q.id]) return false;
-    }
-    return true;
+    const missing = questions.filter(q => !data[q.id]);
+
+    setQuestionErrors(prev => {
+      const next = { ...prev };
+      for (const q of questions) {
+        next[questionKey(tab, q.id)] = !data[q.id];
+      }
+      return next;
+    });
+
+    return {
+      ok: missing.length === 0,
+      firstMissingId: missing[0]?.id,
+    };
   };
 
   const handleSubmit = async (tab: string) => {
     let payload: unknown = null;
 
     if (tab === 'sat') {
-      if (!validateQuestions(satQuestions, satData)) {
+      const { ok, firstMissingId } = validateQuestionTab(
+        'sat',
+        satQuestions,
+        satData
+      );
+      if (!ok) {
         enqueueSnackbar('Please answer all questions', { variant: 'error' });
+        scrollToElement(
+          questionRefs.current[questionKey('sat', firstMissingId || 'q1')]
+        );
         return;
       }
       payload = satQuestions.map(q => ({
@@ -322,8 +484,16 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         answer: satData[q.id],
       }));
     } else if (tab === 'dat') {
-      if (!validateQuestions(datQuestions, datData)) {
+      const { ok, firstMissingId } = validateQuestionTab(
+        'dat',
+        datQuestions,
+        datData
+      );
+      if (!ok) {
         enqueueSnackbar('Please answer all questions', { variant: 'error' });
+        scrollToElement(
+          questionRefs.current[questionKey('dat', firstMissingId || 'q1')]
+        );
         return;
       }
       payload = datQuestions.map(q => ({
@@ -331,32 +501,85 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         answer: datData[q.id],
       }));
     } else if (tab === 'adt') {
-      if (!validateQuestions(adtQuestions, adtData)) {
+      const { ok, firstMissingId } = validateQuestionTab(
+        'adt',
+        adtQuestions,
+        adtData
+      );
+      if (!ok) {
         enqueueSnackbar('Please answer all questions', { variant: 'error' });
+        scrollToElement(
+          questionRefs.current[questionKey('adt', firstMissingId || 'q1')]
+        );
         return;
       }
       payload = adtQuestions.map(q => ({
         label: q.label,
         answer: adtData[q.id],
       }));
+    } else if (tab === 'cat') {
+      const { ok, firstMissingId } = validateQuestionTab(
+        'cat',
+        catQuestions,
+        catData
+      );
+      if (!ok) {
+        enqueueSnackbar('Please answer all questions', { variant: 'error' });
+        scrollToElement(
+          questionRefs.current[questionKey('cat', firstMissingId || 'q1')]
+        );
+        return;
+      }
+      payload = catQuestions.map(q => ({
+        label: q.label,
+        answer: catData[q.id],
+      }));
     } else if (tab === 'disclaimer') {
-      if (!disclaimerAccepted || !disclaimerSignature || !disclaimerDate) {
+      const nextErrors = {
+        accepted: !disclaimerAccepted,
+        signature: !disclaimerSignature,
+        date: !disclaimerDate,
+      };
+      setDisclaimerErrors(nextErrors);
+
+      if (nextErrors.accepted || nextErrors.signature || nextErrors.date) {
         enqueueSnackbar('Please accept and sign the disclaimer', {
           variant: 'error',
         });
+
+        if (nextErrors.accepted) scrollToElement(disclaimerAcceptedRef.current);
+        else if (nextErrors.signature)
+          scrollToElement(disclaimerSignatureRef.current);
+        else scrollToElement(disclaimerDateRef.current);
+
         return;
       }
       payload = { signature: disclaimerSignature, date: disclaimerDate };
     } else if (tab === 'consent') {
+      const nextErrors = {
+        accepted: !consentAccepted,
+        name: !consentName,
+        signature: !consentSignature,
+        date: !consentDate,
+      };
+      setConsentErrors(nextErrors);
+
       if (
-        !consentAccepted ||
-        !consentName ||
-        !consentSignature ||
-        !consentDate
+        nextErrors.accepted ||
+        nextErrors.name ||
+        nextErrors.signature ||
+        nextErrors.date
       ) {
         enqueueSnackbar('Please fill all required fields', {
           variant: 'error',
         });
+
+        if (nextErrors.accepted) scrollToElement(consentAcceptedRef.current);
+        else if (nextErrors.name) scrollToElement(consentNameRef.current);
+        else if (nextErrors.signature)
+          scrollToElement(consentSignatureRef.current);
+        else scrollToElement(consentDateRef.current);
+
         return;
       }
       payload = {
@@ -373,7 +596,7 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
     try {
       await submitTab({ tab, data: payload });
       enqueueSnackbar('Submitted successfully', { variant: 'success' });
-      if (value < 5) setValue(value + 1);
+      if (value < 6) setValue(value + 1);
     } catch (error) {
       console.error(error);
       enqueueSnackbar('Error submitting', { variant: 'error' });
@@ -387,18 +610,41 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
   ) => (
     <Box>
       {questions.map(q => (
-        <Box key={q.id} sx={{ mb: 3 }}>
-          <FormLabel required sx={{ whiteSpace: 'pre-line' }}>
-            {q.label}
-          </FormLabel>
-          <RadioGroup
-            row
-            value={data[q.id] || ''}
-            onChange={e => handleQuestionChange(tabName, q.id, e.target.value)}
+        <Box
+          key={q.id}
+          sx={{ mb: 3 }}
+          ref={el => {
+            if (isQuestionTabName(tabName)) {
+              questionRefs.current[questionKey(tabName, q.id)] = el;
+            }
+          }}
+        >
+          <FormControl
+            error={
+              isQuestionTabName(tabName) &&
+              !!questionErrors[questionKey(tabName, q.id)]
+            }
+            component="fieldset"
+            sx={{ width: '100%' }}
           >
-            <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
-            <FormControlLabel value="No" control={<Radio />} label="No" />
-          </RadioGroup>
+            <FormLabel required sx={{ whiteSpace: 'pre-line' }}>
+              {q.label}
+            </FormLabel>
+            <RadioGroup
+              row
+              value={data[q.id] || ''}
+              onChange={e =>
+                handleQuestionChange(tabName, q.id, e.target.value)
+              }
+            >
+              <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+              <FormControlLabel value="No" control={<Radio />} label="No" />
+            </RadioGroup>
+            {isQuestionTabName(tabName) &&
+              questionErrors[questionKey(tabName, q.id)] && (
+                <FormHelperText>Please select an answer</FormHelperText>
+              )}
+          </FormControl>
         </Box>
       ))}
       <Button
@@ -406,7 +652,11 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         onClick={() => handleSubmit(tabName)}
         disabled={submitting}
       >
-        {submitting ? <CircularProgress size={24} /> : 'Submit'}
+        {submitting ? (
+          <CircularProgress size={24} />
+        ) : (
+          <span key={`assessment-${tabName}-submit`}>Submit</span>
+        )}
       </Button>
     </Box>
   );
@@ -425,8 +675,10 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
         <Tab label="Sleep Apnea Test" />
         <Tab label="Depression Diagnostic Test" />
         <Tab label="Anxiety Diagnostic Test" />
+        <Tab label="Concussion Assessment Test" />
         <Tab label="Disclaimer" />
         <Tab label="Consent" />
+        {showLastTab && <Tab label="Patient Documents" />}
       </Tabs>
 
       <TabPanel value={value} index={0}>
@@ -442,7 +694,6 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
       </TabPanel>
 
       <TabPanel value={value} index={2}>
-        
         <Typography variant="h6" gutterBottom>
           Please read each question carefully and indicate whether the statement
           applies to you.
@@ -459,6 +710,15 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
       </TabPanel>
 
       <TabPanel value={value} index={4}>
+       
+        <Typography variant="body1" gutterBottom>
+          Please read each question carefully and indicate whether the statement
+          applies to you.
+        </Typography>
+        {renderQuestionTab(catQuestions, catData, 'cat')}
+      </TabPanel>
+
+      <TabPanel value={value} index={5}>
         <Box
           sx={{
             maxHeight: '400px',
@@ -699,30 +959,59 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
           </Typography>
         </Box>
 
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={disclaimerAccepted}
-              onChange={e => setDisclaimerAccepted(e.target.checked)}
+        <Box ref={disclaimerAcceptedRef}>
+          <FormControl error={disclaimerErrors.accepted}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={disclaimerAccepted}
+                  onChange={e => {
+                    setDisclaimerAccepted(e.target.checked);
+                    setDisclaimerErrors(prev => ({
+                      ...prev,
+                      accepted: false,
+                    }));
+                  }}
+                />
+              }
+              label="I have read and agree to the disclaimer"
             />
-          }
-          label="I have read and agree to the disclaimer"
-        />
+            {disclaimerErrors.accepted && (
+              <FormHelperText>This field is required</FormHelperText>
+            )}
+          </FormControl>
+        </Box>
         <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-          <TextField
-            label="Name ; Type electronic signature"
-            value={disclaimerSignature}
-            onChange={e => setDisclaimerSignature(e.target.value)}
-            style={{ width: '50%' }}
-          />
-          <TextField
-            label="Date"
-            type="date"
-            value={disclaimerDate}
-            onChange={e => setDisclaimerDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            style={{ width: '50%' }}
-          />
+          <Box ref={disclaimerSignatureRef} sx={{ width: '50%' }}>
+            <TextField
+              label="Name ; Type electronic signature"
+              value={disclaimerSignature}
+              onChange={e => {
+                setDisclaimerSignature(e.target.value);
+                setDisclaimerErrors(prev => ({ ...prev, signature: false }));
+              }}
+              error={disclaimerErrors.signature}
+              helperText={
+                disclaimerErrors.signature ? 'This field is required' : ''
+              }
+              fullWidth
+            />
+          </Box>
+          <Box ref={disclaimerDateRef} sx={{ width: '50%' }}>
+            <TextField
+              label="Date"
+              type="date"
+              value={disclaimerDate}
+              onChange={e => {
+                setDisclaimerDate(e.target.value);
+                setDisclaimerErrors(prev => ({ ...prev, date: false }));
+              }}
+              InputLabelProps={{ shrink: true }}
+              error={disclaimerErrors.date}
+              helperText={disclaimerErrors.date ? 'This field is required' : ''}
+              fullWidth
+            />
+          </Box>
         </Box>
         <Button
           variant="contained"
@@ -730,11 +1019,15 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
           onClick={() => handleSubmit('disclaimer')}
           disabled={submitting}
         >
-          {submitting ? <CircularProgress size={24} /> : 'ACCEPT'}
+          {submitting ? (
+            <CircularProgress size={24} />
+          ) : (
+            <span key="assessment-disclaimer-accept">ACCEPT</span>
+          )}
         </Button>
       </TabPanel>
 
-      <TabPanel value={value} index={5}>
+      <TabPanel value={value} index={6}>
         <Box
           sx={{
             maxHeight: '400px',
@@ -866,40 +1159,73 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
           </Typography>
         </Box>
 
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={consentAccepted}
-              onChange={e => setConsentAccepted(e.target.checked)}
+        <Box ref={consentAcceptedRef}>
+          <FormControl error={consentErrors.accepted}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={consentAccepted}
+                  onChange={e => {
+                    setConsentAccepted(e.target.checked);
+                    setConsentErrors(prev => ({ ...prev, accepted: false }));
+                  }}
+                />
+              }
+              label="I agree to the terms"
             />
-          }
-          label="I agree to the terms"
-        />
+            {consentErrors.accepted && (
+              <FormHelperText>This field is required</FormHelperText>
+            )}
+          </FormControl>
+        </Box>
 
         <Typography variant="subtitle1" sx={{ mt: 2 }}>
           Participant Information
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <TextField
-            label="Full Name"
-            value={consentName}
-            onChange={e => setConsentName(e.target.value)}
-            fullWidth
-          />
-          <TextField
-            label="Signature"
-            value={consentSignature}
-            onChange={e => setConsentSignature(e.target.value)}
-            fullWidth
-          />
-          <TextField
-            label="Date"
-            type="date"
-            value={consentDate}
-            onChange={e => setConsentDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            fullWidth
-          />
+          <Box ref={consentNameRef} sx={{ flex: 1, minWidth: 240 }}>
+            <TextField
+              label="Full Name"
+              value={consentName}
+              onChange={e => {
+                setConsentName(e.target.value);
+                setConsentErrors(prev => ({ ...prev, name: false }));
+              }}
+              error={consentErrors.name}
+              helperText={consentErrors.name ? 'This field is required' : ''}
+              fullWidth
+            />
+          </Box>
+          <Box ref={consentSignatureRef} sx={{ flex: 1, minWidth: 240 }}>
+            <TextField
+              label="Signature"
+              value={consentSignature}
+              onChange={e => {
+                setConsentSignature(e.target.value);
+                setConsentErrors(prev => ({ ...prev, signature: false }));
+              }}
+              error={consentErrors.signature}
+              helperText={
+                consentErrors.signature ? 'This field is required' : ''
+              }
+              fullWidth
+            />
+          </Box>
+          <Box ref={consentDateRef} sx={{ flex: 1, minWidth: 240 }}>
+            <TextField
+              label="Date"
+              type="date"
+              value={consentDate}
+              onChange={e => {
+                setConsentDate(e.target.value);
+                setConsentErrors(prev => ({ ...prev, date: false }));
+              }}
+              InputLabelProps={{ shrink: true }}
+              error={consentErrors.date}
+              helperText={consentErrors.date ? 'This field is required' : ''}
+              fullWidth
+            />
+          </Box>
         </Box>
 
         <Typography variant="subtitle1" sx={{ mt: 2 }}>
@@ -940,9 +1266,19 @@ const AssessmentForm = ({ onComplete }: { onComplete: () => void }) => {
           onClick={() => handleSubmit('consent')}
           disabled={submitting}
         >
-          {submitting ? <CircularProgress size={24} /> : 'Submit'}
+          {submitting ? (
+            <CircularProgress size={24} />
+          ) : (
+            <span key="assessment-consent-submit">Submit</span>
+          )}
         </Button>
       </TabPanel>
+
+      {showLastTab && (
+        <TabPanel value={value} index={7}>
+          {tab}
+        </TabPanel>
+      )}
     </Paper>
   );
 };
