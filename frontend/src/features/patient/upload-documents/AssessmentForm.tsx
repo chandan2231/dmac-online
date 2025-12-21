@@ -187,6 +187,7 @@ const adtQuestions = [
 ];
 
 const catQuestions = [
+  // NOTE: The CAT tab is gated by a separate question
   {
     id: 'q1',
     label: '1. Did you have concussion/Traumatic brain injury?',
@@ -254,6 +255,11 @@ const catQuestions = [
   },
 ];
 
+const catGateQuestion: Question = {
+  id: 'q0',
+  label: 'Do you have brain injury?',
+};
+
 interface Question {
   id: string;
   label: string;
@@ -298,6 +304,10 @@ const AssessmentForm = ({
   const [datData, setDatData] = useState<Record<string, string>>({});
   const [adtData, setAdtData] = useState<Record<string, string>>({});
   const [catData, setCatData] = useState<Record<string, string>>({});
+
+  const [catBrainInjury, setCatBrainInjury] = useState('');
+  const catBrainInjuryRef = useRef<HTMLDivElement | null>(null);
+  const [catBrainInjuryError, setCatBrainInjuryError] = useState(false);
 
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [disclaimerSignature, setDisclaimerSignature] = useState('');
@@ -382,11 +392,28 @@ const AssessmentForm = ({
         const parsed =
           typeof status.cat === 'string' ? JSON.parse(status.cat) : status.cat;
         const map: Record<string, string> = {};
+
         if (Array.isArray(parsed)) {
-          parsed.forEach((item: AnswerPayload, index: number) => {
-            map[`q${index + 1}`] = item.answer;
-          });
+          const first = parsed[0] as AnswerPayload | undefined;
+          const firstLabel = (first?.label || '').trim();
+          const isNewFormat =
+            firstLabel.toLowerCase() === catGateQuestion.label.toLowerCase();
+
+          if (isNewFormat) {
+            setCatBrainInjury(first?.answer || '');
+            parsed.slice(1).forEach((item: AnswerPayload, index: number) => {
+              map[`q${index + 1}`] = item.answer;
+            });
+          } else {
+            // Backward compatibility: previously CAT had only the 16 questions.
+            // If CAT has data, assume the gate answer is "Yes".
+            setCatBrainInjury('Yes');
+            parsed.forEach((item: AnswerPayload, index: number) => {
+              map[`q${index + 1}`] = item.answer;
+            });
+          }
         }
+
         setCatData(map);
       }
       if (status.disclaimer) {
@@ -518,22 +545,39 @@ const AssessmentForm = ({
         answer: adtData[q.id],
       }));
     } else if (tab === 'cat') {
-      const { ok, firstMissingId } = validateQuestionTab(
-        'cat',
-        catQuestions,
-        catData
-      );
-      if (!ok) {
-        enqueueSnackbar('Please answer all questions', { variant: 'error' });
-        scrollToElement(
-          questionRefs.current[questionKey('cat', firstMissingId || 'q1')]
-        );
+      if (!catBrainInjury) {
+        setCatBrainInjuryError(true);
+        enqueueSnackbar('Please select brain injury (Yes/No)', {
+          variant: 'error',
+        });
+        scrollToElement(catBrainInjuryRef.current);
         return;
       }
-      payload = catQuestions.map(q => ({
-        label: q.label,
-        answer: catData[q.id],
-      }));
+
+      // If "No", auto-submit just the gate answer and move on.
+      if (catBrainInjury === 'No') {
+        payload = [{ label: catGateQuestion.label, answer: 'No' }];
+      } else {
+        const { ok, firstMissingId } = validateQuestionTab(
+          'cat',
+          catQuestions,
+          catData
+        );
+        if (!ok) {
+          enqueueSnackbar('Please answer all questions', { variant: 'error' });
+          scrollToElement(
+            questionRefs.current[questionKey('cat', firstMissingId || 'q1')]
+          );
+          return;
+        }
+        payload = [
+          { label: catGateQuestion.label, answer: 'Yes' },
+          ...catQuestions.map(q => ({
+            label: q.label,
+            answer: catData[q.id],
+          })),
+        ];
+      }
     } else if (tab === 'disclaimer') {
       const nextErrors = {
         accepted: !disclaimerAccepted,
@@ -715,7 +759,48 @@ const AssessmentForm = ({
           Please read each question carefully and indicate whether the statement
           applies to you.
         </Typography>
-        {renderQuestionTab(catQuestions, catData, 'cat')}
+
+        <Box ref={catBrainInjuryRef} sx={{ mb: 3 }}>
+          <FormControl error={catBrainInjuryError} component="fieldset">
+            <FormLabel required>{catGateQuestion.label}</FormLabel>
+            <RadioGroup
+              row
+              value={catBrainInjury}
+              onChange={async e => {
+                const next = e.target.value;
+                setCatBrainInjury(next);
+                setCatBrainInjuryError(false);
+
+                // If user selects "No", submit immediately and move on.
+                if (next === 'No') {
+                  try {
+                    await submitTab({
+                      tab: 'cat',
+                      data: [{ label: catGateQuestion.label, answer: 'No' }],
+                    });
+                    enqueueSnackbar('Submitted successfully', {
+                      variant: 'success',
+                    });
+                    if (value < 6) setValue(value + 1);
+                  } catch (error) {
+                    console.error(error);
+                    enqueueSnackbar('Error submitting', { variant: 'error' });
+                  }
+                }
+              }}
+            >
+              <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+              <FormControlLabel value="No" control={<Radio />} label="No" />
+            </RadioGroup>
+            {catBrainInjuryError && (
+              <FormHelperText>This field is required</FormHelperText>
+            )}
+          </FormControl>
+        </Box>
+
+        {catBrainInjury === 'Yes'
+          ? renderQuestionTab(catQuestions, catData, 'cat')
+          : null}
       </TabPanel>
 
       <TabPanel value={value} index={5}>
