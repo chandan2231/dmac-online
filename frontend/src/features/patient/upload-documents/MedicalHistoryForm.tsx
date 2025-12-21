@@ -89,6 +89,39 @@ type MedicalHistoryPayload = {
   concerns: string;
 };
 
+type ErrorState = {
+  memoryDuration: boolean;
+  attentionProblem: boolean;
+  neurologicalConditions: boolean;
+  sleepRelatedDisorders: boolean;
+  psychiatricEmotionalConditions: boolean;
+  cardiovascularMetabolicDisorders: boolean;
+  endocrineHormonalDisorders: boolean;
+  respiratorySystemicConditions: boolean;
+  medicationRelatedCauses: boolean;
+  substanceRelatedCauses: boolean;
+  currentMedicationList: boolean;
+  vitalsSystolic: boolean;
+  vitalsDiastolic: boolean;
+  vitalsHeartRate: boolean;
+  vitalsWeightUnit: boolean;
+  vitalsWeight: boolean;
+  vitalsHeightUnit: boolean;
+  vitalsHeight: boolean;
+  socialExercise: boolean;
+  socialWalking: boolean;
+  socialSleepMoreThan6Hours: boolean;
+  socialAlcohol: boolean;
+  socialDrugAbusePresent: boolean;
+  socialDrugAbusePast: boolean;
+  socialTobacco: boolean;
+  socialFamilyHistoryMembers: boolean;
+  socialDementia: boolean;
+  socialStroke: boolean;
+  socialLupus: boolean;
+  concerns: boolean;
+};
+
 const DEFAULT_PAYLOAD: MedicalHistoryPayload = {
   memoryDuration: '',
   attentionProblem: '',
@@ -126,6 +159,39 @@ const DEFAULT_PAYLOAD: MedicalHistoryPayload = {
   concerns: '',
 };
 
+const DEFAULT_ERRORS: ErrorState = {
+  memoryDuration: false,
+  attentionProblem: false,
+  neurologicalConditions: false,
+  sleepRelatedDisorders: false,
+  psychiatricEmotionalConditions: false,
+  cardiovascularMetabolicDisorders: false,
+  endocrineHormonalDisorders: false,
+  respiratorySystemicConditions: false,
+  medicationRelatedCauses: false,
+  substanceRelatedCauses: false,
+  currentMedicationList: false,
+  vitalsSystolic: false,
+  vitalsDiastolic: false,
+  vitalsHeartRate: false,
+  vitalsWeightUnit: false,
+  vitalsWeight: false,
+  vitalsHeightUnit: false,
+  vitalsHeight: false,
+  socialExercise: false,
+  socialWalking: false,
+  socialSleepMoreThan6Hours: false,
+  socialAlcohol: false,
+  socialDrugAbusePresent: false,
+  socialDrugAbusePast: false,
+  socialTobacco: false,
+  socialFamilyHistoryMembers: false,
+  socialDementia: false,
+  socialStroke: false,
+  socialLupus: false,
+  concerns: false,
+};
+
 const parseMaybeJson = (value: unknown): unknown => {
   if (!value) return null;
   if (typeof value === 'string') {
@@ -143,14 +209,18 @@ const CheckboxGroup = ({
   options,
   values,
   onChange,
+  error,
+  helperText,
 }: {
   title: string;
   options: string[];
   values: string[];
   onChange: (next: string[]) => void;
+  error?: boolean;
+  helperText?: string;
 }) => {
   return (
-    <Box sx={{ mt: 3 }}>
+    <FormControl error={!!error} sx={{ mt: 3, display: 'block' }}>
       <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
         {title}
       </FormLabel>
@@ -177,7 +247,8 @@ const CheckboxGroup = ({
           );
         })}
       </FormGroup>
-    </Box>
+      {error && helperText && <FormHelperText>{helperText}</FormHelperText>}
+    </FormControl>
   );
 };
 
@@ -234,10 +305,20 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
   const memoryDurationRef = useRef<HTMLDivElement | null>(null);
   const attentionProblemRef = useRef<HTMLDivElement | null>(null);
 
-  const [errors, setErrors] = useState({
-    memoryDuration: false,
-    attentionProblem: false,
-  });
+  const neurologicalRef = useRef<HTMLDivElement | null>(null);
+  const sleepRef = useRef<HTMLDivElement | null>(null);
+  const psychRef = useRef<HTMLDivElement | null>(null);
+  const cardioRef = useRef<HTMLDivElement | null>(null);
+  const endocrineRef = useRef<HTMLDivElement | null>(null);
+  const respiratoryRef = useRef<HTMLDivElement | null>(null);
+  const medicationRelatedRef = useRef<HTMLDivElement | null>(null);
+  const substanceRelatedRef = useRef<HTMLDivElement | null>(null);
+  const currentMedicationRef = useRef<HTMLDivElement | null>(null);
+  const vitalsRef = useRef<HTMLDivElement | null>(null);
+  const socialRef = useRef<HTMLDivElement | null>(null);
+  const concernsRef = useRef<HTMLDivElement | null>(null);
+
+  const [errors, setErrors] = useState<ErrorState>(DEFAULT_ERRORS);
 
   const latestPayload = useMemo(() => {
     const parsed = parseMaybeJson(latest?.data);
@@ -470,19 +551,172 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
   );
 
   const handleSubmit = async () => {
-    const nextErrors = {
-      memoryDuration: !form.memoryDuration,
-      attentionProblem: !form.attentionProblem,
+    const nextErrors: ErrorState = { ...DEFAULT_ERRORS };
+    const firstInvalidRef: {
+      current: { el: HTMLElement | null; message: string } | null;
+    } = { current: null };
+
+    const setFirstInvalid = (el: HTMLElement | null, message: string): void => {
+      if (firstInvalidRef.current) return;
+      firstInvalidRef.current = { el, message };
     };
 
-    if (nextErrors.memoryDuration || nextErrors.attentionProblem) {
-      setErrors(nextErrors);
-      if (nextErrors.memoryDuration) scrollToElement(memoryDurationRef.current);
-      else scrollToElement(attentionProblemRef.current);
+    if (!form.memoryDuration) {
+      nextErrors.memoryDuration = true;
+      setFirstInvalid(
+        memoryDurationRef.current,
+        'Please answer Q1 (memory duration)'
+      );
+    }
 
-      enqueueSnackbar('Please select memory loss duration', {
-        variant: 'error',
-      });
+    if (!form.attentionProblem) {
+      nextErrors.attentionProblem = true;
+      setFirstInvalid(
+        attentionProblemRef.current,
+        'Please answer Q2 (attention problem)'
+      );
+    }
+
+    if (!form.neurologicalConditions?.length) {
+      nextErrors.neurologicalConditions = true;
+      setFirstInvalid(
+        neurologicalRef.current,
+        'Please answer Q3 (neurological conditions)'
+      );
+    }
+
+    if (!form.sleepRelatedDisorders?.length) {
+      nextErrors.sleepRelatedDisorders = true;
+      setFirstInvalid(sleepRef.current, 'Please answer Q4 (sleep disorders)');
+    }
+
+    if (!form.psychiatricEmotionalConditions?.length) {
+      nextErrors.psychiatricEmotionalConditions = true;
+      setFirstInvalid(
+        psychRef.current,
+        'Please answer Q5 (psychiatric & emotional conditions)'
+      );
+    }
+
+    if (!form.cardiovascularMetabolicDisorders?.length) {
+      nextErrors.cardiovascularMetabolicDisorders = true;
+      setFirstInvalid(
+        cardioRef.current,
+        'Please answer Q6 (cardiovascular & metabolic disorders)'
+      );
+    }
+
+    if (!form.endocrineHormonalDisorders?.length) {
+      nextErrors.endocrineHormonalDisorders = true;
+      setFirstInvalid(
+        endocrineRef.current,
+        'Please answer Q7 (endocrine & hormonal disorders)'
+      );
+    }
+
+    if (!form.respiratorySystemicConditions?.length) {
+      nextErrors.respiratorySystemicConditions = true;
+      setFirstInvalid(
+        respiratoryRef.current,
+        'Please answer Q8 (respiratory & systemic conditions)'
+      );
+    }
+
+    if (!form.medicationRelatedCauses?.length) {
+      nextErrors.medicationRelatedCauses = true;
+      setFirstInvalid(
+        medicationRelatedRef.current,
+        'Please answer Q9 (medication-related causes)'
+      );
+    }
+
+    if (!form.substanceRelatedCauses?.length) {
+      nextErrors.substanceRelatedCauses = true;
+      setFirstInvalid(
+        substanceRelatedRef.current,
+        'Please answer Q10 (substance-related causes)'
+      );
+    }
+
+    if (!form.currentMedicationList?.trim()) {
+      nextErrors.currentMedicationList = true;
+      setFirstInvalid(
+        currentMedicationRef.current,
+        'Please answer Q11 (current medication list)'
+      );
+    }
+
+    if (!form.vitals.systolic?.trim()) nextErrors.vitalsSystolic = true;
+    if (!form.vitals.diastolic?.trim()) nextErrors.vitalsDiastolic = true;
+    if (!form.vitals.heartRate?.trim()) nextErrors.vitalsHeartRate = true;
+    if (!form.vitals.weightUnit) nextErrors.vitalsWeightUnit = true;
+    if (!form.vitals.weight?.trim()) nextErrors.vitalsWeight = true;
+    if (!form.vitals.heightUnit) nextErrors.vitalsHeightUnit = true;
+    if (!form.vitals.height?.trim()) nextErrors.vitalsHeight = true;
+
+    if (
+      nextErrors.vitalsSystolic ||
+      nextErrors.vitalsDiastolic ||
+      nextErrors.vitalsHeartRate ||
+      nextErrors.vitalsWeightUnit ||
+      nextErrors.vitalsWeight ||
+      nextErrors.vitalsHeightUnit ||
+      nextErrors.vitalsHeight
+    ) {
+      setFirstInvalid(vitalsRef.current, 'Please complete Q12 (vital signs)');
+    }
+
+    if (!form.socialHabits.exercise) nextErrors.socialExercise = true;
+    if (!form.socialHabits.walking) nextErrors.socialWalking = true;
+    if (!form.socialHabits.sleepMoreThan6Hours)
+      nextErrors.socialSleepMoreThan6Hours = true;
+    if (!form.socialHabits.alcohol) nextErrors.socialAlcohol = true;
+    if (!form.socialHabits.drugAbusePresent)
+      nextErrors.socialDrugAbusePresent = true;
+    if (!form.socialHabits.drugAbusePast) nextErrors.socialDrugAbusePast = true;
+    if (!form.socialHabits.tobacco) nextErrors.socialTobacco = true;
+    if (!form.socialHabits.familyHistoryMembers?.length)
+      nextErrors.socialFamilyHistoryMembers = true;
+    if (!form.socialHabits.dementia) nextErrors.socialDementia = true;
+    if (!form.socialHabits.stroke) nextErrors.socialStroke = true;
+    if (!form.socialHabits.lupus) nextErrors.socialLupus = true;
+
+    if (
+      nextErrors.socialExercise ||
+      nextErrors.socialWalking ||
+      nextErrors.socialSleepMoreThan6Hours ||
+      nextErrors.socialAlcohol ||
+      nextErrors.socialDrugAbusePresent ||
+      nextErrors.socialDrugAbusePast ||
+      nextErrors.socialTobacco ||
+      nextErrors.socialFamilyHistoryMembers ||
+      nextErrors.socialDementia ||
+      nextErrors.socialStroke ||
+      nextErrors.socialLupus
+    ) {
+      setFirstInvalid(socialRef.current, 'Please complete Q13 (social habits)');
+    }
+
+    if (!form.concerns?.trim()) {
+      nextErrors.concerns = true;
+      setFirstInvalid(
+        concernsRef.current,
+        'Please enter your questions/concerns'
+      );
+    }
+
+    const hasErrors = Object.values(nextErrors).some(Boolean);
+    if (hasErrors) {
+      setErrors(nextErrors);
+      const firstInvalid = firstInvalidRef.current;
+      if (firstInvalid) {
+        scrollToElement(firstInvalid.el);
+        enqueueSnackbar(firstInvalid.message, { variant: 'error' });
+      } else {
+        enqueueSnackbar('Please complete all required fields', {
+          variant: 'error',
+        });
+      }
       return;
     }
 
@@ -555,79 +789,134 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
         />
       </Box>
 
-      <CheckboxGroup
-        title="Ques 3: Neurological Conditions (select all that apply)"
-        options={neurologicalOptions}
-        values={form.neurologicalConditions}
-        onChange={next =>
-          setForm(prev => ({ ...prev, neurologicalConditions: next }))
-        }
-      />
+      <Box ref={neurologicalRef}>
+        <CheckboxGroup
+          title="Ques 3: Neurological Conditions (select all that apply)"
+          options={neurologicalOptions}
+          values={form.neurologicalConditions}
+          onChange={next => {
+            setForm(prev => ({ ...prev, neurologicalConditions: next }));
+            setErrors(prev => ({ ...prev, neurologicalConditions: false }));
+          }}
+          error={errors.neurologicalConditions}
+          helperText="This field is required"
+        />
+      </Box>
 
-      <CheckboxGroup
-        title="Ques 4: Sleep-Related Disorders (select all that apply)"
-        options={sleepOptions}
-        values={form.sleepRelatedDisorders}
-        onChange={next =>
-          setForm(prev => ({ ...prev, sleepRelatedDisorders: next }))
-        }
-      />
+      <Box ref={sleepRef}>
+        <CheckboxGroup
+          title="Ques 4: Sleep-Related Disorders (select all that apply)"
+          options={sleepOptions}
+          values={form.sleepRelatedDisorders}
+          onChange={next => {
+            setForm(prev => ({ ...prev, sleepRelatedDisorders: next }));
+            setErrors(prev => ({ ...prev, sleepRelatedDisorders: false }));
+          }}
+          error={errors.sleepRelatedDisorders}
+          helperText="This field is required"
+        />
+      </Box>
 
-      <CheckboxGroup
-        title="Ques 5: Psychiatric & Emotional Conditions (select all that apply)"
-        options={psychOptions}
-        values={form.psychiatricEmotionalConditions}
-        onChange={next =>
-          setForm(prev => ({ ...prev, psychiatricEmotionalConditions: next }))
-        }
-      />
+      <Box ref={psychRef}>
+        <CheckboxGroup
+          title="Ques 5: Psychiatric & Emotional Conditions (select all that apply)"
+          options={psychOptions}
+          values={form.psychiatricEmotionalConditions}
+          onChange={next => {
+            setForm(prev => ({
+              ...prev,
+              psychiatricEmotionalConditions: next,
+            }));
+            setErrors(prev => ({
+              ...prev,
+              psychiatricEmotionalConditions: false,
+            }));
+          }}
+          error={errors.psychiatricEmotionalConditions}
+          helperText="This field is required"
+        />
+      </Box>
 
-      <CheckboxGroup
-        title="Ques 6: Cardiovascular & Metabolic Disorders (select all that apply)"
-        options={cardioOptions}
-        values={form.cardiovascularMetabolicDisorders}
-        onChange={next =>
-          setForm(prev => ({ ...prev, cardiovascularMetabolicDisorders: next }))
-        }
-      />
+      <Box ref={cardioRef}>
+        <CheckboxGroup
+          title="Ques 6: Cardiovascular & Metabolic Disorders (select all that apply)"
+          options={cardioOptions}
+          values={form.cardiovascularMetabolicDisorders}
+          onChange={next => {
+            setForm(prev => ({
+              ...prev,
+              cardiovascularMetabolicDisorders: next,
+            }));
+            setErrors(prev => ({
+              ...prev,
+              cardiovascularMetabolicDisorders: false,
+            }));
+          }}
+          error={errors.cardiovascularMetabolicDisorders}
+          helperText="This field is required"
+        />
+      </Box>
 
-      <CheckboxGroup
-        title="Ques 7: Endocrine & Hormonal Disorders (select all that apply)"
-        options={endocrineOptions}
-        values={form.endocrineHormonalDisorders}
-        onChange={next =>
-          setForm(prev => ({ ...prev, endocrineHormonalDisorders: next }))
-        }
-      />
+      <Box ref={endocrineRef}>
+        <CheckboxGroup
+          title="Ques 7: Endocrine & Hormonal Disorders (select all that apply)"
+          options={endocrineOptions}
+          values={form.endocrineHormonalDisorders}
+          onChange={next => {
+            setForm(prev => ({ ...prev, endocrineHormonalDisorders: next }));
+            setErrors(prev => ({ ...prev, endocrineHormonalDisorders: false }));
+          }}
+          error={errors.endocrineHormonalDisorders}
+          helperText="This field is required"
+        />
+      </Box>
 
-      <CheckboxGroup
-        title="Ques 8: Respiratory & Systemic Conditions (select all that apply)"
-        options={respiratoryOptions}
-        values={form.respiratorySystemicConditions}
-        onChange={next =>
-          setForm(prev => ({ ...prev, respiratorySystemicConditions: next }))
-        }
-      />
+      <Box ref={respiratoryRef}>
+        <CheckboxGroup
+          title="Ques 8: Respiratory & Systemic Conditions (select all that apply)"
+          options={respiratoryOptions}
+          values={form.respiratorySystemicConditions}
+          onChange={next => {
+            setForm(prev => ({ ...prev, respiratorySystemicConditions: next }));
+            setErrors(prev => ({
+              ...prev,
+              respiratorySystemicConditions: false,
+            }));
+          }}
+          error={errors.respiratorySystemicConditions}
+          helperText="This field is required"
+        />
+      </Box>
 
-      <CheckboxGroup
-        title="Ques 9: Medication-Related Causes (select all that apply)"
-        options={medicationOptions}
-        values={form.medicationRelatedCauses}
-        onChange={next =>
-          setForm(prev => ({ ...prev, medicationRelatedCauses: next }))
-        }
-      />
+      <Box ref={medicationRelatedRef}>
+        <CheckboxGroup
+          title="Ques 9: Medication-Related Causes (select all that apply)"
+          options={medicationOptions}
+          values={form.medicationRelatedCauses}
+          onChange={next => {
+            setForm(prev => ({ ...prev, medicationRelatedCauses: next }));
+            setErrors(prev => ({ ...prev, medicationRelatedCauses: false }));
+          }}
+          error={errors.medicationRelatedCauses}
+          helperText="This field is required"
+        />
+      </Box>
 
-      <CheckboxGroup
-        title="Ques 10: Substance-Related Causes (select all that apply)"
-        options={substanceOptions}
-        values={form.substanceRelatedCauses}
-        onChange={next =>
-          setForm(prev => ({ ...prev, substanceRelatedCauses: next }))
-        }
-      />
+      <Box ref={substanceRelatedRef}>
+        <CheckboxGroup
+          title="Ques 10: Substance-Related Causes (select all that apply)"
+          options={substanceOptions}
+          values={form.substanceRelatedCauses}
+          onChange={next => {
+            setForm(prev => ({ ...prev, substanceRelatedCauses: next }));
+            setErrors(prev => ({ ...prev, substanceRelatedCauses: false }));
+          }}
+          error={errors.substanceRelatedCauses}
+          helperText="This field is required"
+        />
+      </Box>
 
-      <Box sx={{ mt: 3 }}>
+      <Box ref={currentMedicationRef} sx={{ mt: 3 }}>
         <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
           Ques 11: Current medication list
         </FormLabel>
@@ -641,6 +930,10 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               ...prev,
               currentMedicationList: e.target.value,
             }))
+          }
+          error={errors.currentMedicationList}
+          helperText={
+            errors.currentMedicationList ? 'This field is required' : undefined
           }
           placeholder="Type your current medications"
           InputProps={{
@@ -670,7 +963,7 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
         />
       </Box>
 
-      <Box sx={{ mt: 3 }}>
+      <Box ref={vitalsRef} sx={{ mt: 3 }}>
         <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
           Ques 12: Vital sign
         </FormLabel>
@@ -692,6 +985,8 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
                 vitals: { ...prev.vitals, systolic: e.target.value },
               }))
             }
+            error={errors.vitalsSystolic}
+            helperText={errors.vitalsSystolic ? 'Required' : undefined}
           />
           <TextField
             fullWidth
@@ -703,6 +998,8 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
                 vitals: { ...prev.vitals, diastolic: e.target.value },
               }))
             }
+            error={errors.vitalsDiastolic}
+            helperText={errors.vitalsDiastolic ? 'Required' : undefined}
           />
           <TextField
             fullWidth
@@ -714,9 +1011,11 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
                 vitals: { ...prev.vitals, heartRate: e.target.value },
               }))
             }
+            error={errors.vitalsHeartRate}
+            helperText={errors.vitalsHeartRate ? 'Required' : undefined}
           />
 
-          <FormControl>
+          <FormControl error={errors.vitalsWeightUnit || errors.vitalsWeight}>
             <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
               Weight
             </FormLabel>
@@ -736,6 +1035,9 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               <FormControlLabel value="kg" control={<Radio />} label="kg" />
               <FormControlLabel value="lb" control={<Radio />} label="lb" />
             </RadioGroup>
+            {errors.vitalsWeightUnit && (
+              <FormHelperText>Unit is required</FormHelperText>
+            )}
             <TextField
               fullWidth
               label="Weight"
@@ -746,10 +1048,12 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
                   vitals: { ...prev.vitals, weight: e.target.value },
                 }))
               }
+              error={errors.vitalsWeight}
+              helperText={errors.vitalsWeight ? 'Required' : undefined}
             />
           </FormControl>
 
-          <FormControl>
+          <FormControl error={errors.vitalsHeightUnit || errors.vitalsHeight}>
             <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
               Height
             </FormLabel>
@@ -770,6 +1074,9 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               <FormControlLabel value="ft" control={<Radio />} label="ft" />
               <FormControlLabel value="in" control={<Radio />} label="in" />
             </RadioGroup>
+            {errors.vitalsHeightUnit && (
+              <FormHelperText>Unit is required</FormHelperText>
+            )}
             <TextField
               fullWidth
               label="Height"
@@ -780,12 +1087,14 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
                   vitals: { ...prev.vitals, height: e.target.value },
                 }))
               }
+              error={errors.vitalsHeight}
+              helperText={errors.vitalsHeight ? 'Required' : undefined}
             />
           </FormControl>
         </Box>
       </Box>
 
-      <Box sx={{ mt: 3 }}>
+      <Box ref={socialRef} sx={{ mt: 3 }}>
         <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
           Ques 13: Social habits
         </FormLabel>
@@ -799,6 +1108,8 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               socialHabits: { ...prev.socialHabits, exercise: v },
             }))
           }
+          error={errors.socialExercise}
+          helperText="This field is required"
         />
 
         <YesNoRadioGroup
@@ -810,6 +1121,8 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               socialHabits: { ...prev.socialHabits, walking: v },
             }))
           }
+          error={errors.socialWalking}
+          helperText="This field is required"
         />
 
         <YesNoRadioGroup
@@ -821,9 +1134,11 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               socialHabits: { ...prev.socialHabits, sleepMoreThan6Hours: v },
             }))
           }
+          error={errors.socialSleepMoreThan6Hours}
+          helperText="This field is required"
         />
 
-        <FormControl sx={{ mt: 3 }}>
+        <FormControl error={errors.socialAlcohol} sx={{ mt: 3 }}>
           <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
             Alcohol
           </FormLabel>
@@ -856,6 +1171,9 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               label="Occasional"
             />
           </RadioGroup>
+          {errors.socialAlcohol && (
+            <FormHelperText>This field is required</FormHelperText>
+          )}
         </FormControl>
 
         <YesNoRadioGroup
@@ -867,6 +1185,8 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               socialHabits: { ...prev.socialHabits, drugAbusePresent: v },
             }))
           }
+          error={errors.socialDrugAbusePresent}
+          helperText="This field is required"
         />
 
         <YesNoRadioGroup
@@ -878,6 +1198,8 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               socialHabits: { ...prev.socialHabits, drugAbusePast: v },
             }))
           }
+          error={errors.socialDrugAbusePast}
+          helperText="This field is required"
         />
 
         <YesNoRadioGroup
@@ -889,21 +1211,26 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               socialHabits: { ...prev.socialHabits, tobacco: v },
             }))
           }
+          error={errors.socialTobacco}
+          helperText="This field is required"
         />
 
         <CheckboxGroup
           title="Family History (select all that apply)"
           options={familyHistoryOptions}
           values={form.socialHabits.familyHistoryMembers}
-          onChange={next =>
+          onChange={next => {
             setForm(prev => ({
               ...prev,
               socialHabits: {
                 ...prev.socialHabits,
                 familyHistoryMembers: next,
               },
-            }))
-          }
+            }));
+            setErrors(prev => ({ ...prev, socialFamilyHistoryMembers: false }));
+          }}
+          error={errors.socialFamilyHistoryMembers}
+          helperText="This field is required"
         />
 
         <YesNoRadioGroup
@@ -915,6 +1242,8 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               socialHabits: { ...prev.socialHabits, dementia: v },
             }))
           }
+          error={errors.socialDementia}
+          helperText="This field is required"
         />
 
         <YesNoRadioGroup
@@ -926,6 +1255,8 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               socialHabits: { ...prev.socialHabits, stroke: v },
             }))
           }
+          error={errors.socialStroke}
+          helperText="This field is required"
         />
 
         <YesNoRadioGroup
@@ -937,12 +1268,14 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
               socialHabits: { ...prev.socialHabits, lupus: v },
             }))
           }
+          error={errors.socialLupus}
+          helperText="This field is required"
         />
       </Box>
 
       {/*  */}
 
-      <Box sx={{ mt: 3 }}>
+      <Box ref={concernsRef} sx={{ mt: 3 }}>
         <FormLabel sx={{ fontWeight: 600, color: 'text.primary' }}>
           Type questions or your concern below
         </FormLabel>
@@ -954,6 +1287,8 @@ const MedicalHistoryForm = ({ onSubmitted }: { onSubmitted?: () => void }) => {
           onChange={e =>
             setForm(prev => ({ ...prev, concerns: e.target.value }))
           }
+          error={errors.concerns}
+          helperText={errors.concerns ? 'This field is required' : undefined}
           sx={{ mt: 1 }}
           placeholder="Type your questions or concerns"
         />
