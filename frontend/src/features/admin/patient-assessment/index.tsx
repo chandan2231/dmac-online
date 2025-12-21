@@ -259,6 +259,11 @@ const catQuestions = [
   },
 ];
 
+const catGateQuestion: Question = {
+  id: 'q0',
+  label: 'Do you have brain injury?',
+};
+
 interface Question {
   id: string;
   label: string;
@@ -350,6 +355,7 @@ const PatientAssessment = () => {
   const [datData, setDatData] = useState<Record<string, string>>({});
   const [adtData, setAdtData] = useState<Record<string, string>>({});
   const [catData, setCatData] = useState<Record<string, string>>({});
+  const [catBrainInjury, setCatBrainInjury] = useState('');
 
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [disclaimerSignature, setDisclaimerSignature] = useState('');
@@ -404,9 +410,26 @@ const PatientAssessment = () => {
           typeof status.cat === 'string' ? JSON.parse(status.cat) : status.cat;
         const map: Record<string, string> = {};
         if (Array.isArray(parsed)) {
-          parsed.forEach((item: AnswerPayload, index: number) => {
-            map[`q${index + 1}`] = item.answer;
-          });
+          const first = parsed[0] as AnswerPayload | undefined;
+          const firstLabel = (first?.label || '').trim();
+          const isNewFormat =
+            firstLabel.toLowerCase() === catGateQuestion.label.toLowerCase();
+
+          if (isNewFormat) {
+            setCatBrainInjury(first?.answer || '');
+            parsed.slice(1).forEach((item: AnswerPayload, index: number) => {
+              map[`q${index + 1}`] = item.answer;
+            });
+          } else {
+            // Backward compatibility: old CAT payload had only the 16 questions.
+            // If CAT has data, assume the gate answer is "Yes".
+            setCatBrainInjury(parsed.length ? 'Yes' : '');
+            parsed.forEach((item: AnswerPayload, index: number) => {
+              map[`q${index + 1}`] = item.answer;
+            });
+          }
+        } else {
+          setCatBrainInjury('');
         }
         setCatData(map);
       }
@@ -545,12 +568,45 @@ const PatientAssessment = () => {
         </TabPanel>
 
         <TabPanel value={value} index={4}>
-          
+          <Box sx={{ mb: 2 }}>
+            {!catBrainInjury && Object.keys(catData).length === 0 && (
+              <Alert severity="info">No data submitted for this section.</Alert>
+            )}
+            <FormLabel
+              required
+              sx={{ whiteSpace: 'pre-line', display: 'block' }}
+            >
+              {catGateQuestion.label}
+            </FormLabel>
+            <RadioGroup row value={catBrainInjury || ''}>
+              <FormControlLabel
+                value="Yes"
+                control={<Radio />}
+                label="Yes"
+                disabled
+              />
+              <FormControlLabel
+                value="No"
+                control={<Radio />}
+                label="No"
+                disabled
+              />
+            </RadioGroup>
+            {catBrainInjury === 'No' && (
+              <Alert severity="info" sx={{ mt: 1 }}>
+                Patient answered "No". Remaining CAT questions are not
+                applicable.
+              </Alert>
+            )}
+          </Box>
+
           <Typography variant="body1" gutterBottom>
             Please read each question carefully and indicate whether the
             statement applies to you.
           </Typography>
-          {renderQuestionTab(catQuestions, catData)}
+          {catBrainInjury === 'Yes'
+            ? renderQuestionTab(catQuestions, catData)
+            : null}
         </TabPanel>
 
         <TabPanel value={value} index={5}>

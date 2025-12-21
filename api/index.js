@@ -30,7 +30,7 @@ app.use((req, res, next) => {
 
 app.use(cookieParser())
 
-const allowedOrigins = ['http://13.58.42.77', 'http://localhost:3010'] // add localhost for dev
+const allowedOrigins = ['https://dev.retainmemory.com', 'http://localhost:3010'] // add localhost for dev
 app.use(
   cors({
     origin: function (origin, callback) {
