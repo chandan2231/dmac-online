@@ -2227,8 +2227,7 @@ export const submitAssessmentTab = async (req, res) => {
       INSERT INTO ${tableName} (user_id, data)
       VALUES (?, ?)
       ON DUPLICATE KEY UPDATE
-        data = VALUES(data),
-        updated_at = CURRENT_TIMESTAMP
+        data = VALUES(data)
     `
 
     await queryDB(query, [userId, jsonData])
@@ -2239,7 +2238,6 @@ export const submitAssessmentTab = async (req, res) => {
     res.status(500).json({ message: 'Error submitting assessment' })
   }
 }
-
 
 export const getLatestMedicalHistory = async (req, res) => {
   const userId = req.user.userId
@@ -2281,8 +2279,7 @@ export const submitMedicalHistory = async (req, res) => {
       INSERT INTO dmac_webapp_medical_history (user_id, data)
       VALUES (?, ?)
       ON DUPLICATE KEY UPDATE
-        data = VALUES(data),
-        updated_at = CURRENT_TIMESTAMP
+        data = VALUES(data)
     `
 
     await queryDB(query, [userId, jsonData])
@@ -2300,4 +2297,3 @@ export const submitMedicalHistory = async (req, res) => {
     res.status(500).json({ message: 'Error submitting medical history' })
   }
 }
-
