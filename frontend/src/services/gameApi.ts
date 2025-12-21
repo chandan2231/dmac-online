@@ -2,7 +2,7 @@ import HttpService from './HttpService';
 
 export interface Module {
     id: number;
-    code: 'IMAGE_FLASH' | 'VISUAL_SPATIAL' | 'AUDIO_STORY';
+    code: 'IMAGE_FLASH' | 'VISUAL_SPATIAL' | 'AUDIO_STORY' | 'CONNECT_DOTS';
     name: string;
     order_index: number;
     max_score: number;
@@ -40,6 +40,7 @@ export interface SessionData {
         };
     }[];
     instructions?: string;
+    language_code?: string;
 }
 
 export interface SubmitPayload {

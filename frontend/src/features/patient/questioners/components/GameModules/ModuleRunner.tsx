@@ -5,6 +5,7 @@ import CustomLoader from '../../../../../components/loader';
 import ImageFlash from './ImageFlash';
 import VisualSpatial from './VisualSpatial';
 import AudioStoryRecall from './AudioStoryRecall';
+import ConnectTheDots from './ConnectTheDots';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 import GenericModal from '../../../../../components/modal';
@@ -121,6 +122,10 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
         });
     };
 
+    const handleConnectDotsComplete = (payload: any) => {
+        handleModuleSubmit(payload);
+    };
+
     const handleGoHome = () => {
         navigate(ROUTES.HOME);
     };
@@ -168,6 +173,14 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             }));
             console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
             handleAudioStoryComplete(dummyAnswers);
+        } else if (code === 'CONNECT_DOTS') {
+            // Fake completions
+            const payload = {
+                question_id: session.questions?.[0]?.question_id,
+                answer_text: "L,5,M,6,N,7,O,8,P,9,Q,10,R,11", // Valid sequence
+                time_taken: 10
+            }
+            handleConnectDotsComplete(payload);
         }
     };
 
@@ -207,6 +220,9 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             )}
             {!showCompletion && moduleCode === 'AUDIO_STORY' && (
                 <AudioStoryRecall session={session} onComplete={handleAudioStoryComplete} languageCode={languageCode} />
+            )}
+            {!showCompletion && moduleCode === 'CONNECT_DOTS' && (
+                <ConnectTheDots session={session} onComplete={handleConnectDotsComplete} />
             )}
         </Box>
     );

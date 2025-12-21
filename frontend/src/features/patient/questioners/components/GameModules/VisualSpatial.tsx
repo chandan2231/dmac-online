@@ -179,7 +179,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
                 instructionText={session.instructions || ''}
                 languageCode={languageCode}
             >
-                <Typography sx={{ fontSize: '1.1rem', lineHeight: 1.6, color: '#d32f2f', fontWeight: 500 }}>
+                <Typography sx={{ fontSize: '1.1rem', lineHeight: 1.6, color: 'black', fontWeight: 500 }}>
                     {session.instructions}
                 </Typography>
             </GenericModal>
@@ -282,7 +282,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
                                         width: '100%',
                                         height: '250px',
                                         objectFit: 'contain',
-                                        background: '#f5f5f5',
+                                        background: '#ffffff',
                                         p: 2
                                     }}
                                 />

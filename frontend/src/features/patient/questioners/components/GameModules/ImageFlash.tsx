@@ -64,7 +64,8 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
         next: getLanguageText(languageConstants, 'game_next'),
         enterAnswers: getLanguageText(languageConstants, 'game_enter_answers'),
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder'),
-        validationError: getLanguageText(languageConstants, 'game_validation_error')
+        validationError: getLanguageText(languageConstants, 'game_validation_error'),
+        answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW'
     };
 
     const [phase, setPhase] = useState<'instruction' | 'playing' | 'lastImageWithButtons' | 'beforeInput' | 'input'>('instruction');
@@ -228,17 +229,19 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                             onClick={() => setPhase('beforeInput')}
                             sx={{
                                 backgroundColor: '#3f51b5',
-                                width: '120px',
+                                minWidth: '160px',
+                                px: 2,
                                 py: 1.5,
                                 fontSize: '1rem',
                                 fontWeight: 'bold'
                             }}
                         >
-                            {t.next}
+                            {t.answerNow}
                         </MorenButton>
                     </Box>
                 </Box>
-            )}
+            )
+            }
 
             {/* Instruction before input - from backend */}
             <GenericModal
@@ -246,7 +249,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                 onClose={() => { }}
                 title={t.instruction}
                 hideCancelButton={true}
-                submitButtonText={t.next}
+                submitButtonText={t.answerNow}
                 onSubmit={() => setPhase('input')}
                 enableAudio={true}
                 instructionText={session.questions?.[0]?.prompt_text || ''}
@@ -257,63 +260,64 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                 </Typography>
             </GenericModal>
 
-            {phase === 'input' && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', maxWidth: '600px', px: 2 }}>
+            {
+                phase === 'input' && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', maxWidth: '600px', px: 2 }}>
 
-                    <Typography variant="h6" sx={{ textAlign: 'center', color: '#666' }}>{t.enterAnswers}</Typography>
+                        <Typography variant="h6" sx={{ textAlign: 'center', color: '#666' }}>{t.enterAnswers}</Typography>
 
-                    <SpeechInput
-                        fullWidth
-                        value={inputText}
-                        onChange={(value) => {
-                            setInputText(value);
-                            setValidationError(''); // Clear error when typing
-                        }}
-                        onSpeechResult={(transcript) => {
-                            // Append to existing text with space (no comma)
-                            const currentText = inputText.trim();
-                            const newText = currentText
-                                ? `${currentText} ${transcript.toLowerCase()}`
-                                : transcript.toLowerCase();
-                            setInputText(newText);
-                            setValidationError(''); // Clear error when speaking
-                        }}
-                        languageCode={languageCode}
-                        placeholder={t.inputPlaceholder}
-                    />
-
-                    {/* Validation Error Message */}
-                    {validationError && (
-                        <Typography
-                            sx={{
-                                color: '#d32f2f',
-                                fontSize: '0.875rem',
-                                textAlign: 'center',
-                                fontWeight: 500
+                        <SpeechInput
+                            fullWidth
+                            value={inputText}
+                            onChange={(value) => {
+                                setInputText(value);
+                                setValidationError(''); // Clear error when typing
                             }}
-                        >
-                            {validationError}
-                        </Typography>
-                    )}
-
-                    {/* Navigation Buttons */}
-
-                    <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <MorenButton
-                            variant="contained"
-                            onClick={handleSubmit}
-                            sx={{
-                                backgroundColor: '#1976d2',
-                                width: '100%',
-                                py: 1.5,
-                                fontSize: '1.1rem'
+                            onSpeechResult={(transcript) => {
+                                // Append to existing text with space (no comma)
+                                const currentText = inputText.trim();
+                                const newText = currentText
+                                    ? `${currentText} ${transcript.toLowerCase()}`
+                                    : transcript.toLowerCase();
+                                setInputText(newText);
+                                setValidationError(''); // Clear error when speaking
                             }}
-                        >
-                            {t.next}
-                        </MorenButton>
+                            languageCode={languageCode}
+                            placeholder={t.inputPlaceholder}
+                        />
+
+                        {/* Validation Error Message */}
+                        {validationError && (
+                            <Typography
+                                sx={{
+                                    color: '#d32f2f',
+                                    fontSize: '0.875rem',
+                                    textAlign: 'center',
+                                    fontWeight: 500
+                                }}
+                            >
+                                {validationError}
+                            </Typography>
+                        )}
+
+                        {/* Navigation Buttons */}
+
+                        <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <MorenButton
+                                variant="contained"
+                                onClick={handleSubmit}
+                                sx={{
+                                    backgroundColor: '#1976d2',
+                                    width: '100%',
+                                    py: 1.5,
+                                    fontSize: '1.1rem'
+                                }}
+                            >
+                                {t.answerNow}
+                            </MorenButton>
+                        </Box>
                     </Box>
-                </Box>
-            )}
+                )}
         </Box>
     );
 };

@@ -7,8 +7,15 @@ import SpeechInput from '../../../../../components/SpeechInput';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 import AudioPlayer from './Shared/AudioPlayer';
-import story1Audio from '../../../../../assets/AudioStoryRecal/john_hapton_vacation_story.mp3';
-import story2Audio from '../../../../../assets/AudioStoryRecal/marynotingham_hidentreassure_story.mp3';
+import story1English from '../../../../../assets/AudioStoryRecal/john_hapton_vacation_story_english.mp3';
+import story1Spanish from '../../../../../assets/AudioStoryRecal/john_hapton_vacation_story_spanish.mp3';
+import story1Hindi from '../../../../../assets/AudioStoryRecal/john_hapton_vacation_story_hindi.mp3';
+import story1Arabic from '../../../../../assets/AudioStoryRecal/john_hapton_vacation_story_arabic.mp3';
+
+import story2English from '../../../../../assets/AudioStoryRecal/marynotingham_hidentreassure_story_english.mp3';
+import story2Spanish from '../../../../../assets/AudioStoryRecal/marynotingham_hidentreassure_story_spanish.mp3';
+import story2Hindi from '../../../../../assets/AudioStoryRecal/marynotingham_hidentreassure_story_hindi.mp3';
+import story2Arabic from '../../../../../assets/AudioStoryRecal/marynotingham_hidentreassure_story_arabic.mp3';
 
 interface AudioStoryRecallProps {
     session: SessionData;
@@ -29,7 +36,8 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
         completed: getLanguageText(languageConstants, 'game_completed_status'),
         enterAnswers: getLanguageText(languageConstants, 'game_enter_answers'),
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder') || 'Type your recall here...',
-        validationError: getLanguageText(languageConstants, 'game_validation_error')
+        validationError: getLanguageText(languageConstants, 'game_validation_error'),
+        answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW'
     };
 
     // Phases: 'pre_audio_instruction' -> 'playing_audio' -> 'playing_complete' -> 'post_audio_instruction' -> 'recall'
@@ -44,22 +52,44 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
     const stories = session.questions || [];
     const currentStory = stories[currentStoryIndex];
 
+    const getLanguageSuffix = (code: string) => {
+        if (!code) return 'english';
+        const lang = code.toLowerCase();
+        if (lang.startsWith('es')) return 'spanish';
+        if (lang.startsWith('hi')) return 'hindi';
+        if (lang.startsWith('ar')) return 'arabic';
+        return 'english';
+    };
+
     const resolveAudioUrl = (url: string) => {
         if (!url) {
             console.warn('[AudioStoryRecall] No audio URL provided');
             return '';
         }
 
+        const langSuffix = getLanguageSuffix(languageCode);
+        console.log(`[AudioStoryRecall] Resolving audio for language: ${languageCode} (${langSuffix})`);
+
         // Map local filenames to imports
         // We look for substrings that identify the story
         if (url.includes('john_hapton') || url.includes('vacation_story')) {
             console.log('[AudioStoryRecall] Mapped to Story 1 Audio');
-            return story1Audio;
+            switch (langSuffix) {
+                case 'spanish': return story1Spanish;
+                case 'hindi': return story1Hindi;
+                case 'arabic': return story1Arabic;
+                default: return story1English;
+            }
         }
 
         if (url.includes('marynotingham') || url.includes('hidentreassure')) {
             console.log('[AudioStoryRecall] Mapped to Story 2 Audio');
-            return story2Audio;
+            switch (langSuffix) {
+                case 'spanish': return story2Spanish;
+                case 'hindi': return story2Hindi;
+                case 'arabic': return story2Arabic;
+                default: return story2English;
+            }
         }
 
         if (url.startsWith('http') || url.startsWith('https')) return url;
@@ -230,9 +260,8 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
                             <MorenButton
                                 variant="contained"
                                 onClick={handleNextFromComplete}
-                                sx={{ width: '150px', backgroundColor: '#274765' }}
-                            >
-                                {t.next || 'NEXT'}
+                                sx={{ minWidth: '160px', px: 2, backgroundColor: '#274765' }}>
+                                {t.answerNow}
                             </MorenButton>
                         </Box>
                     </Box>
@@ -276,9 +305,9 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
                             onClick={handleSubmitAnswer}
                             sx={{ width: '100%', mt: 2 }}
                         >
-                            {t.next}
+                            {t.answerNow}
                         </MorenButton>
-                    </Box>
+                    </Box >
                 )
             }
         </Box >
