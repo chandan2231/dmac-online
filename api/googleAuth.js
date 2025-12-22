@@ -20,6 +20,5 @@ export const getGoogleAuthURL = (userId) => {
     state: JSON.stringify({ userId: userId }),
     prompt: 'consent' // Force to get refresh token
   })
-  console.log('Generated Google Auth URL:', url)
   return url
 }

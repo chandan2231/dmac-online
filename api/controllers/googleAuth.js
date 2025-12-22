@@ -5,15 +5,13 @@ import { oauth2Client, getGoogleAuthURL } from '../googleAuth.js';
 
 export const googleAuthUrl = (req, res) => {
   const userId = req.user.userId
-  console.log('Requesting Google Auth URL for User ID:', userId)
   res.json({ url: getGoogleAuthURL(userId) })
 }
 
 export const googleCallbackUrl = async (req, res) => {
-  console.log('Received Google Callback with Query:', req.query.code, req.query.state)
   const { code, state } = req.query
   const { userId } = JSON.parse(state)
-  console.log('userId:', userId)
+
   // Step 1 — Validate
   if (!code || !userId) {
     return res.status(400).json({
@@ -25,11 +23,9 @@ export const googleCallbackUrl = async (req, res) => {
   try {
     // Step 2 — Exchange Code for Tokens
     const { tokens } = await oauth2Client.getToken(code)
-    console.log('tokens:', tokens)
     oauth2Client.setCredentials(tokens)
     const { access_token, refresh_token } = tokens
-    console.log('access_token:', access_token)
-    console.log('refresh_token:', refresh_token)
+
     // Step 3 — Update DB
     const updateQuery = `
       UPDATE dmac_webapp_users
