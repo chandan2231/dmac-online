@@ -25,6 +25,8 @@ import {
 
 const router = express.Router()
 
+console.log('Setting up Patient routes', authenticateUser)
+
 router.post(
   '/upload-document',
   authenticateUser,
