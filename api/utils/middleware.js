@@ -16,7 +16,7 @@ export const upload = multer({ storage })
 // Middleware to protect routes
 export const authenticateUser = (req, res, next) => {
   const authHeader = req.headers['authorization']
-
+  console.log('Auth Header:', authHeader)
   if (!authHeader)
     return res
       .status(404)
@@ -25,12 +25,13 @@ export const authenticateUser = (req, res, next) => {
   const token = authHeader.startsWith('Bearer ')
     ? authHeader.slice(7, authHeader.length)
     : authHeader
-
+  console.log('Auth Header token:', token)
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err)
       return res.status(404).json({ message: 'Invalid or expired token.' })
 
     req.user = user
+    console.log('Auth Header req.user:', req.user)
     next()
   })
 }
