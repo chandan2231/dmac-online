@@ -8,9 +8,7 @@ import { authenticateUserGoogle } from '../utils/middleware.js'
 
 const router = express.Router()
 
-console.log('Setting up Google Auth routes', authenticateUserGoogle)
-
 router.get('/url', authenticateUserGoogle, googleAuthUrl)
-router.get('/auth/callback', authenticateUserGoogle, googleCallbackUrl)
+router.get('/auth/callback', googleCallbackUrl)
 
 export default router
