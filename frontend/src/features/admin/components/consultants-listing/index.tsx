@@ -10,7 +10,7 @@ import ModernInput from '../../../../components/input';
 import ModernSwitch from '../../../../components/switch';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useState, useEffect } from 'react';
-import { Box, Typography, Rating } from '@mui/material';
+import { Box, Typography, Rating, Chip } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 import { GenericTable } from '../../../../components/table';
@@ -479,6 +479,23 @@ function ConsultantTable({
       },
     },
     {
+      field: 'ratings',
+      headerName: 'Ratings',
+      width: 140,
+      sortable: false,
+      filterable: false,
+      renderCell: params => (
+        <Chip
+          label="View Ratings"
+          size="small"
+          variant="filled"
+          clickable
+          color="primary"
+          onClick={() => onViewReviews(params.row)}
+        />
+      ),
+    },
+    {
       field: 'actions',
       headerName: 'Actions',
       width: 100,
@@ -523,14 +540,6 @@ function ConsultantTable({
                 }}
               >
                 View Details
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  handleClose();
-                  onViewReviews(params.row);
-                }}
-              >
-                View Ratings
               </MenuItem>
               <MenuItem
                 onClick={() => {
