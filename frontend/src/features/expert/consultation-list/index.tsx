@@ -22,7 +22,7 @@ import { GenericTable } from '../../../components/table';
 import { TabHeaderLayout } from '../../../components/tab-header';
 import { useGetConsultations } from '../hooks/useGetConsultations';
 import { useGetExpertPatients } from '../hooks/useGetExpertPatients';
-import { useState } from 'react';
+import { type MouseEvent, useState } from 'react';
 import UpdateStatusModal from './UpdateStatusModal';
 import ReviewModal from './ReviewModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
@@ -91,7 +91,7 @@ const ConsultationList = () => {
   };
 
   const handleMenuClick = (
-    event: React.MouseEvent<HTMLButtonElement>,
+    event: MouseEvent<HTMLButtonElement>,
     consultation: IConsultation
   ) => {
     setMenuAnchor(event.currentTarget);
@@ -110,12 +110,9 @@ const ConsultationList = () => {
     handleMenuClose();
   };
 
-  const handleViewReviewClick = () => {
-    if (menuConsultation) {
-      setSelectedReviewConsultationId(menuConsultation.id);
-      setReviewModalOpen(true);
-    }
-    handleMenuClose();
+  const handleOpenReviewModal = (consultationId: number) => {
+    setSelectedReviewConsultationId(consultationId);
+    setReviewModalOpen(true);
   };
 
   const handleViewDocumentsClick = () => {
@@ -254,6 +251,24 @@ const ConsultationList = () => {
       },
     },
     {
+      field: 'review',
+      headerName: 'Review',
+      flex: 1,
+      maxWidth: 140,
+      sortable: false,
+      filterable: false,
+      renderCell: params => (
+        <Chip
+          label="View Review"
+          size="small"
+          variant="filled"
+          clickable
+          color="primary"
+          onClick={() => handleOpenReviewModal(params.row.id)}
+        />
+      ),
+    },
+    {
       field: 'actions',
       headerName: 'Actions',
       flex: 1,
@@ -335,7 +350,6 @@ const ConsultationList = () => {
         >
           Edit Status
         </MenuItem>
-        <MenuItem onClick={handleViewReviewClick}>View Review</MenuItem>
         <MenuItem onClick={handleViewDocumentsClick}>
           View Assessment & Documents
         </MenuItem>
