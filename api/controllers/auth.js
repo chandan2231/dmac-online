@@ -27,8 +27,7 @@ export const capturePatientPayment = async (req, res) => {
   const transactionTime = moment().format('HH:mm:ss')
   const datetime = moment().format('YYYY-MM-DD HH:mm:ss')
 
-  const captureOrderRequest =
-    new paypal.orders.OrdersCaptureRequest(orderId)
+  const captureOrderRequest = new paypal.orders.OrdersCaptureRequest(orderId)
   captureOrderRequest.requestBody({ payer_id: payerId })
 
   let patient_id = null
@@ -78,8 +77,9 @@ export const capturePatientPayment = async (req, res) => {
       let paymentConnection
 
       try {
-        paymentConnection =
-          await paymentPoolConnection.promise().getConnection()
+        paymentConnection = await paymentPoolConnection
+          .promise()
+          .getConnection()
         await paymentConnection.beginTransaction()
 
         const [[user]] = await paymentConnection.query(
@@ -264,8 +264,6 @@ export const capturePatientPayment = async (req, res) => {
   }
 }
 
-
-
 // export const capturePatientPayment = async (req, res) => {
 //   const {
 //     orderId,
@@ -293,8 +291,8 @@ export const capturePatientPayment = async (req, res) => {
 
 //     /* Always log transaction */
 //     await db.promise().query(
-//       `INSERT INTO dmac_webapp_users_transaction 
-//        (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type) 
+//       `INSERT INTO dmac_webapp_users_transaction
+//        (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type)
 //        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 //       [
 //         captureResult.result.id,
@@ -312,7 +310,7 @@ export const capturePatientPayment = async (req, res) => {
 //     if (paymentStatus !== 'COMPLETED') {
 //       throw new Error('PAYMENT_NOT_COMPLETED')
 //     }
-    
+
 //     /* ------------------ GET PRODUCT DETAILS ------------------ */
 //     const product = await getProductById(productId, db)
 
@@ -323,8 +321,8 @@ export const capturePatientPayment = async (req, res) => {
 
 //     /* Mark patient as paid */
 //     await db.promise().query(
-//       `UPDATE dmac_webapp_users 
-//        SET patient_payment = 1, patient_payment_date = ? 
+//       `UPDATE dmac_webapp_users
+//        SET patient_payment = 1, patient_payment_date = ?
 //        WHERE id = ?`,
 //       [datetime, userId]
 //     )
@@ -348,7 +346,7 @@ export const capturePatientPayment = async (req, res) => {
 
 //       /* ------------------ INSERT INTO MAIN users TABLE ------------------ */
 //       const [insertUserResult] = await db.promise().query(
-//         `INSERT INTO users 
+//         `INSERT INTO users
 //           (user_role, username, password, firstName, address, city, state, zipCode, country, mobileNo, time_zone, clinic_id, active, is_quesionaire, is_test, dateCreated, added_from)
 //           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 //         [
@@ -412,7 +410,7 @@ export const capturePatientPayment = async (req, res) => {
 //       const clinic_id = 9
 
 //       const [[lastPayment]] = await db.promise().query(
-//         `SELECT * FROM user_payment_details 
+//         `SELECT * FROM user_payment_details
 //         WHERE user_id = ? ORDER BY id DESC LIMIT 1`,
 //         [patient_id]
 //       )
@@ -486,7 +484,7 @@ export const capturePatientPayment = async (req, res) => {
 
 //     /* Log failed payment */
 //     await db.promise().query(
-//       `INSERT INTO dmac_webapp_users_transaction 
+//       `INSERT INTO dmac_webapp_users_transaction
 //        (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type, failure_reason)
 //        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 //       [
@@ -949,7 +947,8 @@ export const patientEmailVerification = (req, res) => {
             rup.product_id,
             p.product_name,
             p.product_description AS product_description,
-            p.product_amount
+            p.product_amount,
+            p.subscription_list
           FROM dmac_webapp_registered_users_product rup
           LEFT JOIN dmac_webapp_products p 
             ON rup.product_id = p.id
