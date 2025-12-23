@@ -26,12 +26,86 @@ const PatientPayment = () => {
   const [isAcknowledgementOpen, setIsAcknowledgementOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [paypalSdkReady, setPaypalSdkReady] = useState(false);
 
   /** PayPal container reference */
   const paypalRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!state) return;
+
+    const productAmount = get(state, ['product', 'product_amount']);
+    const productId = get(state, ['product', 'product_id']);
+    const userId = get(state, ['user', 'id']);
+    const userName = get(state, ['user', 'name']);
+    const productName = get(state, ['product', 'product_name']);
+
+    const valid =
+      productAmount && productId && userId && userName && productName;
+
+    if (!valid) return;
+    if (!paypalRef.current) return;
+
+    const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+    const clientId = PAYPAL_CLIENT_ID;
+
+    if (!clientId) {
+      console.error('Missing PayPal client id (VITE_PAYPAL_CLIENT_ID).');
+      return;
+    }
+
+    // If the SDK is already present (e.g. from a previous visit), mark ready.
+    if (window.paypal) {
+      setPaypalSdkReady(true);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    const scriptId = 'paypal-sdk';
+    const existingScript = document.getElementById(
+      scriptId
+    ) as HTMLScriptElement | null;
+
+    const onLoad = () => {
+      setPaypalSdkReady(true);
+      setLoading(false);
+    };
+
+    const onError = (err: unknown) => {
+      console.error('Failed to load PayPal SDK:', err);
+      setLoading(false);
+    };
+
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.async = true;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(
+        clientId
+      )}&components=buttons`;
+      script.addEventListener('load', onLoad);
+      script.addEventListener('error', onError);
+      document.body.appendChild(script);
+    } else {
+      existingScript.addEventListener('load', onLoad);
+      existingScript.addEventListener('error', onError);
+    }
+
+    return () => {
+      existingScript?.removeEventListener('load', onLoad);
+      existingScript?.removeEventListener('error', onError);
+    };
+  }, [state, navigate]);
+
+  useEffect(() => {
+    if (!paypalSdkReady) return;
+    if (!state) return;
+    if (!paypalRef.current) return;
+    if (!window.paypal) return;
+
+    const container = paypalRef.current;
 
     const productAmount = get(state, ['product', 'product_amount']);
     const productId = get(state, ['product', 'product_id']);
@@ -44,90 +118,65 @@ const PatientPayment = () => {
       productAmount && productId && userId && userName && productName;
 
     if (!valid) return;
-    if (!paypalRef.current) return;
 
-    const PAYPAL_ENV = import.meta.env.VITE_PAYPAL_ENV;
-    const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
-    const clientId = PAYPAL_ENV === 'sandbox' ? PAYPAL_CLIENT_ID : '';
+    container.innerHTML = '';
 
-    /** Function to render PayPal Buttons */
-    const renderPayPalButtons = () => {
-      if (!window.paypal || !paypalRef.current) return;
+    const buttons = window.paypal.Buttons({
+      createOrder: async () => {
+        const response = await PaymentService.createPayment(productAmount);
+        return response?.orderId;
+      },
 
-      // Prevent multiple renders
-      if (paypalRef.current.children.length > 0) return;
+      onApprove: async (data: unknown) => {
+        const { orderID, payerID } = data as {
+          orderID: string;
+          payerID: string;
+        };
+        const payload = {
+          orderId: orderID,
+          payerId: payerID,
+          currencyCode: 'USD',
+          amount: productAmount,
+          userId,
+          productId,
+          userName,
+          productName,
+          userEmail,
+        };
 
-      // Clean container
-      paypalRef.current.innerHTML = '';
+        const result = await PaymentService.capturePayment(payload);
+        if (result) {
+          navigate(ROUTES.PATIENT_PAYMENT_SUCCESS, {
+            state: { ...state, orderID: orderID },
+          });
+        }
+      },
 
-      window.paypal
-        .Buttons({
-          createOrder: async () => {
-            const response = await PaymentService.createPayment(productAmount);
-            return response?.orderId;
-          },
+      onCancel: async () => {
+        await PaymentService.cancelPayment();
+        navigate(ROUTES.PATIENT_PAYMENT_CANCELLED, { state });
+      },
 
-          onApprove: async (data: unknown) => {
-            const { orderID, payerID } = data as {
-              orderID: string;
-              payerID: string;
-            };
-            const payload = {
-              orderId: orderID,
-              payerId: payerID,
-              currencyCode: 'USD',
-              amount: productAmount,
-              userId,
-              productId,
-              userName,
-              productName,
-              userEmail,
-            };
+      onError: (err: unknown) => {
+        console.error('PayPal Error:', err);
+      },
+    });
 
-            const result = await PaymentService.capturePayment(payload);
-            if (result) {
-              navigate(ROUTES.PATIENT_PAYMENT_SUCCESS, {
-                state: { ...state, orderID: orderID },
-              });
-            }
-          },
+    buttons.render(container);
 
-          onCancel: async () => {
-            await PaymentService.cancelPayment();
-            navigate(ROUTES.PATIENT_PAYMENT_CANCELLED, { state });
-          },
-
-          onError: (err: unknown) => {
-            console.error('PayPal Error:', err);
-          },
-        })
-        .render(paypalRef.current);
+    return () => {
+      try {
+        buttons.close?.();
+      } catch {
+        // ignore
+      }
+      container.innerHTML = '';
     };
-
-    setLoading(true);
-
-    /** Load PayPal SDK only once */
-    const existingScript = document.getElementById('paypal-sdk');
-
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.id = 'paypal-sdk';
-      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons`;
-      script.onload = () => {
-        setLoading(false);
-        renderPayPalButtons();
-      };
-      document.body.appendChild(script);
-    } else {
-      setLoading(false);
-      renderPayPalButtons();
-    }
-  }, [state, navigate]);
-
-  if (loading) return <Loader />;
+  }, [paypalSdkReady, state, navigate]);
 
   return (
     <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
+      {loading && <Loader />}
       <Typography variant="h4" fontWeight="bold" mb={4} textAlign="center">
         Checkout
       </Typography>
