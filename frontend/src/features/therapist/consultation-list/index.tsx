@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type MouseEvent, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -94,7 +94,7 @@ const TherapistConsultationList = () => {
   };
 
   const handleMenuClick = (
-    event: React.MouseEvent<HTMLButtonElement>,
+    event: MouseEvent<HTMLButtonElement>,
     consultation: IConsultation
   ) => {
     setMenuAnchor(event.currentTarget);
@@ -113,12 +113,9 @@ const TherapistConsultationList = () => {
     handleMenuClose();
   };
 
-  const handleViewReviewClick = () => {
-    if (menuConsultation) {
-      setSelectedReviewConsultationId(menuConsultation.id);
-      setReviewModalOpen(true);
-    }
-    handleMenuClose();
+  const handleOpenReviewModal = (consultationId: number) => {
+    setSelectedReviewConsultationId(consultationId);
+    setReviewModalOpen(true);
   };
 
   const handleViewDocumentsClick = () => {
@@ -261,6 +258,23 @@ const TherapistConsultationList = () => {
       },
     },
     {
+      field: 'review',
+      headerName: 'Review',
+      width: 140,
+      sortable: false,
+      filterable: false,
+      renderCell: params => (
+        <Chip
+          label="View Review"
+          size="small"
+          variant="filled"
+          clickable
+          color="primary"
+          onClick={() => handleOpenReviewModal(params.row.id)}
+        />
+      ),
+    },
+    {
       field: 'actions',
       headerName: 'Actions',
       width: 100,
@@ -339,7 +353,6 @@ const TherapistConsultationList = () => {
         >
           Edit Status
         </MenuItem>
-        <MenuItem onClick={handleViewReviewClick}>View Review</MenuItem>
         <MenuItem onClick={handleViewDocumentsClick}>View Documents</MenuItem>
       </Menu>
     </Box>

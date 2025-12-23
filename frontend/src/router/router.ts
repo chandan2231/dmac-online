@@ -60,9 +60,10 @@ const PatientRegisterPage = lazy(
 const PatientVerifyEmailPage = lazy(
   () => import('../pages/auth/verify-email/patient-verify-email')
 );
-const PatientPaymentPage = lazy(
-  () => import('../pages/payment/patient-payment')
-);
+// const PatientPaymentPage = lazy(
+//   () => import('../pages/payment/patient-payment')
+// );
+import PatientPaymentPage from '../pages/payment/patient-payment';
 const PatientLoginPage = lazy(
   () => import('../pages/auth/login/patient-login')
 );
