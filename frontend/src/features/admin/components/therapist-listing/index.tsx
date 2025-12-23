@@ -25,7 +25,7 @@ import dayjs from 'dayjs';
 import { useToast } from '../../../../providers/toast-provider';
 import { useGetTherapistListing } from '../../hooks/useGetTherapistListing';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { IconButton, Menu, MenuItem } from '@mui/material';
+import { Chip, IconButton, Menu, MenuItem } from '@mui/material';
 import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages';
 import ModernMultiSelect from '../../../../components/multi-select';
 import type { ILanguage } from '../../../../i18n/language.interface';
@@ -480,6 +480,23 @@ function UserTable({
       },
     },
     {
+      field: 'ratings',
+      headerName: 'Ratings',
+      width: 140,
+      sortable: false,
+      filterable: false,
+      renderCell: params => (
+        <Chip
+          label="View Ratings"
+          size="small"
+          variant="filled"
+          clickable
+          color="primary"
+          onClick={() => onViewReviews(params.row)}
+        />
+      ),
+    },
+    {
       field: 'actions',
       headerName: 'Actions',
       width: 100,
@@ -524,14 +541,6 @@ function UserTable({
                 }}
               >
                 View Details
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  handleClose();
-                  onViewReviews(params.row);
-                }}
-              >
-                View Ratings
               </MenuItem>
               <MenuItem
                 onClick={() => {
