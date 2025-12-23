@@ -1,3 +1,4 @@
+import './index.css';
 import { get } from 'lodash';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -8,14 +9,12 @@ import {
   CardContent,
   Divider,
   Stack,
-  Chip,
 } from '@mui/material';
 import { ROUTES } from '../../../router/router';
 import Grid from '@mui/material/GridLegacy';
 import PaymentService from '../payment.service';
 import Loader from '../../../components/loader';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import GenericModal from '../../../components/modal';
 import MorenCheckbox from '../../../components/checkbox';
 
@@ -235,70 +234,42 @@ const PatientPayment = () => {
               overflow: 'visible',
             }}
           >
-            <CardContent sx={{ p: 4 }}>
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="start"
-                mb={2}
-              >
-                <Box>
-                  <Typography
-                    variant="overline"
-                    color="text.secondary"
-                    fontWeight="bold"
-                  >
-                    PRODUCT
-                  </Typography>
-                  <Typography variant="h5" fontWeight="bold">
-                    {get(state, ['product', 'product_name'], '')}
-                  </Typography>
-                </Box>
-                <Chip
-                  label={`$${get(state, ['product', 'product_amount'], '')}`}
-                  color="primary"
-                  sx={{ fontWeight: 'bold', fontSize: '1rem', height: 32 }}
-                />
-              </Box>
-
-              <Typography variant="body2" color="text.secondary" paragraph>
-                {get(state, ['product', 'product_description'], '')}
-              </Typography>
-
-              <Divider sx={{ my: 2 }} />
-
-              {get(state, ['product', 'subscription_list'], '') && (
-                <Box>
-                  <Typography
-                    variant="subtitle2"
-                    fontWeight="bold"
-                    gutterBottom
-                  >
-                    Features included:
-                  </Typography>
-                  <Stack spacing={1}>
-                    {(
-                      get(state, ['product', 'subscription_list'], '') as string
-                    )
-                      .split(',')
-                      .map((feature: string, index: number) => (
-                        <Box
-                          key={index}
-                          display="flex"
-                          alignItems="center"
-                          gap={1}
-                        >
-                          <CheckCircleOutlineIcon
-                            color="success"
-                            fontSize="small"
-                          />
-                          <Typography variant="body2">{feature}</Typography>
-                        </Box>
-                      ))}
-                  </Stack>
-                </Box>
-              )}
-            </CardContent>
+            <div className="plan">
+              <div className="inner">
+                <span className="pricing">
+                  <span>{`$${get(state, ['product', 'product_amount'], '')}`}</span>
+                </span>
+                <p className="title">
+                  {get(state, ['product', 'product_name'], '')}
+                </p>
+                <p className="info">
+                  {get(state, ['product', 'product_description'], '')}
+                </p>
+                <ul className="features">
+                  {(get(state, ['product', 'subscription_list'], '') as string)
+                    .split(',')
+                    .map((feature, index) => (
+                      <li key={index}>
+                        <span className="icon">
+                          <svg
+                            height="24"
+                            width="24"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path d="M0 0h24v24H0z" fill="none"></path>
+                            <path
+                              fill="currentColor"
+                              d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
+                            ></path>
+                          </svg>
+                        </span>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            </div>
           </Card>
         </Grid>
 
