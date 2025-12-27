@@ -131,6 +131,7 @@ const handleDefault = async (module, questions, languageCode) => {
       questions: [{
         question_id: question.id,
         prompt_text: question.prompt_text,
+        post_game_text: question.post_game_text,
         items: items.map((i) => ({
           question_item_id: i.question_item_id,
           order: i.item_order,
@@ -144,10 +145,35 @@ const handleDefault = async (module, questions, languageCode) => {
   return { questions: [] }
 }
 
+const handleExecutive = async (module, questions, languageCode) => {
+  const processedQuestions = []
+  for (const q of questions) {
+    // For executive, items are just accepted answers primarily, maybe an image if needed
+    // But mostly it's text. We fetch items anyway.
+    const items = await fetchItems(q.id, languageCode)
+    processedQuestions.push({
+      question_id: q.id,
+      prompt_text: q.prompt_text,
+      post_game_text: q.post_game_text,
+      items: items.map((i) => ({
+        question_item_id: i.question_item_id,
+        order: i.item_order,
+        image_key: i.image_key,
+        image_url: i.image_url,
+        audio_url: i.audio_url,
+        accepted_answers: i.accepted_answers
+      }))
+    })
+  }
+  return { questions: processedQuestions }
+}
+
 const moduleHandlers = {
   'VISUAL_SPATIAL': handleVisualSpatial,
   'AUDIO_STORY': handleAudioStory,
+  'AUDIO_WORDS': handleDefault,
   'IMAGE_FLASH': handleDefault,
+  'EXECUTIVE': handleExecutive,
   'default': handleDefault
 }
 
@@ -268,6 +294,32 @@ export const submitSession = async (req, res) => {
           [ans.question_id, ans.selected_option_key]
         )
         itemScore = (options.length > 0 && options[0].is_correct === 1) ? 1 : 0
+      } else if (module.code === 'CONNECT_DOTS') {
+        const items = await fetchItems(ans.question_id, 'en')
+        // Assume answer_text is comma separated sequence e.g. "L,5,M..."
+        const userSequence = (ans.answer_text || '').split(',')
+        const correctSequence = items.map(i => i.image_key)
+
+        let correctConnections = 0
+        // Check pairs
+        for (let i = 0; i < Math.min(userSequence.length, correctSequence.length) - 1; i++) {
+          if (userSequence[i] === correctSequence[i] && userSequence[i + 1] === correctSequence[i + 1]) {
+            correctConnections++
+          }
+        }
+
+        const totalConnections = Math.max(1, correctSequence.length - 1)
+        const sequenceScore = (correctConnections / totalConnections) * 4.0
+
+        // Time Bonus
+        let timeBonus = 0
+        const timeTaken = parseFloat(ans.time_taken || 0)
+        if (timeTaken > 0) {
+          if (timeTaken <= 30) timeBonus = 1.0
+          else if (timeTaken <= 45) timeBonus = 0.5
+        }
+
+        itemScore = Math.min(5, sequenceScore + timeBonus)
       } else {
         // Keyword matching (Image Flash & Audio Story)
         // Audio story has cap 5.0, Image flash cap 5 (count)
@@ -285,8 +337,46 @@ export const submitSession = async (req, res) => {
         if (module.code === 'AUDIO_STORY') {
           // Special rule: >= 10 keywords = 5.0, else count * 0.5
           if (correctCount >= 10) itemScore = 5.0
+          // Special rule: >= 10 keywords = 5.0, else count * 0.5
+          if (correctCount >= 10) itemScore = 5.0
           else itemScore = Math.min(correctCount * 0.5, 5.0)
           maxScore = 10 // 2 stories
+        } else if (module.code === 'AUDIO_WORDS') {
+          // 0.5 points per word, max 10 words possible
+          // User request: "Method 1: If recalls 10+ words score = 5 (automatic full credit)"
+          // "Method 2: Count matches ... score = score + 0.5"
+          if (correctCount >= 10) {
+            itemScore = 5.0
+          } else {
+            itemScore = Math.min(correctCount * 0.5, 5.0)
+          }
+          maxScore = 5
+        } else if (module.code === 'EXECUTIVE') {
+          const language_code = ans.language_code || body.language_code || 'en'
+          const items = await fetchItems(ans.question_id, language_code)
+
+          if (items.length > 0) {
+            const acceptedStr = items[0].accepted_answers || ''
+            const userAns = (ans.answer_text || '').trim().toLowerCase().replace(/\s+/g, ' ')
+
+            if (acceptedStr === 'DYNAMIC_DATE_BEFORE_YESTERDAY') {
+              const date = new Date()
+              date.setDate(date.getDate() - 2)
+              const locales = { en: 'en-US', hi: 'hi-IN', es: 'es-ES', ar: 'ar-SA' }
+              const locale = locales[language_code] || 'en-US'
+              const correctDay = date.toLocaleDateString(locale, { weekday: 'long' }).toLowerCase()
+              if (userAns === correctDay) itemScore = 1
+            } else if (acceptedStr === 'DYNAMIC_DATE_TOMORROW') {
+              const date = new Date()
+              date.setDate(date.getDate() + 1)
+              const correctDate = date.getDate().toString()
+              if (userAns === correctDate) itemScore = 1
+            } else {
+              const allowed = acceptedStr.toLowerCase().split(',').map(s => s.trim())
+              if (allowed.includes(userAns)) itemScore = 1
+            }
+          }
+          maxScore = 10
         } else {
           itemScore = Math.min(correctCount, 5)
         }

@@ -1,7 +1,6 @@
 import React from 'react';
-import { TextField, InputAdornment, IconButton, type TextFieldProps, Box } from '@mui/material';
+import { TextField, InputAdornment, IconButton, type TextFieldProps } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
-import MicOffIcon from '@mui/icons-material/MicOff';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { keyframes } from '@mui/system';
 
@@ -21,26 +20,11 @@ const pulseRed = keyframes`
   }
 `;
 
-// Pulsing animation for listening - creates purple glow ring
-const pulsePurple = keyframes`
-  0% {
-    box-shadow: 0 0 0 0 rgba(124, 77, 255, 0.6);
-    transform: scale(1);
-  }
-  50% {
-    box-shadow: 0 0 0 15px rgba(156, 122, 255, 0.2);
-    transform: scale(1.02);
-  }
-  100% {
-    box-shadow: 0 0 0 20px rgba(156, 122, 255, 0);
-    transform: scale(1);
-  }
-`;
-
 interface SpeechInputProps extends Omit<TextFieldProps, 'onChange'> {
     value: string;
     onChange: (value: string) => void;
     onSpeechResult?: (transcript: string) => void;
+    onTranscriptChange?: (transcript: string) => void;
     languageCode?: string;
 }
 
@@ -48,6 +32,7 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
     value,
     onChange,
     onSpeechResult,
+    onTranscriptChange,
     languageCode = 'en-US',
     placeholder = 'Type or click mic to speak',
     ...textFieldProps
@@ -68,6 +53,11 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
     const silenceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
     React.useEffect(() => {
+        // Broadcast transcript changes
+        if (onTranscriptChange) {
+            onTranscriptChange(transcript);
+        }
+
         // When transcript changes (user is speaking), reset the silence timer
         if (isListening && transcript) {
             // Clear existing timer
@@ -81,13 +71,20 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
             }, 3000);
         }
 
-        // Cleanup on unmount
+        // Cleanup timer on effect re-run
         return () => {
             if (silenceTimerRef.current) {
                 clearTimeout(silenceTimerRef.current);
             }
         };
     }, [transcript, isListening, stopListening]);
+
+    // Cleanup listening on unmount
+    React.useEffect(() => {
+        return () => {
+            stopListening();
+        };
+    }, [stopListening]);
 
     const handleMicClick = () => {
         if (isListening) {

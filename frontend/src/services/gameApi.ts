@@ -2,7 +2,7 @@ import HttpService from './HttpService';
 
 export interface Module {
     id: number;
-    code: 'IMAGE_FLASH' | 'VISUAL_SPATIAL' | 'AUDIO_STORY' | 'CONNECT_DOTS';
+    code: 'IMAGE_FLASH' | 'VISUAL_SPATIAL' | 'AUDIO_STORY' | 'CONNECT_DOTS' | 'AUDIO_WORDS' | 'EXECUTIVE';
     name: string;
     order_index: number;
     max_score: number;

@@ -49,9 +49,11 @@ const TextToSpeech = ({ text, languageCode, iconSize = 'medium', color = 'primar
     }, []);
 
     const handleSpeak = () => {
+        // Always cancel pending speech first to clear queue/wake up engine
+        window.speechSynthesis.cancel();
+
         if (isPlaying) {
-            // Stop current speech
-            window.speechSynthesis.cancel();
+            // If was playing, we just stopped it above. update state.
             setIsPlaying(false);
             return;
         }

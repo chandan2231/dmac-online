@@ -5,7 +5,9 @@ import CustomLoader from '../../../../../components/loader';
 import ImageFlash from './ImageFlash';
 import VisualSpatial from './VisualSpatial';
 import AudioStoryRecall from './AudioStoryRecall';
+import AudioWordsRecall from './AudioWordsRecall';
 import ConnectTheDots from './ConnectTheDots';
+import ExecutiveQuestions from './ExecutiveQuestions';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 import GenericModal from '../../../../../components/modal';
@@ -122,8 +124,20 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
         });
     };
 
+    const handleAudioWordsComplete = (answers: any[]) => {
+        handleModuleSubmit({
+            answers
+        });
+    };
+
     const handleConnectDotsComplete = (payload: any) => {
         handleModuleSubmit(payload);
+    };
+
+    const handleExecutiveComplete = (answers: any[]) => {
+        handleModuleSubmit({
+            answers
+        });
     };
 
     const handleGoHome = () => {
@@ -173,6 +187,16 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             }));
             console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
             handleAudioStoryComplete(dummyAnswers);
+        } else if (code === 'AUDIO_WORDS') {
+            // Construct dummy answers
+            const questions = session.questions || [];
+            const dummyAnswers = questions.map(q => ({
+                question_id: q.question_id,
+                answer_text: 'skipped via dev button',
+                language_code: languageCode
+            }));
+            console.log('[ModuleRunner] Skipping AudioWords with payload:', dummyAnswers);
+            handleAudioWordsComplete(dummyAnswers);
         } else if (code === 'CONNECT_DOTS') {
             // Fake completions
             const payload = {
@@ -181,6 +205,15 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
                 time_taken: 10
             }
             handleConnectDotsComplete(payload);
+        } else if (code === 'EXECUTIVE') {
+            const questions = session.questions || [];
+            const dummyAnswers = questions.map(q => ({
+                question_id: q.question_id,
+                answer_text: 'skipped via dev button',
+                language_code: languageCode
+            }));
+            console.log('[ModuleRunner] Skipping Executive with payload:', dummyAnswers);
+            handleExecutiveComplete(dummyAnswers);
         }
     };
 
@@ -221,8 +254,14 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             {!showCompletion && moduleCode === 'AUDIO_STORY' && (
                 <AudioStoryRecall session={session} onComplete={handleAudioStoryComplete} languageCode={languageCode} />
             )}
+            {!showCompletion && moduleCode === 'AUDIO_WORDS' && (
+                <AudioWordsRecall session={session} onComplete={handleAudioWordsComplete} languageCode={languageCode} />
+            )}
             {!showCompletion && moduleCode === 'CONNECT_DOTS' && (
                 <ConnectTheDots session={session} onComplete={handleConnectDotsComplete} />
+            )}
+            {!showCompletion && moduleCode === 'EXECUTIVE' && (
+                <ExecutiveQuestions session={session} onComplete={handleExecutiveComplete} languageCode={languageCode} />
             )}
         </Box>
     );

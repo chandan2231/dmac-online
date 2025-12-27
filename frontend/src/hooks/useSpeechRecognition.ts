@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import SpeechRecognition, {
     useSpeechRecognition as useReactSpeechRecognition,
 } from "react-speech-recognition";
@@ -51,7 +51,7 @@ export const useSpeechRecognition = (
         }
     }, [finalTranscript, onResult, resetTranscript]);
 
-    const startListening = () => {
+    const startListening = useCallback(() => {
         if (!browserSupportsSpeechRecognition) {
             onError?.("Speech Recognition not supported");
             return;
@@ -66,11 +66,11 @@ export const useSpeechRecognition = (
         } catch (err) {
             onError?.("Failed to start Speech Recognition");
         }
-    };
+    }, [browserSupportsSpeechRecognition, languageCode, onError]);
 
-    const stopListening = () => {
+    const stopListening = useCallback(() => {
         SpeechRecognition.stopListening();
-    };
+    }, []);
 
     // Return interim transcript if available, otherwise final transcript
     const displayTranscript = interimTranscript || transcript;
