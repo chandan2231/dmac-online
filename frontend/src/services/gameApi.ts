@@ -1,12 +1,13 @@
 import HttpService from './HttpService';
 
-export interface Module {
+export type Module = {
     id: number;
-    code: 'IMAGE_FLASH' | 'VISUAL_SPATIAL' | 'AUDIO_STORY' | 'CONNECT_DOTS' | 'AUDIO_WORDS' | 'EXECUTIVE';
+    code: 'VISUAL_SPATIAL' | 'AUDIO_STORY' | 'AUDIO_WORDS' | 'IMAGE_FLASH' | 'CONNECT_DOTS' | 'EXECUTIVE' | 'SEMANTIC' | 'NUMBER_RECALL';
     name: string;
-    order_index: number;
+    description: string;
     max_score: number;
-}
+    order_index: number;
+};
 
 export interface QuestionItem {
     question_item_id: number;

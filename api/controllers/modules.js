@@ -168,12 +168,35 @@ const handleExecutive = async (module, questions, languageCode) => {
   return { questions: processedQuestions }
 }
 
+const handleSemantic = async (module, questions, languageCode) => {
+  const processedQuestions = []
+  for (const q of questions) {
+    const items = await fetchItems(q.id, languageCode)
+    processedQuestions.push({
+      question_id: q.id,
+      prompt_text: q.prompt_text,
+      post_game_text: q.post_game_text,
+      items: items.map((i) => ({
+        question_item_id: i.question_item_id,
+        order: i.item_order,
+        image_key: i.image_key,
+        image_url: i.image_url,
+        audio_url: i.audio_url,
+        accepted_answers: i.accepted_answers
+      }))
+    })
+  }
+  return { questions: processedQuestions }
+}
+
 const moduleHandlers = {
   'VISUAL_SPATIAL': handleVisualSpatial,
   'AUDIO_STORY': handleAudioStory,
   'AUDIO_WORDS': handleDefault,
   'IMAGE_FLASH': handleDefault,
   'EXECUTIVE': handleExecutive,
+  'SEMANTIC': handleSemantic,
+  'NUMBER_RECALL': handleExecutive, // Reuse handleExecutive as it returns checks for all items which fits
   'default': handleDefault
 }
 
@@ -320,38 +343,42 @@ export const submitSession = async (req, res) => {
         }
 
         itemScore = Math.min(5, sequenceScore + timeBonus)
+      } else if (module.code === 'NUMBER_RECALL') {
+        // Number Recall Scoring
+        // Logic: Exact match of the sequence = 0.5 points.
+        // Total possible: 10 * 0.5 = 5.0
+        const items = await fetchItems(ans.question_id, 'en')
+        if (items.length > 0) {
+          const accepted = items[0].accepted_answers || ''
+          const userAns = (ans.answer_text || '').trim()
+
+          if (userAns === accepted) {
+            itemScore = 0.5
+          }
+        }
       } else {
-        // Keyword matching (Image Flash & Audio Story)
-        // Audio story has cap 5.0, Image flash cap 5 (count)
-        // Also Audio story 10 keywords = 5.0
+
+        // Keyword matching (Image Flash & Audio Story & others)
 
         const language_code = ans.language_code || body.language_code || 'en' // fallback
         const items = await fetchItems(ans.question_id, language_code)
-
-        // Use improved scoring logic:
-        // Simple split comparison might need to be smarter but let's replicate logic
-        // Iterate user words vs accepted answers
 
         let correctCount = calculateKeywordScore(ans.answer_text, items)
 
         if (module.code === 'AUDIO_STORY') {
           // Special rule: >= 10 keywords = 5.0, else count * 0.5
           if (correctCount >= 10) itemScore = 5.0
-          // Special rule: >= 10 keywords = 5.0, else count * 0.5
-          if (correctCount >= 10) itemScore = 5.0
           else itemScore = Math.min(correctCount * 0.5, 5.0)
           maxScore = 10 // 2 stories
         } else if (module.code === 'AUDIO_WORDS') {
           // 0.5 points per word, max 10 words possible
-          // User request: "Method 1: If recalls 10+ words score = 5 (automatic full credit)"
-          // "Method 2: Count matches ... score = score + 0.5"
           if (correctCount >= 10) {
             itemScore = 5.0
           } else {
             itemScore = Math.min(correctCount * 0.5, 5.0)
           }
           maxScore = 5
-        } else if (module.code === 'EXECUTIVE') {
+        } else if (module.code === 'EXECUTIVE' || module.code === 'SEMANTIC') {
           const language_code = ans.language_code || body.language_code || 'en'
           const items = await fetchItems(ans.question_id, language_code)
 
@@ -371,12 +398,34 @@ export const submitSession = async (req, res) => {
               date.setDate(date.getDate() + 1)
               const correctDate = date.getDate().toString()
               if (userAns === correctDate) itemScore = 1
+            } else if (acceptedStr === 'DYNAMIC_YEAR_LAST_NYE') {
+              const currentYear = new Date().getFullYear();
+              const lastNYE = (currentYear - 1).toString();
+              // Flexible: Current year - 1 is ideal, but allow current year if early in year? User logic says:
+              // 2024 -> 1, 2023 -> 1 (recent), 2025 -> 0.5
+              if (userAns === lastNYE) {
+                itemScore = 1;
+              } else if (userAns === (currentYear - 2).toString()) {
+                itemScore = 1; // Recent acceptable
+              } else if (userAns === currentYear.toString()) {
+                itemScore = 0.5;
+              }
+            } else if (acceptedStr === 'RANGE_55_75') {
+              // Extract number from input string like "65 mph"
+              const match = userAns.match(/\d+/);
+              if (match) {
+                const speed = parseInt(match[0], 10);
+                if (speed >= 55 && speed <= 75) {
+                  itemScore = 1;
+                }
+              }
             } else {
               const allowed = acceptedStr.toLowerCase().split(',').map(s => s.trim())
               if (allowed.includes(userAns)) itemScore = 1
             }
           }
-          maxScore = 10
+          // Set Max Score based on module
+          maxScore = (module.code === 'EXECUTIVE') ? 10 : 5;
         } else {
           itemScore = Math.min(correctCount, 5)
         }

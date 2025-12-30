@@ -35,36 +35,59 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
     // Refs to handle microphone race conditions
     const liveTranscriptRef = useRef('');
     const isTransitioningRef = useRef(false);
+    const inputTextRef = useRef('');
 
     const questions = session.questions || [];
     const currentQuestion = questions[currentQuestionIndex];
     const totalQuestions = questions.length;
 
-    // Reset transition flag when question changes
+    // Sync ref with state for timer access
+    useEffect(() => {
+        inputTextRef.current = inputText;
+    }, [inputText]);
+
+    // Reset transition flag and start timer when question changes
     useEffect(() => {
         setIsSubmitting(false);
         // Add a small safety buffer to ignore ghost speech events from previous question
-        const timer = setTimeout(() => {
+        const safetyTimer = setTimeout(() => {
             isTransitioningRef.current = false;
             liveTranscriptRef.current = '';
         }, 500);
-        return () => clearTimeout(timer);
-    }, [currentQuestionIndex]);
+
+        // Auto-advance timer (70 seconds)
+        const autoAdvanceTimer = setTimeout(() => {
+            if (phase === 'playing' && !isSubmitting) {
+                console.log('Auto-advancing due to timeout');
+                submitAnswer(inputTextRef.current, true);
+            }
+        }, 70000);
+
+        return () => {
+            clearTimeout(safetyTimer);
+            clearTimeout(autoAdvanceTimer);
+        };
+    }, [currentQuestionIndex, phase]); // Re-run when question or phase changes
 
     const handleStart = () => {
         setPhase('playing');
     };
 
-    const handleNext = () => {
-        if (!currentQuestion || isTransitioningRef.current) return;
+    const submitAnswer = (textValue: string, isAuto: boolean = false) => {
+        if (!currentQuestion) return;
+        // If already transitioning and not auto (auto can force? no, obey lock), return
+        // Actually if auto fires, we want to force it? 
+        // If manual submit happened, isSubmitting is true.
+        // Timer check "!isSubmitting" above handles race.
 
-        // Set transitioning flag to ignore late speech results and prevent double clicks
+        if (isTransitioningRef.current && !isAuto) return;
+
         isTransitioningRef.current = true;
         setIsSubmitting(true);
 
         // Combine committed text with any pending live transcript
         const pendingText = liveTranscriptRef.current;
-        const finalAnswerText = (inputText + ' ' + pendingText).trim();
+        const finalAnswerText = (textValue + ' ' + pendingText).trim();
 
         const newAnswer = {
             question_id: currentQuestion.question_id,
@@ -83,6 +106,10 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
             // All done
             onComplete(updatedAnswers);
         }
+    };
+
+    const handleNext = () => {
+        submitAnswer(inputText);
     };
 
     if (!currentQuestion && phase === 'playing') {

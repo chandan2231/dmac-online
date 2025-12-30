@@ -8,6 +8,7 @@ import AudioStoryRecall from './AudioStoryRecall';
 import AudioWordsRecall from './AudioWordsRecall';
 import ConnectTheDots from './ConnectTheDots';
 import ExecutiveQuestions from './ExecutiveQuestions';
+import NumberRecall from './NumberRecall';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 import GenericModal from '../../../../../components/modal';
@@ -140,6 +141,12 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
         });
     };
 
+    const handleNumberRecallComplete = (answers: any[]) => {
+        handleModuleSubmit({
+            answers
+        });
+    };
+
     const handleGoHome = () => {
         navigate(ROUTES.HOME);
     };
@@ -205,15 +212,23 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
                 time_taken: 10
             }
             handleConnectDotsComplete(payload);
-        } else if (code === 'EXECUTIVE') {
+        } else if (code === 'EXECUTIVE' || code === 'SEMANTIC') {
             const questions = session.questions || [];
             const dummyAnswers = questions.map(q => ({
                 question_id: q.question_id,
                 answer_text: 'skipped via dev button',
                 language_code: languageCode
             }));
-            console.log('[ModuleRunner] Skipping Executive with payload:', dummyAnswers);
+            console.log('[ModuleRunner] Skipping Executive/Semantic with payload:', dummyAnswers);
             handleExecutiveComplete(dummyAnswers);
+        } else if (code === 'NUMBER_RECALL') {
+            const questions = session.questions || [];
+            const dummyAnswers = questions.map(q => ({
+                question_id: q.question_id,
+                answer_text: '123'
+            }));
+            console.log('[ModuleRunner] Skipping NumberRecall with payload:', dummyAnswers);
+            handleNumberRecallComplete(dummyAnswers);
         }
     };
 
@@ -260,8 +275,11 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             {!showCompletion && moduleCode === 'CONNECT_DOTS' && (
                 <ConnectTheDots session={session} onComplete={handleConnectDotsComplete} />
             )}
-            {!showCompletion && moduleCode === 'EXECUTIVE' && (
+            {!showCompletion && (moduleCode === 'EXECUTIVE' || moduleCode === 'SEMANTIC') && (
                 <ExecutiveQuestions session={session} onComplete={handleExecutiveComplete} languageCode={languageCode} />
+            )}
+            {!showCompletion && moduleCode === 'NUMBER_RECALL' && (
+                <NumberRecall session={session} onComplete={handleNumberRecallComplete} languageCode={languageCode} />
             )}
         </Box>
     );
