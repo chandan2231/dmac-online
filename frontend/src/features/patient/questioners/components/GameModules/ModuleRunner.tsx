@@ -9,6 +9,7 @@ import AudioWordsRecall from './AudioWordsRecall';
 import ConnectTheDots from './ConnectTheDots';
 import ExecutiveQuestions from './ExecutiveQuestions';
 import NumberRecall from './NumberRecall';
+import DrawingRecall from './DrawingRecall';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 import GenericModal from '../../../../../components/modal';
@@ -147,6 +148,10 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
         });
     };
 
+    const handleDrawingRecallComplete = (payload: any) => {
+        handleModuleSubmit(payload);
+    };
+
     const handleGoHome = () => {
         navigate(ROUTES.HOME);
     };
@@ -229,6 +234,15 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             }));
             console.log('[ModuleRunner] Skipping NumberRecall with payload:', dummyAnswers);
             handleNumberRecallComplete(dummyAnswers);
+        } else if (code === 'DRAWING_RECALL') {
+            const payload = {
+                question_id: session.questions?.[0]?.question_id,
+                answer_text: JSON.stringify([]),
+                canvas_data: 'skipped',
+                language_code: languageCode
+            };
+            console.log('[ModuleRunner] Skipping DrawingRecall with payload:', payload);
+            handleDrawingRecallComplete(payload);
         }
     };
 
@@ -280,6 +294,9 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             )}
             {!showCompletion && moduleCode === 'NUMBER_RECALL' && (
                 <NumberRecall session={session} onComplete={handleNumberRecallComplete} languageCode={languageCode} />
+            )}
+            {!showCompletion && moduleCode === 'DRAWING_RECALL' && (
+                <DrawingRecall session={session} onComplete={handleDrawingRecallComplete} languageCode={languageCode} />
             )}
         </Box>
     );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { IconButton, Tooltip } from '@mui/material';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import StopIcon from '@mui/icons-material/Stop';
@@ -12,147 +12,152 @@ interface TextToSpeechProps {
 
 const TextToSpeech = ({ text, languageCode, iconSize = 'medium', color = 'primary' }: TextToSpeechProps) => {
     const [isPlaying, setIsPlaying] = useState(false);
+    const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
 
     // Map language codes to Speech Synthesis language codes
-    const getVoiceLang = (code: string): string => {
-        // Normalize code to lower case
+    const getVoiceLang = useCallback((code: string): string => {
         const cleanCode = code.toLowerCase().trim();
         const langMap: Record<string, string> = {
             'en': 'en-US',
             'hi': 'hi-IN',
             'es': 'es-ES',
-            'ar': 'ar-SA',
+            'ar': 'ar-XA', // Google Cloud Text-to-Speech Modern Standard Arabic
             'zh': 'zh-CN',
-            'uk': 'en-GB' // Example for potential fallback
+            'uk': 'en-GB'
         };
-        // Return mapped code, or if it's already a full code like 'ar-SA', return it, else default to 'en-US'
         return langMap[cleanCode] || (cleanCode.includes('-') ? cleanCode : 'en-US');
-    };
-
-    // Load voices on mount (needed for some browsers)
-    useEffect(() => {
-        const loadVoices = () => {
-            const voices = window.speechSynthesis.getVoices();
-            if (voices.length > 0) {
-                console.log('[TextToSpeech] Voices loaded:', voices.length);
-            }
-        };
-
-        if (window.speechSynthesis) {
-            // Load voices immediately
-            loadVoices();
-            // Some browsers need this event listener
-            window.speechSynthesis.onvoiceschanged = () => {
-                loadVoices();
-            };
-        }
     }, []);
 
+    // Voice selection logic optimized for speed by running once
+    const findBestVoice = useCallback((voices: SpeechSynthesisVoice[], targetLang: string) => {
+        // 1. Exact match
+        let selected = voices.find(v => v.lang === targetLang);
+
+        // 2. Base language match
+        if (!selected) {
+            const baseLang = targetLang.split('-')[0];
+            selected = voices.find(v => v.lang.startsWith(baseLang));
+        }
+
+        // 3. Fallback for specific languages like Arabic/Hindi
+        if (!selected) {
+            const lowerTarget = targetLang.toLowerCase();
+            selected = voices.find(v => {
+                const lowerName = v.name.toLowerCase();
+                const lowerVoiceLang = v.lang.toLowerCase();
+
+                // Advanced Arabic Detection for Google Voices
+                if (lowerTarget.startsWith('ar')) {
+                    return lowerVoiceLang.includes('ar-xa') ||
+                        lowerVoiceLang.includes('ar-eg') ||
+                        lowerName.includes('ar-xa') ||
+                        lowerName.includes('arabic') ||
+                        lowerName.includes('العربية');
+                }
+
+                if (lowerTarget.startsWith('hi') && (lowerName.includes('hindi') || lowerVoiceLang.startsWith('hi'))) return true;
+                return false;
+            });
+        }
+
+        return selected || null;
+    }, []);
+
+
+    const updateVoice = useCallback(() => {
+        if (!window.speechSynthesis) return;
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            const targetLang = getVoiceLang(languageCode);
+            voiceRef.current = findBestVoice(voices, targetLang);
+        }
+    }, [languageCode, getVoiceLang, findBestVoice]);
+
+    useEffect(() => {
+        if (!window.speechSynthesis) return;
+
+        // Initial load
+        updateVoice();
+
+        // Chrome and others might load voices asynchronously
+        window.speechSynthesis.onvoiceschanged = updateVoice;
+
+        return () => {
+            if (window.speechSynthesis) {
+                window.speechSynthesis.onvoiceschanged = null;
+            }
+        };
+    }, [updateVoice]);
+
     const handleSpeak = () => {
-        // Always cancel pending speech first to clear queue/wake up engine
+        if (!window.speechSynthesis) return;
+
+        // Instant cancel for high responsiveness
         window.speechSynthesis.cancel();
 
         if (isPlaying) {
-            // If was playing, we just stopped it above. update state.
             setIsPlaying(false);
             return;
         }
 
-        if (!text || !window.speechSynthesis) {
-            console.warn('Speech synthesis not supported or no text provided');
-            alert('Text-to-speech is not supported in your browser');
-            return;
-        }
+        if (!text) return;
 
-        // Get the target language (e.g., 'ar-SA' or 'en-US')
-        let targetLang = getVoiceLang(languageCode);
-
-        // Specific fix: If input code is just 'ar', ensure we aim for Arabic
-        if (languageCode.toLowerCase() === 'ar') {
-            targetLang = 'ar-SA';
-        }
-
-        // Get all available voices
-        const voices = window.speechSynthesis.getVoices();
-
-        // Debugging logs
-        console.group('[TextToSpeech Debug]');
-        console.log('Language Code Prop:', languageCode);
-        console.log('Target Lang:', targetLang);
-        console.log('Available Voices Count:', voices.length);
-
-        // improved voice selection logic
-        let selectedVoice: SpeechSynthesisVoice | undefined;
-
-        // 1. Try exact match on full lang code (e.g. 'ar-SA' === 'ar-SA')
-        selectedVoice = voices.find(voice => voice.lang === targetLang);
-        if (selectedVoice) console.log('Match Strategy 1 (Exact):', selectedVoice.name);
-
-        // 2. Try match on base language (e.g. 'ar' in 'ar-EG')
-        if (!selectedVoice) {
-            const baseLang = targetLang.split('-')[0]; // 'ar'
-            selectedVoice = voices.find(voice => voice.lang.startsWith(baseLang));
-            if (selectedVoice) console.log('Match Strategy 2 (Base Lang):', selectedVoice.name);
-        }
-
-        // 3. Fallback: Search for language name in voice name (e.g. "Google Ar..." or "Arabic")
-        if (!selectedVoice && targetLang.startsWith('ar')) {
-            selectedVoice = voices.find(voice =>
-                voice.name.toLowerCase().includes('google ar') ||
-                voice.name.toLowerCase().includes('arabic') ||
-                voice.lang.includes('ar-')
-            );
-            if (selectedVoice) console.log('Match Strategy 3 (Name Search):', selectedVoice.name);
-        }
-
-        // 4. Verification: If we still picked a voice that doesn't start with 'ar', and we wanted 'ar', warn user
-        if (targetLang.startsWith('ar') && selectedVoice && !selectedVoice.lang.startsWith('ar')) {
-            console.warn('[TextToSpeech] Warning: Wanted Arabic but got non-Arabic voice:', selectedVoice.lang);
-            // Should we force undefined to let browser try its own fallback? 
-            // continued...
-        }
-
-        if (!selectedVoice) {
-            console.warn(`[TextToSpeech] No specific voice found for ${targetLang}, relying on browser default for lang.`);
-        } else {
-            console.log(`[TextToSpeech] Final Selected Voice: ${selectedVoice.name} (${selectedVoice.lang})`);
-        }
-        console.groupEnd();
-
-        // Create speech utterance
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = targetLang; // Important: set this even if voice is null
+        const lang = getVoiceLang(languageCode);
+        utterance.lang = lang;
 
-        if (selectedVoice) {
-            utterance.voice = selectedVoice;
+        // DEBUG LOGGING
+        console.log('[TTS Debug] ----------------------------------------------');
+        console.log('[TTS Debug] Requesting lang:', languageCode, 'Mapped to:', lang);
+        console.log('[TTS Debug] Text preview:', text.substring(0, 50) + '...');
+
+        // Fallback: If voiceRef is null, try finding voice one last time (e.g. if loaded late)
+        if (!voiceRef.current) {
+            const voices = window.speechSynthesis.getVoices();
+            console.log('[TTS Debug] Late voice check. Found:', voices.length, 'voices');
+            if (voices.length > 0) {
+                // Log ALL voices to see what we actually have
+                console.log('[TTS Debug] ALL VOICES:', voices.map(v => `${v.name} (${v.lang})`));
+                voiceRef.current = findBestVoice(voices, lang);
+            }
         }
 
-        // Adjust properties for better Arabic playback if needed
-        utterance.rate = 0.85; // Slightly slower
+        if (voiceRef.current) {
+            console.log('[TTS Debug] ✅ Using voice:', voiceRef.current.name, voiceRef.current.lang);
+            utterance.voice = voiceRef.current;
+        } else {
+            console.warn('[TTS Debug] ⚠️ No specific voice found for:', lang);
+            if (languageCode.toLowerCase().startsWith('ar')) {
+                console.log('[TTS Debug] Forcing generic "ar" lang fallback for Arabic');
+                utterance.lang = 'ar';
+            }
+        }
+
+        // Production settings for clear speech - adjusted to 0.8 for elderly users
+        utterance.rate = 0.8;
         utterance.pitch = 1;
 
-        // Event handlers
         utterance.onstart = () => {
-            console.log('[TextToSpeech] Speech started');
+            console.log('[TTS Debug] Speech event: START');
             setIsPlaying(true);
         };
         utterance.onend = () => {
-            console.log('[TextToSpeech] Speech ended');
+            console.log('[TTS Debug] Speech event: END');
             setIsPlaying(false);
         };
         utterance.onerror = (event) => {
-            console.error('[TextToSpeech] Speech error:', event);
-            setIsPlaying(false);
-            if (event.error === 'not-allowed') {
-                alert('Please allow audio playback in your browser settings');
+            console.error('[TTS Debug] Speech event: ERROR', event.error, event);
+            // Successive clicks trigger 'interrupted' error which we ignore
+            if (event.error !== 'interrupted') {
+                setIsPlaying(false);
             }
         };
 
-        // Speak
+        console.log('[TTS Debug] Calling window.speechSynthesis.speak()...');
         window.speechSynthesis.speak(utterance);
     };
 
-    // Cleanup on unmount
+    // Global cleanup
     useEffect(() => {
         return () => {
             if (window.speechSynthesis) {

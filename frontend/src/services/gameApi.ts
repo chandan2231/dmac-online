@@ -2,7 +2,7 @@ import HttpService from './HttpService';
 
 export type Module = {
     id: number;
-    code: 'VISUAL_SPATIAL' | 'AUDIO_STORY' | 'AUDIO_WORDS' | 'IMAGE_FLASH' | 'CONNECT_DOTS' | 'EXECUTIVE' | 'SEMANTIC' | 'NUMBER_RECALL';
+    code: 'VISUAL_SPATIAL' | 'AUDIO_STORY' | 'AUDIO_WORDS' | 'IMAGE_FLASH' | 'CONNECT_DOTS' | 'EXECUTIVE' | 'SEMANTIC' | 'NUMBER_RECALL' | 'DRAWING_RECALL';
     name: string;
     description: string;
     max_score: number;
