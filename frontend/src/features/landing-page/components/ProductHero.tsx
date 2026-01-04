@@ -13,11 +13,11 @@ export default function ProductHero() {
       })}
     >
       {/* Increase the network loading priority of the background image. */}
-      <img
+      {/* <img
         style={{ display: 'none' }}
         src={backgroundImage}
         alt="increase priority"
-      />
+      /> */}
       <LandingPageTypography
         color="inherit"
         align="center"
