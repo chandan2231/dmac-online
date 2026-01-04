@@ -5,6 +5,7 @@ import Link from '@mui/material/Link';
 import Container from '@mui/material/Container';
 import { Typography } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
+import { Link as RouterLink } from 'react-router-dom';
 import { ROUTES } from '../../../router/router';
 
 function Copyright() {
@@ -70,10 +71,14 @@ export default function AppFooter() {
             </Typography>
             <Box component="ul" sx={{ m: 0, listStyle: 'none', p: 0 }}>
               <Box component="li" sx={{ py: 0.5 }}>
-                <Link href={ROUTES.TERMS_OF_SERVICE}>Terms</Link>
+                <Link component={RouterLink} to={ROUTES.TERMS_OF_SERVICE}>
+                  Terms
+                </Link>
               </Box>
               <Box component="li" sx={{ py: 0.5 }}>
-                <Link href={ROUTES.PRIVACY_POLICY}>Privacy</Link>
+                <Link component={RouterLink} to={ROUTES.PRIVACY_POLICY}>
+                  Privacy
+                </Link>
               </Box>
             </Box>
           </Grid>
