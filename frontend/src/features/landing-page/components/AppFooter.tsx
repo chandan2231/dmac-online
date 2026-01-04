@@ -6,7 +6,6 @@ import Link from '@mui/material/Link';
 import Container from '@mui/material/Container';
 import { Typography } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
-import { Link as RouterLink } from 'react-router-dom';
 import { ROUTES } from '../../../router/router';
 
 function Copyright() {
