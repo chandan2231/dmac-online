@@ -4,6 +4,7 @@ import LandingPageToolbar from './LandingPageToolbar';
 import LandingPageAppBar from './LandingPageAppBar';
 import { Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import { ROUTES } from '../../../router/router';
 
 function AppAppBar() {
@@ -26,7 +27,8 @@ function AppAppBar() {
             variant="h6"
             underline="none"
             color="inherit"
-            href={ROUTES.HOME}
+            component={RouterLink}
+            to={ROUTES.HOME}
             sx={{ fontSize: 24 }}
           >
             {'RM360 Global'}

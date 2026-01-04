@@ -4,6 +4,7 @@ import AppFooter from '../../features/landing-page/components/AppFooter';
 
 const TermsOfServicePage = () => {
   const currentDate = new Date();
+  const baseUrl = `${window.location.protocol}//${window.location.host}`;
   return (
     <>
       <AppAppBar />
@@ -103,7 +104,7 @@ const TermsOfServicePage = () => {
           </Typography>
           <Typography variant="body1" paragraph>
             Your use of the Service is also governed by our Privacy Policy,
-            available at: https://yourdomain.com/privacy-policy
+            available at: <a href={`${baseUrl}/privacy-policy`}>{`${baseUrl}/privacy-policy`}</a>
           </Typography>
 
           <Typography variant="h6" component="h2" gutterBottom>
@@ -155,8 +156,8 @@ const TermsOfServicePage = () => {
             For questions or concerns regarding these Terms, contact us at:
           </Typography>
           <Typography variant="body1" component="ul" sx={{ pl: 3 }}>
-            <li>Email: support@yourdomain.com</li>
-            <li>Website: https://yourdomain.com</li>
+            <li>Email: regainmemory.contact@gmail.com</li>
+            <li>Website: <a href={baseUrl}>{baseUrl}</a></li>
           </Typography>
         </Container>
       </Box>
