@@ -9,6 +9,8 @@ const ForgotPassword = lazy(() => import('../pages/auth/forgot-password'));
 const AuthRedirectHomePage = lazy(() => import('../pages/patient/home'));
 const PageNotFound = lazy(() => import('../pages/not-found'));
 const LandingPageComponent = lazy(() => import('../pages/landing-page'));
+const PrivacyPolicyPage = lazy(() => import('../pages/privacy-policy'));
+const TermsOfServicePage = lazy(() => import('../pages/terms-of-service'));
 
 // Protected Pages
 const ResetPassword = lazy(() => import('../pages/auth/reset-password'));
@@ -137,6 +139,8 @@ export const COMPONENT_MAP = {
   PageNotFound,
   AuthRedirectHomePage,
   LandingPageComponent,
+  PrivacyPolicyPage,
+  TermsOfServicePage,
 
   // These are the components that will be dynamically rendered based on the backend configuration
   // and can be accessed only after authentication
@@ -194,6 +198,8 @@ export type ComponentKey = keyof typeof COMPONENT_MAP;
 export const ROUTES = {
   // Public routes
   HOME: '/',
+  PRIVACY_POLICY: '/privacy-policy',
+  TERMS_OF_SERVICE: '/terms-of-service',
 
   // USER Authenticated routes
   PATIENT_LOGIN: '/patient/login',
@@ -284,6 +290,16 @@ export const PUBLIC_ROUTES = [
     path: ROUTES.HOME,
     layout: LAYOUT_MAP['BaseLayout'],
     component: COMPONENT_MAP['LandingPageComponent'],
+  },
+  {
+    path: ROUTES.PRIVACY_POLICY,
+    layout: LAYOUT_MAP['BaseLayout'],
+    component: COMPONENT_MAP['PrivacyPolicyPage'],
+  },
+  {
+    path: ROUTES.TERMS_OF_SERVICE,
+    layout: LAYOUT_MAP['BaseLayout'],
+    component: COMPONENT_MAP['TermsOfServicePage'],
   },
   // Admin, Therapist, Super Admin and Expert Login and Registration Routes
   {
