@@ -18,8 +18,8 @@ const LandingPage = () => {
       <AppAppBar />
       <ProductHero />
       <Box sx={{ bgcolor: 'background.default' }}>
-        <CognitiveJourney />
         <RM360Details />
+        <CognitiveJourney />
         {/* <RM360Offerings /> */}
         <ProductValues />
         {/* <ProductCategories /> */}
