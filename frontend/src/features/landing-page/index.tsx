@@ -4,7 +4,8 @@ import ProductHero from './components/ProductHero';
 import ProductValues from './components/ProductValues';
 import AppFooter from './components/AppFooter';
 import { Box } from '@mui/material';
-// import CognitiveJourney from './components/CognitiveJourney';
+import CognitiveJourney from './components/CognitiveJourney';
+import RM360Details from './components/RM360Details';
 // import RM360Offerings from './components/RM360Offerings';
 // import ProductCategories from './components/ProductCategories';
 // import ProductHowItWorks from './components/ProductHowItWorks';
@@ -17,7 +18,8 @@ const LandingPage = () => {
       <AppAppBar />
       <ProductHero />
       <Box sx={{ bgcolor: 'background.default' }}>
-        {/* <CognitiveJourney /> */}
+        <CognitiveJourney />
+        <RM360Details />
         {/* <RM360Offerings /> */}
         <ProductValues />
         {/* <ProductCategories /> */}
