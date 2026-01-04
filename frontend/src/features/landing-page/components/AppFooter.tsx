@@ -5,12 +5,13 @@ import Link from '@mui/material/Link';
 import Container from '@mui/material/Container';
 import { Typography } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
+import { Link as RouterLink } from 'react-router-dom';
 
 function Copyright() {
   return (
     <React.Fragment>
       {'© '}
-      <Link color="inherit" href="https://mui.com/">
+      <Link component={RouterLink} to="/" color="inherit">
         RM360 Global
       </Link>{' '}
       {new Date().getFullYear()}
@@ -51,10 +52,10 @@ export default function AppFooter() {
               sx={{ justifyContent: 'flex-end', height: 120 }}
             >
               <Grid item sx={{ display: 'flex' }}>
-                <Box component="a" href="https://mui.com/" sx={iconStyle}>
+                <Box component="a" href="#" sx={iconStyle}>
                   <img src="/onepirate/appFooterFacebook.png" alt="Facebook" />
                 </Box>
-                <Box component="a" href="https://x.com/MUI_hq" sx={iconStyle}>
+                <Box component="a" href="#" sx={iconStyle}>
                   <img src="/onepirate/appFooterTwitter.png" alt="X" />
                 </Box>
               </Grid>
@@ -69,10 +70,14 @@ export default function AppFooter() {
             </Typography>
             <Box component="ul" sx={{ m: 0, listStyle: 'none', p: 0 }}>
               <Box component="li" sx={{ py: 0.5 }}>
-                <Link href="/premium-themes/onepirate/terms/">Terms</Link>
+                <Link component={RouterLink} to="/terms-of-service">
+                  Terms of Service
+                </Link>
               </Box>
               <Box component="li" sx={{ py: 0.5 }}>
-                <Link href="/premium-themes/onepirate/privacy/">Privacy</Link>
+                <Link component={RouterLink} to="/privacy-policy">
+                  Privacy Policy
+                </Link>
               </Box>
             </Box>
           </Grid>

@@ -4,6 +4,7 @@ import AppFooter from '../../features/landing-page/components/AppFooter';
 
 const PrivacyPolicyPage = () => {
   const currentDate = new Date();
+  const baseUrl = `${window.location.protocol}//${window.location.host}`;
   return (
     <>
       <AppAppBar />
@@ -144,8 +145,8 @@ const PrivacyPolicyPage = () => {
             us at:
           </Typography>
           <Typography variant="body1" component="ul" sx={{ pl: 3 }}>
-            <li>Email: support@yourdomain.com</li>
-            <li>Website: https://yourdomain.com</li>
+            <li>Email: regainmemory.contact@gmail.com</li>
+            <li>Website: <a href={baseUrl}>{baseUrl}</a></li>
           </Typography>
         </Container>
       </Box>
