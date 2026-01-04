@@ -2,21 +2,30 @@ import { get } from 'lodash';
 import HttpService from '../../services/HttpService';
 import type {
   CapturePaymentPayload,
+  CreatePatientPaymentPayload,
   CreatePaymentResponse,
 } from './payment.interface';
 
 const createPayment = async (
-  amount: number
+  payload: CreatePatientPaymentPayload
 ): Promise<CreatePaymentResponse> => {
   try {
     const response = await HttpService.post('/auth/patient/createPayment', {
-      amount,
+      ...payload,
     });
     console.log('createPayment -->', response);
     return {
       success: true,
       approvalUrl: get(response, ['data', 'approvalUrl']),
       orderId: get(response, ['data', 'orderId']),
+      amountToPay: Number(get(response, ['data', 'amountToPay'])),
+      isUpgrade: Boolean(get(response, ['data', 'isUpgrade'])),
+      upgradeFromProductId: get(
+        response,
+        ['data', 'upgradeFromProductId'],
+        null
+      ),
+      fullProductAmount: Number(get(response, ['data', 'fullProductAmount'])),
       message: 'Payment created successfully',
     };
   } catch (error: unknown) {

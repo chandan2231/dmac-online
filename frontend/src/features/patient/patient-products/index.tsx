@@ -11,8 +11,20 @@ import { ROUTES } from '../../../router/router';
 import CustomLoader from '../../../components/loader';
 import moment from 'moment';
 import { TabHeaderLayout } from '../../../components/tab-header';
+import { useState } from 'react';
 
-const ProductCard = ({ ...args }: IProduct) => {
+type UpgradeContext = {
+  isUpgrade: boolean;
+  upgradeFromProductId: number | null;
+  currentProductAmount: number;
+  fullProductAmount: number;
+  amountToPay: number;
+};
+
+const ProductCard = ({
+  upgradeContext,
+  ...args
+}: IProduct & { upgradeContext?: UpgradeContext }) => {
   const navigate = useNavigate();
   const { user: userDetails } = useSelector((state: RootState) => state.auth);
   const {
@@ -23,6 +35,8 @@ const ProductCard = ({ ...args }: IProduct) => {
     id: product_id,
   } = args;
 
+  const payableAmount = upgradeContext?.amountToPay ?? Number(product_amount);
+
   const user = {
     id: get(userDetails, 'id'),
     name: get(userDetails, 'name'),
@@ -30,16 +44,30 @@ const ProductCard = ({ ...args }: IProduct) => {
     mobile: get(userDetails, 'phone'),
   };
   const product = {
-    product_amount,
+    product_amount: upgradeContext?.amountToPay ?? product_amount,
     product_id,
     product_name,
     product_description,
     subscription_list,
+    ...(upgradeContext
+      ? {
+          full_product_amount: upgradeContext.fullProductAmount,
+          current_product_amount: upgradeContext.currentProductAmount,
+        }
+      : {}),
   };
 
   const stateData = {
     user,
     product,
+    ...(upgradeContext
+      ? {
+          upgrade: {
+            isUpgrade: true,
+            upgradeFromProductId: upgradeContext.upgradeFromProductId,
+          },
+        }
+      : {}),
   };
 
   const handleBuyClick = () => {
@@ -56,7 +84,7 @@ const ProductCard = ({ ...args }: IProduct) => {
     >
       <div className="inner">
         <span className="pricing">
-          <span>${product_amount}</span>
+          <span>${payableAmount}</span>
         </span>
         <p className="title">{product_name}</p>
         <p className="info">{product_description}</p>
@@ -84,12 +112,63 @@ const ProductCard = ({ ...args }: IProduct) => {
 
         <div className="action">
           <Button variant="contained" onClick={() => handleBuyClick()}>
-            Register
+            {upgradeContext?.isUpgrade ? 'Upgrade Product' : 'Register'}
           </Button>
         </div>
       </div>
     </div>
   );
+};
+
+const toNumberOrNull = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+};
+
+const isHigherTier = (current: IProduct | null, candidate: IProduct) => {
+  if (!current) return true;
+
+  const currentAmount =
+    toNumberOrNull((current as UniversalType).product_amount) ?? 0;
+  const candidateAmount =
+    toNumberOrNull((candidate as UniversalType).product_amount) ?? 0;
+
+  const currentPriority = toNumberOrNull(
+    (current as UniversalType).upgrade_priority
+  );
+  const candidatePriority = toNumberOrNull(
+    (candidate as UniversalType).upgrade_priority
+  );
+  const hasPriority = currentPriority !== null && candidatePriority !== null;
+
+  return hasPriority
+    ? candidatePriority < currentPriority
+    : candidateAmount > currentAmount;
+};
+
+const buildUpgradeContext = (
+  current: IProduct,
+  target: IProduct
+): UpgradeContext | null => {
+  const currentAmount =
+    toNumberOrNull((current as UniversalType).product_amount) ?? 0;
+  const targetAmount =
+    toNumberOrNull((target as UniversalType).product_amount) ?? 0;
+  const amountToPay = Number((targetAmount - currentAmount).toFixed(2));
+  if (!Number.isFinite(amountToPay) || amountToPay <= 0) return null;
+
+  return {
+    isUpgrade: true,
+    upgradeFromProductId: Number(
+      (current as UniversalType).product_id ??
+        (current as UniversalType).id ??
+        null
+    ),
+    currentProductAmount: currentAmount,
+    fullProductAmount: targetAmount,
+    amountToPay,
+  };
 };
 
 const PatientProducts = () => {
@@ -100,6 +179,8 @@ const PatientProducts = () => {
     isLoading: isSubscribedProductsLoading,
     error: subscribedProductsError,
   } = useGetSubscribedProduct(user);
+
+  const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
 
   if (isLoading || isSubscribedProductsLoading) {
     return <CustomLoader />;
@@ -141,6 +222,60 @@ const PatientProducts = () => {
     subscribedProducts.length > 0 &&
     Array.isArray(get(data, 'data'))
   ) {
+    const currentSubscribed = subscribedProducts[0] as unknown as IProduct;
+    const allProducts = (get(data, 'data', []) as IProduct[]) ?? [];
+    const currentProductId = Number(
+      (currentSubscribed as UniversalType).id ??
+        (currentSubscribed as UniversalType).product_id
+    );
+
+    const currentFromListing =
+      allProducts.find(
+        p => Number((p as UniversalType).id) === currentProductId
+      ) ?? null;
+    const currentForTier = (currentFromListing ??
+      currentSubscribed) as IProduct;
+
+    const currentPriority = toNumberOrNull(
+      (currentForTier as UniversalType).upgrade_priority
+    );
+    const priorities = allProducts
+      .map(p => toNumberOrNull((p as UniversalType).upgrade_priority))
+      .filter((v): v is number => v !== null);
+    const minPriority = priorities.length > 0 ? Math.min(...priorities) : null;
+    const alreadyHighestByPriority =
+      currentPriority !== null && minPriority !== null
+        ? currentPriority <= minPriority
+        : false;
+    const upgradeOptions = allProducts
+      .filter(p => Number((p as UniversalType).id) !== currentProductId)
+      .filter(p => isHigherTier(currentForTier, p))
+      .sort((a, b) => {
+        const ap = toNumberOrNull((a as UniversalType).upgrade_priority);
+        const bp = toNumberOrNull((b as UniversalType).upgrade_priority);
+        if (ap !== null && bp !== null) return ap - bp;
+        return (
+          Number((a as UniversalType).product_amount) -
+          Number((b as UniversalType).product_amount)
+        );
+      });
+
+    const upgradeCards = upgradeOptions
+      .map(p => ({
+        product: p,
+        ctx: buildUpgradeContext(currentSubscribed, p),
+      }))
+      .filter((x): x is { product: IProduct; ctx: UpgradeContext } => !!x.ctx);
+
+    const currentAmount =
+      toNumberOrNull((currentSubscribed as UniversalType).product_amount) ?? 0;
+    const maxAmount = Math.max(
+      0,
+      ...allProducts.map(
+        p => toNumberOrNull((p as UniversalType).product_amount) ?? 0
+      )
+    );
+
     return (
       <Box
         sx={{
@@ -151,6 +286,7 @@ const PatientProducts = () => {
           width: '100%',
           height: '100%',
           p: 3,
+          overflowY: 'auto',
         }}
       >
         <TabHeaderLayout
@@ -167,6 +303,14 @@ const PatientProducts = () => {
                 Subscribed Product Details
               </Typography>
             </Box>
+          }
+          rightNode={
+            <Button
+              variant="contained"
+              onClick={() => setShowUpgradeOptions(v => !v)}
+            >
+              Upgrade Product
+            </Button>
           }
         />
 
@@ -294,6 +438,38 @@ const PatientProducts = () => {
             }
           )}
         </Box>
+
+        {showUpgradeOptions ? (
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              width: '100%',
+              gap: 2,
+              mt: 3,
+            }}
+          >
+            {upgradeCards.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                {alreadyHighestByPriority || currentAmount >= maxAmount
+                  ? 'You already have the highest-tier product.'
+                  : upgradeOptions.length > 0
+                    ? 'Upgrade options exist, but they are not payable (check product amounts vs upgrade priority).'
+                    : 'No higher-tier products available to upgrade.'}
+              </Typography>
+            ) : (
+              upgradeCards.map(({ product: p, ctx: upgradeContext }, idx) => {
+                return (
+                  <ProductCard
+                    key={idx}
+                    {...p}
+                    upgradeContext={upgradeContext}
+                  />
+                );
+              })
+            )}
+          </Box>
+        ) : null}
       </Box>
     );
   }

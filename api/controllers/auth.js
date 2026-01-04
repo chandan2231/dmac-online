@@ -7,14 +7,18 @@ import { client } from '../paypalConfig.js'
 import paypal from '@paypal/checkout-server-sdk'
 import crypto from 'crypto'
 import moment from 'moment'
-import { getProductById, hasLiccaSubscription } from './commonService.js'
+import {
+  computeUpgradeCharge,
+  getProductById,
+  getUserLatestCompletedProduct,
+  hasLiccaSubscription
+} from './commonService.js'
 import { paymentPoolConnection } from '../paymentPoolConnection.js'
 
 export const capturePatientPayment = async (req, res) => {
   const {
     orderId,
     payerId,
-    amount,
     currencyCode,
     productId,
     userId,
@@ -38,19 +42,61 @@ export const capturePatientPayment = async (req, res) => {
     const captureResult = await client().execute(captureOrderRequest)
     const paymentStatus = captureResult.result.status
 
+    const targetProduct = await getProductById(productId, db)
+    if (!targetProduct) throw new Error('PRODUCT_NOT_FOUND')
+
+    const current = await getUserLatestCompletedProduct(userId, db)
+    const charge = current
+      ? computeUpgradeCharge({ currentProduct: current, targetProduct })
+      : {
+          allowed: true,
+          reason: null,
+          amountToCharge: Number(
+            Number(targetProduct.product_amount).toFixed(2)
+          ),
+          isUpgrade: false,
+          upgradeFromProductId: null,
+          fullProductAmount: Number(targetProduct.product_amount),
+          currentProductAmount: null
+        }
+
+    if (!charge.allowed) {
+      throw new Error(charge.reason)
+    }
+
+    const capturedAmountValue =
+      captureResult?.result?.purchase_units?.[0]?.payments?.captures?.[0]
+        ?.amount?.value ?? null
+    const capturedAmount =
+      capturedAmountValue !== null ? Number(capturedAmountValue) : null
+    if (capturedAmount === null || !Number.isFinite(capturedAmount)) {
+      throw new Error('CAPTURE_AMOUNT_MISSING')
+    }
+    if (
+      Number(capturedAmount.toFixed(2)) !==
+      Number(charge.amountToCharge.toFixed(2))
+    ) {
+      throw new Error('AMOUNT_MISMATCH')
+    }
+
     await db.promise().query(
       `INSERT INTO dmac_webapp_users_transaction
-       (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type,
+        is_upgrade, upgrade_from_product_id, full_product_amount, price_difference_amount)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         captureResult.result.id,
         payerId,
-        amount,
+        charge.amountToCharge,
         currencyCode,
         paymentStatus,
         productId,
         userId,
-        'paypal'
+        'paypal',
+        charge.isUpgrade ? 1 : 0,
+        charge.upgradeFromProductId,
+        charge.fullProductAmount,
+        charge.isUpgrade ? charge.amountToCharge : null
       ]
     )
 
@@ -59,10 +105,7 @@ export const capturePatientPayment = async (req, res) => {
     }
 
     /* ------------------ PRODUCT CHECK ------------------ */
-    const product = await getProductById(productId, db)
-    if (!product) throw new Error('PRODUCT_NOT_FOUND')
-
-    isLiccaIncluded = hasLiccaSubscription(product.subscription_list)
+    isLiccaIncluded = hasLiccaSubscription(targetProduct.subscription_list)
 
     /* ------------------ MARK PAYMENT DONE ------------------ */
     await db.promise().query(
@@ -224,7 +267,7 @@ export const capturePatientPayment = async (req, res) => {
     const html = `
       <p>Dear ${userName},</p>
       <h3>Payment Successful</h3>
-      <p>Amount: $${amount}</p>
+      <p>Amount: $${charge.amountToCharge}</p>
       <p>Product: ${productName}</p>
       <p>Date: ${transactionDate} ${transactionTime}</p>
       <p>Regards,<br/>Admin<br/>DMAC.COM</p>
@@ -247,7 +290,7 @@ export const capturePatientPayment = async (req, res) => {
       [
         orderId,
         payerId || null,
-        amount,
+        null,
         currencyCode,
         'FAILED',
         productId,
@@ -1052,6 +1095,41 @@ export const patientLogin = (req, res) => {
 }
 
 export const createPatientPayment = async (req, res) => {
+  const { userId, productId } = req.body
+
+  if (!userId || !productId) {
+    return res
+      .status(400)
+      .json({ message: 'userId and productId are required' })
+  }
+
+  const targetProduct = await getProductById(productId, db)
+  if (!targetProduct) {
+    return res.status(404).json({ message: 'Product not found' })
+  }
+
+  const current = await getUserLatestCompletedProduct(userId, db)
+
+  const charge = current
+    ? computeUpgradeCharge({ currentProduct: current, targetProduct })
+    : {
+        allowed: true,
+        reason: null,
+        amountToCharge: Number(Number(targetProduct.product_amount).toFixed(2)),
+        isUpgrade: false,
+        upgradeFromProductId: null,
+        fullProductAmount: Number(targetProduct.product_amount),
+        currentProductAmount: null
+      }
+
+  if (!charge.allowed) {
+    return res.status(400).json({ message: charge.reason })
+  }
+
+  if (!Number.isFinite(charge.amountToCharge) || charge.amountToCharge <= 0) {
+    return res.status(400).json({ message: 'INVALID_AMOUNT' })
+  }
+
   const createOrderRequest = new paypal.orders.OrdersCreateRequest()
   createOrderRequest.requestBody({
     intent: 'CAPTURE',
@@ -1059,7 +1137,7 @@ export const createPatientPayment = async (req, res) => {
       {
         amount: {
           currency_code: 'USD',
-          value: req.body.amount // Amount to charge the customer
+          value: String(charge.amountToCharge) // Amount to charge the customer (server-computed)
         }
       }
     ],
@@ -1076,7 +1154,11 @@ export const createPatientPayment = async (req, res) => {
     ).href
     res.json({
       orderId,
-      approvalUrl
+      approvalUrl,
+      amountToPay: charge.amountToCharge,
+      isUpgrade: charge.isUpgrade,
+      upgradeFromProductId: charge.upgradeFromProductId,
+      fullProductAmount: charge.fullProductAmount
     })
   } catch (error) {
     console.error(error)
@@ -1109,7 +1191,7 @@ export const getPatientProductByUserId = async (req, res) => {
 
   const query = `
     SELECT
-      t.id,
+      t.id AS transaction_id,
       t.product_id,
       t.payment_id,
       t.amount,
@@ -1121,7 +1203,8 @@ export const getPatientProductByUserId = async (req, res) => {
       p.product_name,
       p.product_description,
       p.product_amount,
-      p.subscription_list
+      p.subscription_list,
+      p.upgrade_priority
     FROM dmac_webapp_users_transaction t
     INNER JOIN dmac_webapp_products p
       ON t.product_id = p.id
