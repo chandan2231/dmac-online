@@ -26,7 +26,7 @@ function ProductValues() {
         bgcolor: theme => theme.landingPage.background,
       }}
     >
-      <Container sx={{ mt: 15, mb: 30, display: 'flex', position: 'relative' }}>
+      <Container sx={{ mt: 8, mb: 30, display: 'flex', position: 'relative' }}>
         {/* Flex container instead of Grid */}
         <Box
           sx={{
