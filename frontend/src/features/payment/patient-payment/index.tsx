@@ -24,6 +24,13 @@ const PatientPayment = () => {
   const [acknowledged, setAcknowledged] = useState(false);
   const [isAcknowledgementOpen, setIsAcknowledgementOpen] = useState(false);
 
+  const [serverAmountToPay, setServerAmountToPay] = useState<number | null>(
+    null
+  );
+  const [serverUpgradeFromProductId, setServerUpgradeFromProductId] = useState<
+    number | null
+  >(null);
+
   const [loading, setLoading] = useState(false);
   const [paypalSdkReady, setPaypalSdkReady] = useState(false);
 
@@ -31,18 +38,21 @@ const PatientPayment = () => {
   const paypalRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!state) return;
+    if (!state) {
+      navigate(ROUTES.PATIENT_PRODUCTS, { replace: true });
+      return;
+    }
 
-    const productAmount = get(state, ['product', 'product_amount']);
     const productId = get(state, ['product', 'product_id']);
     const userId = get(state, ['user', 'id']);
     const userName = get(state, ['user', 'name']);
     const productName = get(state, ['product', 'product_name']);
 
-    const valid =
-      productAmount && productId && userId && userName && productName;
-
-    if (!valid) return;
+    const valid = productId && userId && userName && productName;
+    if (!valid) {
+      navigate(ROUTES.PATIENT_PRODUCTS, { replace: true });
+      return;
+    }
     if (!paypalRef.current) return;
 
     const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
@@ -106,15 +116,13 @@ const PatientPayment = () => {
 
     const container = paypalRef.current;
 
-    const productAmount = get(state, ['product', 'product_amount']);
     const productId = get(state, ['product', 'product_id']);
     const userId = get(state, ['user', 'id']);
     const userName = get(state, ['user', 'name']);
     const userEmail = get(state, ['user', 'email']);
     const productName = get(state, ['product', 'product_name']);
 
-    const valid =
-      productAmount && productId && userId && userName && productName;
+    const valid = productId && userId && userName && productName;
 
     if (!valid) return;
 
@@ -122,8 +130,27 @@ const PatientPayment = () => {
 
     const buttons = window.paypal.Buttons({
       createOrder: async () => {
-        const response = await PaymentService.createPayment(productAmount);
-        return response?.orderId;
+        const response = await PaymentService.createPayment({
+          userId,
+          productId,
+        });
+        if (!response?.success || !response.orderId) {
+          throw new Error(response?.message || 'PAYMENT_CREATE_FAILED');
+        }
+
+        // Always prefer server-computed values for robust upgrades.
+        if (Number.isFinite(response.amountToPay ?? NaN)) {
+          setServerAmountToPay(Number(response.amountToPay));
+        }
+        const upgradeFrom =
+          response.upgradeFromProductId !== undefined
+            ? Number(response.upgradeFromProductId)
+            : null;
+        setServerUpgradeFromProductId(
+          Number.isFinite(upgradeFrom) ? upgradeFrom : null
+        );
+
+        return response.orderId;
       },
 
       onApprove: async (data: unknown) => {
@@ -131,23 +158,37 @@ const PatientPayment = () => {
           orderID: string;
           payerID: string;
         };
+
+        const uiAmount = Number(get(state, ['product', 'product_amount'], 0));
+        const amount =
+          serverAmountToPay !== null && Number.isFinite(serverAmountToPay)
+            ? serverAmountToPay
+            : uiAmount;
+
         const payload = {
           orderId: orderID,
           payerId: payerID,
           currencyCode: 'USD',
-          amount: productAmount,
           userId,
-          productId,
           userName,
           productName,
           userEmail,
+          productId,
+          amount,
+          upgradeFromProductId:
+            serverUpgradeFromProductId ??
+            get(state, ['upgrade', 'upgradeFromProductId'], null),
         };
 
-        const result = await PaymentService.capturePayment(payload);
-        if (result) {
-          navigate(ROUTES.PATIENT_PAYMENT_SUCCESS, {
-            state: { ...state, orderID: orderID },
-          });
+        try {
+          const result = await PaymentService.capturePayment(payload);
+          if (result) {
+            navigate(ROUTES.PATIENT_PAYMENT_SUCCESS, {
+              state: { ...state, orderID: orderID },
+            });
+          }
+        } catch (err) {
+          console.error('Payment capture failed:', err);
         }
       },
 
@@ -237,7 +278,12 @@ const PatientPayment = () => {
             <div className="plan">
               <div className="inner">
                 <span className="pricing">
-                  <span>{`$${get(state, ['product', 'product_amount'], '')}`}</span>
+                  <span>{`$$${
+                    serverAmountToPay !== null &&
+                    Number.isFinite(serverAmountToPay)
+                      ? serverAmountToPay
+                      : get(state, ['product', 'product_amount'], '')
+                  }`}</span>
                 </span>
                 <p className="title">
                   {get(state, ['product', 'product_name'], '')}
