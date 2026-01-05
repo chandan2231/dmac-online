@@ -56,7 +56,7 @@ const getProductsListing = async (): Promise<{
       product_amount: Number(item.product_amount),
       created_date: moment(get(item, 'created_date')).format('YYYY-MM-DD'),
       updated_date: moment(get(item, 'updated_date')).format('YYYY-MM-DD'),
-      feature: parseProductFeature(get(item, 'feature')),
+      feature: parseProductFeature(get(item, 'feature', [])),
     }));
 
     return {

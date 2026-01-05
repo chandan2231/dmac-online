@@ -1,7 +1,19 @@
 import './index.css';
 import { get } from 'lodash';
 import type { IProduct } from '../../admin/admin.interface';
-import { Box, Button, Typography, Chip, Stack } from '@mui/material';
+import {
+  Box,
+  Button,
+  Typography,
+  Chip,
+  Stack,
+  TableContainer,
+  Table,
+  TableBody,
+  TableRow,
+  TableCell,
+  Paper,
+} from '@mui/material';
 import { useGetProductListing } from '../../admin/hooks/useGetProductListing';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -12,6 +24,32 @@ import CustomLoader from '../../../components/loader';
 import moment from 'moment';
 import { TabHeaderLayout } from '../../../components/tab-header';
 import { useState } from 'react';
+
+const parseProductFeature = (raw: unknown) => {
+  if (Array.isArray(raw)) {
+    return raw
+      .filter(Boolean)
+      .map(item => {
+        const title = String(get(item, 'title', '')).trim();
+        const value = String(get(item, 'value', '')).trim();
+        return { title, value };
+      })
+      .filter(item => item.title.length > 0);
+  }
+
+  if (typeof raw === 'string') {
+    const text = raw.trim();
+    if (!text) return [];
+    try {
+      const parsed = JSON.parse(text) as unknown;
+      return parseProductFeature(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
 
 type UpgradeContext = {
   isUpgrade: boolean;
@@ -35,6 +73,8 @@ const ProductCard = ({
     id: product_id,
   } = args;
 
+  const parsedFeature = parseProductFeature(get(args, ['feature']));
+
   const payableAmount = upgradeContext?.amountToPay ?? Number(product_amount);
 
   const user = {
@@ -49,6 +89,7 @@ const ProductCard = ({
     product_name,
     product_description,
     subscription_list,
+    feature: parsedFeature,
     ...(upgradeContext
       ? {
           full_product_amount: upgradeContext.fullProductAmount,
@@ -89,25 +130,50 @@ const ProductCard = ({
         <p className="title">{product_name}</p>
         <p className="info">{product_description}</p>
         <ul className="features">
-          {subscription_list.split(',').map((feature, index) => (
-            <li key={index}>
-              <span className="icon">
-                <svg
-                  height="24"
-                  width="24"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M0 0h24v24H0z" fill="none"></path>
-                  <path
-                    fill="currentColor"
-                    d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
-                  ></path>
-                </svg>
-              </span>
-              <span>{feature}</span>
-            </li>
-          ))}
+          {Array.isArray(parsedFeature) && parsedFeature.length ? (
+            <TableContainer
+              component={Paper}
+              variant="outlined"
+              sx={{ bgcolor: 'transparent', boxShadow: 'none' }}
+            >
+              <Table size="small">
+                <TableBody>
+                  {parsedFeature.map((feature, index) => (
+                    <TableRow key={index}>
+                      <TableCell
+                        sx={{
+                          fontWeight: 700,
+                        }}
+                      >
+                        {feature.title}
+                      </TableCell>
+                      <TableCell>{feature.value}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            subscription_list.split(',').map((feature, index) => (
+              <li key={index}>
+                <span className="icon">
+                  <svg
+                    height="24"
+                    width="24"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M0 0h24v24H0z" fill="none"></path>
+                    <path
+                      fill="currentColor"
+                      d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
+                    ></path>
+                  </svg>
+                </span>
+                <span>{feature}</span>
+              </li>
+            ))
+          )}
         </ul>
 
         <div className="action">
@@ -337,27 +403,66 @@ const PatientProducts = () => {
                     </span>
                     <p className="title">{product_name}</p>
                     <p className="info">{product_description}</p>
-                    <ul className="features">
-                      {subscription_list.split(',').map((feature, index) => (
-                        <li key={index}>
-                          <span className="icon">
-                            <svg
-                              height="24"
-                              width="24"
-                              viewBox="0 0 24 24"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path d="M0 0h24v24H0z" fill="none"></path>
-                              <path
-                                fill="currentColor"
-                                d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
-                              ></path>
-                            </svg>
-                          </span>
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
+
+                    {Array.isArray(
+                      parseProductFeature(get(product, ['feature']))
+                    ) &&
+                    parseProductFeature(get(product, ['feature'])).length ? (
+                      <TableContainer
+                        component={Paper}
+                        variant="outlined"
+                        sx={{
+                          bgcolor: 'transparent',
+                          boxShadow: 'none',
+                        }}
+                      >
+                        <Table size="small">
+                          <TableBody>
+                            {(
+                              parseProductFeature(
+                                get(product, ['feature'], [])
+                              ) as Array<{
+                                title: string;
+                                value: string;
+                              }>
+                            ).map((feature, index) => (
+                              <TableRow key={index}>
+                                <TableCell
+                                  sx={{
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {feature.title}
+                                </TableCell>
+                                <TableCell>{feature.value}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    ) : (
+                      <ul className="features">
+                        {subscription_list.split(',').map((feature, index) => (
+                          <li key={index}>
+                            <span className="icon">
+                              <svg
+                                height="24"
+                                width="24"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path d="M0 0h24v24H0z" fill="none"></path>
+                                <path
+                                  fill="currentColor"
+                                  d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
+                                ></path>
+                              </svg>
+                            </span>
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
 
                     <Stack
                       direction={{ xs: 'column', sm: 'row' }}

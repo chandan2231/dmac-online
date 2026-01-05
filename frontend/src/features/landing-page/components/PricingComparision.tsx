@@ -25,6 +25,7 @@ function PricingComparision() {
 
   const HEADER_CELL_HEIGHT = 100;
   const FEATURE_ROW_HEIGHT = 56;
+  const FIRST_COL_WIDTH = 280;
 
   if (isLoading) {
     return <CustomLoader />;
@@ -67,8 +68,6 @@ function PricingComparision() {
 
     const isYes = normalized === 'yes';
     const bg = isYes ? theme.palette.success.light : theme.palette.error.light;
-    // const fg = isYes ? theme.palette.success.dark : theme.palette.error.dark;
-    const fg = '#ffffff';
 
     return (
       <Box
@@ -81,10 +80,10 @@ function PricingComparision() {
           py: 0.5,
           borderRadius: 999,
           bgcolor: bg,
-          color: fg,
+          color: '#000000',
           fontWeight: 700,
           fontSize: 12,
-          minWidth: 44,
+          minWidth: '40%',
         }}
       >
         {isYes ? 'Yes' : 'No'}
@@ -100,16 +99,17 @@ function PricingComparision() {
   };
 
   const handleBuy = (product: IProduct) => {
-    const omitFeature: Partial<IProduct> = { ...product };
-    if (omitFeature.feature) {
-      delete omitFeature.feature;
-    }
     navigate(ROUTES.PATIENT_REGISTRATION, {
       state: {
-        ...omitFeature,
+        ...product,
       },
     });
   };
+
+  const productColumnWidth =
+    products.length > 0
+      ? `calc((100% - ${FIRST_COL_WIDTH}px) / ${products.length})`
+      : 'auto';
 
   return (
     <Box
@@ -131,12 +131,19 @@ function PricingComparision() {
           backgroundColor: theme.palette.background.paper,
         }}
       >
-        <Table size="small" sx={{ minWidth: 900 }}>
+        <Table
+          size="small"
+          sx={{
+            minWidth: 900,
+            tableLayout: 'fixed',
+            width: '100%',
+          }}
+        >
           <TableHead>
             <TableRow>
               <TableCell
                 sx={{
-                  width: 280,
+                  width: FIRST_COL_WIDTH,
                   position: 'sticky',
                   left: 0,
                   zIndex: 3,
@@ -158,6 +165,7 @@ function PricingComparision() {
                     sx={{
                       p: 0,
                       height: HEADER_CELL_HEIGHT,
+                      width: productColumnWidth,
                       borderLeft: `1px solid ${theme.palette.divider}`,
                     }}
                   >
@@ -201,6 +209,7 @@ function PricingComparision() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          color: palette.contrastText,
                         }}
                       >
                         <Typography variant="h5" sx={{ fontWeight: 900 }}>
@@ -233,6 +242,7 @@ function PricingComparision() {
                     zIndex: 2,
                     bgcolor: 'inherit',
                     borderRight: `1px solid ${theme.palette.divider}`,
+                    width: FIRST_COL_WIDTH,
                   }}
                 >
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -243,7 +253,11 @@ function PricingComparision() {
                   <TableCell
                     key={product.id}
                     align="center"
-                    sx={{ height: FEATURE_ROW_HEIGHT }}
+                    sx={{
+                      height: FEATURE_ROW_HEIGHT,
+                      width: productColumnWidth,
+                      borderLeft: `1px solid ${theme.palette.divider}`,
+                    }}
                   >
                     {(() => {
                       const value = getValueForTitle(product, title) || '-';
@@ -269,12 +283,17 @@ function PricingComparision() {
                   zIndex: 2,
                   bgcolor: theme.palette.background.paper,
                   borderRight: `1px solid ${theme.palette.divider}`,
+                  width: FIRST_COL_WIDTH,
                 }}
               />
               {products.map((product, index) => {
                 const color = columnColors[index % columnColors.length];
                 return (
-                  <TableCell key={product.id} align="center">
+                  <TableCell
+                    key={product.id}
+                    align="center"
+                    sx={{ width: productColumnWidth }}
+                  >
                     <Button
                       fullWidth
                       color={color}
