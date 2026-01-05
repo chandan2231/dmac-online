@@ -9,6 +9,9 @@ const ForgotPassword = lazy(() => import('../pages/auth/forgot-password'));
 const AuthRedirectHomePage = lazy(() => import('../pages/patient/home'));
 const PageNotFound = lazy(() => import('../pages/not-found'));
 const LandingPageComponent = lazy(() => import('../pages/landing-page'));
+const PublicProductsListingPageComponent = lazy(
+  () => import('../pages/products-listing')
+);
 const PrivacyPolicyPage = lazy(() => import('../pages/privacy-policy'));
 const TermsOfServicePage = lazy(() => import('../pages/terms-of-service'));
 
@@ -139,6 +142,7 @@ export const COMPONENT_MAP = {
   PageNotFound,
   AuthRedirectHomePage,
   LandingPageComponent,
+  PublicProductsListingPageComponent,
   PrivacyPolicyPage,
   TermsOfServicePage,
 
@@ -198,6 +202,7 @@ export type ComponentKey = keyof typeof COMPONENT_MAP;
 export const ROUTES = {
   // Public routes
   HOME: '/',
+  PRODUCTS_LISTING: '/products',
   PRIVACY_POLICY: '/privacy-policy',
   TERMS_OF_SERVICE: '/terms-of-service',
 
@@ -290,6 +295,11 @@ export const PUBLIC_ROUTES = [
     path: ROUTES.HOME,
     layout: LAYOUT_MAP['BaseLayout'],
     component: COMPONENT_MAP['LandingPageComponent'],
+  },
+  {
+    path: ROUTES.PRODUCTS_LISTING,
+    layout: LAYOUT_MAP['BaseLayout'],
+    component: COMPONENT_MAP['PublicProductsListingPageComponent'],
   },
   {
     path: ROUTES.PRIVACY_POLICY,

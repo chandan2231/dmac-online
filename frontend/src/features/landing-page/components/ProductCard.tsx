@@ -11,6 +11,7 @@ const ProductCard = ({ ...args }: IProduct) => {
     product_amount,
     subscription_list,
   } = args;
+
   const navigate = useNavigate();
 
   const handleRegisterClick = (args: IProduct) => {
