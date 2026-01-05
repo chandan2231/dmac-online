@@ -9,6 +9,12 @@ import {
   CardContent,
   Divider,
   Stack,
+  TableContainer,
+  Table,
+  TableBody,
+  TableRow,
+  TableCell,
+  Paper,
 } from '@mui/material';
 import { ROUTES } from '../../../router/router';
 import Grid from '@mui/material/GridLegacy';
@@ -291,29 +297,62 @@ const PatientPayment = () => {
                 <p className="info">
                   {get(state, ['product', 'product_description'], '')}
                 </p>
-                <ul className="features">
-                  {(get(state, ['product', 'subscription_list'], '') as string)
-                    .split(',')
-                    .map((feature, index) => (
-                      <li key={index}>
-                        <span className="icon">
-                          <svg
-                            height="24"
-                            width="24"
-                            viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path d="M0 0h24v24H0z" fill="none"></path>
-                            <path
-                              fill="currentColor"
-                              d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
-                            ></path>
-                          </svg>
-                        </span>
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                </ul>
+                {Array.isArray(get(state, ['product', 'feature'])) &&
+                get(state, ['product', 'feature']).length ? (
+                  <TableContainer
+                    component={Paper}
+                    variant="outlined"
+                    sx={{ bgcolor: 'transparent', boxShadow: 'none' }}
+                  >
+                    <Table size="small">
+                      <TableBody>
+                        {(
+                          get(state, ['product', 'feature'], []) as Array<{
+                            title: string;
+                            value: string;
+                          }>
+                        ).map((feature, index) => (
+                          <TableRow key={index}>
+                            <TableCell
+                              sx={{
+                                fontWeight: 700,
+                              }}
+                            >
+                              {feature.title}
+                            </TableCell>
+                            <TableCell>{feature.value}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  <ul className="features">
+                    {(
+                      get(state, ['product', 'subscription_list'], '') as string
+                    )
+                      .split(',')
+                      .map((feature, index) => (
+                        <li key={index}>
+                          <span className="icon">
+                            <svg
+                              height="24"
+                              width="24"
+                              viewBox="0 0 24 24"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path d="M0 0h24v24H0z" fill="none"></path>
+                              <path
+                                fill="currentColor"
+                                d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
+                              ></path>
+                            </svg>
+                          </span>
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                  </ul>
+                )}
               </div>
             </div>
           </Card>
