@@ -1,10 +1,13 @@
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/GridLegacy';
 import Paper from '@mui/material/Paper';
 import { alpha } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
 import LandingPageTypography from './LandingPageTypography';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../router/router';
 
 const item: SxProps<Theme> = {
   display: 'flex',
@@ -21,6 +24,8 @@ const number: SxProps<Theme> = {
 };
 
 export default function CognitiveJourney() {
+  const navigate = useNavigate();
+
   return (
     <Box
       component="section"
@@ -156,6 +161,22 @@ export default function CognitiveJourney() {
             </Paper>
           </Grid>
         </Grid>
+
+        <Box
+          sx={{
+            mt: 5,
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          <Button
+            variant="contained"
+            onClick={() => navigate(ROUTES.PRODUCTS_LISTING)}
+          >
+            Explore Products
+          </Button>
+        </Box>
       </Container>
     </Box>
   );

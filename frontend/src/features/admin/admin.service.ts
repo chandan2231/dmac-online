@@ -16,6 +16,32 @@ import type {
 import moment from 'moment';
 import HttpService from '../../services/HttpService';
 
+const parseProductFeature = (raw: unknown) => {
+  if (Array.isArray(raw)) {
+    return raw
+      .filter(Boolean)
+      .map(item => {
+        const title = String(get(item, 'title', '')).trim();
+        const value = String(get(item, 'value', '')).trim();
+        return { title, value };
+      })
+      .filter(item => item.title.length > 0);
+  }
+
+  if (typeof raw === 'string') {
+    const text = raw.trim();
+    if (!text) return [];
+    try {
+      const parsed = JSON.parse(text) as unknown;
+      return parseProductFeature(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
+
 const getProductsListing = async (): Promise<{
   success: boolean;
   data: IProduct[] | null;
@@ -30,6 +56,7 @@ const getProductsListing = async (): Promise<{
       product_amount: Number(item.product_amount),
       created_date: moment(get(item, 'created_date')).format('YYYY-MM-DD'),
       updated_date: moment(get(item, 'updated_date')).format('YYYY-MM-DD'),
+      feature: parseProductFeature(get(item, 'feature', [])),
     }));
 
     return {

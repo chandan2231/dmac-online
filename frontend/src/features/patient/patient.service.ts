@@ -356,7 +356,7 @@ const getAssessmentStatus = async () => {
   }
 };
 
-const submitAssessmentTab = async (tab: string, data: any) => {
+const submitAssessmentTab = async (tab: string, data: UniversalType) => {
   try {
     const response = await HttpService.getAxiosClient().post(
       `patient/assessment-submit`,

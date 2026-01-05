@@ -1204,7 +1204,8 @@ export const getPatientProductByUserId = async (req, res) => {
       p.product_description,
       p.product_amount,
       p.subscription_list,
-      p.upgrade_priority
+      p.upgrade_priority,
+      p.feature
     FROM dmac_webapp_users_transaction t
     INNER JOIN dmac_webapp_products p
       ON t.product_id = p.id
