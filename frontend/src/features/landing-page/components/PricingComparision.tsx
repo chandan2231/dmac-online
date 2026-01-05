@@ -23,7 +23,7 @@ function PricingComparision() {
   const navigate = useNavigate();
   const theme = useTheme();
 
-  const HEADER_CELL_HEIGHT = 170;
+  const HEADER_CELL_HEIGHT = 100;
   const FEATURE_ROW_HEIGHT = 56;
 
   if (isLoading) {
@@ -67,7 +67,8 @@ function PricingComparision() {
 
     const isYes = normalized === 'yes';
     const bg = isYes ? theme.palette.success.light : theme.palette.error.light;
-    const fg = isYes ? theme.palette.success.dark : theme.palette.error.dark;
+    // const fg = isYes ? theme.palette.success.dark : theme.palette.error.dark;
+    const fg = '#ffffff';
 
     return (
       <Box
@@ -179,7 +180,7 @@ function PricingComparision() {
                         }}
                       >
                         <Typography
-                          variant="subtitle1"
+                          variant="h6"
                           sx={{
                             fontWeight: 600,
                             lineHeight: 1.2,
@@ -202,7 +203,7 @@ function PricingComparision() {
                           justifyContent: 'center',
                         }}
                       >
-                        <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                        <Typography variant="h5" sx={{ fontWeight: 900 }}>
                           ${Number(product.product_amount).toFixed(2)}
                         </Typography>
                       </Box>
