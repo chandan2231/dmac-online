@@ -458,15 +458,37 @@ const PatientProducts = () => {
                     : 'No higher-tier products available to upgrade.'}
               </Typography>
             ) : (
-              upgradeCards.map(({ product: p, ctx: upgradeContext }, idx) => {
-                return (
-                  <ProductCard
-                    key={idx}
-                    {...p}
-                    upgradeContext={upgradeContext}
-                  />
-                );
-              })
+              <Box>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 600,
+                    mb: 3,
+                  }}
+                >
+                  Available Upgrade Options
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    width: '100%',
+                    gap: 2,
+                  }}
+                >
+                  {upgradeCards.map(
+                    ({ product: p, ctx: upgradeContext }, idx) => {
+                      return (
+                        <ProductCard
+                          key={idx}
+                          {...p}
+                          upgradeContext={upgradeContext}
+                        />
+                      );
+                    }
+                  )}
+                </Box>
+              </Box>
             )}
           </Box>
         ) : null}
