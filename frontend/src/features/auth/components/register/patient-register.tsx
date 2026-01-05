@@ -227,7 +227,11 @@ const PatientRegister = () => {
               <div className="">
                 {Array.isArray(get(state, ['feature'])) &&
                 get(state, ['feature']).length ? (
-                  <TableContainer component={Paper} variant="outlined">
+                  <TableContainer
+                    component={Paper}
+                    variant="outlined"
+                    sx={{ bgcolor: 'transparent', boxShadow: 'none' }}
+                  >
                     <Table size="small">
                       <TableBody>
                         {(
