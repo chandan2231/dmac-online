@@ -221,9 +221,28 @@ const PatientPayment = () => {
   }, [paypalSdkReady, state, navigate]);
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
+    <Box
+      sx={{
+        p: 4,
+        maxWidth: 1200,
+        mx: 'auto',
+        height: '100%',
+        overflowY: 'scroll',
+        // Hide scrollbar but allow scrolling
+        '&::-webkit-scrollbar': {
+          display: 'none',
+        },
+        '-ms-overflow-style': 'none', // IE and Edge
+        'scrollbar-width': 'none', // Firefox
+      }}
+    >
       {loading && <Loader />}
-      <Typography variant="h4" fontWeight="bold" mb={4} textAlign="center">
+      <Typography
+        variant="h4"
+        fontWeight="bold"
+        textAlign="center"
+        sx={{ mb: 4 }}
+      >
         Checkout
       </Typography>
       <Grid container spacing={4}>
@@ -284,7 +303,7 @@ const PatientPayment = () => {
             <div className="plan">
               <div className="inner">
                 <span className="pricing">
-                  <span>{`$$${
+                  <span>{`$${
                     serverAmountToPay !== null &&
                     Number.isFinite(serverAmountToPay)
                       ? serverAmountToPay

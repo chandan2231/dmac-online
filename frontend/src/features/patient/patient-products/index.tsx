@@ -9,6 +9,7 @@ import {
   Stack,
   TableContainer,
   Table,
+  TableHead,
   TableBody,
   TableRow,
   TableCell,
@@ -24,6 +25,7 @@ import CustomLoader from '../../../components/loader';
 import moment from 'moment';
 import { TabHeaderLayout } from '../../../components/tab-header';
 import { useState } from 'react';
+import { useTheme } from '@mui/material/styles';
 
 const parseProductFeature = (raw: unknown) => {
   if (Array.isArray(raw)) {
@@ -57,6 +59,35 @@ type UpgradeContext = {
   currentProductAmount: number;
   fullProductAmount: number;
   amountToPay: number;
+};
+
+type FeatureKV = { title: string; value: string };
+
+const getProductFeaturePairs = (product: IProduct): FeatureKV[] => {
+  const fromFeature = parseProductFeature(
+    get(product as UniversalType, 'feature')
+  );
+  if (Array.isArray(fromFeature) && fromFeature.length > 0) return fromFeature;
+
+  const subscriptionList = String(
+    get(product as UniversalType, 'subscription_list', '')
+  )
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  if (subscriptionList.length === 0) return [];
+
+  return subscriptionList.map(title => ({ title, value: 'Yes' }));
+};
+
+const getValueForTitle = (product: IProduct, title: string): string => {
+  const normalizedTitle = title.trim().toLowerCase();
+  const pairs = getProductFeaturePairs(product);
+  const match = pairs.find(
+    item => (item?.title ?? '').trim().toLowerCase() === normalizedTitle
+  );
+  return (match?.value ?? '').toString();
 };
 
 const ProductCard = ({
@@ -239,6 +270,8 @@ const buildUpgradeContext = (
 
 const PatientProducts = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const navigate = useNavigate();
+  const theme = useTheme();
   const { data, isLoading, error } = useGetProductListing();
   const {
     data: subscribedProducts,
@@ -341,6 +374,30 @@ const PatientProducts = () => {
         p => toNumberOrNull((p as UniversalType).product_amount) ?? 0
       )
     );
+
+    const productsForUpgradeTable: Array<{
+      product: IProduct;
+      ctx: UpgradeContext;
+    }> = upgradeCards.map(x => ({ product: x.product, ctx: x.ctx }));
+
+    const orderedTitles: string[] = [];
+    const seenTitles = new Set<string>();
+    for (const item of productsForUpgradeTable) {
+      const featureList = getProductFeaturePairs(item.product);
+      for (const feature of featureList) {
+        const title = (feature?.title ?? '').trim();
+        if (!title) continue;
+        if (/^price$/i.test(title)) continue;
+        if (!seenTitles.has(title)) {
+          seenTitles.add(title);
+          orderedTitles.push(title);
+        }
+      }
+    }
+
+    const columnColors: Array<
+      'success' | 'info' | 'secondary' | 'warning' | 'primary'
+    > = ['success', 'info', 'secondary', 'warning', 'primary'];
 
     return (
       <Box
@@ -543,10 +600,7 @@ const PatientProducts = () => {
         {showUpgradeOptions ? (
           <Box
             sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
               width: '100%',
-              gap: 2,
               mt: 3,
             }}
           >
@@ -559,36 +613,279 @@ const PatientProducts = () => {
                     : 'No higher-tier products available to upgrade.'}
               </Typography>
             ) : (
-              <Box>
-                <Typography
-                  variant="h5"
-                  sx={{
-                    fontWeight: 600,
-                    mb: 3,
-                  }}
-                >
+              <Box sx={{ width: '100%' }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
                   Available Upgrade Options
                 </Typography>
-                <Box
+
+                <TableContainer
+                  component={Paper}
+                  variant="outlined"
                   sx={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
                     width: '100%',
-                    gap: 2,
+                    overflowX: 'auto',
+                    borderRadius: 2,
+                    backgroundColor: theme.palette.background.paper,
                   }}
                 >
-                  {upgradeCards.map(
-                    ({ product: p, ctx: upgradeContext }, idx) => {
-                      return (
-                        <ProductCard
-                          key={idx}
-                          {...p}
-                          upgradeContext={upgradeContext}
+                  <Table
+                    size="small"
+                    sx={{
+                      minWidth: 900,
+                      tableLayout: 'fixed',
+                      width: '100%',
+                    }}
+                  >
+                    <TableHead>
+                      <TableRow>
+                        <TableCell
+                          sx={{
+                            width: 280,
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 3,
+                            bgcolor: theme.palette.background.paper,
+                            borderRight: `1px solid ${theme.palette.divider}`,
+                          }}
+                        >
+                          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                            Feature
+                          </Typography>
+                        </TableCell>
+                        {productsForUpgradeTable.map((item, index) => {
+                          const color =
+                            columnColors[index % columnColors.length];
+                          const palette = theme.palette[color];
+
+                          const displayAmount = Number(
+                            item.ctx.amountToPay ?? 0
+                          ).toFixed(2);
+
+                          return (
+                            <TableCell
+                              key={String(
+                                (item.product as UniversalType).id ??
+                                  (item.product as UniversalType).product_id ??
+                                  index
+                              )}
+                              align="center"
+                              sx={{
+                                p: 0,
+                                height: 170,
+                                borderLeft: `1px solid ${theme.palette.divider}`,
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  p: 0,
+                                  bgcolor: palette.main,
+                                  height: '100%',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    fontWeight: 600,
+                                    flex: '1 1 auto',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    px: 1,
+                                  }}
+                                >
+                                  <Typography
+                                    variant="subtitle1"
+                                    sx={{
+                                      fontWeight: 700,
+                                      lineHeight: 1.2,
+                                      display: '-webkit-box',
+                                      WebkitBoxOrient: 'vertical',
+                                      WebkitLineClamp: 2,
+                                      overflow: 'hidden',
+                                      color: palette.contrastText,
+                                    }}
+                                  >
+                                    {
+                                      (item.product as UniversalType)
+                                        .product_name
+                                    }
+                                  </Typography>
+                                </Box>
+                                <Box
+                                  sx={{
+                                    px: 2,
+                                    py: 1.75,
+                                    flex: '0 0 auto',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 0.5,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: palette.contrastText,
+                                  }}
+                                >
+                                  <Typography
+                                    variant="h4"
+                                    sx={{ fontWeight: 900 }}
+                                  >
+                                    ${displayAmount}
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ fontWeight: 700, opacity: 0.95 }}
+                                  >
+                                    To Pay
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    </TableHead>
+
+                    <TableBody>
+                      {orderedTitles.map(title => (
+                        <TableRow
+                          key={title}
+                          sx={{
+                            height: 56,
+                            '&:nth-of-type(odd)': {
+                              bgcolor: theme.palette.action.hover,
+                            },
+                          }}
+                        >
+                          <TableCell
+                            sx={{
+                              height: 56,
+                              position: 'sticky',
+                              left: 0,
+                              zIndex: 2,
+                              bgcolor: 'inherit',
+                              borderRight: `1px solid ${theme.palette.divider}`,
+                              width: 280,
+                            }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 600 }}
+                            >
+                              {title}
+                            </Typography>
+                          </TableCell>
+                          {productsForUpgradeTable.map((item, idx) => {
+                            const value =
+                              getValueForTitle(item.product, title) || '-';
+
+                            return (
+                              <TableCell
+                                key={`${title}-${idx}`}
+                                align="center"
+                                sx={{
+                                  height: 56,
+                                  borderLeft: `1px solid ${theme.palette.divider}`,
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontWeight: 600 }}
+                                >
+                                  {value}
+                                </Typography>
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))}
+
+                      <TableRow>
+                        <TableCell
+                          sx={{
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 2,
+                            bgcolor: theme.palette.background.paper,
+                            borderRight: `1px solid ${theme.palette.divider}`,
+                            width: 280,
+                          }}
                         />
-                      );
-                    }
-                  )}
-                </Box>
+
+                        {productsForUpgradeTable.map((item, index) => {
+                          const color =
+                            columnColors[index % columnColors.length];
+
+                          return (
+                            <TableCell key={`cta-${index}`} align="center">
+                              <Button
+                                fullWidth
+                                color={color}
+                                variant="contained"
+                                onClick={() => {
+                                  // Reuse existing payment flow by delegating to ProductCard payload logic.
+                                  // Minimal: render the same state expected by the payment route.
+                                  const userDetails =
+                                    (user as UniversalType) ?? {};
+                                  const userPayload = {
+                                    id: get(userDetails, 'id'),
+                                    name: get(userDetails, 'name'),
+                                    email: get(userDetails, 'email'),
+                                    mobile: get(userDetails, 'phone'),
+                                  };
+
+                                  const parsedFeature = getProductFeaturePairs(
+                                    item.product
+                                  );
+                                  const productPayload = {
+                                    product_amount: item.ctx.amountToPay,
+                                    product_id:
+                                      (item.product as UniversalType).id ??
+                                      (item.product as UniversalType)
+                                        .product_id,
+                                    product_name: (
+                                      item.product as UniversalType
+                                    ).product_name,
+                                    product_description: (
+                                      item.product as UniversalType
+                                    ).product_description,
+                                    subscription_list: (
+                                      item.product as UniversalType
+                                    ).subscription_list,
+                                    feature: parsedFeature,
+                                    full_product_amount:
+                                      item.ctx.fullProductAmount,
+                                    current_product_amount:
+                                      item.ctx.currentProductAmount,
+                                  };
+                                  const stateData = {
+                                    user: userPayload,
+                                    product: productPayload,
+                                    upgrade: {
+                                      isUpgrade: true,
+                                      upgradeFromProductId:
+                                        item.ctx.upgradeFromProductId,
+                                    },
+                                  };
+
+                                  navigate(ROUTES.PATIENT_PAYMENT, {
+                                    state: stateData,
+                                  });
+                                }}
+                                sx={{
+                                  py: 1.25,
+                                  fontWeight: 800,
+                                  borderRadius: 999,
+                                }}
+                              >
+                                UPGRADE
+                              </Button>
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </Box>
             )}
           </Box>
