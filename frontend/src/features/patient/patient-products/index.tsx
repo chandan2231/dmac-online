@@ -291,18 +291,14 @@ const PatientProducts = () => {
       >
         <TabHeaderLayout
           leftNode={
-            <Box
-              sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+              }}
             >
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 600,
-                }}
-              >
-                Subscribed Product Details
-              </Typography>
-            </Box>
+              Subscribed Product Details
+            </Typography>
           }
           rightNode={
             <Button
