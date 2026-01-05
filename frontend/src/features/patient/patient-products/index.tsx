@@ -73,6 +73,8 @@ const ProductCard = ({
     id: product_id,
   } = args;
 
+  const parsedFeature = parseProductFeature(get(args, ['feature']));
+
   const payableAmount = upgradeContext?.amountToPay ?? Number(product_amount);
 
   const user = {
@@ -87,6 +89,7 @@ const ProductCard = ({
     product_name,
     product_description,
     subscription_list,
+    feature: parsedFeature,
     ...(upgradeContext
       ? {
           full_product_amount: upgradeContext.fullProductAmount,
@@ -127,8 +130,7 @@ const ProductCard = ({
         <p className="title">{product_name}</p>
         <p className="info">{product_description}</p>
         <ul className="features">
-          {Array.isArray(get(args, ['feature'])) &&
-          get(args, ['feature']).length ? (
+          {Array.isArray(parsedFeature) && parsedFeature.length ? (
             <TableContainer
               component={Paper}
               variant="outlined"
@@ -136,12 +138,7 @@ const ProductCard = ({
             >
               <Table size="small">
                 <TableBody>
-                  {(
-                    get(args, ['feature'], []) as Array<{
-                      title: string;
-                      value: string;
-                    }>
-                  ).map((feature, index) => (
+                  {parsedFeature.map((feature, index) => (
                     <TableRow key={index}>
                       <TableCell
                         sx={{
