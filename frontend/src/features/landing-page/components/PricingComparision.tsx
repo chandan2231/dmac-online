@@ -99,13 +99,9 @@ function PricingComparision() {
   };
 
   const handleBuy = (product: IProduct) => {
-    const omitFeature: Partial<IProduct> = { ...product };
-    if (omitFeature.feature) {
-      delete omitFeature.feature;
-    }
     navigate(ROUTES.PATIENT_REGISTRATION, {
       state: {
-        ...omitFeature,
+        ...product,
       },
     });
   };

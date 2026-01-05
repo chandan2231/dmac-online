@@ -8,6 +8,12 @@ import {
   FormControlLabel,
   FormControl,
   FormLabel,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableRow,
 } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '../../../../providers/toast-provider/index.tsx';
@@ -92,6 +98,8 @@ const PatientRegister = () => {
   const { showToast } = useToast();
   const { loading } = useSelector((state: RootState) => state.auth);
 
+  console.log('Selected Product:', state);
+
   const {
     register,
     handleSubmit,
@@ -168,310 +176,348 @@ const PatientRegister = () => {
   }
 
   return (
-    <Grid container spacing={4} sx={{ p: 4 }}>
-      {/* LEFT SECTION — PRODUCT SUMMARY */}
-      <Grid item xs={12} md={4}>
-        <MorenCard
-          title="Product Summary"
-          description="Review your selected product"
-          minHeight={'100%'}
-        >
-          <Box display="flex" flexDirection="column" gap={2}>
-            <Typography variant="h5" fontWeight="bold">
-              {state ? get(state, ['product_name'], '') : ''}
-            </Typography>
+    <Box>
+      {/* Heading */}
+      <Box textAlign="center" mb={4} mt={4}>
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          Registration
+        </Typography>
+      </Box>
 
-            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-              {state ? get(state, ['product_description'], '') : ''}
-            </Typography>
-
-            <Box
-              mt={2}
-              p={2}
-              sx={{
-                background: '#eef2ff',
-                borderRadius: 2,
-                textAlign: 'center',
-              }}
-            >
-              <Typography variant="h6" fontWeight="bold">
-                Amount:
-              </Typography>
-              <Typography variant="h4" color="primary.main" fontWeight="bold">
-                ${state ? get(state, ['product_amount'], '') : ''}
-              </Typography>
-            </Box>
-
-            <div className="">
-              <ul className="">
-                {(get(state, ['subscription_list'], '') as string)
-                  .split(',')
-                  .map((feature, index) => (
-                    <li
-                      key={index}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        marginBottom: '8px',
-                      }}
-                    >
-                      <span
-                        className=""
-                        style={{
-                          backgroundColor: '#1FCAC5',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#fff',
-                          borderRadius: '50%',
-                          width: '20px',
-                          height: '20px',
-                        }}
-                      >
-                        <svg
-                          height="24"
-                          width="24"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path d="M0 0h24v24H0z" fill="none"></path>
-                          <path
-                            fill="currentColor"
-                            d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
-                          ></path>
-                        </svg>
-                      </span>
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          </Box>
-        </MorenCard>
-      </Grid>
-
-      {/* RIGHT SECTION — FORM */}
-      <Grid item xs={12} md={8}>
-        <MorenCard
-          title="Register"
-          description="Enter your details to create an account"
-          minHeight={'100%'}
-        >
-          <Box
-            component="form"
-            onSubmit={handleSubmit(onSubmit)}
-            display="flex"
-            flexDirection="column"
-            gap={2}
+      <Grid
+        container
+        spacing={4}
+        sx={{
+          mb: 4,
+        }}
+      >
+        {/* LEFT SECTION — PRODUCT SUMMARY */}
+        <Grid item xs={12} md={4}>
+          <MorenCard
+            title="Product Summary"
+            description="Review your selected product"
+            minHeight={'100%'}
           >
-            {/* Row: Name + Mobile */}
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <ModernInput
-                  label="Name"
-                  placeholder="Enter your name"
-                  {...register('name')}
-                  error={!!errors.name}
-                  helperText={errors.name?.message}
-                />
-              </Grid>
+            <Box display="flex" flexDirection="column" gap={2}>
+              <Typography variant="h5" fontWeight="bold">
+                {state ? get(state, ['product_name'], '') : ''}
+              </Typography>
 
-              <Grid item xs={12} sm={6}>
-                <ModernInput
-                  label="Mobile"
-                  placeholder="Enter your mobile number"
-                  {...register('mobile')}
-                  error={!!errors.mobile}
-                  helperText={errors.mobile?.message}
-                />
-              </Grid>
-            </Grid>
+              <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                {state ? get(state, ['product_description'], '') : ''}
+              </Typography>
 
-            {/* Row: Weight + Height */}
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <FormControl component="fieldset" error={!!errors.weightUnit}>
-                  <FormLabel component="legend">Weight Unit</FormLabel>
-                  <Controller
-                    rules={{ required: true }}
-                    control={control}
-                    name="weightUnit"
-                    render={({ field }) => (
-                      <RadioGroup row {...field}>
-                        <FormControlLabel
-                          value="kg"
-                          control={<Radio />}
-                          label="Kg"
-                        />
-                        <FormControlLabel
-                          value="pound"
-                          control={<Radio />}
-                          label="Pound"
-                        />
-                      </RadioGroup>
-                    )}
+              <Box
+                mt={2}
+                p={2}
+                sx={{
+                  background: '#eef2ff',
+                  borderRadius: 2,
+                  textAlign: 'center',
+                }}
+              >
+                <Typography variant="h6" fontWeight="bold">
+                  Amount:
+                </Typography>
+                <Typography variant="h4" color="primary.main" fontWeight="bold">
+                  ${state ? get(state, ['product_amount'], '') : ''}
+                </Typography>
+              </Box>
+
+              <div className="">
+                {Array.isArray(get(state, ['feature'])) &&
+                get(state, ['feature']).length ? (
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableBody>
+                        {(
+                          get(state, ['feature'], []) as Array<{
+                            title: string;
+                            value: string;
+                          }>
+                        ).map((feature, index) => (
+                          <TableRow key={index}>
+                            <TableCell sx={{ fontWeight: 700 }}>
+                              {feature.title}
+                            </TableCell>
+                            <TableCell>{feature.value}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  <ul className="">
+                    {(get(state, ['subscription_list'], '') as string)
+                      .split(',')
+                      .map((feature, index) => (
+                        <li
+                          key={index}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            marginBottom: '8px',
+                          }}
+                        >
+                          <span
+                            className=""
+                            style={{
+                              backgroundColor: '#1FCAC5',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#fff',
+                              borderRadius: '50%',
+                              width: '20px',
+                              height: '20px',
+                            }}
+                          >
+                            <svg
+                              height="24"
+                              width="24"
+                              viewBox="0 0 24 24"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path d="M0 0h24v24H0z" fill="none"></path>
+                              <path
+                                fill="currentColor"
+                                d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
+                              ></path>
+                            </svg>
+                          </span>
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                  </ul>
+                )}
+              </div>
+            </Box>
+          </MorenCard>
+        </Grid>
+
+        {/* RIGHT SECTION — FORM */}
+        <Grid item xs={12} md={8}>
+          <MorenCard
+            title=""
+            description="Enter your details to create an account"
+            minHeight={'100%'}
+          >
+            <Box
+              component="form"
+              onSubmit={handleSubmit(onSubmit)}
+              display="flex"
+              flexDirection="column"
+              gap={2}
+            >
+              {/* Row: Name + Mobile */}
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <ModernInput
+                    label="Name"
+                    placeholder="Enter your name"
+                    {...register('name')}
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
                   />
-                  {errors.weightUnit && (
-                    <Typography variant="caption" color="error">
-                      {errors.weightUnit.message}
-                    </Typography>
-                  )}
-                </FormControl>
-                <ModernInput
-                  label="Weight"
-                  placeholder="Enter your weight"
-                  type="number"
-                  {...register('weight')}
-                  error={!!errors.weight}
-                  helperText={errors.weight?.message}
-                />
-              </Grid>
+                </Grid>
 
-              <Grid item xs={12} sm={6}>
-                <FormControl component="fieldset" error={!!errors.heightUnit}>
-                  <FormLabel component="legend">Height Unit</FormLabel>
-                  <Controller
-                    rules={{ required: true }}
-                    control={control}
-                    name="heightUnit"
-                    render={({ field }) => (
-                      <RadioGroup row {...field}>
-                        <FormControlLabel
-                          value="cm"
-                          control={<Radio />}
-                          label="Cm"
-                        />
-                        <FormControlLabel
-                          value="inches"
-                          control={<Radio />}
-                          label="Inches"
-                        />
-                      </RadioGroup>
-                    )}
+                <Grid item xs={12} sm={6}>
+                  <ModernInput
+                    label="Mobile"
+                    placeholder="Enter your mobile number"
+                    {...register('mobile')}
+                    error={!!errors.mobile}
+                    helperText={errors.mobile?.message}
                   />
-                  {errors.heightUnit && (
-                    <Typography variant="caption" color="error">
-                      {errors.heightUnit.message}
-                    </Typography>
-                  )}
-                </FormControl>
-                <ModernInput
-                  label="Height"
-                  placeholder="Enter your height"
-                  type="number"
-                  {...register('height')}
-                  error={!!errors.height}
-                  helperText={errors.height?.message}
-                />
-              </Grid>
-            </Grid>
-
-            <ModernInput
-              label="Email"
-              placeholder="Enter your email"
-              type="email"
-              {...register('email')}
-              error={!!errors.email}
-              helperText={errors.email?.message}
-            />
-
-            {/* Row: Password + Confirm */}
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <ModernInput
-                  label="Password"
-                  placeholder="Enter your password"
-                  type="password"
-                  {...register('password')}
-                  error={!!errors.password}
-                  helperText={errors.password?.message}
-                />
+                </Grid>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
-                <ModernInput
-                  label="Confirm Password"
-                  placeholder="Confirm your password"
-                  type="password"
-                  {...register('confirmPassword')}
-                  error={!!errors.confirmPassword}
-                  helperText={errors.confirmPassword?.message}
-                />
+              {/* Row: Weight + Height */}
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <FormControl component="fieldset" error={!!errors.weightUnit}>
+                    <FormLabel component="legend">Weight Unit</FormLabel>
+                    <Controller
+                      rules={{ required: true }}
+                      control={control}
+                      name="weightUnit"
+                      render={({ field }) => (
+                        <RadioGroup row {...field}>
+                          <FormControlLabel
+                            value="kg"
+                            control={<Radio />}
+                            label="Kg"
+                          />
+                          <FormControlLabel
+                            value="pound"
+                            control={<Radio />}
+                            label="Pound"
+                          />
+                        </RadioGroup>
+                      )}
+                    />
+                    {errors.weightUnit && (
+                      <Typography variant="caption" color="error">
+                        {errors.weightUnit.message}
+                      </Typography>
+                    )}
+                  </FormControl>
+                  <ModernInput
+                    label="Weight"
+                    placeholder="Enter your weight"
+                    type="number"
+                    {...register('weight')}
+                    error={!!errors.weight}
+                    helperText={errors.weight?.message}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <FormControl component="fieldset" error={!!errors.heightUnit}>
+                    <FormLabel component="legend">Height Unit</FormLabel>
+                    <Controller
+                      rules={{ required: true }}
+                      control={control}
+                      name="heightUnit"
+                      render={({ field }) => (
+                        <RadioGroup row {...field}>
+                          <FormControlLabel
+                            value="cm"
+                            control={<Radio />}
+                            label="Cm"
+                          />
+                          <FormControlLabel
+                            value="inches"
+                            control={<Radio />}
+                            label="Inches"
+                          />
+                        </RadioGroup>
+                      )}
+                    />
+                    {errors.heightUnit && (
+                      <Typography variant="caption" color="error">
+                        {errors.heightUnit.message}
+                      </Typography>
+                    )}
+                  </FormControl>
+                  <ModernInput
+                    label="Height"
+                    placeholder="Enter your height"
+                    type="number"
+                    {...register('height')}
+                    error={!!errors.height}
+                    helperText={errors.height?.message}
+                  />
+                </Grid>
               </Grid>
-            </Grid>
 
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <ModernSelect
-                  value={selectedCountry}
-                  onChange={option => setValue('country', option)}
-                  placeholder="Select your country"
-                  options={COUNTRIES_LIST}
-                  error={!!errors.country}
-                  helperText={errors.country?.value?.message}
-                  searchable
-                />
+              <ModernInput
+                label="Email"
+                placeholder="Enter your email"
+                type="email"
+                {...register('email')}
+                error={!!errors.email}
+                helperText={errors.email?.message}
+              />
+
+              {/* Row: Password + Confirm */}
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <ModernInput
+                    label="Password"
+                    placeholder="Enter your password"
+                    type="password"
+                    {...register('password')}
+                    error={!!errors.password}
+                    helperText={errors.password?.message}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <ModernInput
+                    label="Confirm Password"
+                    placeholder="Confirm your password"
+                    type="password"
+                    {...register('confirmPassword')}
+                    error={!!errors.confirmPassword}
+                    helperText={errors.confirmPassword?.message}
+                  />
+                </Grid>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
-                <ModernSelect
-                  value={selectedState}
-                  onChange={option => setValue('state', option)}
-                  placeholder="Select your state"
-                  options={
-                    COUNTRIES_LIST.find(
-                      country => country.value === selectedCountry?.value
-                    )?.states || []
-                  }
-                  error={!!errors.state}
-                  helperText={errors.state?.value?.message}
-                  searchable={true}
-                />
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <ModernSelect
+                    value={selectedCountry}
+                    onChange={option => setValue('country', option)}
+                    placeholder="Select your country"
+                    options={COUNTRIES_LIST}
+                    error={!!errors.country}
+                    helperText={errors.country?.value?.message}
+                    searchable
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <ModernSelect
+                    value={selectedState}
+                    onChange={option => setValue('state', option)}
+                    placeholder="Select your state"
+                    options={
+                      COUNTRIES_LIST.find(
+                        country => country.value === selectedCountry?.value
+                      )?.states || []
+                    }
+                    error={!!errors.state}
+                    helperText={errors.state?.value?.message}
+                    searchable={true}
+                  />
+                </Grid>
               </Grid>
-            </Grid>
 
-            {/* Row: Area + Zip Code */}
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <ModernInput
-                  label="Area"
-                  placeholder="Enter your area"
-                  {...register('area')}
-                  error={!!errors.area}
-                  helperText={errors.area?.message}
-                />
+              {/* Row: Area + Zip Code */}
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <ModernInput
+                    label="Area"
+                    placeholder="Enter your area"
+                    {...register('area')}
+                    error={!!errors.area}
+                    helperText={errors.area?.message}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <ModernInput
+                    label="Zip Code"
+                    placeholder="Enter your zip code"
+                    {...register('zipCode')}
+                    error={!!errors.zipCode}
+                    helperText={errors.zipCode?.message}
+                  />
+                </Grid>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
-                <ModernInput
-                  label="Zip Code"
-                  placeholder="Enter your zip code"
-                  {...register('zipCode')}
-                  error={!!errors.zipCode}
-                  helperText={errors.zipCode?.message}
-                />
-              </Grid>
-            </Grid>
+              <ModernSelect
+                value={selectedLanguage}
+                onChange={option => setValue('language', option)}
+                placeholder="Choose your language"
+                options={convertLanguagesListToOptions(
+                  get(listingResponse, ['data', 'languages'], []) || []
+                )}
+                error={!!errors.language}
+                helperText={errors.language?.value?.message}
+              />
 
-            <ModernSelect
-              value={selectedLanguage}
-              onChange={option => setValue('language', option)}
-              placeholder="Choose your language"
-              options={convertLanguagesListToOptions(
-                get(listingResponse, ['data', 'languages'], []) || []
-              )}
-              error={!!errors.language}
-              helperText={errors.language?.value?.message}
-            />
-
-            <MorenButton type="submit" variant="contained" disabled={loading}>
-              Register
-            </MorenButton>
-          </Box>
-        </MorenCard>
+              <MorenButton type="submit" variant="contained" disabled={loading}>
+                Register
+              </MorenButton>
+            </Box>
+          </MorenCard>
+        </Grid>
       </Grid>
-    </Grid>
+    </Box>
   );
 };
 
