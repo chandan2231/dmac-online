@@ -80,7 +80,7 @@ function PricingComparision() {
           py: 0.5,
           borderRadius: 999,
           bgcolor: bg,
-          color: '#000000',
+          color: theme.palette.common.white,
           fontWeight: 700,
           fontSize: 12,
           minWidth: '40%',
@@ -196,6 +196,8 @@ function PricingComparision() {
                             WebkitBoxOrient: 'vertical',
                             WebkitLineClamp: 2,
                             overflow: 'hidden',
+                            fontSize: '1.1rem',
+                            color: theme => theme.palette.common.white,
                           }}
                         >
                           {product.product_name}
@@ -209,7 +211,7 @@ function PricingComparision() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: palette.contrastText,
+                          color: theme => theme.palette.common.white,
                         }}
                       >
                         <Typography variant="h5" sx={{ fontWeight: 900 }}>
@@ -296,14 +298,21 @@ function PricingComparision() {
                   >
                     <Button
                       fullWidth
-                      color={color}
                       variant="contained"
                       onClick={() => handleBuy(product)}
-                      sx={{
+                      sx={theme => ({
                         py: 1.25,
                         fontWeight: 800,
                         borderRadius: 999,
-                      }}
+                        backgroundColor: theme.palette[color].main,
+                        color: theme.palette.common.white,
+                        boxShadow: 'none',
+                        '&:hover': {
+                          backgroundColor:
+                            theme.palette[color].dark || theme.palette[color].main,
+                          boxShadow: 'none',
+                        },
+                      })}
                     >
                       BUY NOW
                     </Button>
