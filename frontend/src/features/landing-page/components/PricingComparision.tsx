@@ -34,7 +34,7 @@ function PricingComparision() {
   if (error) {
     return null;
   }
-
+  // test comment
   const products = ((get(data, 'data', []) as IProduct[]) ?? [])
     .slice()
     .sort(
