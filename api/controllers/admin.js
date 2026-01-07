@@ -137,6 +137,261 @@ export const updateProductCountryAmounts = (req, res) => {
   })
 }
 
+const safeParseJsonArray = (raw) => {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw
+  if (typeof raw !== 'string') return []
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+const normalizeKeyType = (keyType) => {
+  return keyType === 'radio' ? 'radio' : 'text'
+}
+
+const normalizeRadioValue = (value) => {
+  const text = String(value || '')
+    .trim()
+    .toLowerCase()
+  if (text === 'yes') return 'Yes'
+  if (text === 'no') return 'No'
+  return null
+}
+
+export const getProductFeatureKeys = async (req, res) => {
+  try {
+    const keys = await new Promise((resolve, reject) => {
+      db.query(
+        'SELECT id, title, key_type, value FROM dmac_webapp_product_feature_keys ORDER BY id ASC',
+        [],
+        (err, data) => {
+          if (err) reject(err)
+          resolve(data)
+        }
+      )
+    })
+
+    if (Array.isArray(keys) && keys.length > 0) {
+      return res.status(200).json(keys)
+    }
+
+    // Seed from existing product feature JSON if the table is empty
+    const products = await new Promise((resolve, reject) => {
+      db.query(
+        'SELECT id, feature FROM dmac_webapp_products',
+        [],
+        (err, data) => {
+          if (err) reject(err)
+          resolve(data)
+        }
+      )
+    })
+
+    const uniqueByTitle = new Map()
+    ;(Array.isArray(products) ? products : []).forEach((p) => {
+      const items = safeParseJsonArray(p?.feature)
+      items.forEach((item) => {
+        const title = String(item?.title || '').trim()
+        const value = String(item?.value || '').trim()
+        if (!title) return
+        if (uniqueByTitle.has(title)) return
+
+        const radioValue = normalizeRadioValue(value)
+        uniqueByTitle.set(title, {
+          title,
+          key_type: radioValue ? 'radio' : 'text',
+          value: radioValue ? radioValue : value
+        })
+      })
+    })
+
+    const toInsert = Array.from(uniqueByTitle.values())
+    for (const row of toInsert) {
+      await new Promise((resolve, reject) => {
+        db.query(
+          'INSERT IGNORE INTO dmac_webapp_product_feature_keys (title, key_type, value) VALUES (?, ?, ?)',
+          [row.title, row.key_type, row.value],
+          (err) => {
+            if (err) reject(err)
+            resolve(true)
+          }
+        )
+      })
+    }
+
+    const seeded = await new Promise((resolve, reject) => {
+      db.query(
+        'SELECT id, title, key_type, value FROM dmac_webapp_product_feature_keys ORDER BY id ASC',
+        [],
+        (err, data) => {
+          if (err) reject(err)
+          resolve(data)
+        }
+      )
+    })
+
+    return res.status(200).json(seeded)
+  } catch (error) {
+    return res.status(500).json({ status: 500, msg: 'Server error', error })
+  }
+}
+
+export const createProductFeatureKey = async (req, res) => {
+  try {
+    const { title, key_type, value } = req.body
+
+    const normalizedTitle = String(title || '').trim()
+    const normalizedKeyType = normalizeKeyType(key_type)
+
+    if (!normalizedTitle) {
+      return res.status(400).json({ status: 400, msg: 'Title is required' })
+    }
+
+    let normalizedValue = String(value ?? '').trim()
+    if (normalizedKeyType === 'radio') {
+      const radioValue = normalizeRadioValue(normalizedValue)
+      if (!radioValue) {
+        return res
+          .status(400)
+          .json({ status: 400, msg: 'Radio value must be Yes or No' })
+      }
+      normalizedValue = radioValue
+    }
+
+    const insertResult = await new Promise((resolve, reject) => {
+      db.query(
+        'INSERT INTO dmac_webapp_product_feature_keys (title, key_type, value) VALUES (?, ?, ?)',
+        [normalizedTitle, normalizedKeyType, normalizedValue],
+        (err, result) => {
+          if (err) reject(err)
+          resolve(result)
+        }
+      )
+    })
+
+    // Apply to all products (append if missing)
+    const products = await new Promise((resolve, reject) => {
+      db.query(
+        'SELECT id, feature FROM dmac_webapp_products',
+        [],
+        (err, data) => {
+          if (err) reject(err)
+          resolve(data)
+        }
+      )
+    })
+
+    for (const p of Array.isArray(products) ? products : []) {
+      const items = safeParseJsonArray(p?.feature)
+      const exists = items.some(
+        (i) => String(i?.title || '').trim() === normalizedTitle
+      )
+      if (exists) continue
+      items.push({ title: normalizedTitle, value: normalizedValue })
+      await new Promise((resolve, reject) => {
+        db.query(
+          'UPDATE dmac_webapp_products SET feature = ? WHERE id = ?',
+          [JSON.stringify(items), p.id],
+          (err) => {
+            if (err) reject(err)
+            resolve(true)
+          }
+        )
+      })
+    }
+
+    return res.status(200).json({
+      status: 200,
+      msg: 'Feature key created successfully',
+      id: insertResult?.insertId
+    })
+  } catch (error) {
+    // Handle duplicate title
+    if (String(error?.code || '') === 'ER_DUP_ENTRY') {
+      return res
+        .status(409)
+        .json({ status: 409, msg: 'Feature key already exists' })
+    }
+    return res.status(500).json({ status: 500, msg: 'Server error', error })
+  }
+}
+
+export const deleteProductFeatureKey = async (req, res) => {
+  try {
+    const { id } = req.body
+    if (!id) {
+      return res.status(400).json({ status: 400, msg: 'Id is required' })
+    }
+
+    const rows = await new Promise((resolve, reject) => {
+      db.query(
+        'SELECT id, title FROM dmac_webapp_product_feature_keys WHERE id = ?',
+        [id],
+        (err, data) => {
+          if (err) reject(err)
+          resolve(data)
+        }
+      )
+    })
+
+    const record = Array.isArray(rows) && rows.length > 0 ? rows[0] : null
+    if (!record) {
+      return res.status(404).json({ status: 404, msg: 'Feature key not found' })
+    }
+
+    await new Promise((resolve, reject) => {
+      db.query(
+        'DELETE FROM dmac_webapp_product_feature_keys WHERE id = ?',
+        [id],
+        (err) => {
+          if (err) reject(err)
+          resolve(true)
+        }
+      )
+    })
+
+    const titleToRemove = String(record.title || '').trim()
+    const products = await new Promise((resolve, reject) => {
+      db.query(
+        'SELECT id, feature FROM dmac_webapp_products',
+        [],
+        (err, data) => {
+          if (err) reject(err)
+          resolve(data)
+        }
+      )
+    })
+
+    for (const p of Array.isArray(products) ? products : []) {
+      const items = safeParseJsonArray(p?.feature)
+      const next = items.filter(
+        (i) => String(i?.title || '').trim() !== titleToRemove
+      )
+      if (next.length === items.length) continue
+      await new Promise((resolve, reject) => {
+        db.query(
+          'UPDATE dmac_webapp_products SET feature = ? WHERE id = ?',
+          [JSON.stringify(next), p.id],
+          (err) => {
+            if (err) reject(err)
+            resolve(true)
+          }
+        )
+      })
+    }
+
+    return res
+      .status(200)
+      .json({ status: 200, msg: 'Feature key deleted successfully', id })
+  } catch (error) {
+    return res.status(500).json({ status: 500, msg: 'Server error', error })
+  }
+}
+
 export const getProductList = (req, res) => {
   const que = 'SELECT * FROM dmac_webapp_products'
   db.query(que, [], (err, data) => {

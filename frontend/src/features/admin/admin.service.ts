@@ -1,8 +1,11 @@
 import { get } from 'lodash';
 import type {
   ICreateProductPayload,
+  ICreateProductFeatureKeyPayload,
+  IDeleteProductFeatureKeyPayload,
   IProduct,
   IProductCountryAmount,
+  IProductFeatureKey,
   IUpdateProductPayload,
   IUpdateProductCountryAmountsPayload,
   IUserDetails,
@@ -241,6 +244,73 @@ const updateProductCountryAmounts = async (
       success: false,
       message,
     };
+  }
+};
+
+const getProductFeatureKeys = async (): Promise<{
+  success: boolean;
+  data: IProductFeatureKey[] | null;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.get('/admin/product-feature-keys/list');
+    return {
+      success: true,
+      data: get(response, 'data', []) as IProductFeatureKey[],
+      message: 'Feature keys fetched successfully',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while fetching feature keys';
+    return { success: false, data: null, message };
+  }
+};
+
+const createProductFeatureKey = async (
+  payload: ICreateProductFeatureKeyPayload
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await HttpService.post(
+      '/admin/product-feature-keys/create',
+      payload
+    );
+    return {
+      success: true,
+      message:
+        get(response, ['data', 'msg']) ||
+        get(response, ['data', 'message'], 'Feature key created successfully'),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while creating feature key';
+    return { success: false, message };
+  }
+};
+
+const deleteProductFeatureKey = async (
+  payload: IDeleteProductFeatureKeyPayload
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await HttpService.post(
+      '/admin/product-feature-keys/delete',
+      payload
+    );
+    return {
+      success: true,
+      message:
+        get(response, ['data', 'msg']) ||
+        get(response, ['data', 'message'], 'Feature key deleted successfully'),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while deleting feature key';
+    return { success: false, message };
   }
 };
 
@@ -958,6 +1028,9 @@ const AdminService = {
   updateProduct, // ✅ export update service
   updateProductStatus,
   updateProductCountryAmounts,
+  getProductFeatureKeys,
+  createProductFeatureKey,
+  deleteProductFeatureKey,
   getUsersListing,
   updateUserStatus,
   getTransactionsListing,

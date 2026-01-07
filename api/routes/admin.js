@@ -7,6 +7,9 @@ import {
   createProduct,
   updateProductDetails,
   updateProductCountryAmounts,
+  getProductFeatureKeys,
+  createProductFeatureKey,
+  deleteProductFeatureKey,
   changeProductStatus,
   updateUsersDetails,
   changeUserPassword,
@@ -33,6 +36,23 @@ router.post(
   authenticateUser,
   updateProductCountryAmounts
 )
+
+router.get(
+  '/product-feature-keys/list',
+  authenticateUser,
+  getProductFeatureKeys
+)
+router.post(
+  '/product-feature-keys/create',
+  authenticateUser,
+  createProductFeatureKey
+)
+router.post(
+  '/product-feature-keys/delete',
+  authenticateUser,
+  deleteProductFeatureKey
+)
+
 router.post('/products/status/change', authenticateUser, changeProductStatus)
 router.post('/user/reset/password', authenticateUser, changeUserPassword)
 router.post(

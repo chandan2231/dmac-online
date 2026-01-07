@@ -29,6 +29,9 @@ const UsersListingPageComponent = lazy(
 const ProductsListingPageComponent = lazy(
   () => import('../pages/admin/products-listing')
 );
+const ProductFeatureKeysPageComponent = lazy(
+  () => import('../pages/admin/product-feature-keys')
+);
 const ConsultantsListingPageComponent = lazy(
   () => import('../pages/admin/consultants-listing')
 );
@@ -157,6 +160,7 @@ export const COMPONENT_MAP = {
   DashboardPageComponent,
   UsersListingPageComponent,
   ProductsListingPageComponent,
+  ProductFeatureKeysPageComponent,
   ConsultantsListingPageComponent,
   TransactionsListingPageComponent,
   TherapistListingPageComponent,
@@ -238,6 +242,7 @@ export const ROUTES = {
   TRANSACTIONS: '/admin/transactions',
   CONSULTANTS: '/admin/consultants',
   PRODUCTS: '/admin/products',
+  PRODUCT_FEATURE_KEYS: '/admin/product-feature-keys',
   THERAPISTS: '/admin/therapists',
   CONSULTATIONS: '/admin/consultations',
   THERAPIST_CONSULTATIONS: '/admin/therapists-consultations',
@@ -691,6 +696,16 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     showInSidebar: true,
     sideBarTitle: 'Products List',
     sideBarIcon: 'InventoryIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PRODUCT_FEATURE_KEYS,
+    layout: 'MainLayout',
+    component: 'ProductFeatureKeysPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Product Feature Keys',
+    sideBarIcon: 'ExtensionIcon',
     isAChildOf: null,
   },
   {

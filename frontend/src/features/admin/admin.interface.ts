@@ -2,6 +2,7 @@ import type { IUser } from '../auth/auth.interface';
 
 export const QUERY_KEYS_FOR_ADMIN = {
   GET_PRODUCT_LISTING: 'getProductListing',
+  GET_PRODUCT_FEATURE_KEYS: 'getProductFeatureKeys',
   GET_USER_LISTING: 'getUserListing',
   GET_TRANSACTION_LISTING: 'getTransactionListing',
   GET_CONSULTANT_LISTING: 'getConsultantListing',
@@ -20,6 +21,25 @@ export interface IProductCountryAmount {
   currency_code: string;
   currency_symbol: string;
   amount: number;
+}
+
+export type ProductFeatureKeyType = 'radio' | 'text';
+
+export interface IProductFeatureKey {
+  id: number;
+  title: string;
+  key_type: ProductFeatureKeyType;
+  value: string;
+}
+
+export interface ICreateProductFeatureKeyPayload {
+  title: string;
+  key_type: ProductFeatureKeyType;
+  value: string;
+}
+
+export interface IDeleteProductFeatureKeyPayload {
+  id: number | string;
 }
 
 export interface IProduct {
