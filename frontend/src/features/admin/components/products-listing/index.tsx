@@ -18,6 +18,11 @@ import CustomLoader from '../../../../components/loader';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 import { TabHeaderLayout } from '../../../../components/tab-header';
+import ModernSelect, { type IOption } from '../../../../components/select';
+import {
+  COUNTRIES_LIST,
+  COUNTRY_CURRENCY_BY_CODE,
+} from '../../../../utils/constants';
 
 // ✅ Validation schema
 const schema = Yup.object({
@@ -52,6 +57,11 @@ function ProductsTable() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuProductId, setMenuProductId] = useState<number | null>(null);
   const [isViewMode, setIsViewMode] = useState(false);
+  const [isCountryAmountModalOpen, setIsCountryAmountModalOpen] =
+    useState(false);
+  const [countryAmountRows, setCountryAmountRows] = useState<
+    Array<{ country: IOption | null; amount: number | '' }>
+  >([]);
 
   const { showToast } = useToast();
 
@@ -79,6 +89,141 @@ function ProductsTable() {
   const handleOpenViewModal = (product: IProduct) => {
     setSelectedProduct(product);
     setIsViewMode(true);
+  };
+
+  const countryOptions: IOption[] = (COUNTRIES_LIST || []).map(c => ({
+    value: String(get(c, 'value', '')),
+    label: String(get(c, 'label', '')),
+  }));
+
+  const getCurrencyMeta = (countryCode: string) => {
+    return (
+      COUNTRY_CURRENCY_BY_CODE[countryCode] || {
+        currencyCode: 'USD',
+        symbol: '$',
+      }
+    );
+  };
+
+  const handleOpenCountryAmountModal = (product: IProduct) => {
+    setSelectedProduct(product);
+    const usdCountry = countryOptions.find(c => c.value === 'US') || null;
+
+    const existing: Array<{ country: IOption | null; amount: number | '' }> = (
+      get(product, 'country_amounts', []) as Array<{
+        country_code?: string;
+        amount?: number;
+      }>
+    ).map(item => {
+      const code = String(get(item, 'country_code', '')).trim();
+      const opt = countryOptions.find(c => c.value === code) || null;
+      const amt = Number(get(item, 'amount', ''));
+      return {
+        country: opt,
+        amount: Number.isFinite(amt) ? amt : ('' as const),
+      };
+    });
+
+    const hasUS = existing.some(r => r.country?.value === 'US');
+    const rows: Array<{ country: IOption | null; amount: number | '' }> = hasUS
+      ? existing
+      : [
+          {
+            country: usdCountry,
+            amount: Number(product.product_amount) || 0,
+          },
+          ...existing,
+        ];
+
+    setCountryAmountRows(
+      rows.length > 0
+        ? rows
+        : [
+            {
+              country: usdCountry,
+              amount: Number(product.product_amount) || 0,
+            },
+          ]
+    );
+    setIsCountryAmountModalOpen(true);
+  };
+
+  const handleCloseCountryAmountModal = () => {
+    setIsCountryAmountModalOpen(false);
+    setCountryAmountRows([]);
+    setSelectedProduct(null);
+  };
+
+  const handleAddCountryAmountRow = () => {
+    setCountryAmountRows(prev => [...prev, { country: null, amount: '' }]);
+  };
+
+  const handleSaveCountryAmounts = async () => {
+    if (!selectedProduct) return;
+
+    const normalized = countryAmountRows
+      .map(row => {
+        const countryCode = row.country?.value || '';
+        const countryName = row.country?.label || '';
+        const amountNumber =
+          typeof row.amount === 'number' ? row.amount : Number(row.amount);
+        return { countryCode, countryName, amount: amountNumber };
+      })
+      .filter(row => row.countryCode && row.countryName);
+
+    // USD is always derived from product_amount
+    const usdMeta = getCurrencyMeta('US');
+    const payload = [
+      {
+        country_code: 'US',
+        country_name: 'United States',
+        currency_code: usdMeta.currencyCode,
+        currency_symbol: usdMeta.symbol,
+        amount: Number(selectedProduct.product_amount) || 0,
+      },
+      ...normalized
+        .filter(r => r.countryCode !== 'US')
+        .map(r => {
+          const meta = getCurrencyMeta(r.countryCode);
+          return {
+            country_code: r.countryCode,
+            country_name: r.countryName,
+            currency_code: meta.currencyCode,
+            currency_symbol: meta.symbol,
+            amount: Number(r.amount) || 0,
+          };
+        }),
+    ];
+
+    const invalid = payload.some(
+      item =>
+        !item.country_code ||
+        !item.country_name ||
+        !item.currency_code ||
+        !item.currency_symbol ||
+        !Number.isFinite(item.amount) ||
+        item.amount <= 0
+    );
+
+    if (invalid) {
+      showToast('Please select country and enter a valid amount', 'error');
+      return;
+    }
+
+    setIsLoadingStatus(true);
+    const result = await AdminService.updateProductCountryAmounts({
+      id: selectedProduct.id,
+      country_amounts: payload,
+    });
+
+    if (result.success) {
+      showToast(result.message, 'success');
+      handleCloseCountryAmountModal();
+      refetch();
+    } else {
+      showToast(result.message, 'error');
+    }
+    setIsLoadingStatus(false);
   };
 
   // ✅ Form setup
@@ -216,6 +361,14 @@ function ProductsTable() {
                 }}
               >
                 View Details
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  handleClose();
+                  handleOpenCountryAmountModal(params.row);
+                }}
+              >
+                Add amount by country
               </MenuItem>
               <MenuItem
                 onClick={() => {
@@ -453,6 +606,112 @@ function ProductsTable() {
             </Box>
           </Box>
         )}
+      </GenericModal>
+
+      {/* Country Amount Modal */}
+      <GenericModal
+        isOpen={isCountryAmountModalOpen}
+        onClose={handleCloseCountryAmountModal}
+        title={`Add amount by country$${
+          selectedProduct
+            ? ` - ${get(selectedProduct, 'product_name', '')}`
+            : ''
+        }`.replace('$', '')}
+        hideCancelButton
+      >
+        <Box display="flex" flexDirection="column" gap={2}>
+          {countryAmountRows.map((row, index) => {
+            const code = row.country?.value || '';
+            const meta = code ? getCurrencyMeta(code) : null;
+            const isUSDRow = code === 'US' || (!code && index === 0);
+            return (
+              <Box
+                key={`${row.country?.value || 'row'}-${index}`}
+                display="flex"
+                flexDirection={{ xs: 'column', sm: 'row' }}
+                gap={2}
+              >
+                <Box flex={1}>
+                  <ModernSelect
+                    label="Country"
+                    id={`country-${index}`}
+                    options={countryOptions.map(opt => ({
+                      ...opt,
+                      disabled:
+                        opt.value === 'US' ||
+                        countryAmountRows.some(
+                          (r, i) =>
+                            i !== index && r.country?.value === opt.value
+                        ),
+                    }))}
+                    value={row.country}
+                    onChange={val => {
+                      setCountryAmountRows(prev =>
+                        prev.map((r, i) =>
+                          i === index ? { ...r, country: val } : r
+                        )
+                      );
+                    }}
+                    placeholder="Select country"
+                    searchable
+                    fullWidth
+                    // USD always comes from product_amount
+                    {...(isUSDRow ? { disabled: true } : {})}
+                  />
+                </Box>
+
+                <Box flex={1}>
+                  {/* Label */}
+                  <Typography variant="body2" color="textSecondary" mb={1}>
+                    Amount Details:
+                  </Typography>
+                  <ModernInput
+                    label={`Amount${meta ? ` (${meta.symbol})` : ''}`}
+                    placeholder={
+                      meta
+                        ? `Enter amount (${meta.currencyCode})`
+                        : 'Enter amount'
+                    }
+                    type="number"
+                    value={
+                      isUSDRow && selectedProduct
+                        ? Number(selectedProduct.product_amount) || 0
+                        : row.amount
+                    }
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      const value = e.target.value;
+                      setCountryAmountRows(prev =>
+                        prev.map((r, i) =>
+                          i === index
+                            ? {
+                                ...r,
+                                amount: value === '' ? '' : Number(value),
+                              }
+                            : r
+                        )
+                      );
+                    }}
+                    disabled={isUSDRow}
+                  />
+                  {isUSDRow && (
+                    <Typography variant="caption" color="textSecondary">
+                      USD amount is taken from product amount.
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            );
+          })}
+
+          <Box display="flex" justifyContent="space-between" gap={2}>
+            <MorenButton variant="outlined" onClick={handleAddCountryAmountRow}>
+              Add Another Country
+            </MorenButton>
+            <MorenButton variant="contained" onClick={handleSaveCountryAmounts}>
+              Save
+            </MorenButton>
+          </Box>
+        </Box>
       </GenericModal>
     </Box>
   );

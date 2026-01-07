@@ -108,6 +108,35 @@ export const createProduct = (req, res) => {
   })
 }
 
+export const updateProductCountryAmounts = (req, res) => {
+  const { id, country_amounts } = req.body
+
+  if (!id || !Array.isArray(country_amounts)) {
+    return res.status(400).json({ status: 400, msg: 'Missing required fields' })
+  }
+
+  const query =
+    'UPDATE dmac_webapp_products SET country_amounts = ? WHERE id = ?'
+
+  db.query(query, [JSON.stringify(country_amounts), id], (err, result) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ status: 500, msg: 'Database error', error: err })
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ status: 404, msg: 'Product not found' })
+    }
+
+    return res.json({
+      status: 200,
+      msg: 'Product country amounts updated successfully',
+      id
+    })
+  })
+}
+
 export const getProductList = (req, res) => {
   const que = 'SELECT * FROM dmac_webapp_products'
   db.query(que, [], (err, data) => {

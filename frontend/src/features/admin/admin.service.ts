@@ -2,7 +2,9 @@ import { get } from 'lodash';
 import type {
   ICreateProductPayload,
   IProduct,
+  IProductCountryAmount,
   IUpdateProductPayload,
+  IUpdateProductCountryAmountsPayload,
   IUserDetails,
   IChangeUserPasswordPayload,
   ITransaction,
@@ -43,6 +45,40 @@ const parseProductFeature = (raw: unknown) => {
   return [];
 };
 
+const parseProductCountryAmounts = (raw: unknown): IProductCountryAmount[] => {
+  if (Array.isArray(raw)) {
+    return raw
+      .filter(Boolean)
+      .map(item => ({
+        country_code: String(get(item, 'country_code', '')).trim(),
+        country_name: String(get(item, 'country_name', '')).trim(),
+        currency_code: String(get(item, 'currency_code', '')).trim(),
+        currency_symbol: String(get(item, 'currency_symbol', '')).trim(),
+        amount: Number(get(item, 'amount', 0)),
+      }))
+      .filter(
+        item =>
+          item.country_code.length > 0 &&
+          item.country_name.length > 0 &&
+          item.currency_code.length > 0 &&
+          item.currency_symbol.length > 0
+      );
+  }
+
+  if (typeof raw === 'string') {
+    const text = raw.trim();
+    if (!text) return [];
+    try {
+      const parsed = JSON.parse(text) as unknown;
+      return parseProductCountryAmounts(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
+
 const getProductsListing = async (): Promise<{
   success: boolean;
   data: IProduct[] | null;
@@ -58,6 +94,9 @@ const getProductsListing = async (): Promise<{
       created_date: moment(get(item, 'created_date')).format('YYYY-MM-DD'),
       updated_date: moment(get(item, 'updated_date')).format('YYYY-MM-DD'),
       feature: parseProductFeature(get(item, 'feature', [])),
+      country_amounts: parseProductCountryAmounts(
+        get(item, 'country_amounts', [])
+      ),
     }));
 
     return {
@@ -165,6 +204,38 @@ const createProduct = async (
       get(error, 'response.data.message') ||
       get(error, 'response.data.error') ||
       'An unexpected error occurred while creating product';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
+const updateProductCountryAmounts = async (
+  payload: IUpdateProductCountryAmountsPayload
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await HttpService.post(
+      '/admin/products/country-amounts/update',
+      payload
+    );
+
+    return {
+      success: true,
+      message:
+        get(response, ['data', 'msg']) ||
+        get(
+          response,
+          ['data', 'message'],
+          'Product country amounts updated successfully'
+        ),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while updating product country amounts';
 
     return {
       success: false,
@@ -886,6 +957,7 @@ const AdminService = {
   createProduct,
   updateProduct, // ✅ export update service
   updateProductStatus,
+  updateProductCountryAmounts,
   getUsersListing,
   updateUserStatus,
   getTransactionsListing,

@@ -8,6 +8,18 @@ export const LOCAL_STORAGE_KEYS = {
 export const DRAWER_WIDTH = 260;
 export const MINI_DRAWER_WIDTH = 70;
 
+export const COUNTRY_CURRENCY_BY_CODE: Record<
+  string,
+  { currencyCode: string; symbol: string }
+> = {
+  US: { currencyCode: 'USD', symbol: '$' },
+  CA: { currencyCode: 'CAD', symbol: '$' },
+  GB: { currencyCode: 'GBP', symbol: '£' },
+  AU: { currencyCode: 'AUD', symbol: '$' },
+  IN: { currencyCode: 'INR', symbol: '₹' },
+  CN: { currencyCode: 'CNY', symbol: '¥' },
+};
+
 export const COUNTRIES_LIST = [
   {
     value: 'US',

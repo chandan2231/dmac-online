@@ -14,6 +14,14 @@ export interface IProductFeature {
   value: string;
 }
 
+export interface IProductCountryAmount {
+  country_code: string;
+  country_name: string;
+  currency_code: string;
+  currency_symbol: string;
+  amount: number;
+}
+
 export interface IProduct {
   id: number;
   product_name: string;
@@ -25,6 +33,7 @@ export interface IProduct {
   updated_date: string;
   subscription_list: string; // comma-separated values
   feature: IProductFeature[];
+  country_amounts?: IProductCountryAmount[];
 }
 
 export interface IUpdateProductPayload {
@@ -38,6 +47,11 @@ export interface ICreateProductPayload {
   product_name: string;
   product_description: string;
   product_amount: number;
+}
+
+export interface IUpdateProductCountryAmountsPayload {
+  id: number | string;
+  country_amounts: IProductCountryAmount[];
 }
 
 export interface IUserDetails extends Omit<IUser, 'id'> {
