@@ -2,6 +2,8 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../store';
 import { get } from 'lodash';
 import { useGetFalsePositivePageDetails } from '../hooks/useGetFalsePositiveDetails';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../../router/router';
 import { Box } from '@mui/material';
 import CustomLoader from '../../../../components/loader';
 import MorenButton from '../../../../components/button';
@@ -16,6 +18,7 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
     data: falsePositiveDetails,
     isPending: isLoadingFalsePositiveDetails,
   } = useGetFalsePositivePageDetails(get(user, ['languageCode'], 'en'));
+  const navigate = useNavigate();
 
   if (isLoadingFalsePositiveDetails) {
     return <CustomLoader />;
@@ -98,12 +101,22 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
       {/* Link Text */}
       <Box sx={{ textAlign: 'center' }}>{get(falsePositiveDetails, ['link_text'], '')}</Box>
 
-      <Box sx={{ width: '100%', mt: 4, display: 'flex', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          width: '100%',
+          mt: 4,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'center',
+          gap: 2,
+        }}
+      >
         <MorenButton
           variant="contained"
           onClick={() => setFalsePositive(true)}
           sx={{
-            width: '100%',
+            width: { xs: '100%', sm: 'auto' },
+            minWidth: '200px',
             borderRadius: '25px',
             textTransform: 'uppercase',
             fontWeight: 'bold',
@@ -112,6 +125,23 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
         >
           {get(falsePositiveDetails, ['button_text'], '')}
         </MorenButton>
+
+        {get(falsePositiveDetails, ['secondary_button_text']) ? (
+          <MorenButton
+            variant="outlined"
+            onClick={() => navigate(ROUTES.HOME)}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: '200px',
+              borderRadius: '25px',
+              textTransform: 'uppercase',
+              fontWeight: 'bold',
+              py: 1.5,
+            }}
+          >
+            {get(falsePositiveDetails, ['secondary_button_text'], '')}
+          </MorenButton>
+        ) : null}
       </Box>
     </Box>
   );

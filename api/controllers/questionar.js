@@ -113,7 +113,10 @@ export const getQuestionWithFollowUps = (req, res) => {
     FROM dmac_webapp_questions q
     JOIN dmac_webapp_questions_translations qt
       ON q.id = qt.question_id AND qt.language_code = ?
+    JOIN dmac_webapp_question_options_map om
+      ON q.id = om.question_id
     JOIN dmac_webapp_question_options o
+      ON om.option_id = o.id
     JOIN dmac_webapp_question_option_translations ot
       ON o.id = ot.option_id AND ot.language_code = ?
     LEFT JOIN dmac_webapp_question_alerts a ON q.alert_id = a.id
@@ -204,7 +207,7 @@ export const getPageContent = (req, res) => {
   }
 
   const query = `
-    SELECT t.title, t.content, t.doctor_info, t.link_text, t.button_text
+    SELECT t.title, t.content, t.doctor_info, t.link_text, t.button_text, t.secondary_button_text
     FROM dmac_webapp_page p
     JOIN dmac_webapp_page_translations t ON p.id = t.page_id
     WHERE p.page_key = ? AND t.language_code = ?
