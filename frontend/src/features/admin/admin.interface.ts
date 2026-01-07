@@ -34,6 +34,12 @@ export interface IUpdateProductPayload {
   product_amount: number;
 }
 
+export interface ICreateProductPayload {
+  product_name: string;
+  product_description: string;
+  product_amount: number;
+}
+
 export interface IUserDetails extends Omit<IUser, 'id'> {
   id: number;
   mobile: string;

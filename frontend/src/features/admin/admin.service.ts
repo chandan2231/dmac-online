@@ -1,5 +1,6 @@
 import { get } from 'lodash';
 import type {
+  ICreateProductPayload,
   IProduct,
   IUpdateProductPayload,
   IUserDetails,
@@ -90,11 +91,9 @@ const updateProduct = async (
 
     return {
       success: true,
-      message: get(
-        response,
-        ['data', 'message'],
-        'Product updated successfully'
-      ),
+      message:
+        get(response, ['data', 'msg']) ||
+        get(response, ['data', 'message'], 'Product updated successfully'),
     };
   } catch (error: unknown) {
     const message =
@@ -124,17 +123,48 @@ const updateProductStatus = async (
 
     return {
       success: true,
-      message: get(
-        response,
-        ['data', 'message'],
-        'Product status updated successfully'
-      ),
+      message:
+        get(response, ['data', 'msg']) ||
+        get(
+          response,
+          ['data', 'message'],
+          'Product status updated successfully'
+        ),
     };
   } catch (error: unknown) {
     const message =
       get(error, 'response.data.message') ||
       get(error, 'response.data.error') ||
       'An unexpected error occurred while updating product status';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
+// ✅ Create product
+const createProduct = async (
+  payload: ICreateProductPayload
+): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/admin/products/create', payload);
+
+    return {
+      success: true,
+      message:
+        get(response, ['data', 'msg']) ||
+        get(response, ['data', 'message'], 'Product created successfully'),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while creating product';
 
     return {
       success: false,
@@ -853,6 +883,7 @@ const getPatientMedicalHistory = async (patientId: number) => {
 
 const AdminService = {
   getProductsListing,
+  createProduct,
   updateProduct, // ✅ export update service
   updateProductStatus,
   getUsersListing,

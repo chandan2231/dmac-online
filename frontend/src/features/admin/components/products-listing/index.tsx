@@ -45,22 +45,35 @@ function ProductsTable() {
   });
 
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [productModalMode, setProductModalMode] = useState<
+    'add' | 'edit' | null
+  >(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuProductId, setMenuProductId] = useState<number | null>(null);
   const [isViewMode, setIsViewMode] = useState(false);
 
   const { showToast } = useToast();
 
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
+  const handleCloseProductModal = () => {
+    setProductModalMode(null);
     setSelectedProduct(null);
     reset(); // clear form
   };
 
   const handleOpenEditModal = (product: IProduct) => {
     setSelectedProduct(product);
-    setIsEditModalOpen(true);
+    setProductModalMode('edit');
+  };
+
+  const handleOpenAddModal = () => {
+    setSelectedProduct(null);
+    setProductModalMode('add');
+    reset({
+      product_name: '',
+      product_description: '',
+      product_amount: Number.NaN,
+    });
   };
 
   const handleOpenViewModal = (product: IProduct) => {
@@ -90,24 +103,32 @@ function ProductsTable() {
   }, [selectedProduct, reset]);
 
   const onSubmit = async (values: ProductFormValues) => {
-    if (!selectedProduct) return;
-
     setIsLoadingStatus(true);
 
-    const result = await AdminService.updateProduct({
-      id: selectedProduct.id,
-      ...values,
-    });
+    const payload = {
+      product_name: values.product_name,
+      product_description: values.product_description,
+      product_amount: Number(values.product_amount),
+    };
+
+    const result =
+      productModalMode === 'edit' && selectedProduct
+        ? await AdminService.updateProduct({
+            id: selectedProduct.id,
+            ...payload,
+          })
+        : await AdminService.createProduct(payload);
 
     if (result.success) {
       setIsLoadingStatus(false);
-      handleCloseEditModal();
+      handleCloseProductModal();
       // ✅ Show success message
       showToast(result.message, 'success');
       // Optionally refresh list
       refetch();
     } else {
-      console.error('❌ Update failed:', result.message);
+      console.error('❌ Save failed:', result.message);
+      showToast(result.message, 'error');
     }
     setIsLoadingStatus(false);
   };
@@ -128,7 +149,7 @@ function ProductsTable() {
   const columns: GridColDef<IProduct>[] = [
     { field: 'product_name', headerName: 'Product Name', flex: 1 },
     { field: 'product_description', headerName: 'Description', flex: 2 },
-    { field: 'product_amount', headerName: 'Amount', width: 120 },
+    { field: 'product_amount', headerName: 'Amount (USD)', width: 140 },
     {
       field: 'status',
       headerName: 'Status',
@@ -157,14 +178,16 @@ function ProductsTable() {
       sortable: false,
       filterable: false,
       renderCell: params => {
-        const open = Boolean(anchorEl);
+        const open = Boolean(anchorEl) && menuProductId === params.row.id;
 
         const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
           setAnchorEl(event.currentTarget);
+          setMenuProductId(params.row.id);
         };
 
         const handleClose = () => {
           setAnchorEl(null);
+          setMenuProductId(null);
         };
 
         return (
@@ -236,6 +259,19 @@ function ProductsTable() {
             Products List
           </Typography>
         }
+        rightNode={
+          <MorenButton
+            variant="contained"
+            onClick={handleOpenAddModal}
+            sx={{
+              minWidth: '140px',
+              maxWidth: '180px',
+              alignSelf: 'flex-end',
+            }}
+          >
+            Add Product
+          </MorenButton>
+        }
       />
 
       <GenericTable
@@ -248,9 +284,11 @@ function ProductsTable() {
 
       {/* ✅ Modal with form */}
       <GenericModal
-        isOpen={isEditModalOpen}
-        onClose={handleCloseEditModal}
-        title="Edit Product Details"
+        isOpen={productModalMode === 'add' || productModalMode === 'edit'}
+        onClose={handleCloseProductModal}
+        title={
+          productModalMode === 'add' ? 'Add Product' : 'Edit Product Details'
+        }
         hideCancelButton
       >
         <Box
@@ -278,9 +316,9 @@ function ProductsTable() {
 
           <ModernInput
             label="Amount"
-            placeholder="Enter product amount"
+            placeholder="Enter product amount (USD)"
             type="number"
-            {...register('product_amount')}
+            {...register('product_amount', { valueAsNumber: true })}
             error={!!errors.product_amount}
             helperText={errors.product_amount?.message}
           />
@@ -295,7 +333,7 @@ function ProductsTable() {
               maxWidth: '150px',
             }}
           >
-            Save Changes
+            {productModalMode === 'add' ? 'Create Product' : 'Save Changes'}
           </MorenButton>
         </Box>
       </GenericModal>
@@ -362,7 +400,7 @@ function ProductsTable() {
                   color="textSecondary"
                   minWidth={120}
                 >
-                  Amount:
+                  Amount (USD):
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
                   {get(selectedProduct, 'product_amount', '')}

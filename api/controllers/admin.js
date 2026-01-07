@@ -69,6 +69,45 @@ export const updateProductDetails = async (req, res) => {
   }
 }
 
+export const createProduct = (req, res) => {
+  const { product_name, product_description, product_amount } = req.body
+
+  if (!product_name || !product_description || product_amount == null) {
+    return res.status(400).json({ status: 400, msg: 'Missing required fields' })
+  }
+
+  const query = `
+    INSERT INTO dmac_webapp_products
+      (product_name, product_description, subscription_list, feature, product_amount, upgrade_priority, status, created_date, updated_date)
+    VALUES
+      (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+  `
+
+  const values = [
+    product_name,
+    product_description,
+    String(product_name),
+    '[]',
+    product_amount,
+    null,
+    1
+  ]
+
+  db.query(query, values, (err, result) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ status: 500, msg: 'Database error', error: err })
+    }
+
+    return res.json({
+      status: 200,
+      msg: 'Product created successfully',
+      id: result?.insertId
+    })
+  })
+}
+
 export const getProductList = (req, res) => {
   const que = 'SELECT * FROM dmac_webapp_products'
   db.query(que, [], (err, data) => {
