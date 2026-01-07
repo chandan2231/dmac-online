@@ -171,7 +171,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
             <GenericModal
                 isOpen={phase === 'instruction'}
                 onClose={() => { }}
-                title={t.instruction}
+                title={`${session.module?.name || ''} ${t.instruction}`}
                 hideCancelButton={true}
                 submitButtonText={t.start}
                 onSubmit={handleStart}

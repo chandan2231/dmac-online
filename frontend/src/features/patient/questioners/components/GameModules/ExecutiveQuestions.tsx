@@ -131,7 +131,7 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
             <GenericModal
                 isOpen={phase === 'instruction'}
                 onClose={() => { }}
-                title={t.instructions}
+                title={`${session.module?.name || ''} ${t.instructions}`}
                 hideCancelButton={true}
                 submitButtonText={t.start}
                 onSubmit={handleStart}

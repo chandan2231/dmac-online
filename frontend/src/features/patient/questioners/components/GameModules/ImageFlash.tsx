@@ -174,7 +174,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
             <GenericModal
                 isOpen={phase === 'instruction'}
                 onClose={() => { }}
-                title={t.instructions}
+                title={`${session.module?.name || ''} ${t.instructions}`}
                 hideCancelButton={true}
                 submitButtonText={t.start}
                 onSubmit={handleStart}
@@ -247,7 +247,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
             <GenericModal
                 isOpen={phase === 'beforeInput'}
                 onClose={() => { }}
-                title={t.instruction}
+                title={`${session.module?.name || ''} ${t.instruction}`}
                 hideCancelButton={true}
                 submitButtonText={t.answerNow}
                 onSubmit={() => setPhase('input')}

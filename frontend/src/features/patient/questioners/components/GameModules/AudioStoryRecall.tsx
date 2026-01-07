@@ -172,7 +172,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
             <GenericModal
                 isOpen={phase === 'pre_audio_instruction'}
                 onClose={() => { }}
-                title={t.instructions}
+                title={`${session.module?.name || ''} ${t.instructions}`}
                 hideCancelButton={true}
                 submitButtonText={t.start}
                 onSubmit={handleNextFromInstruction}
@@ -187,7 +187,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
             <GenericModal
                 isOpen={phase === 'post_audio_instruction'}
                 onClose={() => { }}
-                title={t.instructions}
+                title={`${session.module?.name || ''} ${t.instructions}`}
                 hideCancelButton={true}
                 submitButtonText={t.next}
                 onSubmit={handleNextFromPostInstruction}

@@ -166,7 +166,7 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
             <GenericModal
                 isOpen={phase === 'instruction'}
                 onClose={() => { }}
-                title={t.instructions}
+                title={`${session.module?.name || ''} ${t.instructions}`}
                 hideCancelButton={true}
                 submitButtonText={t.start}
                 onSubmit={handleStart}

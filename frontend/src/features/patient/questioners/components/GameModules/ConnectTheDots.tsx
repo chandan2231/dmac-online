@@ -201,7 +201,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
             <GenericModal
                 isOpen={showInstruction}
                 onClose={() => { }}
-                title={instructionsTitle}
+                title={`${session.module?.name || ''} ${instructionsTitle}`}
                 hideCancelButton={true}
                 submitButtonText={startText}
                 onSubmit={handleInstructionSubmit}

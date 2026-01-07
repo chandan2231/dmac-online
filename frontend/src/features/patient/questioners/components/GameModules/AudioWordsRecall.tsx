@@ -109,7 +109,7 @@ const AudioWordsRecall = ({ session, onComplete, languageCode }: AudioWordsRecal
             <GenericModal
                 isOpen={phase === 'pre_audio_instruction'}
                 onClose={() => { }}
-                title={t.instructions}
+                title={`${session.module?.name || ''} ${t.instructions}`}
                 hideCancelButton={true}
                 submitButtonText={t.start}
                 onSubmit={handleStart}
@@ -124,7 +124,7 @@ const AudioWordsRecall = ({ session, onComplete, languageCode }: AudioWordsRecal
             <GenericModal
                 isOpen={phase === 'post_audio_instruction'}
                 onClose={() => { }}
-                title={t.instructions}
+                title={`${session.module?.name || ''} ${t.instructions}`}
                 hideCancelButton={true}
                 submitButtonText={t.next}
                 onSubmit={handleNextToRecall}

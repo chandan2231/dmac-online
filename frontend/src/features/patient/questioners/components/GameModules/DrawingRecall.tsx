@@ -40,6 +40,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
 
     const startText = getLanguageText(languageConstants, 'game_start') || 'Start';
     const nextText = getLanguageText(languageConstants, 'game_next') || 'NEXT';
+    const instructionsText = getLanguageText(languageConstants, 'game_instructions') || 'Instructions';
 
     // Handle instruction submission
     const handleInstructionSubmit = () => {
@@ -304,7 +305,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
             <GenericModal
                 isOpen={phase === 'instruction'}
                 onClose={() => { }}
-                title="Instruction"
+                title={`${session.module?.name || ''} ${instructionsText}`}
                 hideCancelButton={true}
                 submitButtonText={startText}
                 onSubmit={handleInstructionSubmit}
