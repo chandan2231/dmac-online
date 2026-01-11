@@ -672,8 +672,6 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     showInSidebar: true,
     sideBarTitle: 'Experts List',
     sideBarIcon: 'BadgeIcon',
-    sideBarGroupTitle: 'USERS',
-    sideBarGroupIcon: 'GroupIcon',
     isAChildOf: null,
   },
   {
