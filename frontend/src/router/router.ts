@@ -1,58 +1,37 @@
-import { lazy } from 'react';
 import { type UserRole } from '../features/auth/auth.interface';
 import type { MapperObjectKey } from '../components/sidebar/mapped-icons';
 
 // Public Pages
-const LoginPage = lazy(() => import('../pages/auth/login'));
-const Register = lazy(() => import('../pages/auth/register'));
-const ForgotPassword = lazy(() => import('../pages/auth/forgot-password'));
-const AuthRedirectHomePage = lazy(() => import('../pages/patient/home'));
-const PageNotFound = lazy(() => import('../pages/not-found'));
-const LandingPageComponent = lazy(() => import('../pages/landing-page'));
-const PublicProductsListingPageComponent = lazy(
-  () => import('../pages/products-listing')
-);
-const PrivacyPolicyPage = lazy(() => import('../pages/privacy-policy'));
-const TermsOfServicePage = lazy(() => import('../pages/terms-of-service'));
+import LoginPage from '../pages/auth/login';
+import Register from '../pages/auth/register';
+import ForgotPassword from '../pages/auth/forgot-password';
+import AuthRedirectHomePage from '../pages/patient/home';
+import PageNotFound from '../pages/not-found';
+import LandingPageComponent from '../pages/landing-page';
+import PublicProductsListingPageComponent from '../pages/products-listing';
+import PrivacyPolicyPage from '../pages/privacy-policy';
+import TermsOfServicePage from '../pages/terms-of-service';
 
 // Protected Pages
-const ResetPassword = lazy(() => import('../pages/auth/reset-password'));
-const VerifyEmail = lazy(() => import('../pages/auth/verify-email'));
-const ProfilePage = lazy(() => import('../pages/patient/profile'));
-const QuestionersPage = lazy(() => import('../pages/patient/questioners'));
+import ResetPassword from '../pages/auth/reset-password';
+import VerifyEmail from '../pages/auth/verify-email';
+import ProfilePage from '../pages/patient/profile';
+import QuestionersPage from '../pages/patient/questioners';
 
 // Admin Pages
-const DashboardPageComponent = lazy(() => import('../pages/admin/dashboard'));
-const UsersListingPageComponent = lazy(
-  () => import('../pages/admin/users-listing')
-);
-const ProductsListingPageComponent = lazy(
-  () => import('../pages/admin/products-listing')
-);
-const ProductFeatureKeysPageComponent = lazy(
-  () => import('../pages/admin/product-feature-keys')
-);
-const ConsultantsListingPageComponent = lazy(
-  () => import('../pages/admin/consultants-listing')
-);
-const TransactionsListingPageComponent = lazy(
-  () => import('../pages/admin/transactions-listing')
-);
-const TherapistListingPageComponent = lazy(
-  () => import('../pages/admin/tharapist-listing')
-);
-const ConsultationsListingPageComponent = lazy(
-  () => import('../pages/admin/consultations-listing')
-);
-const TherapistsConsultationsListingPageComponent = lazy(
-  () => import('../pages/admin/therapists-consultations-listing')
-);
-const AdminPatientAssessmentPage = lazy(
-  () => import('../pages/admin/patient-assessment')
-);
+import DashboardPageComponent from '../pages/admin/dashboard';
+import UsersListingPageComponent from '../pages/admin/users-listing';
+import ProductsListingPageComponent from '../pages/admin/products-listing';
+import ProductFeatureKeysPageComponent from '../pages/admin/product-feature-keys';
+import ConsultantsListingPageComponent from '../pages/admin/consultants-listing';
+import TransactionsListingPageComponent from '../pages/admin/transactions-listing';
+import TherapistListingPageComponent from '../pages/admin/tharapist-listing';
+import ConsultationsListingPageComponent from '../pages/admin/consultations-listing';
+import TherapistsConsultationsListingPageComponent from '../pages/admin/therapists-consultations-listing';
+import AdminPatientAssessmentPage from '../pages/admin/patient-assessment';
 
 // Developer Pages
-const DeveloperPageComponent = lazy(() => import('../pages/developer'));
+import DeveloperPageComponent from '../pages/developer';
 
 // Layouts
 import MainLayout from '../layouts/MainLayout';
@@ -62,68 +41,36 @@ import BaseLayout from '../layouts/BaseLayout';
 import PatientLayout from '../layouts/PatientLayout';
 
 // Patient Pages
-const PatientRegisterPage = lazy(
-  () => import('../pages/auth/register/patient-register')
-);
-const PatientVerifyEmailPage = lazy(
-  () => import('../pages/auth/verify-email/patient-verify-email')
-);
+import PatientRegisterPage from '../pages/auth/register/patient-register';
+import PatientVerifyEmailPage from '../pages/auth/verify-email/patient-verify-email';
 // const PatientPaymentPage = lazy(
 //   () => import('../pages/payment/patient-payment')
 // );
 import PatientPaymentPage from '../pages/payment/patient-payment';
-const PatientLoginPage = lazy(
-  () => import('../pages/auth/login/patient-login')
-);
-const PatientPaymentSuccessPage = lazy(
-  () => import('../pages/payment/patient-payment-success')
-);
-const PatientPaymentCancelledPage = lazy(
-  () => import('../pages/payment/patient-payment-cancel')
-);
-const PatientProductsPage = lazy(
-  () => import('../pages/patient/patient-products')
-);
-const PatientAuthWithGooglePage = lazy(
-  () => import('../pages/patient/auth-with-google')
-);
-const BookConsultationPage = lazy(
-  () => import('../pages/patient/book-consultation')
-);
-const BookTherapistPage = lazy(() => import('../pages/patient/book-therapist'));
-const UploadDocumentsPage = lazy(
-  () => import('../pages/patient/upload-documents')
-);
-const CountryAdminListingPage = lazy(
-  () => import('../pages/admin/country-admin-listing')
-);
+import PatientLoginPage from '../pages/auth/login/patient-login';
+import PatientPaymentSuccessPage from '../pages/payment/patient-payment-success';
+import PatientPaymentCancelledPage from '../pages/payment/patient-payment-cancel';
+import PatientProductsPage from '../pages/patient/patient-products';
+import PatientAuthWithGooglePage from '../pages/patient/auth-with-google';
+import BookConsultationPage from '../pages/patient/book-consultation';
+import BookTherapistPage from '../pages/patient/book-therapist';
+import UploadDocumentsPage from '../pages/patient/upload-documents';
+import CountryAdminListingPage from '../pages/admin/country-admin-listing';
 
 // Expert Pages
-const ConsultationListPage = lazy(
-  () => import('../pages/expert/consultation-list')
-);
-const TransactionHistoryPage = lazy(
-  () => import('../pages/expert/transaction-history')
-);
-const ExpertHomePage = lazy(() => import('../pages/expert/home'));
-const CalendarPage = lazy(() => import('../pages/expert/calendar'));
-const ExpertReviewsPage = lazy(() => import('../pages/expert/reviews'));
-const PatientAssessmentPage = lazy(
-  () => import('../pages/expert/patient-assessment')
-);
+import ConsultationListPage from '../pages/expert/consultation-list';
+import TransactionHistoryPage from '../pages/expert/transaction-history';
+import ExpertHomePage from '../pages/expert/home';
+import CalendarPage from '../pages/expert/calendar';
+import ExpertReviewsPage from '../pages/expert/reviews';
+import PatientAssessmentPage from '../pages/expert/patient-assessment';
 
 // Therapist Pages
-const TherapistHomePage = lazy(() => import('../pages/therapist/home'));
-const CalendarPageForTherapist = lazy(
-  () => import('../pages/therapist/calendar')
-);
-const TherapistConsultationListPage = lazy(
-  () => import('../pages/therapist/consultation-list')
-);
-const TherapistReviewsPage = lazy(() => import('../pages/therapist/reviews'));
-const TherapistPatientAssessmentPage = lazy(
-  () => import('../pages/therapist/patient-assessment')
-);
+import TherapistHomePage from '../pages/therapist/home';
+import CalendarPageForTherapist from '../pages/therapist/calendar';
+import TherapistConsultationListPage from '../pages/therapist/consultation-list';
+import TherapistReviewsPage from '../pages/therapist/reviews';
+import TherapistPatientAssessmentPage from '../pages/therapist/patient-assessment';
 
 // Developer Pages
 
