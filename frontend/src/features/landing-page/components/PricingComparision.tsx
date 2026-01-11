@@ -31,6 +31,10 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
   const FEATURE_ROW_HEIGHT = 56;
   const FIRST_COL_WIDTH = 280;
 
+  // Responsive breakpoints
+  // const MOBILE_BREAKPOINT = 600;
+  // const TABLET_BREAKPOINT = 900;
+
   if (isLoading) {
     return <CustomLoader />;
   }
@@ -131,35 +135,61 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
     });
   };
 
-  const productColumnWidth =
-    products.length > 0
+  // Set a larger minWidth for each product column to fit long product names on mobile/tablet only
+  const PRODUCT_MIN_WIDTH = 260;
+  const productColumnWidth = {
+    xs: `${PRODUCT_MIN_WIDTH}px`,
+    md: products.length > 0
       ? `calc((100% - ${FIRST_COL_WIDTH}px) / ${products.length})`
-      : 'auto';
+      : 'auto',
+  };
 
   return (
     <Box
       component="section"
-      sx={{
+      sx={theme => ({
         display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         overflow: 'hidden',
-        bgcolor: theme => theme.landingPage.background,
-        py: 2,
-        px: 2,
-      }}
+        bgcolor: theme.landingPage.background,
+        py: { xs: 1, sm: 2, md: 3 },
+        px: { xs: 0.5, sm: 2, md: 4 },
+        width: '100%',
+      })}
     >
+      <Typography
+        variant="h4"
+        sx={{
+          fontWeight: 900,
+          mb: { xs: 2, sm: 3 },
+          textAlign: 'center',
+          letterSpacing: 1,
+          fontSize: { xs: '1.3rem', sm: '2rem' },
+          whiteSpace: 'normal',
+          overflow: 'visible',
+          textOverflow: 'unset',
+          display: 'block',
+        }}
+      >
+        Product Details
+      </Typography>
       <TableContainer
         component={Paper}
-        sx={{
+        sx={theme => ({
           width: '100%',
           overflowX: 'auto',
-          borderRadius: 2,
+          borderRadius: { xs: 0, sm: 2 },
           backgroundColor: theme.palette.background.paper,
-        }}
+          boxShadow: { xs: 'none', sm: undefined },
+          // Add maxWidth and horizontal scroll for mobile
+          maxWidth: '100vw',
+        })}
       >
         <Table
           size="small"
           sx={{
-            minWidth: 900,
+            minWidth: { xs: `calc(${FIRST_COL_WIDTH}px + ${products.length} * ${PRODUCT_MIN_WIDTH}px)`, md: 900 },
             tableLayout: 'fixed',
             width: '100%',
           }}
@@ -167,16 +197,22 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
           <TableHead>
             <TableRow>
               <TableCell
-                sx={{
-                  width: FIRST_COL_WIDTH,
+                sx={theme => ({
+                  width: { xs: 120, sm: FIRST_COL_WIDTH },
+                  minWidth: 90,
+                  maxWidth: 200,
                   position: 'sticky',
                   left: 0,
                   zIndex: 3,
                   bgcolor: theme.palette.background.paper,
                   borderRight: `1px solid ${theme.palette.divider}`,
-                }}
+                  fontSize: { xs: 13, sm: 16 },
+                  px: { xs: 1, sm: 2 },
+                  // Ensure sticky left column stays above scroll
+                  boxShadow: { xs: '2px 0 4px -2px rgba(0,0,0,0.08)', sm: 'none' },
+                })}
               >
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: 15, sm: 20 } }}>
                   Pricing Table
                 </Typography>
               </TableCell>
@@ -187,21 +223,22 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
                   <TableCell
                     key={product.id}
                     align="center"
-                    sx={{
+                    sx={theme => ({
                       p: 0,
-                      height: HEADER_CELL_HEIGHT,
+                      height: { xs: 60, sm: HEADER_CELL_HEIGHT },
                       width: productColumnWidth,
+                      minWidth: { xs: PRODUCT_MIN_WIDTH, md: 90 },
                       borderLeft: `1px solid ${theme.palette.divider}`,
-                    }}
+                    })}
                   >
                     <Box
-                      sx={{
+                      sx={theme => ({
                         p: 0,
                         bgcolor: palette.main,
                         height: '100%',
                         display: 'flex',
                         flexDirection: 'column',
-                      }}
+                      })}
                     >
                       <Box
                         sx={{
@@ -221,7 +258,7 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
                             WebkitBoxOrient: 'vertical',
                             WebkitLineClamp: 2,
                             overflow: 'hidden',
-                            fontSize: '1.1rem',
+                            fontSize: { xs: '0.95rem', sm: '1.1rem' },
                             color: theme => theme.palette.common.white,
                           }}
                         >
@@ -230,8 +267,8 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
                       </Box>
                       <Box
                         sx={{
-                          px: 2,
-                          py: 1.75,
+                          px: { xs: 1, sm: 2 },
+                          py: { xs: 1, sm: 1.75 },
                           flex: '0 0 auto',
                           display: 'flex',
                           alignItems: 'center',
@@ -239,7 +276,7 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
                           color: theme => theme.palette.common.white,
                         }}
                       >
-                        <Typography variant="h5" sx={{ fontWeight: 900 }}>
+                        <Typography variant="h5" sx={{ fontWeight: 900, fontSize: { xs: 16, sm: 22 } }}>
                           {(() => {
                             const price = getDisplayPrice(product);
                             return `${price.symbol}${price.amount.toFixed(2)}`;
@@ -257,25 +294,30 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
             {orderedTitles.map(title => (
               <TableRow
                 key={title}
-                sx={{
-                  height: FEATURE_ROW_HEIGHT,
+                sx={theme => ({
+                  height: { xs: 40, sm: FEATURE_ROW_HEIGHT },
                   '&:nth-of-type(odd)': {
                     bgcolor: theme.palette.action.hover,
                   },
-                }}
+                })}
               >
                 <TableCell
-                  sx={{
-                    height: FEATURE_ROW_HEIGHT,
+                  sx={theme => ({
+                    height: { xs: 40, sm: FEATURE_ROW_HEIGHT },
                     position: 'sticky',
                     left: 0,
                     zIndex: 2,
-                    bgcolor: 'inherit',
+                    bgcolor: theme.palette.background.paper,
                     borderRight: `1px solid ${theme.palette.divider}`,
-                    width: FIRST_COL_WIDTH,
-                  }}
+                    width: { xs: 120, sm: FIRST_COL_WIDTH },
+                    minWidth: 90,
+                    maxWidth: 200,
+                    fontSize: { xs: 12, sm: 15 },
+                    px: { xs: 1, sm: 2 },
+                    boxShadow: { xs: '2px 0 4px -2px rgba(0,0,0,0.08)', sm: 'none' },
+                  })}
                 >
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, fontSize: { xs: 12, sm: 15 } }}>
                     {title}
                   </Typography>
                 </TableCell>
@@ -283,11 +325,14 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
                   <TableCell
                     key={product.id}
                     align="center"
-                    sx={{
-                      height: FEATURE_ROW_HEIGHT,
+                    sx={theme => ({
+                      height: { xs: 40, sm: FEATURE_ROW_HEIGHT },
                       width: productColumnWidth,
+                      minWidth: { xs: PRODUCT_MIN_WIDTH, md: 90 },
                       borderLeft: `1px solid ${theme.palette.divider}`,
-                    }}
+                      fontSize: { xs: 12, sm: 15 },
+                      px: { xs: 1, sm: 2 },
+                    })}
                   >
                     {(() => {
                       const value = getValueForTitle(product, title) || '-';
@@ -295,7 +340,7 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
                       if (pill) return pill;
 
                       return (
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: { xs: 12, sm: 15 } }}>
                           {value}
                         </Typography>
                       );
@@ -307,14 +352,18 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
 
             <TableRow>
               <TableCell
-                sx={{
+                sx={theme => ({
                   position: 'sticky',
                   left: 0,
                   zIndex: 2,
                   bgcolor: theme.palette.background.paper,
                   borderRight: `1px solid ${theme.palette.divider}`,
-                  width: FIRST_COL_WIDTH,
-                }}
+                  width: { xs: 120, sm: FIRST_COL_WIDTH },
+                  minWidth: 90,
+                  maxWidth: 200,
+                  px: { xs: 1, sm: 2 },
+                  boxShadow: { xs: '2px 0 4px -2px rgba(0,0,0,0.08)', sm: 'none' },
+                })}
               />
               {products.map((product, index) => {
                 const color = columnColors[index % columnColors.length];
@@ -322,16 +371,17 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
                   <TableCell
                     key={product.id}
                     align="center"
-                    sx={{ width: productColumnWidth }}
+                    sx={{ width: productColumnWidth, minWidth: { xs: PRODUCT_MIN_WIDTH, md: 90 }, px: { xs: 1, sm: 2 } }}
                   >
                     <Button
                       fullWidth
                       variant="contained"
                       onClick={() => handleBuy(product)}
                       sx={theme => ({
-                        py: 1.25,
+                        py: { xs: 1, sm: 1.25 },
                         fontWeight: 800,
                         borderRadius: 999,
+                        fontSize: { xs: 13, sm: 16 },
                         backgroundColor: theme.palette[color].main,
                         color: theme.palette.common.white,
                         boxShadow: 'none',
