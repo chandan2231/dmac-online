@@ -232,13 +232,13 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
                     })}
                   >
                     <Box
-                      sx={theme => ({
+                      sx={{
                         p: 0,
                         bgcolor: palette.main,
                         height: '100%',
                         display: 'flex',
                         flexDirection: 'column',
-                      })}
+                      }}
                     >
                       <Box
                         sx={{
