@@ -98,6 +98,14 @@ function ProductsTable() {
       product_description: '',
       product_amount: Number.NaN,
     });
+
+    const allKeys =
+      (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || [];
+    const defaults: Record<string, string> = {};
+    allKeys.forEach(k => {
+      defaults[k.title] = k.key_type === 'radio' ? 'No' : '';
+    });
+    setFeatureKeyValues(defaults);
   };
 
   const handleOpenViewModal = (product: IProduct) => {
@@ -353,7 +361,20 @@ function ProductsTable() {
             id: selectedProduct.id,
             ...payload,
           })
-        : await AdminService.createProduct(payload);
+        : await AdminService.createProduct({
+            ...payload,
+            feature: (
+              (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || []
+            ).map(key => ({
+              title: key.title,
+              value:
+                key.key_type === 'radio'
+                  ? featureKeyValues[key.title] === 'Yes'
+                    ? 'Yes'
+                    : 'No'
+                  : String(featureKeyValues[key.title] ?? ''),
+            })),
+          });
 
     if (result.success) {
       setIsLoadingStatus(false);
@@ -574,6 +595,76 @@ function ProductsTable() {
             error={!!errors.product_amount}
             helperText={errors.product_amount?.message}
           />
+
+          {productModalMode === 'add' && (
+            <Box display="flex" flexDirection="column" gap={2}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  Product Features
+                </Typography>
+                <Typography variant="caption" color="textSecondary">
+                  Fields below are generated from Product Feature Keys.
+                </Typography>
+              </Box>
+
+              {(
+                (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || []
+              ).map(keyItem => {
+                const currentVal = featureKeyValues[keyItem.title] || '';
+
+                if (keyItem.key_type === 'radio') {
+                  const val = currentVal || 'No';
+                  return (
+                    <Box key={keyItem.id}>
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        sx={{ mb: 1 }}
+                      >
+                        {keyItem.title}
+                      </Typography>
+                      <RadioGroup
+                        row
+                        value={val}
+                        onChange={e => {
+                          setFeatureKeyValues(prev => ({
+                            ...prev,
+                            [keyItem.title]: e.target.value,
+                          }));
+                        }}
+                      >
+                        <FormControlLabel
+                          value="Yes"
+                          control={<Radio />}
+                          label="Yes"
+                        />
+                        <FormControlLabel
+                          value="No"
+                          control={<Radio />}
+                          label="No"
+                        />
+                      </RadioGroup>
+                    </Box>
+                  );
+                }
+
+                return (
+                  <ModernInput
+                    key={keyItem.id}
+                    label={keyItem.title}
+                    placeholder={`Enter value for ${keyItem.title}`}
+                    value={currentVal}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setFeatureKeyValues(prev => ({
+                        ...prev,
+                        [keyItem.title]: e.target.value,
+                      }));
+                    }}
+                  />
+                );
+              })}
+            </Box>
+          )}
 
           <MorenButton
             type="submit"
