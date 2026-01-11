@@ -14,6 +14,10 @@ function AppAppBar() {
     navigate(ROUTES.PATIENT_LOGIN);
   };
 
+  const handleNavigateToProducts = () => {
+    navigate('/products');
+  };
+
   return (
     <div>
       <LandingPageAppBar
@@ -33,10 +37,17 @@ function AppAppBar() {
           >
             {'RM360 Global'}
           </Link>
-          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={handleNavigateToProducts}
+              sx={{ mr: 1, color: 'white', borderColor: 'white', '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255,255,255,0.08)' } }}
+            >
+              Explore Product
+            </Button>
             <Button
               variant="contained"
-              onClick={() => handleNavigateToPatientLogin()}
+              onClick={handleNavigateToPatientLogin}
             >
               Login
             </Button>

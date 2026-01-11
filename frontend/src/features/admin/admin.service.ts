@@ -121,6 +121,45 @@ const getProductsListing = async (): Promise<{
   }
 };
 
+const getLandingPageProductsListing = async (): Promise<{
+  success: boolean;
+  data: IProduct[] | null;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.get('/admin/products');
+
+    // ensure product_amount is casted to number
+    const products = (get(response, 'data', []) as IProduct[]).map(item => ({
+      ...item,
+      product_amount: Number(item.product_amount),
+      created_date: moment(get(item, 'created_date')).format('YYYY-MM-DD'),
+      updated_date: moment(get(item, 'updated_date')).format('YYYY-MM-DD'),
+      feature: parseProductFeature(get(item, 'feature', [])),
+      country_amounts: parseProductCountryAmounts(
+        get(item, 'country_amounts', [])
+      ),
+    }));
+
+    return {
+      success: true,
+      data: products,
+      message: 'Products fetched successfully',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while fetching products';
+
+    return {
+      success: false,
+      data: null,
+      message,
+    };
+  }
+};
+
 // ✅ Update product
 const updateProduct = async (
   payload: IUpdateProductPayload
@@ -1024,6 +1063,7 @@ const getPatientMedicalHistory = async (patientId: number) => {
 
 const AdminService = {
   getProductsListing,
+  getLandingPageProductsListing,
   createProduct,
   updateProduct, // ✅ export update service
   updateProductStatus,

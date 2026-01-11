@@ -8,3 +8,10 @@ export function useGetProductListing() {
     queryFn: () => AdminService.getProductsListing(),
   });
 }
+
+export function useGetLandingPageProductListing() {
+  return useQuery({
+    queryKey: [QUERY_KEYS_FOR_ADMIN.GET_PRODUCT_LISTING],
+    queryFn: () => AdminService.getLandingPageProductsListing(),
+  });
+}

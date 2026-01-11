@@ -40,6 +40,10 @@ const schema = Yup.object({
   product_amount: Yup.number()
     .typeError('Amount must be a number')
     .positive('Amount must be greater than 0')
+    .test('decimal-places', 'Amount must have up to 2 decimal places', value => {
+      if (value === undefined || value === null) return false;
+      return /^\d+(\.\d{1,2})?$/.test(String(value));
+    })
     .required('Amount is required'),
 });
 
@@ -547,7 +551,21 @@ function ProductsTable() {
             label="Amount"
             placeholder="Enter product amount (USD)"
             type="number"
-            {...register('product_amount', { valueAsNumber: true })}
+            inputProps={{ step: '0.01', min: '0', pattern: '^\\d+(\\.\\d{1,2})?$' }}
+            {...register('product_amount', { valueAsNumber: true,
+              onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                const val = e.target.value;
+                // Only allow up to 2 decimal places
+                if (/^\d+(\.\d{0,2})?$/.test(val) || val === '') {
+                  e.target.value = val;
+                } else {
+                  // Truncate to 2 decimals if more entered
+                  const truncated = val.replace(/^(\d+\.\d{2}).*$/, '$1');
+                  e.target.value = truncated;
+                }
+                return e;
+              }
+            })}
             error={!!errors.product_amount}
             helperText={errors.product_amount?.message}
           />
