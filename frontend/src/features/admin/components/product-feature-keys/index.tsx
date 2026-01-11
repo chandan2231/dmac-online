@@ -25,7 +25,6 @@ import type {
 type FeatureKeyFormValues = {
   title: string;
   key_type: ProductFeatureKeyType;
-  value: string;
 };
 
 const schema = Yup.object({
@@ -33,7 +32,6 @@ const schema = Yup.object({
   key_type: Yup.mixed<ProductFeatureKeyType>()
     .oneOf(['radio', 'text'])
     .required('Key type is required'),
-  value: Yup.string().required('Value is required'),
 });
 
 function ProductFeatureKeys() {
@@ -59,14 +57,6 @@ function ProductFeatureKeys() {
     []
   );
 
-  const yesNoOptions: IOption[] = useMemo(
-    () => [
-      { label: 'Yes', value: 'Yes' },
-      { label: 'No', value: 'No' },
-    ],
-    []
-  );
-
   const rows = useMemo(() => {
     return (data?.data || []) as IProductFeatureKey[];
   }, [data]);
@@ -82,25 +72,28 @@ function ProductFeatureKeys() {
     defaultValues: {
       title: '',
       key_type: 'text',
-      value: '',
     },
   });
 
   const watchedKeyType = watch('key_type');
 
   const handleOpenAddModal = () => {
-    reset({ title: '', key_type: 'text', value: '' });
+    reset({ title: '', key_type: 'text' });
     setIsModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
     setIsModalOpen(false);
-    reset({ title: '', key_type: 'text', value: '' });
+    reset({ title: '', key_type: 'text' });
   };
 
   const onSubmit = async (values: FeatureKeyFormValues) => {
     setIsSaving(true);
-    const result = await AdminService.createProductFeatureKey(values);
+    const payload = {
+      ...values,
+      value: values.key_type === 'radio' ? 'No' : '',
+    };
+    const result = await AdminService.createProductFeatureKey(payload);
     if (result.success) {
       showToast(result.message, 'success');
       handleCloseAddModal();
@@ -133,7 +126,6 @@ function ProductFeatureKeys() {
       renderCell: params =>
         params.row.key_type === 'radio' ? 'Radio (Yes/No)' : 'Text',
     },
-    { field: 'value', headerName: 'Actual Value', flex: 1 },
     {
       field: 'actions',
       headerName: 'Actions',
@@ -250,34 +242,9 @@ function ProductFeatureKeys() {
             onChange={val => {
               const next = val.value as ProductFeatureKeyType;
               setValue('key_type', next);
-              setValue('value', next === 'radio' ? 'Yes' : '');
             }}
             fullWidth
           />
-
-          {watchedKeyType === 'radio' ? (
-            <ModernSelect
-              label="Actual Value"
-              id="feature-key-radio"
-              options={yesNoOptions}
-              value={yesNoOptions.find(o => o.value === watch('value')) || null}
-              onChange={val => setValue('value', val.value)}
-              fullWidth
-              error={!!errors.value}
-              helperText={errors.value?.message}
-            />
-          ) : (
-            <ModernInput
-              label="Actual Value"
-              placeholder="Enter value"
-              value={watch('value')}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setValue('value', e.target.value)
-              }
-              error={!!errors.value}
-              helperText={errors.value?.message}
-            />
-          )}
 
           <MorenButton
             type="submit"

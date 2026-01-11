@@ -6,17 +6,26 @@ import MorenButton from '../../../../components/button';
 import AdminService from '../../admin.service';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useState, useEffect } from 'react';
-import { Box, Typography } from '@mui/material';
+import {
+  Box,
+  Typography,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  IconButton,
+  Menu,
+  MenuItem,
+} from '@mui/material';
 import { GenericTable } from '../../../../components/table';
 import { useGetProductListing } from '../../hooks/useGetProductListing';
-import type { IProduct } from '../../admin.interface';
+import { useGetProductFeatureKeys } from '../../hooks/useGetProductFeatureKeys';
+import type { IProduct, IProductFeatureKey } from '../../admin.interface';
 import { get } from 'lodash';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useToast } from '../../../../providers/toast-provider';
 import CustomLoader from '../../../../components/loader';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { IconButton, Menu, MenuItem } from '@mui/material';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 import ModernSelect, { type IOption } from '../../../../components/select';
 import {
@@ -43,6 +52,7 @@ type ProductFormValues = {
 
 function ProductsTable() {
   const { data, isLoading, refetch } = useGetProductListing();
+  const { data: featureKeysData } = useGetProductFeatureKeys();
 
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 10,
@@ -59,6 +69,10 @@ function ProductsTable() {
   const [isViewMode, setIsViewMode] = useState(false);
   const [isCountryAmountModalOpen, setIsCountryAmountModalOpen] =
     useState(false);
+  const [isFeatureKeysModalOpen, setIsFeatureKeysModalOpen] = useState(false);
+  const [featureKeyValues, setFeatureKeyValues] = useState<
+    Record<string, string>
+  >({});
   const [countryAmountRows, setCountryAmountRows] = useState<
     Array<{ country: IOption | null; amount: number | '' }>
   >([]);
@@ -152,6 +166,83 @@ function ProductsTable() {
     setIsCountryAmountModalOpen(false);
     setCountryAmountRows([]);
     setSelectedProduct(null);
+  };
+
+  const handleOpenFeatureKeysModal = (product: IProduct) => {
+    setSelectedProduct(product);
+    const initialValues: Record<string, string> = {};
+    const features = get(product, 'feature', []) || [];
+
+    const normalizeRadio = (value: unknown) => {
+      const text = String(value ?? '')
+        .trim()
+        .toLowerCase();
+      if (text === 'yes') return 'Yes';
+      if (text === 'no') return 'No';
+      return '';
+    };
+
+    // Pre-fill existing values
+    features.forEach((f: { title: string; value: string }) => {
+      initialValues[f.title] = f.value;
+    });
+
+    // If we have key definitions loaded, normalize radio values to Yes/No
+    const allKeys =
+      (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || [];
+    allKeys.forEach(k => {
+      if (k.key_type !== 'radio') return;
+      if (initialValues[k.title] !== undefined) {
+        const normalized = normalizeRadio(initialValues[k.title]);
+        if (normalized) initialValues[k.title] = normalized;
+      }
+    });
+
+    setFeatureKeyValues(initialValues);
+    setIsFeatureKeysModalOpen(true);
+  };
+
+  const handleCloseFeatureKeysModal = () => {
+    setIsFeatureKeysModalOpen(false);
+    setFeatureKeyValues({});
+    setSelectedProduct(null);
+  };
+
+  const handleSaveFeatureKeys = async () => {
+    if (!selectedProduct) return;
+
+    setIsLoadingStatus(true);
+
+    const allKeys =
+      (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || [];
+
+    // Construct feature array based on all defined keys and form values
+    const newFeatures = allKeys.map(key => ({
+      title: key.title,
+      value:
+        key.key_type === 'radio'
+          ? featureKeyValues[key.title] === 'Yes'
+            ? 'Yes'
+            : 'No'
+          : String(featureKeyValues[key.title] ?? ''),
+    }));
+
+    const result = await AdminService.updateProduct({
+      id: selectedProduct.id,
+      product_name: selectedProduct.product_name,
+      product_description: selectedProduct.product_description,
+      product_amount: selectedProduct.product_amount,
+      feature: newFeatures,
+    });
+
+    if (result.success) {
+      showToast(result.message, 'success');
+      handleCloseFeatureKeysModal();
+      refetch();
+    } else {
+      showToast(result.message, 'error');
+    }
+    setIsLoadingStatus(false);
   };
 
   const handleAddCountryAmountRow = () => {
@@ -354,6 +445,14 @@ function ProductsTable() {
                 horizontal: 'right',
               }}
             >
+              <MenuItem
+                onClick={() => {
+                  handleClose();
+                  handleOpenFeatureKeysModal(params.row);
+                }}
+              >
+                Edit Feature Keys
+              </MenuItem>
               <MenuItem
                 onClick={() => {
                   handleClose();
@@ -711,6 +810,85 @@ function ProductsTable() {
               Save
             </MorenButton>
           </Box>
+        </Box>
+      </GenericModal>
+      <GenericModal
+        isOpen={isFeatureKeysModalOpen}
+        onClose={handleCloseFeatureKeysModal}
+        title={`Edit Feature Values${
+          selectedProduct
+            ? ` - ${get(selectedProduct, 'product_name', '')}`
+            : ''
+        }`}
+        hideCancelButton
+      >
+        <Box display="flex" flexDirection="column" gap={2}>
+          {(
+            (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || []
+          ).map(keyItem => {
+            const currentVal = featureKeyValues[keyItem.title] || '';
+
+            if (keyItem.key_type === 'radio') {
+              // Radio buttons
+              const val = currentVal || 'No';
+              return (
+                <Box key={keyItem.id}>
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                    sx={{ mb: 1 }}
+                  >
+                    {keyItem.title}
+                  </Typography>
+                  <RadioGroup
+                    row
+                    value={val}
+                    onChange={e => {
+                      setFeatureKeyValues(prev => ({
+                        ...prev,
+                        [keyItem.title]: e.target.value,
+                      }));
+                    }}
+                  >
+                    <FormControlLabel
+                      value="Yes"
+                      control={<Radio />}
+                      label="Yes"
+                    />
+                    <FormControlLabel
+                      value="No"
+                      control={<Radio />}
+                      label="No"
+                    />
+                  </RadioGroup>
+                </Box>
+              );
+            }
+
+            // Text type
+            return (
+              <ModernInput
+                key={keyItem.id}
+                label={keyItem.title}
+                placeholder={`Enter value for ${keyItem.title}`}
+                value={currentVal}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setFeatureKeyValues(prev => ({
+                    ...prev,
+                    [keyItem.title]: e.target.value,
+                  }));
+                }}
+              />
+            );
+          })}
+
+          <MorenButton
+            variant="contained"
+            onClick={handleSaveFeatureKeys}
+            sx={{ alignSelf: 'flex-end', mt: 2, minWidth: '120px' }}
+          >
+            Save Features
+          </MorenButton>
         </Box>
       </GenericModal>
     </Box>

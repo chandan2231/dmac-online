@@ -61,6 +61,7 @@ export interface IUpdateProductPayload {
   product_name: string;
   product_description: string;
   product_amount: number;
+  feature?: IProductFeature[];
 }
 
 export interface ICreateProductPayload {
