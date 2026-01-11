@@ -290,6 +290,8 @@ export interface IAllowedRoutes {
   showInSidebar: boolean;
   sideBarIcon: MapperObjectKey | null;
   sideBarTitle: string | null;
+  sideBarGroupTitle?: string | null;
+  sideBarGroupIcon?: MapperObjectKey | null;
   isAChildOf: ROUTES | null;
 }
 
@@ -646,6 +648,8 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     showInSidebar: true,
     sideBarTitle: 'Users List',
     sideBarIcon: 'GroupIcon',
+    sideBarGroupTitle: 'USERS',
+    sideBarGroupIcon: 'GroupIcon',
     isAChildOf: null,
   },
   {
@@ -656,6 +660,8 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     showInSidebar: true,
     sideBarTitle: 'User’s Transactions',
     sideBarIcon: 'ReceiptLongIcon',
+    sideBarGroupTitle: 'USERS',
+    sideBarGroupIcon: 'GroupIcon',
     isAChildOf: null,
   },
   {
@@ -666,6 +672,8 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     showInSidebar: true,
     sideBarTitle: 'Experts List',
     sideBarIcon: 'BadgeIcon',
+    sideBarGroupTitle: 'USERS',
+    sideBarGroupIcon: 'GroupIcon',
     isAChildOf: null,
   },
   {
