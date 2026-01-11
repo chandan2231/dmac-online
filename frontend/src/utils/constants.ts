@@ -7,7 +7,7 @@ export const LOCAL_STORAGE_KEYS = {
   LANGUAGE_CONSTANTS: 'languageConstants',
 };
 
-export const DRAWER_WIDTH = 260;
+export const DRAWER_WIDTH = 290;
 export const MINI_DRAWER_WIDTH = 70;
 
 const currencySymbolCache = new Map<string, string>();

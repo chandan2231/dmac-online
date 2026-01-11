@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useGetProductListing } from '../../admin/hooks/useGetProductListing';
+import { useGetLandingPageProductListing } from '../../admin/hooks/useGetProductListing';
 import { get } from 'lodash';
 import type { IProduct, IProductFeature } from '../../admin/admin.interface';
 import { useNavigate } from 'react-router-dom';
@@ -23,7 +23,7 @@ type PricingComparisionProps = {
 };
 
 function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
-  const { data, isLoading, error } = useGetProductListing();
+  const { data, isLoading, error } = useGetLandingPageProductListing();
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -66,9 +66,8 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
     }
   }
 
-  const columnColors: Array<
-    'success' | 'info' | 'secondary' | 'warning' | 'primary'
-  > = ['success', 'info', 'secondary', 'warning', 'primary'];
+  // Use a single color for all columns and header
+  const TABLE_HEADER_BG = '#1976d2';
 
   const yesNoPill = (value: string) => {
     const normalized = value.trim().toLowerCase();
@@ -177,20 +176,21 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
       >
         Product Details
       </Typography>
-      <TableContainer
-        component={Paper}
-        sx={theme => ({
+      <Box
+        sx={{
           width: '100%',
-          overflowX: 'auto',
-          borderRadius: { xs: 0, sm: 2 },
-          backgroundColor: theme.palette.background.paper,
-          boxShadow: { xs: 'none', sm: undefined },
-          // Add maxWidth and horizontal scroll for mobile
           maxWidth: '100vw',
-        })}
+          overflowX: 'auto',
+          overflowY: 'auto',
+          borderRadius: { xs: 0, sm: 2 },
+          backgroundColor: theme => theme.palette.background.paper,
+          boxShadow: { xs: 'none', sm: undefined },
+          maxHeight: { xs: 420, sm: 600, md: 700 }, // Set a max height for vertical scroll
+        }}
       >
         <Table
           size="small"
+          stickyHeader
           sx={{
             minWidth: { xs: `calc(${FIRST_COL_WIDTH}px + ${products.length} * ${PRODUCT_MIN_WIDTH}px)`, md: 900 },
             tableLayout: 'fixed',
@@ -200,96 +200,94 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
           <TableHead>
             <TableRow>
               <TableCell
-                sx={theme => ({
+                sx={{
                   width: { xs: 120, sm: FIRST_COL_WIDTH },
                   minWidth: 90,
                   maxWidth: 200,
                   position: 'sticky',
                   left: 0,
                   zIndex: 3,
-                  bgcolor: theme.palette.background.paper,
-                  borderRight: `1px solid ${theme.palette.divider}`,
+                  bgcolor: TABLE_HEADER_BG,
+                  borderRight: '1px solid #e0e0e0',
                   fontSize: { xs: 13, sm: 16 },
                   px: { xs: 1, sm: 2 },
-                  // Ensure sticky left column stays above scroll
+                  color: 'white',
                   boxShadow: { xs: '2px 0 4px -2px rgba(0,0,0,0.08)', sm: 'none' },
-                })}
+                }}
               >
-                <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: 15, sm: 20 } }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: 15, sm: 20 }, color: 'white' }}>
                   Pricing Table
                 </Typography>
               </TableCell>
-              {products.map((product, index) => {
-                const color = columnColors[index % columnColors.length];
-                const palette = theme.palette[color];
-                return (
-                  <TableCell
-                    key={product.id}
-                    align="center"
-                    sx={theme => ({
+              {products.map((product) => (
+                <TableCell
+                  key={product.id}
+                  align="center"
+                  sx={{
+                    p: 0,
+                    height: { xs: 60, sm: HEADER_CELL_HEIGHT },
+                    width: productColumnWidth,
+                    minWidth: { xs: PRODUCT_MIN_WIDTH, md: 90 },
+                    borderLeft: '1px solid #e0e0e0',
+                    bgcolor: TABLE_HEADER_BG,
+                    color: 'white',
+                  }}
+                >
+                  <Box
+                    sx={{
                       p: 0,
-                      height: { xs: 60, sm: HEADER_CELL_HEIGHT },
-                      width: productColumnWidth,
-                      minWidth: { xs: PRODUCT_MIN_WIDTH, md: 90 },
-                      borderLeft: `1px solid ${theme.palette.divider}`,
-                    })}
+                      bgcolor: 'transparent',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
                   >
                     <Box
                       sx={{
-                        p: 0,
-                        bgcolor: palette.main,
-                        height: '100%',
+                        fontWeight: 600,
+                        flex: '1 1 auto',
                         display: 'flex',
-                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
-                      <Box
+                      <Typography
+                        variant="h6"
                         sx={{
                           fontWeight: 600,
-                          flex: '1 1 auto',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                          lineHeight: 1.2,
+                          display: '-webkit-box',
+                          WebkitBoxOrient: 'vertical',
+                          WebkitLineClamp: 2,
+                          overflow: 'hidden',
+                          fontSize: { xs: '0.95rem', sm: '1.1rem' },
+                          color: 'white',
                         }}
                       >
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            fontWeight: 600,
-                            lineHeight: 1.2,
-                            display: '-webkit-box',
-                            WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: 2,
-                            overflow: 'hidden',
-                            fontSize: { xs: '0.95rem', sm: '1.1rem' },
-                            color: theme => theme.palette.common.white,
-                          }}
-                        >
-                          {product.product_name}
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          px: { xs: 1, sm: 2 },
-                          py: { xs: 1, sm: 1.75 },
-                          flex: '0 0 auto',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: theme => theme.palette.common.white,
-                        }}
-                      >
-                        <Typography variant="h5" sx={{ fontWeight: 900, fontSize: { xs: 16, sm: 22 } }}>
-                          {(() => {
-                            const price = getDisplayPrice(product);
-                            return `${price.symbol}${price.amount.toFixed(2)}`;
-                          })()}
-                        </Typography>
-                      </Box>
+                        {product.product_name}
+                      </Typography>
                     </Box>
-                  </TableCell>
-                );
-              })}
+                    <Box
+                      sx={{
+                        px: { xs: 1, sm: 2 },
+                        py: { xs: 1, sm: 1.75 },
+                        flex: '0 0 auto',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                      }}
+                    >
+                      <Typography variant="h5" sx={{ fontWeight: 900, fontSize: { xs: 16, sm: 22 }, color: 'white' }}>
+                        {(() => {
+                          const price = getDisplayPrice(product);
+                          return `${price.symbol}${price.amount.toFixed(2)}`;
+                        })()}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </TableCell>
+              ))}
             </TableRow>
           </TableHead>
 
@@ -368,8 +366,8 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
                   boxShadow: { xs: '2px 0 4px -2px rgba(0,0,0,0.08)', sm: 'none' },
                 })}
               />
-              {products.map((product, index) => {
-                const color = columnColors[index % columnColors.length];
+              {products.map((product) => {
+                // const color = columnColors[index % columnColors.length];
                 return (
                   <TableCell
                     key={product.id}
@@ -380,21 +378,19 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
                       fullWidth
                       variant="contained"
                       onClick={() => handleBuy(product)}
-                      sx={theme => ({
+                      sx={{
                         py: { xs: 1, sm: 1.25 },
                         fontWeight: 800,
                         borderRadius: 999,
                         fontSize: { xs: 13, sm: 16 },
-                        backgroundColor: theme.palette[color].main,
-                        color: theme.palette.common.white,
+                        backgroundColor: '#1976d2',
+                        color: 'white',
                         boxShadow: 'none',
                         '&:hover': {
-                          backgroundColor:
-                            theme.palette[color].dark ||
-                            theme.palette[color].main,
+                          backgroundColor: '#115293',
                           boxShadow: 'none',
                         },
-                      })}
+                      }}
                     >
                       BUY NOW
                     </Button>
@@ -404,8 +400,8 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
             </TableRow>
           </TableBody>
         </Table>
-      </TableContainer>
-    </Box>
+        </Box>
+      </Box>
   );
 }
 

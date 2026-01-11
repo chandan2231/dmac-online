@@ -516,6 +516,16 @@ export const deleteProductFeatureKey = async (req, res) => {
   }
 }
 
+export const getLandingPageProductList = (req, res) => {
+  const que = 'SELECT * FROM dmac_webapp_products where status=1 ORDER BY id ASC'
+  db.query(que, [], (err, data) => {
+    if (err) return res.status(500).json(err)
+    if (data.length >= 0) {
+      return res.status(200).json(data)
+    }
+  })
+}
+
 export const getProductList = (req, res) => {
   const que = 'SELECT * FROM dmac_webapp_products'
   db.query(que, [], (err, data) => {

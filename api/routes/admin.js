@@ -17,7 +17,8 @@ import {
   getConsultationList,
   getPatientDocuments,
   getPatientAssessmentStatus,
-  getPatientMedicalHistory
+  getPatientMedicalHistory,
+  getLandingPageProductList
 } from '../controllers/admin.js'
 
 import { authenticateUser } from '../utils/middleware.js'
@@ -29,6 +30,7 @@ router.post('/user/status/change', authenticateUser, changeUserStatus)
 router.post('/user/create', authenticateUser, createUsersByRole)
 router.post('/user/update', authenticateUser, updateUsersDetails)
 router.get('/products/list', getProductList)
+router.get('/products', getLandingPageProductList)
 router.post('/products/create', authenticateUser, createProduct)
 router.post('/products/update', authenticateUser, updateProductDetails)
 router.post(
