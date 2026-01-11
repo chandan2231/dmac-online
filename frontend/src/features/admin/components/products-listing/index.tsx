@@ -857,8 +857,19 @@ function ProductsTable() {
             );
           })}
 
-          <Box display="flex" justifyContent="space-between" gap={2}>
-            <MorenButton variant="outlined" onClick={handleAddCountryAmountRow}>
+          <Box
+            display="flex"
+            flexDirection="column"
+            justifyContent="space-between"
+            gap={4}
+          >
+            <MorenButton
+              variant="outlined"
+              onClick={handleAddCountryAmountRow}
+              sx={{
+                maxWidth: '200px',
+              }}
+            >
               Add Another Country
             </MorenButton>
             <MorenButton variant="contained" onClick={handleSaveCountryAmounts}>
