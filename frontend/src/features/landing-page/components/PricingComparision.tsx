@@ -2,14 +2,14 @@ import CustomLoader from '../../../components/loader';
 import {
   Box,
   Button,
-  Paper,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Typography,
+  // Paper,
+  // TableContainer,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useGetLandingPageProductListing } from '../../admin/hooks/useGetProductListing';
