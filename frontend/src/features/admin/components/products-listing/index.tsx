@@ -69,7 +69,6 @@ function ProductsTable() {
   const [isViewMode, setIsViewMode] = useState(false);
   const [isCountryAmountModalOpen, setIsCountryAmountModalOpen] =
     useState(false);
-  const [isFeatureKeysModalOpen, setIsFeatureKeysModalOpen] = useState(false);
   const [featureKeyValues, setFeatureKeyValues] = useState<
     Record<string, string>
   >({});
@@ -79,15 +78,60 @@ function ProductsTable() {
 
   const { showToast } = useToast();
 
+  const normalizeRadio = (value: unknown) => {
+    const text = String(value ?? '')
+      .trim()
+      .toLowerCase();
+    if (text === 'yes') return 'Yes';
+    if (text === 'no') return 'No';
+    return '';
+  };
+
+  const initializeFeatureValues = (product: IProduct | null) => {
+    const allKeys =
+      (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || [];
+
+    const next: Record<string, string> = {};
+    // defaults from keys
+    allKeys.forEach(k => {
+      next[k.title] = k.key_type === 'radio' ? 'No' : '';
+    });
+
+    if (product) {
+      const features =
+        (get(product, 'feature', []) as Array<{
+          title?: string;
+          value?: unknown;
+        }>) || [];
+
+      features.forEach(f => {
+        const title = String(f?.title ?? '').trim();
+        if (!title) return;
+        next[title] = String(f?.value ?? '');
+      });
+
+      // normalize radios
+      allKeys.forEach(k => {
+        if (k.key_type !== 'radio') return;
+        const normalized = normalizeRadio(next[k.title]);
+        next[k.title] = normalized || 'No';
+      });
+    }
+
+    setFeatureKeyValues(next);
+  };
+
   const handleCloseProductModal = () => {
     setProductModalMode(null);
     setSelectedProduct(null);
+    setFeatureKeyValues({});
     reset(); // clear form
   };
 
   const handleOpenEditModal = (product: IProduct) => {
     setSelectedProduct(product);
     setProductModalMode('edit');
+    initializeFeatureValues(product);
   };
 
   const handleOpenAddModal = () => {
@@ -99,13 +143,7 @@ function ProductsTable() {
       product_amount: Number.NaN,
     });
 
-    const allKeys =
-      (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || [];
-    const defaults: Record<string, string> = {};
-    allKeys.forEach(k => {
-      defaults[k.title] = k.key_type === 'radio' ? 'No' : '';
-    });
-    setFeatureKeyValues(defaults);
+    initializeFeatureValues(null);
   };
 
   const handleOpenViewModal = (product: IProduct) => {
@@ -174,83 +212,6 @@ function ProductsTable() {
     setIsCountryAmountModalOpen(false);
     setCountryAmountRows([]);
     setSelectedProduct(null);
-  };
-
-  const handleOpenFeatureKeysModal = (product: IProduct) => {
-    setSelectedProduct(product);
-    const initialValues: Record<string, string> = {};
-    const features = get(product, 'feature', []) || [];
-
-    const normalizeRadio = (value: unknown) => {
-      const text = String(value ?? '')
-        .trim()
-        .toLowerCase();
-      if (text === 'yes') return 'Yes';
-      if (text === 'no') return 'No';
-      return '';
-    };
-
-    // Pre-fill existing values
-    features.forEach((f: { title: string; value: string }) => {
-      initialValues[f.title] = f.value;
-    });
-
-    // If we have key definitions loaded, normalize radio values to Yes/No
-    const allKeys =
-      (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || [];
-    allKeys.forEach(k => {
-      if (k.key_type !== 'radio') return;
-      if (initialValues[k.title] !== undefined) {
-        const normalized = normalizeRadio(initialValues[k.title]);
-        if (normalized) initialValues[k.title] = normalized;
-      }
-    });
-
-    setFeatureKeyValues(initialValues);
-    setIsFeatureKeysModalOpen(true);
-  };
-
-  const handleCloseFeatureKeysModal = () => {
-    setIsFeatureKeysModalOpen(false);
-    setFeatureKeyValues({});
-    setSelectedProduct(null);
-  };
-
-  const handleSaveFeatureKeys = async () => {
-    if (!selectedProduct) return;
-
-    setIsLoadingStatus(true);
-
-    const allKeys =
-      (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || [];
-
-    // Construct feature array based on all defined keys and form values
-    const newFeatures = allKeys.map(key => ({
-      title: key.title,
-      value:
-        key.key_type === 'radio'
-          ? featureKeyValues[key.title] === 'Yes'
-            ? 'Yes'
-            : 'No'
-          : String(featureKeyValues[key.title] ?? ''),
-    }));
-
-    const result = await AdminService.updateProduct({
-      id: selectedProduct.id,
-      product_name: selectedProduct.product_name,
-      product_description: selectedProduct.product_description,
-      product_amount: selectedProduct.product_amount,
-      feature: newFeatures,
-    });
-
-    if (result.success) {
-      showToast(result.message, 'success');
-      handleCloseFeatureKeysModal();
-      refetch();
-    } else {
-      showToast(result.message, 'error');
-    }
-    setIsLoadingStatus(false);
   };
 
   const handleAddCountryAmountRow = () => {
@@ -355,25 +316,28 @@ function ProductsTable() {
       product_amount: Number(values.product_amount),
     };
 
+    const allKeys =
+      (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || [];
+    const featurePayload = allKeys.map(key => ({
+      title: key.title,
+      value:
+        key.key_type === 'radio'
+          ? featureKeyValues[key.title] === 'Yes'
+            ? 'Yes'
+            : 'No'
+          : String(featureKeyValues[key.title] ?? ''),
+    }));
+
     const result =
       productModalMode === 'edit' && selectedProduct
         ? await AdminService.updateProduct({
             id: selectedProduct.id,
             ...payload,
+            ...(allKeys.length > 0 ? { feature: featurePayload } : {}),
           })
         : await AdminService.createProduct({
             ...payload,
-            feature: (
-              (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || []
-            ).map(key => ({
-              title: key.title,
-              value:
-                key.key_type === 'radio'
-                  ? featureKeyValues[key.title] === 'Yes'
-                    ? 'Yes'
-                    : 'No'
-                  : String(featureKeyValues[key.title] ?? ''),
-            })),
+            feature: featurePayload,
           });
 
     if (result.success) {
@@ -469,10 +433,10 @@ function ProductsTable() {
               <MenuItem
                 onClick={() => {
                   handleClose();
-                  handleOpenFeatureKeysModal(params.row);
+                  handleOpenEditModal(params.row);
                 }}
               >
-                Edit Feature Keys
+                Edit
               </MenuItem>
               <MenuItem
                 onClick={() => {
@@ -489,14 +453,6 @@ function ProductsTable() {
                 }}
               >
                 Add amount by country
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  handleClose();
-                  handleOpenEditModal(params.row);
-                }}
-              >
-                Edit
               </MenuItem>
             </Menu>
           </>
@@ -596,7 +552,7 @@ function ProductsTable() {
             helperText={errors.product_amount?.message}
           />
 
-          {productModalMode === 'add' && (
+          {(productModalMode === 'add' || productModalMode === 'edit') && (
             <Box display="flex" flexDirection="column" gap={2}>
               <Box>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
@@ -606,6 +562,14 @@ function ProductsTable() {
                   Fields below are generated from Product Feature Keys.
                 </Typography>
               </Box>
+
+              {(
+                (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || []
+              ).length === 0 && (
+                <Typography variant="caption" color="textSecondary">
+                  No feature keys configured.
+                </Typography>
+              )}
 
               {(
                 (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || []
@@ -901,85 +865,6 @@ function ProductsTable() {
               Save
             </MorenButton>
           </Box>
-        </Box>
-      </GenericModal>
-      <GenericModal
-        isOpen={isFeatureKeysModalOpen}
-        onClose={handleCloseFeatureKeysModal}
-        title={`Edit Feature Values${
-          selectedProduct
-            ? ` - ${get(selectedProduct, 'product_name', '')}`
-            : ''
-        }`}
-        hideCancelButton
-      >
-        <Box display="flex" flexDirection="column" gap={2}>
-          {(
-            (get(featureKeysData, 'data', []) as IProductFeatureKey[]) || []
-          ).map(keyItem => {
-            const currentVal = featureKeyValues[keyItem.title] || '';
-
-            if (keyItem.key_type === 'radio') {
-              // Radio buttons
-              const val = currentVal || 'No';
-              return (
-                <Box key={keyItem.id}>
-                  <Typography
-                    variant="body2"
-                    color="textSecondary"
-                    sx={{ mb: 1 }}
-                  >
-                    {keyItem.title}
-                  </Typography>
-                  <RadioGroup
-                    row
-                    value={val}
-                    onChange={e => {
-                      setFeatureKeyValues(prev => ({
-                        ...prev,
-                        [keyItem.title]: e.target.value,
-                      }));
-                    }}
-                  >
-                    <FormControlLabel
-                      value="Yes"
-                      control={<Radio />}
-                      label="Yes"
-                    />
-                    <FormControlLabel
-                      value="No"
-                      control={<Radio />}
-                      label="No"
-                    />
-                  </RadioGroup>
-                </Box>
-              );
-            }
-
-            // Text type
-            return (
-              <ModernInput
-                key={keyItem.id}
-                label={keyItem.title}
-                placeholder={`Enter value for ${keyItem.title}`}
-                value={currentVal}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setFeatureKeyValues(prev => ({
-                    ...prev,
-                    [keyItem.title]: e.target.value,
-                  }));
-                }}
-              />
-            );
-          })}
-
-          <MorenButton
-            variant="contained"
-            onClick={handleSaveFeatureKeys}
-            sx={{ alignSelf: 'flex-end', mt: 2, minWidth: '120px' }}
-          >
-            Save Features
-          </MorenButton>
         </Box>
       </GenericModal>
     </Box>
