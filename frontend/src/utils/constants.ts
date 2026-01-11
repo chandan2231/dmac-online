@@ -1,3 +1,5 @@
+import countryToCurrency from 'country-to-currency';
+
 export const ROLES_ALLOWED_TO_CHANGE_LANGUAGE = ['USER'];
 
 export const LOCAL_STORAGE_KEYS = {
@@ -8,16 +10,43 @@ export const LOCAL_STORAGE_KEYS = {
 export const DRAWER_WIDTH = 260;
 export const MINI_DRAWER_WIDTH = 70;
 
+const currencySymbolCache = new Map<string, string>();
+
+const getCurrencySymbol = (currencyCode: string) => {
+  const key = currencyCode || '$';
+  const cached = currencySymbolCache.get(key);
+  if (cached) return cached;
+
+  try {
+    const parts = new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currencyCode,
+      currencyDisplay: 'narrowSymbol',
+    }).formatToParts(0);
+    const symbol =
+      parts.find(p => p.type === 'currency')?.value || currencyCode || '$';
+    currencySymbolCache.set(key, symbol);
+    return symbol;
+  } catch {
+    const symbol = currencyCode || '$';
+    currencySymbolCache.set(key, symbol);
+    return symbol;
+  }
+};
+
 export const COUNTRY_CURRENCY_BY_CODE: Record<
   string,
   { currencyCode: string; symbol: string }
 > = {
-  US: { currencyCode: 'USD', symbol: '$' },
-  CA: { currencyCode: 'CAD', symbol: '$' },
-  GB: { currencyCode: 'GBP', symbol: '£' },
-  AU: { currencyCode: 'AUD', symbol: '$' },
-  IN: { currencyCode: 'INR', symbol: '₹' },
-  CN: { currencyCode: 'CNY', symbol: '¥' },
+  ...Object.fromEntries(
+    Object.entries(countryToCurrency).map(([countryCode, currencyCode]) => [
+      countryCode,
+      {
+        currencyCode,
+        symbol: getCurrencySymbol(currencyCode),
+      },
+    ])
+  ),
 };
 
 export const COUNTRIES_LIST = [

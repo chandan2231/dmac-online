@@ -155,11 +155,88 @@ export const updateProductDetails = async (req, res) => {
   }
 }
 
-export const createProduct = (req, res) => {
-  const { product_name, product_description, product_amount } = req.body
+export const createProduct = async (req, res) => {
+  const { product_name, product_description, product_amount, feature } =
+    req.body
 
   if (!product_name || !product_description || product_amount == null) {
     return res.status(400).json({ status: 400, msg: 'Missing required fields' })
+  }
+
+  let featureJson = '[]'
+  try {
+    if (feature !== undefined) {
+      let featureArray = []
+      if (Array.isArray(feature)) {
+        featureArray = feature
+      } else if (typeof feature === 'string') {
+        try {
+          const parsed = JSON.parse(feature)
+          featureArray = Array.isArray(parsed) ? parsed : []
+        } catch {
+          featureArray = []
+        }
+      }
+
+      const normalizedItems = (Array.isArray(featureArray) ? featureArray : [])
+        .filter(Boolean)
+        .map((item) => ({
+          title: String(item?.title || '').trim(),
+          value: String(item?.value ?? '').trim()
+        }))
+        .filter((item) => item.title)
+
+      // If keys table exists/has rows, validate radio values
+      let keyRows = []
+      try {
+        const rows = await new Promise((resolve, reject) => {
+          db.query(
+            'SELECT title, key_type FROM dmac_webapp_product_feature_keys',
+            [],
+            (err, data) => {
+              if (err) reject(err)
+              resolve(data)
+            }
+          )
+        })
+        keyRows = Array.isArray(rows) ? rows : []
+      } catch {
+        keyRows = []
+      }
+
+      const keyTypeByTitle = new Map()
+      ;(Array.isArray(keyRows) ? keyRows : []).forEach((row) => {
+        const t = String(row?.title || '').trim()
+        const kt = String(row?.key_type || '').trim()
+        if (t) keyTypeByTitle.set(t, kt)
+      })
+
+      const normalizeRadio = (value) => {
+        const text = String(value || '')
+          .trim()
+          .toLowerCase()
+        if (text === 'yes') return 'Yes'
+        if (text === 'no') return 'No'
+        return null
+      }
+
+      for (const item of normalizedItems) {
+        const kt = keyTypeByTitle.get(item.title)
+        if (kt === 'radio') {
+          const rv = normalizeRadio(item.value)
+          if (!rv) {
+            return res
+              .status(400)
+              .json({ status: 400, msg: 'Radio value must be Yes or No' })
+          }
+          item.value = rv
+        }
+      }
+
+      featureJson = JSON.stringify(normalizedItems)
+    }
+  } catch {
+    featureJson = '[]'
   }
 
   const query = `
@@ -173,7 +250,7 @@ export const createProduct = (req, res) => {
     product_name,
     product_description,
     String(product_name),
-    '[]',
+    featureJson,
     product_amount,
     null,
     1
@@ -328,81 +405,42 @@ export const getProductFeatureKeys = async (req, res) => {
 
 export const createProductFeatureKey = async (req, res) => {
   try {
-    const { title, key_type, value } = req.body
-
-    const normalizedTitle = String(title || '').trim()
-    const normalizedKeyType = normalizeKeyType(key_type)
+    const { title, key_type } = req.body;
+    const normalizedTitle = String(title || '').trim();
+    const normalizedKeyType = normalizeKeyType(key_type);
 
     if (!normalizedTitle) {
-      return res.status(400).json({ status: 400, msg: 'Title is required' })
+      return res.status(400).json({ status: 400, msg: 'Title is required' });
     }
 
-    let normalizedValue = String(value ?? '').trim()
-    if (normalizedKeyType === 'radio') {
-      const radioValue = normalizeRadioValue(normalizedValue)
-      if (!radioValue) {
-        return res
-          .status(400)
-          .json({ status: 400, msg: 'Radio value must be Yes or No' })
-      }
-      normalizedValue = radioValue
-    }
-
+    // Insert only title and key_type, do not store value
     const insertResult = await new Promise((resolve, reject) => {
       db.query(
-        'INSERT INTO dmac_webapp_product_feature_keys (title, key_type, value) VALUES (?, ?, ?)',
-        [normalizedTitle, normalizedKeyType, normalizedValue],
+        'INSERT INTO dmac_webapp_product_feature_keys (title, key_type) VALUES (?, ?)',
+        [normalizedTitle, normalizedKeyType],
         (err, result) => {
-          if (err) reject(err)
-          resolve(result)
+          if (err) reject(err);
+          resolve(result);
         }
-      )
-    })
+      );
+    });
 
-    // Apply to all products (append if missing)
-    const products = await new Promise((resolve, reject) => {
-      db.query(
-        'SELECT id, feature FROM dmac_webapp_products',
-        [],
-        (err, data) => {
-          if (err) reject(err)
-          resolve(data)
-        }
-      )
-    })
 
-    for (const p of Array.isArray(products) ? products : []) {
-      const items = safeParseJsonArray(p?.feature)
-      const exists = items.some(
-        (i) => String(i?.title || '').trim() === normalizedTitle
-      )
-      if (exists) continue
-      items.push({ title: normalizedTitle, value: normalizedValue })
-      await new Promise((resolve, reject) => {
-        db.query(
-          'UPDATE dmac_webapp_products SET feature = ? WHERE id = ?',
-          [JSON.stringify(items), p.id],
-          (err) => {
-            if (err) reject(err)
-            resolve(true)
-          }
-        )
-      })
-    }
+    // Do not update the feature column in dmac_webapp_products
 
     return res.status(200).json({
       status: 200,
       msg: 'Feature key created successfully',
       id: insertResult?.insertId
-    })
+    });
   } catch (error) {
     // Handle duplicate title
     if (String(error?.code || '') === 'ER_DUP_ENTRY') {
       return res
         .status(409)
-        .json({ status: 409, msg: 'Feature key already exists' })
+        .json({ status: 409, msg: 'Feature key already exists' });
     }
-    return res.status(500).json({ status: 500, msg: 'Server error', error })
+    return res.status(500).json({ status: 500, msg: 'Server error', error });
   }
 }
 

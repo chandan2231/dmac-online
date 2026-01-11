@@ -75,8 +75,6 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
     if (normalized !== 'yes' && normalized !== 'no') return null;
 
     const isYes = normalized === 'yes';
-    const bg = isYes ? theme.palette.success.light : theme.palette.error.light;
-
     return (
       <Box
         component="span"
@@ -84,17 +82,22 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          px: 1.25,
-          py: 0.5,
-          borderRadius: 999,
-          bgcolor: bg,
-          color: theme.palette.common.white,
           fontWeight: 700,
-          fontSize: 12,
+          fontSize: 16,
           minWidth: '40%',
         }}
       >
-        {isYes ? 'Yes' : 'No'}
+        {isYes ? (
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="10" r="10" fill={theme.palette.success.main} />
+            <path d="M6 10.5L9 13.5L14 8.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="10" r="10" fill={theme.palette.error.main} />
+            <path d="M7 7L13 13M13 7L7 13" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+        )}
       </Box>
     );
   };
