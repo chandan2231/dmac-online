@@ -24,8 +24,14 @@ export const changeProductStatus = (req, res) => {
 
 export const updateProductDetails = async (req, res) => {
   try {
-    const { id, product_name, product_description, product_amount, status } =
-      req.body
+    const {
+      id,
+      product_name,
+      product_description,
+      product_amount,
+      status,
+      feature
+    } = req.body
 
     if (
       !id ||
@@ -38,13 +44,93 @@ export const updateProductDetails = async (req, res) => {
         .json({ status: 400, msg: 'Missing required fields' })
     }
 
+    let featureJson = null
+    if (feature !== undefined) {
+      let featureArray = []
+      if (Array.isArray(feature)) {
+        featureArray = feature
+      } else if (typeof feature === 'string') {
+        try {
+          const parsed = JSON.parse(feature)
+          featureArray = Array.isArray(parsed) ? parsed : []
+        } catch {
+          featureArray = []
+        }
+      }
+
+      // Normalize shape and values
+      const normalizedItems = (Array.isArray(featureArray) ? featureArray : [])
+        .filter(Boolean)
+        .map((item) => ({
+          title: String(item?.title || '').trim(),
+          value: String(item?.value ?? '').trim()
+        }))
+        .filter((item) => item.title)
+
+      // Validate radio values against feature keys table
+      const keyRows = await new Promise((resolve, reject) => {
+        db.query(
+          'SELECT title, key_type FROM dmac_webapp_product_feature_keys',
+          [],
+          (err, data) => {
+            if (err) reject(err)
+            resolve(data)
+          }
+        )
+      })
+
+      const keyTypeByTitle = new Map()
+      ;(Array.isArray(keyRows) ? keyRows : []).forEach((row) => {
+        const t = String(row?.title || '').trim()
+        const kt = String(row?.key_type || '').trim()
+        if (t) keyTypeByTitle.set(t, kt)
+      })
+
+      const normalizeRadio = (value) => {
+        const text = String(value || '')
+          .trim()
+          .toLowerCase()
+        if (text === 'yes') return 'Yes'
+        if (text === 'no') return 'No'
+        return null
+      }
+
+      for (const item of normalizedItems) {
+        const keyType = keyTypeByTitle.get(item.title)
+        if (keyType === 'radio') {
+          const rv = normalizeRadio(item.value)
+          if (!rv) {
+            return res
+              .status(400)
+              .json({ status: 400, msg: 'Radio value must be Yes or No' })
+          }
+          item.value = rv
+        }
+      }
+
+      featureJson = JSON.stringify(normalizedItems)
+    }
+
+    const setParts = [
+      'product_name = ?',
+      'product_description = ?',
+      'product_amount = ?',
+      'updated_date = NOW()'
+    ]
+    const values = [product_name, product_description, product_amount]
+
+    if (featureJson !== null) {
+      setParts.push('feature = ?')
+      values.push(featureJson)
+    }
+
     const query = `
       UPDATE dmac_webapp_products 
-      SET product_name = ?, product_description = ?, product_amount = ? 
+      SET ${setParts.join(', ')}
       WHERE id = ?
     `
 
-    const values = [product_name, product_description, product_amount, id]
+    values.push(id)
 
     db.query(query, values, (err, result) => {
       if (err) {
