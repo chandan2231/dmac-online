@@ -18,7 +18,11 @@ import type { IProduct, IProductFeature } from '../../admin/admin.interface';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../router/router';
 
-function PricingComparision() {
+type PricingComparisionProps = {
+  selectedCountryCode?: string;
+};
+
+function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
   const { data, isLoading, error } = useGetProductListing();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -34,7 +38,7 @@ function PricingComparision() {
   if (error) {
     return null;
   }
-
+  // test comment
   const products = ((get(data, 'data', []) as IProduct[]) ?? [])
     .slice()
     .sort(
@@ -96,6 +100,27 @@ function PricingComparision() {
       item => (item?.title ?? '').trim() === title
     );
     return (match?.value ?? '').toString();
+  };
+
+  const getDisplayPrice = (product: IProduct) => {
+    const fallbackAmount = Number(product.product_amount);
+    const fallback = {
+      symbol: '$',
+      amount: Number.isFinite(fallbackAmount) ? fallbackAmount : 0,
+    };
+
+    if (!selectedCountryCode) return fallback;
+
+    const match = (product.country_amounts ?? []).find(
+      item => (item?.country_code ?? '').trim() === selectedCountryCode
+    );
+    const amount = Number(match?.amount);
+    if (!match || !Number.isFinite(amount)) return fallback;
+
+    return {
+      symbol: match.currency_symbol || '$',
+      amount,
+    };
   };
 
   const handleBuy = (product: IProduct) => {
@@ -215,7 +240,10 @@ function PricingComparision() {
                         }}
                       >
                         <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                          ${Number(product.product_amount).toFixed(2)}
+                          {(() => {
+                            const price = getDisplayPrice(product);
+                            return `${price.symbol}${price.amount.toFixed(2)}`;
+                          })()}
                         </Typography>
                       </Box>
                     </Box>
@@ -309,7 +337,8 @@ function PricingComparision() {
                         boxShadow: 'none',
                         '&:hover': {
                           backgroundColor:
-                            theme.palette[color].dark || theme.palette[color].main,
+                            theme.palette[color].dark ||
+                            theme.palette[color].main,
                           boxShadow: 'none',
                         },
                       })}

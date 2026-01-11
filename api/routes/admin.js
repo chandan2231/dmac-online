@@ -4,7 +4,12 @@ import {
   changeUserStatus,
   createUsersByRole,
   getProductList,
+  createProduct,
   updateProductDetails,
+  updateProductCountryAmounts,
+  getProductFeatureKeys,
+  createProductFeatureKey,
+  deleteProductFeatureKey,
   changeProductStatus,
   updateUsersDetails,
   changeUserPassword,
@@ -24,7 +29,30 @@ router.post('/user/status/change', authenticateUser, changeUserStatus)
 router.post('/user/create', authenticateUser, createUsersByRole)
 router.post('/user/update', authenticateUser, updateUsersDetails)
 router.get('/products/list', getProductList)
+router.post('/products/create', authenticateUser, createProduct)
 router.post('/products/update', authenticateUser, updateProductDetails)
+router.post(
+  '/products/country-amounts/update',
+  authenticateUser,
+  updateProductCountryAmounts
+)
+
+router.get(
+  '/product-feature-keys/list',
+  authenticateUser,
+  getProductFeatureKeys
+)
+router.post(
+  '/product-feature-keys/create',
+  authenticateUser,
+  createProductFeatureKey
+)
+router.post(
+  '/product-feature-keys/delete',
+  authenticateUser,
+  deleteProductFeatureKey
+)
+
 router.post('/products/status/change', authenticateUser, changeProductStatus)
 router.post('/user/reset/password', authenticateUser, changeUserPassword)
 router.post(
