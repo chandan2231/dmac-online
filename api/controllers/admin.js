@@ -405,81 +405,42 @@ export const getProductFeatureKeys = async (req, res) => {
 
 export const createProductFeatureKey = async (req, res) => {
   try {
-    const { title, key_type, value } = req.body
-
-    const normalizedTitle = String(title || '').trim()
-    const normalizedKeyType = normalizeKeyType(key_type)
+    const { title, key_type } = req.body;
+    const normalizedTitle = String(title || '').trim();
+    const normalizedKeyType = normalizeKeyType(key_type);
 
     if (!normalizedTitle) {
-      return res.status(400).json({ status: 400, msg: 'Title is required' })
+      return res.status(400).json({ status: 400, msg: 'Title is required' });
     }
 
-    let normalizedValue = String(value ?? '').trim()
-    if (normalizedKeyType === 'radio') {
-      const radioValue = normalizeRadioValue(normalizedValue)
-      if (!radioValue) {
-        return res
-          .status(400)
-          .json({ status: 400, msg: 'Radio value must be Yes or No' })
-      }
-      normalizedValue = radioValue
-    }
-
+    // Insert only title and key_type, do not store value
     const insertResult = await new Promise((resolve, reject) => {
       db.query(
-        'INSERT INTO dmac_webapp_product_feature_keys (title, key_type, value) VALUES (?, ?, ?)',
-        [normalizedTitle, normalizedKeyType, normalizedValue],
+        'INSERT INTO dmac_webapp_product_feature_keys (title, key_type) VALUES (?, ?)',
+        [normalizedTitle, normalizedKeyType],
         (err, result) => {
-          if (err) reject(err)
-          resolve(result)
+          if (err) reject(err);
+          resolve(result);
         }
-      )
-    })
+      );
+    });
 
-    // Apply to all products (append if missing)
-    const products = await new Promise((resolve, reject) => {
-      db.query(
-        'SELECT id, feature FROM dmac_webapp_products',
-        [],
-        (err, data) => {
-          if (err) reject(err)
-          resolve(data)
-        }
-      )
-    })
 
-    for (const p of Array.isArray(products) ? products : []) {
-      const items = safeParseJsonArray(p?.feature)
-      const exists = items.some(
-        (i) => String(i?.title || '').trim() === normalizedTitle
-      )
-      if (exists) continue
-      items.push({ title: normalizedTitle, value: normalizedValue })
-      await new Promise((resolve, reject) => {
-        db.query(
-          'UPDATE dmac_webapp_products SET feature = ? WHERE id = ?',
-          [JSON.stringify(items), p.id],
-          (err) => {
-            if (err) reject(err)
-            resolve(true)
-          }
-        )
-      })
-    }
+    // Do not update the feature column in dmac_webapp_products
 
     return res.status(200).json({
       status: 200,
       msg: 'Feature key created successfully',
       id: insertResult?.insertId
-    })
+    });
   } catch (error) {
     // Handle duplicate title
     if (String(error?.code || '') === 'ER_DUP_ENTRY') {
       return res
         .status(409)
-        .json({ status: 409, msg: 'Feature key already exists' })
+        .json({ status: 409, msg: 'Feature key already exists' });
     }
-    return res.status(500).json({ status: 500, msg: 'Server error', error })
+    return res.status(500).json({ status: 500, msg: 'Server error', error });
   }
 }
 
