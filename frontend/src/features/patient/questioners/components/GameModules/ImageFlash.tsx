@@ -65,7 +65,12 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
         enterAnswers: getLanguageText(languageConstants, 'game_enter_answers'),
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder'),
         validationError: getLanguageText(languageConstants, 'game_validation_error'),
-        answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW'
+        answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW',
+        audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction',
+        nextEllipsis: (() => {
+            const val = getLanguageText(languageConstants, 'game_next_ellipsis');
+            return (!val || val === 'game_next_ellipsis') ? 'NEXT...' : val;
+        })()
     };
 
     const [phase, setPhase] = useState<'instruction' | 'playing' | 'lastImageWithButtons' | 'beforeInput' | 'input'>('instruction');
@@ -179,6 +184,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                 submitButtonText={t.start}
                 onSubmit={handleStart}
                 enableAudio={true}
+                audioButtonLabel={t.audioInstruction}
                 instructionText={session.instructions || session.questions?.[0]?.prompt_text || ''}
                 languageCode={languageCode}
             >
@@ -209,10 +215,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                     <Box sx={{ display: 'flex', gap: 2 }}>
                         <MorenButton
                             variant="contained"
-                            onClick={() => {
-                                setCurrentItemIndex(0);
-                                setPhase('playing');
-                            }}
+                            onClick={handleRepeat}
                             sx={{
                                 backgroundColor: '#3f51b5',
                                 width: '120px',
@@ -236,7 +239,7 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
                                 fontWeight: 'bold'
                             }}
                         >
-                            {t.answerNow}
+                            {t.nextEllipsis}
                         </MorenButton>
                     </Box>
                 </Box>
@@ -247,11 +250,15 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
             <GenericModal
                 isOpen={phase === 'beforeInput'}
                 onClose={() => { }}
-                title={`${session.module?.name || ''} ${t.instruction}`}
+                title={(() => {
+                    const val = getLanguageText(languageConstants, 'game_instructions_for_answer');
+                    return (val && val !== 'game_instructions_for_answer') ? val : 'Instructions For Answer';
+                })()}
                 hideCancelButton={true}
                 submitButtonText={t.answerNow}
                 onSubmit={() => setPhase('input')}
                 enableAudio={true}
+                audioButtonLabel={t.audioInstruction}
                 instructionText={session.questions?.[0]?.prompt_text || ''}
                 languageCode={languageCode}
             >

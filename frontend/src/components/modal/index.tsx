@@ -45,6 +45,7 @@ interface GenericModalProps {
   isLoading?: boolean;
   renderHtmlContent?: string;
   submitDisabled?: boolean;
+  audioButtonLabel?: string;
 };
 
 const GenericModal: React.FC<GenericModalProps> = ({
@@ -66,6 +67,7 @@ const GenericModal: React.FC<GenericModalProps> = ({
   enableAudio = false,
   instructionText = '',
   languageCode = 'en',
+  audioButtonLabel,
 }) => {
   if (isLoading) {
     return <CustomLoader />;
@@ -146,6 +148,7 @@ const GenericModal: React.FC<GenericModalProps> = ({
               languageCode={languageCode}
               iconSize="large"
               color="primary"
+              label={audioButtonLabel}
             />
           )}
           {!hideCancelButton && (

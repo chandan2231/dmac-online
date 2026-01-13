@@ -41,6 +41,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     const startText = getLanguageText(languageConstants, 'game_start') || 'Start';
     const nextText = getLanguageText(languageConstants, 'game_next') || 'NEXT';
     const instructionsText = getLanguageText(languageConstants, 'game_instructions') || 'Instructions';
+    const audioInstructionText = getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction';
 
     // Handle instruction submission
     const handleInstructionSubmit = () => {
@@ -310,6 +311,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                 submitButtonText={startText}
                 onSubmit={handleInstructionSubmit}
                 enableAudio={true}
+                audioButtonLabel={audioInstructionText}
                 instructionText={session.module?.description || session.instructions || ''}
                 languageCode={languageCode}
             >

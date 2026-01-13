@@ -192,6 +192,7 @@ const handleSemantic = async (module, questions, languageCode) => {
 const moduleHandlers = {
   'VISUAL_SPATIAL': handleVisualSpatial,
   'AUDIO_STORY': handleAudioStory,
+  'AUDIO_STORY_2': handleAudioStory,
   'AUDIO_WORDS': handleDefault,
   'IMAGE_FLASH': handleDefault,
   'EXECUTIVE': handleExecutive,
@@ -223,12 +224,12 @@ export const getModules = async (req, res) => {
 }
 
 export const startSession = async (req, res) => {
-  const { moduleId } = req.params
-  const { user_id, language_code } = req.body
-  console.log(`[StartSession] starting for module ${moduleId}, user ${user_id}, lang ${language_code}`);
+  const { moduleId } = req.params;
+  const { user_id, language_code, resume } = req.body;
+  console.log(`[StartSession] starting for module ${moduleId}, user ${user_id}, lang ${language_code}, resume ${resume}`);
 
   if (!user_id || !language_code) {
-    return res.status(400).json({ error: 'Missing user_id or language_code' })
+    return res.status(400).json({ error: 'Missing user_id or language_code' });
   }
 
   try {
@@ -241,27 +242,45 @@ export const startSession = async (req, res) => {
        LEFT JOIN modules_i18n mi ON m.id = mi.module_id AND mi.language_code = ?
        WHERE m.id = ?`,
       [language_code, moduleId]
-    )
-    if (modules.length === 0) {
-      return res.status(404).json({ error: 'Module not found' })
-    }
-    const module = modules[0]
+    );
 
-    // 2. Create Session
-    const result = await query(
-      'INSERT INTO sessions (user_id, module_id, score, status) VALUES (?, ?, 0, "in_progress")',
-      [user_id, module.id]
-    )
-    const sessionId = result.insertId
+    if (modules.length === 0) {
+      return res.status(404).json({ error: 'Module not found' });
+    }
+    const module = modules[0];
+
+    // 2. Handle Session Creation vs Resume
+    let sessionId;
+    if (resume) {
+      // Check for existing in_progress session
+      const existing = await query(
+        'SELECT id FROM sessions WHERE user_id = ? AND module_id = ? AND status = "in_progress" ORDER BY created_at DESC LIMIT 1',
+        [user_id, module.id]
+      );
+      if (existing.length > 0) {
+        sessionId = existing[0].id;
+        console.log(`[StartSession] Resuming existing session ${sessionId}`);
+      }
+    }
+
+    if (!sessionId) {
+      // Create new session
+      const result = await query(
+        'INSERT INTO sessions (user_id, module_id, score, status) VALUES (?, ?, 0, "in_progress")',
+        [user_id, module.id]
+      );
+      sessionId = result.insertId;
+      console.log(`[StartSession] Created new session ${sessionId}`);
+    }
 
     // 3. Fetch Questions
-    const questions = await fetchQuestions(module.id, language_code)
+    const questions = await fetchQuestions(module.id, language_code);
 
-    // 4. Construct Response Payload using Strategy Pattern
-    const handler = moduleHandlers[module.code] || moduleHandlers.default
-    const modulePayload = await handler(module, questions, language_code)
+    // 4. Construct Response
+    const handler = moduleHandlers[module.code] || moduleHandlers.default;
+    const modulePayload = await handler(module, questions, language_code);
 
-    const payload = {
+    res.json({
       session_id: sessionId,
       module: {
         id: module.id,
@@ -272,15 +291,37 @@ export const startSession = async (req, res) => {
       language_code,
       instructions: module.description,
       ...modulePayload
-    }
-
-    res.json(payload)
+    });
 
   } catch (err) {
     console.error('[StartSession] Error:', err);
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: err.message });
   }
-}
+};
+
+export const getAttemptStatus = async (req, res) => {
+  const user_id = req.user?.userId; // Corrected key to match JWT payload
+  if (!user_id) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    // Count sessions for Module 1 (Visual Picture Recall)
+    const result = await query(
+      'SELECT COUNT(*) as count FROM sessions WHERE user_id = ? AND module_id = 1',
+      [user_id]
+    );
+    const count = result[0].count;
+    const max_attempts = 3;
+
+    res.json({
+      count,
+      max_attempts,
+      allowed: count < max_attempts
+    });
+  } catch (err) {
+    console.error('[GetAttemptStatus] Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
 
 export const submitSession = async (req, res) => {
   const { moduleId, sessionId } = req.params
@@ -365,11 +406,13 @@ export const submitSession = async (req, res) => {
 
         let correctCount = calculateKeywordScore(ans.answer_text, items)
 
-        if (module.code === 'AUDIO_STORY') {
+        if (module.code === 'AUDIO_STORY' || module.code === 'AUDIO_STORY_2') {
           // Special rule: >= 10 keywords = 5.0, else count * 0.5
+          // Since we split the module, each module now has 1 story.
+          // Max score for one story is presumably 5.0. 
           if (correctCount >= 10) itemScore = 5.0
           else itemScore = Math.min(correctCount * 0.5, 5.0)
-          maxScore = 10 // 2 stories
+          maxScore = 5 // 1 story per module now
         } else if (module.code === 'AUDIO_WORDS') {
           // 0.5 points per word, max 10 words possible
           if (correctCount >= 10) {

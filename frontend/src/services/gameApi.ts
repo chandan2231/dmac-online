@@ -63,16 +63,29 @@ export interface SubmitResponse {
     next_module_id: number | null;
 }
 
+export interface AttemptStatus {
+    count: number;
+    max_attempts: number;
+    allowed: boolean;
+}
+
 const getModules = async (): Promise<{ modules: Module[] }> => {
     const res = await HttpService.get('/modules');
     return res.data;
 };
 
-const startSession = async (moduleId: number, userId: number, languageCode: string): Promise<SessionData> => {
+
+const startSession = async (moduleId: number, userId: number, languageCode: string, resume?: boolean): Promise<SessionData> => {
     const res = await HttpService.post(`/modules/${moduleId}/session/start`, {
         user_id: userId,
-        language_code: languageCode
+        language_code: languageCode,
+        resume
     });
+    return res.data;
+};
+
+const getAttemptStatus = async (): Promise<AttemptStatus> => {
+    const res = await HttpService.get('/modules/attempts');
     return res.data;
 };
 
@@ -84,7 +97,8 @@ const submitSession = async (moduleId: number, sessionId: number, payload: Submi
 const GameApi = {
     getModules,
     startSession,
-    submitSession
+    submitSession,
+    getAttemptStatus
 };
 
 export default GameApi;

@@ -46,6 +46,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
     const { languageConstants } = useLanguageConstantContext();
     const startText = getLanguageText(languageConstants, 'game_start') || 'Start';
     const instructionsTitle = getLanguageText(languageConstants, 'game_instructions') || 'Instructions';
+    const audioInstructionText = getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction';
 
     const [dots, setDots] = useState<Dot[]>([]);
     const [connections, setConnections] = useState<Connection[]>([]);
@@ -206,6 +207,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
                 submitButtonText={startText}
                 onSubmit={handleInstructionSubmit}
                 enableAudio={true}
+                audioButtonLabel={audioInstructionText}
                 instructionText={session.instructions || ''}
                 languageCode={session.language_code || 'en'}
             >

@@ -37,7 +37,8 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
         enterAnswers: getLanguageText(languageConstants, 'game_enter_answers'),
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder') || 'Type your recall here...',
         validationError: getLanguageText(languageConstants, 'game_validation_error'),
-        answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW'
+        answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW',
+        audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
 
     // Phases: 'pre_audio_instruction' -> 'playing_audio' -> 'playing_complete' -> 'post_audio_instruction' -> 'recall'
@@ -177,6 +178,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
                 submitButtonText={t.start}
                 onSubmit={handleNextFromInstruction}
                 enableAudio={true}
+                audioButtonLabel={t.audioInstruction}
                 instructionText={currentStory.prompt_text || ''}
                 languageCode={languageCode}
             >
@@ -187,11 +189,15 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
             <GenericModal
                 isOpen={phase === 'post_audio_instruction'}
                 onClose={() => { }}
-                title={`${session.module?.name || ''} ${t.instructions}`}
+                title={(() => {
+                    const val = getLanguageText(languageConstants, 'game_instructions_for_answer');
+                    return (val && val !== 'game_instructions_for_answer') ? val : 'Instructions For Answer';
+                })()}
                 hideCancelButton={true}
                 submitButtonText={t.next}
                 onSubmit={handleNextFromPostInstruction}
                 enableAudio={true}
+                audioButtonLabel={t.audioInstruction}
                 instructionText={currentStory.post_instruction_text || ''}
                 languageCode={languageCode}
             >

@@ -31,7 +31,8 @@ const AudioWordsRecall = ({ session, onComplete, languageCode }: AudioWordsRecal
         completed: getLanguageText(languageConstants, 'game_completed_status'),
         enterAnswers: getLanguageText(languageConstants, 'game_enter_answers'),
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder') || 'Type your recall here...',
-        answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW'
+        answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW',
+        audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
 
     // State
@@ -114,6 +115,7 @@ const AudioWordsRecall = ({ session, onComplete, languageCode }: AudioWordsRecal
                 submitButtonText={t.start}
                 onSubmit={handleStart}
                 enableAudio={true}
+                audioButtonLabel={t.audioInstruction}
                 instructionText={preInstruction}
                 languageCode={languageCode}
             >
@@ -124,11 +126,15 @@ const AudioWordsRecall = ({ session, onComplete, languageCode }: AudioWordsRecal
             <GenericModal
                 isOpen={phase === 'post_audio_instruction'}
                 onClose={() => { }}
-                title={`${session.module?.name || ''} ${t.instructions}`}
+                title={(() => {
+                    const val = getLanguageText(languageConstants, 'game_instructions_for_answer');
+                    return (val && val !== 'game_instructions_for_answer') ? val : 'Instructions For Answer';
+                })()}
                 hideCancelButton={true}
                 submitButtonText={t.next}
                 onSubmit={handleNextToRecall}
                 enableAudio={true}
+                audioButtonLabel={t.audioInstruction}
                 instructionText={postInstruction}
                 languageCode={languageCode}
             >

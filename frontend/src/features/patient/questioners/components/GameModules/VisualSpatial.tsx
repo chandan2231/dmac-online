@@ -55,7 +55,8 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
     // Get translations
     const t = {
         instruction: getLanguageText(languageConstants, 'game_instruction'),
-        start: getLanguageText(languageConstants, 'game_start')
+        start: getLanguageText(languageConstants, 'game_start'),
+        audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
 
     const [phase, setPhase] = useState<'instruction' | 'target' | 'selection'>('instruction');
@@ -176,6 +177,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
                 submitButtonText={t.start}
                 onSubmit={handleStart}
                 enableAudio={true}
+                audioButtonLabel={t.audioInstruction}
                 instructionText={session.instructions || ''}
                 languageCode={languageCode}
             >

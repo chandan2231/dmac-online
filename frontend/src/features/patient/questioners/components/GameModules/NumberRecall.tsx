@@ -41,7 +41,8 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
         enterAnswers: getLanguageText(languageConstants, 'game_enter_answers'),
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder') || 'Type the numbers...',
         answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW',
-        validationError: getLanguageText(languageConstants, 'game_validation_error') || 'Please enter an answer'
+        validationError: getLanguageText(languageConstants, 'game_validation_error') || 'Please enter an answer',
+        audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
 
     // Phases: 
@@ -172,6 +173,7 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                 onSubmit={handleStart}
                 instructionText={session.instructions || "You will hear number sequences. After each, type what you heard."}
                 enableAudio={true} // Read instructions
+                audioButtonLabel={t.audioInstruction}
                 languageCode={languageCode}
             >
                 <Typography>{session.instructions || "You will hear number sequences. After each, type what you heard."}</Typography>

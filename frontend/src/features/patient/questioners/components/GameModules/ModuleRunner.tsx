@@ -37,7 +37,13 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
     };
 
     const [modules, setModules] = useState<Module[]>([]);
-    const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
+
+    // Load initial index from localStorage
+    const [currentModuleIndex, setCurrentModuleIndex] = useState(() => {
+        // We store ID, but state uses index. We'll need to resolve this once modules are loaded.
+        // For now, start at 0, and effect will adjust if needed.
+        return 0;
+    });
     const [session, setSession] = useState<SessionData | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -49,8 +55,24 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
                 const res = await GameApi.getModules();
                 const sorted = (res.modules || []).sort((a, b) => a.order_index - b.order_index);
                 setModules(sorted);
+
+                // Determine start module
+                const savedId = localStorage.getItem('dmac_current_module_id');
+                let startId = sorted.length > 0 ? sorted[0].id : 0;
+                let startIndex = 0;
+
+                if (savedId) {
+                    const foundIndex = sorted.findIndex(m => m.id === Number(savedId));
+                    if (foundIndex !== -1) {
+                        startId = Number(savedId);
+                        startIndex = foundIndex;
+                    }
+                }
+
+                setCurrentModuleIndex(startIndex);
+
                 if (sorted.length > 0) {
-                    startModuleSession(sorted[0].id);
+                    startModuleSession(startId);
                 } else {
                     console.warn("No active game modules found.");
                     setError(t.noModulesFound);
@@ -69,7 +91,9 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
         setError(null);
         try {
             console.log(`[ModuleRunner] Starting session for module ${moduleId}`);
-            const sess = await GameApi.startSession(moduleId, userId, languageCode);
+            // Resume exiting session (created in PreTest) for Module 1, or generally allow resume
+            // To support attempt tracking via PreTest, we MUST resume if a session exists.
+            const sess = await GameApi.startSession(moduleId, userId, languageCode, true); // resume = true
             console.log(`[ModuleRunner] Session started:`, sess);
             setSession(sess);
         } catch (error) {
@@ -87,6 +111,9 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             const res = await GameApi.submitSession(session.module.id, session.session_id, payload);
 
             if (res.next_module_id) {
+                // Save progress
+                localStorage.setItem('dmac_current_module_id', String(res.next_module_id));
+
                 await startModuleSession(res.next_module_id);
                 const nextIdx = modules.findIndex(m => m.id === res.next_module_id);
                 if (nextIdx !== -1) setCurrentModuleIndex(nextIdx);
@@ -94,6 +121,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
                 // All modules completed - show completion screen
                 setShowCompletion(true);
                 // Re-enable language selector
+                localStorage.removeItem('dmac_current_module_id'); // Clear progress on complete
                 onAllModulesComplete();
             }
         } catch (error) {
@@ -280,7 +308,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             {!showCompletion && moduleCode === 'VISUAL_SPATIAL' && (
                 <VisualSpatial session={session} onComplete={handleVisualSpatialComplete} languageCode={languageCode} />
             )}
-            {!showCompletion && moduleCode === 'AUDIO_STORY' && (
+            {!showCompletion && (moduleCode === 'AUDIO_STORY' || moduleCode === 'AUDIO_STORY_2') && (
                 <AudioStoryRecall session={session} onComplete={handleAudioStoryComplete} languageCode={languageCode} />
             )}
             {!showCompletion && moduleCode === 'AUDIO_WORDS' && (

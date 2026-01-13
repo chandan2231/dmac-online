@@ -6,6 +6,9 @@ import { Box } from '@mui/material';
 import CustomLoader from '../../../../components/loader';
 import MorenButton from '../../../../components/button';
 
+import { useTestAttempts } from '../hooks/useTestAttempts';
+import GameApi from '../../../../services/gameApi';
+
 type IPreTestProps = {
     setPreTestCompleted: (value: boolean) => void;
 };
@@ -17,7 +20,30 @@ const PreTest = ({ setPreTestCompleted }: IPreTestProps) => {
         isPending: isLoadingPreTestDetails,
     } = useGetPreTestPageDetails(get(user, ['languageCode'], 'en'));
 
-    if (isLoadingPreTestDetails) {
+    const { data: attemptStatus, isLoading: isLoadingAttempts } = useTestAttempts();
+
+    const handleStart = async () => {
+        if (!attemptStatus?.allowed) return;
+
+        try {
+            const userId = Number(get(user, 'id', 0));
+            const languageCode = get(user, 'languageCode', 'en');
+            // Force new session for Module 1 (Image Flash) to count attempt
+            // The module ID for Image Flash is 1 (based on previous queries)
+
+            // Clear any previous game progress
+            localStorage.removeItem('dmac_current_module_id');
+
+            await GameApi.startSession(1, userId, languageCode, false); // resume = false
+            setPreTestCompleted(true);
+        } catch (error) {
+            console.error("Failed to start session", error);
+            // toast.error("Failed to start test. Please try again.");
+            alert("Failed to start test. Please try again.");
+        }
+    };
+
+    if (isLoadingPreTestDetails || isLoadingAttempts) {
         return <CustomLoader />;
     }
 
@@ -33,6 +59,19 @@ const PreTest = ({ setPreTestCompleted }: IPreTestProps) => {
             }}
             gap={2}
         >
+            {attemptStatus && !attemptStatus.allowed && (
+                <Box sx={{
+                    bgcolor: '#ffebee',
+                    color: '#c62828',
+                    p: 2,
+                    borderRadius: 1,
+                    textAlign: 'center',
+                    fontWeight: 'bold'
+                }}>
+                    You have used all {attemptStatus.max_attempts} attempts. You cannot take the test again.
+                </Box>
+            )}
+
             {/* Title */}
             <Box sx={{ fontWeight: 'bold', fontSize: '20px', textAlign: 'center', mb: 4 }}>
                 {get(preTestDetails, ['title'], '')}
@@ -94,7 +133,8 @@ const PreTest = ({ setPreTestCompleted }: IPreTestProps) => {
             <Box sx={{ width: '100%', mt: 4, display: 'flex', justifyContent: 'center' }}>
                 <MorenButton
                     variant="contained"
-                    onClick={() => setPreTestCompleted(true)}
+                    onClick={handleStart}
+                    disabled={attemptStatus && !attemptStatus.allowed}
                     sx={{
                         width: { xs: '100%', sm: 'auto' },
                         minWidth: '200px',

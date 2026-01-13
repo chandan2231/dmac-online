@@ -23,7 +23,8 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
         next: getLanguageText(languageConstants, 'game_next') || 'NEXT',
         enterAnswers: getLanguageText(languageConstants, 'game_enter_answers') || 'Enter Answers',
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder') || 'Type here...',
-        answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW'
+        answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW',
+        audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
 
     const [phase, setPhase] = useState<'instruction' | 'playing'>('instruction');
@@ -136,6 +137,7 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
                 submitButtonText={t.start}
                 onSubmit={handleStart}
                 enableAudio={true}
+                audioButtonLabel={t.audioInstruction}
                 instructionText={session.instructions || ''}
                 languageCode={languageCode}
             >

@@ -73,7 +73,7 @@ SET
     button_text = 'NEXT'
 WHERE page_id = 2 AND language_code = 'en';
 
--- Update for Hindi (hi)
+-- Update for Hindi (hi
 UPDATE dmac_webapp_page_translations
 SET
     title = 'DMAC निर्देश',

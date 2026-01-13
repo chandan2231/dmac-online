@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { IconButton, Tooltip } from '@mui/material';
+import MorenButton from '../button';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import StopIcon from '@mui/icons-material/Stop';
 
@@ -8,9 +9,10 @@ interface TextToSpeechProps {
     languageCode: string;
     iconSize?: 'small' | 'medium' | 'large';
     color?: string;
+    label?: string;
 }
 
-const TextToSpeech = ({ text, languageCode, iconSize = 'medium', color = 'primary' }: TextToSpeechProps) => {
+const TextToSpeech = ({ text, languageCode, iconSize = 'medium', color = 'primary', label }: TextToSpeechProps) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
 
@@ -166,7 +168,29 @@ const TextToSpeech = ({ text, languageCode, iconSize = 'medium', color = 'primar
         };
     }, []);
 
-    return (
+    const ButtonComponent = label ? (
+        <Tooltip title={isPlaying ? "Stop audio" : "Play instruction audio"}>
+            <MorenButton
+                onClick={handleSpeak}
+                variant="outlined"
+                startIcon={isPlaying ? <StopIcon /> : <VolumeUpIcon />}
+                sx={{
+                    color: color === 'primary' ? '#1976d2' : 'inherit',
+                    borderColor: color === 'primary' ? '#1976d2' : 'inherit',
+                    transition: 'all 0.2s',
+                    textTransform: 'none',
+                    width: 'auto', // Override default 100% width
+                    padding: '6px 16px', // Slightly smaller padding
+                    '&:hover': {
+                        transform: 'scale(1.02)',
+                        backgroundColor: color === 'primary' ? 'rgba(25, 118, 210, 0.08)' : 'rgba(255, 255, 255, 0.08)'
+                    }
+                }}
+            >
+                {label}
+            </MorenButton>
+        </Tooltip>
+    ) : (
         <Tooltip title={isPlaying ? "Stop audio" : "Play instruction audio"}>
             <IconButton
                 onClick={handleSpeak}
@@ -185,6 +209,8 @@ const TextToSpeech = ({ text, languageCode, iconSize = 'medium', color = 'primar
             </IconButton>
         </Tooltip>
     );
+
+    return ButtonComponent;
 };
 
 export default TextToSpeech;
