@@ -198,6 +198,9 @@ const moduleHandlers = {
   'EXECUTIVE': handleExecutive,
   'SEMANTIC': handleSemantic,
   'NUMBER_RECALL': handleExecutive, // Reuse handleExecutive as it returns checks for all items which fits
+  'REVERSE_NUMBER_RECALL': handleExecutive,
+  'COLOR_RECALL': handleExecutive,
+  'GROUP_MATCHING': handleSemantic,
   'default': handleDefault
 }
 

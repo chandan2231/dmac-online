@@ -14,7 +14,7 @@ interface DrawingRecallProps {
 }
 
 type DrawMode = 'line' | 'rectangle' | null;
-type Phase = 'instruction' | 'memorize' | 'draw';
+type Phase = 'instruction' | 'video_instruction' | 'memorize_instruction' | 'memorize' | 'draw';
 
 interface Point {
     x: number;
@@ -30,6 +30,7 @@ interface DrawnShape {
 const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps) => {
     const { languageConstants } = useLanguageConstantContext();
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
 
     const [phase, setPhase] = useState<Phase>('instruction');
     const [countdown, setCountdown] = useState(10);
@@ -43,10 +44,29 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     const instructionsText = getLanguageText(languageConstants, 'game_instructions') || 'Instructions';
     const audioInstructionText = getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction';
 
-    // Handle instruction submission
+    // New translations for video screen buttons - fallback to English if not found
+    const repeatText = getLanguageText(languageConstants, 'game_repeat') || 'Repeat';
+    const undoText = getLanguageText(languageConstants, 'game_undo') || 'UNDO';
+
+    // Handle instruction submission - Go to Video Instruction first
     const handleInstructionSubmit = () => {
+        setPhase('video_instruction');
+    };
+
+    const handleVideoNext = () => {
+        setPhase('memorize_instruction');
+    };
+
+    const handleMemorizeInstructionSubmit = () => {
         setPhase('memorize');
         setCountdown(10);
+    };
+
+    const handleVideoRepeat = () => {
+        if (videoRef.current) {
+            videoRef.current.currentTime = 0;
+            videoRef.current.play();
+        }
     };
 
     // Countdown timer for memorize phase
@@ -213,6 +233,14 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
         }
     };
 
+    const handleUndo = () => {
+        if (shapes.length === 0) return;
+        const newShapes = shapes.slice(0, -1);
+        setShapes(newShapes);
+        // We need to redraw immediately
+        redrawCanvas(null, newShapes);
+    };
+
     const handleClear = () => {
         setShapes([]);
         const canvas = canvasRef.current;
@@ -279,53 +307,79 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                     }}
                 />
 
-                {/* Countdown overlay */}
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        top: 16,
-                        right: 16,
-                        bgcolor: 'rgba(0,0,0,0.7)',
-                        color: 'white',
-                        px: 2,
-                        py: 1,
-                        borderRadius: 1,
-                        fontSize: '1.5rem',
-                        fontWeight: 'bold'
-                    }}
-                >
-                    {countdown}s
-                </Box>
             </Box>
         );
     };
 
     return (
         <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
-            {/* Instruction Modal */}
+            {/* Instruction Modal - Shows initially and before memorize phase */}
             <GenericModal
-                isOpen={phase === 'instruction'}
+                isOpen={phase === 'instruction' || phase === 'memorize_instruction'}
                 onClose={() => { }}
                 title={`${session.module?.name || ''} ${instructionsText}`}
                 hideCancelButton={true}
                 submitButtonText={startText}
-                onSubmit={handleInstructionSubmit}
+                onSubmit={phase === 'instruction' ? handleInstructionSubmit : handleMemorizeInstructionSubmit}
                 enableAudio={true}
                 audioButtonLabel={audioInstructionText}
-                instructionText={session.module?.description || session.instructions || ''}
+                instructionText={
+                    phase === 'instruction'
+                        ? (session.module?.description || session.instructions || '')
+                        : (session.questions?.[0]?.prompt_text || 'Remember the drawing')
+                }
                 languageCode={languageCode}
             >
                 <Typography>
-                    {session.module?.description || session.instructions || 'Remember the following drawing that will be displayed for 10 seconds. Draw on the next screen with the help of square and line tab on the tap of the screen.'}
+                    {phase === 'instruction'
+                        ? (session.module?.description || session.instructions || 'Remember the following drawing that will be displayed for 10 seconds. Draw on the next screen with the help of square and line tab on the tap of the screen.')
+                        : (session.questions?.[0]?.prompt_text || 'The picture will be displayed for 10 seconds, you are instructed to draw the same picture with the square and line tools provided as shown in the video before.')
+                    }
                 </Typography>
             </GenericModal>
+
+            {/* Video Instruction Phase */}
+            {phase === 'video_instruction' && (
+                <Box sx={{ width: '100%', maxWidth: 800, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                    <Typography variant="h5" sx={{ textAlign: 'center', fontWeight: 'bold' }}>
+                        Instructions
+                    </Typography>
+
+                    <Box sx={{ width: '100%', bgcolor: '#000', borderRadius: 2, overflow: 'hidden' }}>
+                        <video
+                            ref={videoRef}
+                            controls
+                            autoPlay
+                            style={{ width: '100%', height: 'auto', maxHeight: '400px' }}
+                            // Placeholder source - user to add logic for video file
+                            src=""
+                        >
+                            Your browser does not support the video tag.
+                        </video>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                        <Button
+                            variant="outlined"
+                            onClick={handleVideoRepeat}
+                            sx={{ px: 4, textTransform: 'uppercase' }}
+                        >
+                            {repeatText}
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={handleVideoNext}
+                            sx={{ px: 4, textTransform: 'uppercase' }}
+                        >
+                            {nextText}
+                        </Button>
+                    </Box>
+                </Box>
+            )}
 
             {/* Memorize Phase */}
             {phase === 'memorize' && (
                 <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                    <Typography variant="h5" sx={{ color: '#4caf50', fontWeight: 'bold', textAlign: 'center' }}>
-                        {session?.questions?.[0]?.prompt_text || 'REMEMBER THE DRAWING'}
-                    </Typography>
                     {renderReferenceImage()}
                 </Box>
             )}
@@ -358,6 +412,23 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                             }}
                         >
                             DRAW LINE
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={handleUndo}
+                            disabled={shapes.length === 0}
+                            sx={{
+                                bgcolor: '#274765',
+                                '&:hover': { bgcolor: '#1565c0' },
+                                px: 3,
+                                py: 1,
+                                '&.Mui-disabled': {
+                                    bgcolor: '#e0e0e0',
+                                    color: '#9e9e9e'
+                                }
+                            }}
+                        >
+                            {undoText}
                         </Button>
                         <Button
                             variant="contained"

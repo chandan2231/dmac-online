@@ -2,7 +2,7 @@ import HttpService from './HttpService';
 
 export type Module = {
     id: number;
-    code: 'VISUAL_SPATIAL' | 'AUDIO_STORY' | 'AUDIO_WORDS' | 'IMAGE_FLASH' | 'CONNECT_DOTS' | 'EXECUTIVE' | 'SEMANTIC' | 'NUMBER_RECALL' | 'DRAWING_RECALL';
+    code: 'VISUAL_SPATIAL' | 'AUDIO_STORY' | 'AUDIO_STORY_2' | 'AUDIO_WORDS' | 'IMAGE_FLASH' | 'CONNECT_DOTS' | 'EXECUTIVE' | 'SEMANTIC' | 'NUMBER_RECALL' | 'DRAWING_RECALL' | 'REVERSE_NUMBER_RECALL' | 'COLOR_RECALL' | 'VISUAL_PICTURE_RECALL' | 'GROUP_MATCHING' | 'AUDIO_WORDS_RECALL';
     name: string;
     description: string;
     max_score: number;
@@ -15,6 +15,8 @@ export interface QuestionItem {
     image_key: string;
     image_url: string;
     audio_url: string;
+    display_text?: string;
+    accepted_answers?: string;
 }
 
 export interface SessionData {

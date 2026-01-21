@@ -22,6 +22,18 @@ import eightAudio from '../../../../../assets/NumberRecall/eight.mp3';
 import nineAudio from '../../../../../assets/NumberRecall/nine.mp3';
 import tenAudio from '../../../../../assets/NumberRecall/ten.mp3';
 
+// Import local audio assets for Reverse Number Recall
+import reverseFirstAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_first.m4a';
+import reverseSecondAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_second.m4a';
+import reverseThirdAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_third.m4a';
+import reverseFourthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_fourth.m4a';
+import reverseFifthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_fifth.m4a';
+import reverseSixthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_sixth.m4a';
+import reverseSeventhAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_seven.m4a';
+import reverseEighthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_eight.m4a';
+import reverseNinthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_nine.m4a';
+import reverseTenthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_ten.m4a';
+
 interface NumberRecallProps {
     session: SessionData;
     onComplete: (answers: any[]) => void;
@@ -66,11 +78,20 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
     const resolveAudioUrl = (url: string) => {
         if (!url) return '';
 
-        console.log(`[NumberRecall] Resolving URL: ${url}`);
-
         const lowerUrl = url.toLowerCase();
 
         // Simple mapping based on filename keywords
+        if (lowerUrl.includes('reverse_first')) return reverseFirstAudio;
+        if (lowerUrl.includes('reverse_second')) return reverseSecondAudio;
+        if (lowerUrl.includes('reverse_third')) return reverseThirdAudio;
+        if (lowerUrl.includes('reverse_fourth')) return reverseFourthAudio;
+        if (lowerUrl.includes('reverse_fifth')) return reverseFifthAudio;
+        if (lowerUrl.includes('reverse_sixth')) return reverseSixthAudio;
+        if (lowerUrl.includes('reverse_seven')) return reverseSeventhAudio;
+        if (lowerUrl.includes('reverse_eight')) return reverseEighthAudio;
+        if (lowerUrl.includes('reverse_nine')) return reverseNinthAudio;
+        if (lowerUrl.includes('reverse_ten')) return reverseTenthAudio;
+
         if (lowerUrl.includes('first')) return firstAudio;
         if (lowerUrl.includes('second')) return secondAudio;
         if (lowerUrl.includes('third')) return thirdAudio;
@@ -198,13 +219,24 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
 
                     {/* Audio Player - auto plays */}
                     {/* Audio Player - auto plays */}
-                    {currentItem?.audio_url && (
-                        <AudioPlayer
-                            src={getAudioUrl(currentItem.audio_url)}
-                            play={true}
-                            onEnded={handleAudioEnded}
-                        />
-                    )}
+                    {/* Audio Player - auto plays */}
+                    {/* Audio Player - auto plays */}
+                    {/* Audio Player - auto plays */}
+                    {(() => {
+                        console.log('[NumberRecall] currentItem:', currentItem);
+                        const urlToResolve = currentItem?.audio_url || currentItem?.image_url || '';
+                        console.log('[NumberRecall] urlToResolve:', urlToResolve);
+                        const resolvedSrc = getAudioUrl(urlToResolve);
+                        console.log('[NumberRecall] resolvedSrc:', resolvedSrc);
+
+                        return (urlToResolve) && (
+                            <AudioPlayer
+                                src={resolvedSrc}
+                                play={true}
+                                onEnded={handleAudioEnded}
+                            />
+                        );
+                    })()}
                 </Box>
             )}
 

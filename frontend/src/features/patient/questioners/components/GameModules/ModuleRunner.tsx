@@ -10,6 +10,8 @@ import ConnectTheDots from './ConnectTheDots';
 import ExecutiveQuestions from './ExecutiveQuestions';
 import NumberRecall from './NumberRecall';
 import DrawingRecall from './DrawingRecall';
+import ColorRecall from './ColorRecall';
+import GroupMatching from './GroupMatching';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 import GenericModal from '../../../../../components/modal';
@@ -180,6 +182,18 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
         handleModuleSubmit(payload);
     };
 
+    const handleColorRecallComplete = (answers: any[]) => {
+        handleModuleSubmit({
+            answers
+        });
+    };
+
+    const handleGroupMatchingComplete = (answers: any[]) => {
+        handleModuleSubmit({
+            answers
+        });
+    };
+
     const handleGoHome = () => {
         navigate(ROUTES.HOME);
     };
@@ -208,6 +222,8 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
 
         if (code === 'IMAGE_FLASH') {
             handleImageFlashComplete('skipped');
+        } else if (code === 'VISUAL_PICTURE_RECALL') {
+            handleImageFlashComplete('skipped');
         } else if (code === 'VISUAL_SPATIAL') {
             // Construct dummy answers for all rounds
             const rounds = session.questions || [];
@@ -227,7 +243,18 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             }));
             console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
             handleAudioStoryComplete(dummyAnswers);
-        } else if (code === 'AUDIO_WORDS') {
+        }
+        else if (code === 'AUDIO_STORY_2') {
+            // Construct dummy answers for stories
+            const stories = session.questions || [];
+            const dummyAnswers = stories.map(story => ({
+                question_id: story.question_id,
+                answer_text: 'skipped via dev button'
+            }));
+            console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
+            handleAudioStoryComplete(dummyAnswers);
+        }
+        else if (code === 'AUDIO_WORDS') {
             // Construct dummy answers
             const questions = session.questions || [];
             const dummyAnswers = questions.map(q => ({
@@ -236,6 +263,14 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
                 language_code: languageCode
             }));
             console.log('[ModuleRunner] Skipping AudioWords with payload:', dummyAnswers);
+            handleAudioWordsComplete(dummyAnswers);
+        } else if (code === 'AUDIO_WORDS_RECALL') {
+            const questions = session.questions || [];
+            const dummyAnswers = questions.map(q => ({
+                question_id: q.question_id,
+                answer_text: 'skipped via dev button',
+                language_code: languageCode
+            }));
             handleAudioWordsComplete(dummyAnswers);
         } else if (code === 'CONNECT_DOTS') {
             // Fake completions
@@ -262,6 +297,21 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             }));
             console.log('[ModuleRunner] Skipping NumberRecall with payload:', dummyAnswers);
             handleNumberRecallComplete(dummyAnswers);
+        } else if (code === 'REVERSE_NUMBER_RECALL') {
+            const questions = session.questions || [];
+            const dummyAnswers = questions.map(q => ({
+                question_id: q.question_id,
+                answer_text: '321'
+            }));
+            console.log('[ModuleRunner] Skipping ReverseNumberRecall with payload:', dummyAnswers);
+            handleNumberRecallComplete(dummyAnswers);
+        } else if (code === 'COLOR_RECALL') {
+            const dummyAnswers = [{
+                question_id: session.questions?.[0]?.question_id,
+                answer_text: 'red, blue, green',
+                language_code: languageCode
+            }];
+            handleNumberRecallComplete(dummyAnswers);
         } else if (code === 'DRAWING_RECALL') {
             const payload = {
                 question_id: session.questions?.[0]?.question_id,
@@ -271,6 +321,13 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             };
             console.log('[ModuleRunner] Skipping DrawingRecall with payload:', payload);
             handleDrawingRecallComplete(payload);
+        } else if (code === 'GROUP_MATCHING') {
+            console.log('[ModuleRunner] Skipping GroupMatching');
+            const dummyAnswers = (session.questions || []).map(q => ({
+                question_id: q.question_id,
+                answer_text: 'Skipped - Score 0'
+            }));
+            handleGroupMatchingComplete(dummyAnswers);
         }
     };
 
@@ -320,11 +377,23 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             {!showCompletion && (moduleCode === 'EXECUTIVE' || moduleCode === 'SEMANTIC') && (
                 <ExecutiveQuestions session={session} onComplete={handleExecutiveComplete} languageCode={languageCode} />
             )}
-            {!showCompletion && moduleCode === 'NUMBER_RECALL' && (
+            {!showCompletion && (moduleCode === 'NUMBER_RECALL' || moduleCode === 'REVERSE_NUMBER_RECALL') && (
                 <NumberRecall session={session} onComplete={handleNumberRecallComplete} languageCode={languageCode} />
             )}
             {!showCompletion && moduleCode === 'DRAWING_RECALL' && (
                 <DrawingRecall session={session} onComplete={handleDrawingRecallComplete} languageCode={languageCode} />
+            )}
+            {!showCompletion && moduleCode === 'COLOR_RECALL' && (
+                <ColorRecall session={session} onComplete={handleColorRecallComplete} languageCode={languageCode} />
+            )}
+            {!showCompletion && moduleCode === 'VISUAL_PICTURE_RECALL' && (
+                <ImageFlash session={session} onComplete={handleImageFlashComplete} languageCode={languageCode} isRecallOnly={true} />
+            )}
+            {!showCompletion && moduleCode === 'GROUP_MATCHING' && (
+                <GroupMatching session={session} onComplete={handleGroupMatchingComplete} languageCode={languageCode} />
+            )}
+            {!showCompletion && moduleCode === 'AUDIO_WORDS_RECALL' && (
+                <AudioWordsRecall session={session} onComplete={handleAudioWordsComplete} languageCode={languageCode} isRecallOnly={true} />
             )}
         </Box>
     );

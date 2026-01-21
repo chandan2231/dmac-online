@@ -16,9 +16,10 @@ interface AudioWordsRecallProps {
     session: SessionData;
     onComplete: (answers: any[]) => void;
     languageCode: string;
+    isRecallOnly?: boolean;
 }
 
-const AudioWordsRecall = ({ session, onComplete, languageCode }: AudioWordsRecallProps) => {
+const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = false }: AudioWordsRecallProps) => {
     const { languageConstants } = useLanguageConstantContext();
 
     // Translations
@@ -36,7 +37,9 @@ const AudioWordsRecall = ({ session, onComplete, languageCode }: AudioWordsRecal
     };
 
     // State
-    const [phase, setPhase] = useState<'pre_audio_instruction' | 'playing_audio' | 'playing_complete' | 'post_audio_instruction' | 'recall'>('pre_audio_instruction');
+    const [phase, setPhase] = useState<'pre_audio_instruction' | 'playing_audio' | 'playing_complete' | 'post_audio_instruction' | 'recall'>(() => {
+        return isRecallOnly ? 'recall' : 'pre_audio_instruction';
+    });
     const [inputText, setInputText] = useState('');
     const [selectedVersion, setSelectedVersion] = useState<1 | 2>(1);
 

@@ -42,6 +42,7 @@ interface ImageFlashProps {
     session: SessionData;
     onComplete: (answerText: string) => void;
     languageCode: string;
+    isRecallOnly?: boolean;
 }
 
 // Type for SpeechRecognition
@@ -52,7 +53,7 @@ declare global {
     }
 }
 
-const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
+const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }: ImageFlashProps) => {
     const { languageConstants } = useLanguageConstantContext();
 
     // Get all translations
@@ -130,7 +131,11 @@ const ImageFlash = ({ session, onComplete, languageCode }: ImageFlashProps) => {
     }, [languageCode]);
 
     const handleStart = () => {
-        setPhase('playing');
+        if (isRecallOnly) {
+            setPhase('input');
+        } else {
+            setPhase('playing');
+        }
         setCurrentItemIndex(0);
         setInputText(''); // Clear any previous answers
         setValidationError('');
