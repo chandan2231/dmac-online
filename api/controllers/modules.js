@@ -339,8 +339,12 @@ export const submitSession = async (req, res) => {
     }]
   }
 
-  if (!answers || answers.length === 0) {
-    return res.status(400).json({ error: 'No answers provided' })
+  // Allow score override from frontend
+  const providedScore = body.score
+  const hasProvidedScore = (providedScore !== undefined && providedScore !== null)
+
+  if (!hasProvidedScore && (!answers || answers.length === 0)) {
+    return res.status(400).json({ error: 'No answers or score provided' })
   }
 
   try {
@@ -351,139 +355,146 @@ export const submitSession = async (req, res) => {
     let totalScore = 0
     let maxScore = module.max_score || 5
 
-    // Process each answer
-    for (const ans of answers) {
-      let itemScore = 0
+    // Process each answer if provided
+    if (answers && answers.length > 0) {
+      for (const ans of answers) {
+        let itemScore = 0
 
-      if (module.code === 'VISUAL_SPATIAL') {
-        const options = await query(
-          'SELECT is_correct FROM question_options WHERE question_id = ? AND option_key = ?',
-          [ans.question_id, ans.selected_option_key]
-        )
-        itemScore = (options.length > 0 && options[0].is_correct === 1) ? 1 : 0
-      } else if (module.code === 'CONNECT_DOTS') {
-        const items = await fetchItems(ans.question_id, 'en')
-        // Assume answer_text is comma separated sequence e.g. "L,5,M..."
-        const userSequence = (ans.answer_text || '').split(',')
-        const correctSequence = items.map(i => i.image_key)
+        if (module.code === 'VISUAL_SPATIAL') {
+          const options = await query(
+            'SELECT is_correct FROM question_options WHERE question_id = ? AND option_key = ?',
+            [ans.question_id, ans.selected_option_key]
+          )
+          itemScore = (options.length > 0 && options[0].is_correct === 1) ? 1 : 0
+        } else if (module.code === 'CONNECT_DOTS') {
+          const items = await fetchItems(ans.question_id, 'en')
+          // Assume answer_text is comma separated sequence e.g. "L,5,M..."
+          const userSequence = (ans.answer_text || '').split(',')
+          const correctSequence = items.map(i => i.image_key)
 
-        let correctConnections = 0
-        // Check pairs
-        for (let i = 0; i < Math.min(userSequence.length, correctSequence.length) - 1; i++) {
-          if (userSequence[i] === correctSequence[i] && userSequence[i + 1] === correctSequence[i + 1]) {
-            correctConnections++
-          }
-        }
-
-        const totalConnections = Math.max(1, correctSequence.length - 1)
-        const sequenceScore = (correctConnections / totalConnections) * 4.0
-
-        // Time Bonus
-        let timeBonus = 0
-        const timeTaken = parseFloat(ans.time_taken || 0)
-        if (timeTaken > 0) {
-          if (timeTaken <= 30) timeBonus = 1.0
-          else if (timeTaken <= 45) timeBonus = 0.5
-        }
-
-        itemScore = Math.min(5, sequenceScore + timeBonus)
-      } else if (module.code === 'NUMBER_RECALL') {
-        // Number Recall Scoring
-        // Logic: Exact match of the sequence = 0.5 points.
-        // Total possible: 10 * 0.5 = 5.0
-        const items = await fetchItems(ans.question_id, 'en')
-        if (items.length > 0) {
-          const accepted = items[0].accepted_answers || ''
-          const userAns = (ans.answer_text || '').trim()
-
-          if (userAns === accepted) {
-            itemScore = 0.5
-          }
-        }
-      } else {
-
-        // Keyword matching (Image Flash & Audio Story & others)
-
-        const language_code = ans.language_code || body.language_code || 'en' // fallback
-        const items = await fetchItems(ans.question_id, language_code)
-
-        let correctCount = calculateKeywordScore(ans.answer_text, items)
-
-        if (module.code === 'AUDIO_STORY' || module.code === 'AUDIO_STORY_2') {
-          // Special rule: >= 10 keywords = 5.0, else count * 0.5
-          // Since we split the module, each module now has 1 story.
-          // Max score for one story is presumably 5.0. 
-          if (correctCount >= 10) itemScore = 5.0
-          else itemScore = Math.min(correctCount * 0.5, 5.0)
-          maxScore = 5 // 1 story per module now
-        } else if (module.code === 'AUDIO_WORDS') {
-          // 0.5 points per word, max 10 words possible
-          if (correctCount >= 10) {
-            itemScore = 5.0
-          } else {
-            itemScore = Math.min(correctCount * 0.5, 5.0)
-          }
-          maxScore = 5
-        } else if (module.code === 'EXECUTIVE' || module.code === 'SEMANTIC') {
-          const language_code = ans.language_code || body.language_code || 'en'
-          const items = await fetchItems(ans.question_id, language_code)
-
-          if (items.length > 0) {
-            const acceptedStr = items[0].accepted_answers || ''
-            const userAns = (ans.answer_text || '').trim().toLowerCase().replace(/\s+/g, ' ')
-
-            if (acceptedStr === 'DYNAMIC_DATE_BEFORE_YESTERDAY') {
-              const date = new Date()
-              date.setDate(date.getDate() - 2)
-              const locales = { en: 'en-US', hi: 'hi-IN', es: 'es-ES', ar: 'ar-SA' }
-              const locale = locales[language_code] || 'en-US'
-              const correctDay = date.toLocaleDateString(locale, { weekday: 'long' }).toLowerCase()
-              if (userAns === correctDay) itemScore = 1
-            } else if (acceptedStr === 'DYNAMIC_DATE_TOMORROW') {
-              const date = new Date()
-              date.setDate(date.getDate() + 1)
-              const correctDate = date.getDate().toString()
-              if (userAns === correctDate) itemScore = 1
-            } else if (acceptedStr === 'DYNAMIC_YEAR_LAST_NYE') {
-              const currentYear = new Date().getFullYear();
-              const lastNYE = (currentYear - 1).toString();
-              // Flexible: Current year - 1 is ideal, but allow current year if early in year? User logic says:
-              // 2024 -> 1, 2023 -> 1 (recent), 2025 -> 0.5
-              if (userAns === lastNYE) {
-                itemScore = 1;
-              } else if (userAns === (currentYear - 2).toString()) {
-                itemScore = 1; // Recent acceptable
-              } else if (userAns === currentYear.toString()) {
-                itemScore = 0.5;
-              }
-            } else if (acceptedStr === 'RANGE_55_75') {
-              // Extract number from input string like "65 mph"
-              const match = userAns.match(/\d+/);
-              if (match) {
-                const speed = parseInt(match[0], 10);
-                if (speed >= 55 && speed <= 75) {
-                  itemScore = 1;
-                }
-              }
-            } else {
-              const allowed = acceptedStr.toLowerCase().split(',').map(s => s.trim())
-              if (allowed.includes(userAns)) itemScore = 1
+          let correctConnections = 0
+          // Check pairs
+          for (let i = 0; i < Math.min(userSequence.length, correctSequence.length) - 1; i++) {
+            if (userSequence[i] === correctSequence[i] && userSequence[i + 1] === correctSequence[i + 1]) {
+              correctConnections++
             }
           }
-          // Set Max Score based on module
-          maxScore = (module.code === 'EXECUTIVE') ? 10 : 5;
+
+          const totalConnections = Math.max(1, correctSequence.length - 1)
+          const sequenceScore = (correctConnections / totalConnections) * 4.0
+
+          // Time Bonus
+          let timeBonus = 0
+          const timeTaken = parseFloat(ans.time_taken || 0)
+          if (timeTaken > 0) {
+            if (timeTaken <= 30) timeBonus = 1.0
+            else if (timeTaken <= 45) timeBonus = 0.5
+          }
+
+          itemScore = Math.min(5, sequenceScore + timeBonus)
+        } else if (module.code === 'NUMBER_RECALL') {
+          // Number Recall Scoring
+          // Logic: Exact match of the sequence = 0.5 points.
+          // Total possible: 10 * 0.5 = 5.0
+          const items = await fetchItems(ans.question_id, 'en')
+          if (items.length > 0) {
+            const accepted = items[0].accepted_answers || ''
+            const userAns = (ans.answer_text || '').trim()
+
+            if (userAns === accepted) {
+              itemScore = 0.5
+            }
+          }
         } else {
-          itemScore = Math.min(correctCount, 5)
+
+          // Keyword matching (Image Flash & Audio Story & others)
+
+          const language_code = ans.language_code || body.language_code || 'en' // fallback
+          const items = await fetchItems(ans.question_id, language_code)
+
+          let correctCount = calculateKeywordScore(ans.answer_text, items)
+
+          if (module.code === 'AUDIO_STORY' || module.code === 'AUDIO_STORY_2') {
+            // Special rule: >= 10 keywords = 5.0, else count * 0.5
+            // Since we split the module, each module now has 1 story.
+            // Max score for one story is presumably 5.0. 
+            if (correctCount >= 10) itemScore = 5.0
+            else itemScore = Math.min(correctCount * 0.5, 5.0)
+            maxScore = 5 // 1 story per module now
+          } else if (module.code === 'AUDIO_WORDS') {
+            // 0.5 points per word, max 10 words possible
+            if (correctCount >= 10) {
+              itemScore = 5.0
+            } else {
+              itemScore = Math.min(correctCount * 0.5, 5.0)
+            }
+            maxScore = 5
+          } else if (module.code === 'EXECUTIVE' || module.code === 'SEMANTIC') {
+            const language_code = ans.language_code || body.language_code || 'en'
+            const items = await fetchItems(ans.question_id, language_code)
+
+            if (items.length > 0) {
+              const acceptedStr = items[0].accepted_answers || ''
+              const userAns = (ans.answer_text || '').trim().toLowerCase().replace(/\s+/g, ' ')
+
+              if (acceptedStr === 'DYNAMIC_DATE_BEFORE_YESTERDAY') {
+                const date = new Date()
+                date.setDate(date.getDate() - 2)
+                const locales = { en: 'en-US', hi: 'hi-IN', es: 'es-ES', ar: 'ar-SA' }
+                const locale = locales[language_code] || 'en-US'
+                const correctDay = date.toLocaleDateString(locale, { weekday: 'long' }).toLowerCase()
+                if (userAns === correctDay) itemScore = 1
+              } else if (acceptedStr === 'DYNAMIC_DATE_TOMORROW') {
+                const date = new Date()
+                date.setDate(date.getDate() + 1)
+                const correctDate = date.getDate().toString()
+                if (userAns === correctDate) itemScore = 1
+              } else if (acceptedStr === 'DYNAMIC_YEAR_LAST_NYE') {
+                const currentYear = new Date().getFullYear();
+                const lastNYE = (currentYear - 1).toString();
+                // Flexible: Current year - 1 is ideal, but allow current year if early in year? User logic says:
+                // 2024 -> 1, 2023 -> 1 (recent), 2025 -> 0.5
+                if (userAns === lastNYE) {
+                  itemScore = 1;
+                } else if (userAns === (currentYear - 2).toString()) {
+                  itemScore = 1; // Recent acceptable
+                } else if (userAns === currentYear.toString()) {
+                  itemScore = 0.5;
+                }
+              } else if (acceptedStr === 'RANGE_55_75') {
+                // Extract number from input string like "65 mph"
+                const match = userAns.match(/\d+/);
+                if (match) {
+                  const speed = parseInt(match[0], 10);
+                  if (speed >= 55 && speed <= 75) {
+                    itemScore = 1;
+                  }
+                }
+              } else {
+                const allowed = acceptedStr.toLowerCase().split(',').map(s => s.trim())
+                if (allowed.includes(userAns)) itemScore = 1
+              }
+            }
+            // Set Max Score based on module
+            maxScore = (module.code === 'EXECUTIVE') ? 10 : 5;
+          } else {
+            itemScore = Math.min(correctCount, 5)
+          }
         }
+
+        totalScore += itemScore
+
+        // Save Response
+        await query(
+          'INSERT INTO responses (session_id, question_id, answer_text, selected_option_key, is_correct) VALUES (?, ?, ?, ?, ?)',
+          [sessionId, ans.question_id, ans.answer_text || null, ans.selected_option_key || null, itemScore > 0 ? 1 : 0]
+        )
       }
+    }
 
-      totalScore += itemScore
-
-      // Save Response
-      await query(
-        'INSERT INTO responses (session_id, question_id, answer_text, selected_option_key, is_correct) VALUES (?, ?, ?, ?, ?)',
-        [sessionId, ans.question_id, ans.answer_text || null, ans.selected_option_key || null, itemScore > 0 ? 1 : 0]
-      )
+    // Override score if provided by frontend
+    if (hasProvidedScore) {
+      totalScore = parseFloat(providedScore)
     }
 
     // Update Session
@@ -512,5 +523,48 @@ export const submitSession = async (req, res) => {
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: err.message })
+  }
+}
+
+export const getUserReport = async (req, res) => {
+  const user_id = req.user?.userId;
+  if (!user_id) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    // Get all completed sessions for the user, joined with module info
+    // We want the LATEST score for each module? Or all attempts?
+    // Let's return the latest attempt per module for the summary report.
+    const sql = `
+      SELECT 
+        m.id as module_id, 
+        m.code, 
+        m.name, 
+        m.max_score, 
+        m.order_index,
+        s.score as user_score,
+        s.created_at as completed_at
+      FROM sessions s
+      JOIN modules m ON s.module_id = m.id
+      WHERE s.user_id = ? 
+        AND s.status = 'completed'
+        AND s.id IN (
+          SELECT MAX(id) 
+          FROM sessions 
+          WHERE user_id = ? AND status = 'completed' 
+          GROUP BY module_id
+        )
+      ORDER BY m.order_index ASC
+    `;
+
+    const report = await query(sql, [user_id, user_id]);
+
+    res.json({
+      user_id,
+      report
+    });
+
+  } catch (err) {
+    console.error('[GetUserReport] Error:', err);
+    res.status(500).json({ error: err.message });
   }
 }
