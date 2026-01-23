@@ -1,4 +1,5 @@
 import { db } from '../connect.js'
+import { isFuzzyMatch } from '../utils/stringUtils.js'
 
 const query = (sql, args) => {
   return new Promise((resolve, reject) => {
@@ -63,10 +64,17 @@ const calculateKeywordScore = (userText, items) => {
       // Also check normalized (no space) version as per AudioStory logic
       const normalizedWord = word.replace(/\s+/g, '')
 
-      // Check exact word match or normalized containment
+      // Check exact word match or normalized containment OR fuzzy match
       const isMatch = synonyms.some(syn => {
         const normalizedSyn = syn.replace(/\s+/g, '')
-        return syn === word || (normalizedSyn.length > 3 && normalizedWord.includes(normalizedSyn))
+        // Clean trailing punctuation from user word for fair comparison
+        const cleanWord = word.replace(/[.,!?;:]$/, '')
+
+        return (
+          syn === word ||
+          isFuzzyMatch(cleanWord, syn) ||
+          (normalizedSyn.length > 3 && normalizedWord.includes(normalizedSyn)) // Keeping existing logic too
+        )
       })
 
       if (isMatch) {
