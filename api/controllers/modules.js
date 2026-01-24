@@ -44,17 +44,18 @@ const fetchOptions = async (questionId) => {
   )
 }
 
-const calculateKeywordScore = (userText, items) => {
+const calculateKeywordScore = (userText, items, options = {}) => {
   const userWords = (userText || '').toLowerCase().split(/[\s,]+/).filter(Boolean)
   let correctCount = 0
   const matchedItems = new Set()
+  const matchedSynonyms = new Set() // Used when options.uniqueWords is true
 
   // Flatten all synonyms into a list of { text, itemId } for easier checking?
   // Or iterate words against items.
   // Logic matches original: iterate user words, check against synonyms.
   for (const word of userWords) {
     for (const item of items) {
-      if (matchedItems.has(item.question_item_id)) continue
+      if (!options.uniqueWords && matchedItems.has(item.question_item_id)) continue
 
       const synonyms = (item.accepted_answers || '')
         .toLowerCase()
@@ -65,7 +66,7 @@ const calculateKeywordScore = (userText, items) => {
       const normalizedWord = word.replace(/\s+/g, '')
 
       // Check exact word match or normalized containment OR fuzzy match
-      const isMatch = synonyms.some(syn => {
+      const matchedSynonym = synonyms.find(syn => {
         const normalizedSyn = syn.replace(/\s+/g, '')
         // Clean trailing punctuation from user word for fair comparison
         const cleanWord = word.replace(/[.,!?;:]$/, '')
@@ -77,10 +78,22 @@ const calculateKeywordScore = (userText, items) => {
         )
       })
 
-      if (isMatch) {
-        correctCount++
-        matchedItems.add(item.question_item_id)
-        break // Move to next user word
+      if (matchedSynonym) {
+        if (options.uniqueWords) {
+          // For single-item lists (Audio Words), prevent counting same word twice (e.g. "car car")
+          // But allow different words from same item.
+          // We track the ACCEPTED ANSWER that was matched.
+          if (matchedSynonyms.has(matchedSynonym)) break // Word already counted
+          matchedSynonyms.add(matchedSynonym)
+          correctCount++
+          // For uniqueWords mode, we don't break widely if we matched, 
+          // but since we found a match for this user word, we break to next user word.
+          break
+        } else {
+          correctCount++
+          matchedItems.add(item.question_item_id)
+          break // Move to next user word
+        }
       }
     }
   }
@@ -426,16 +439,20 @@ export const submitSession = async (req, res) => {
             // Special rule: >= 10 keywords = 5.0, else count * 0.5
             // Since we split the module, each module now has 1 story.
             // Max score for one story is presumably 5.0. 
+            // FIX: Use uniqueWords: true to count multiple matches from single item
+            let correctCount = calculateKeywordScore(ans.answer_text, items, { uniqueWords: true })
+
             if (correctCount >= 10) itemScore = 5.0
             else itemScore = Math.min(correctCount * 0.5, 5.0)
             maxScore = 5 // 1 story per module now
           } else if (module.code === 'AUDIO_WORDS') {
-            // 0.5 points per word, max 10 words possible
-            if (correctCount >= 10) {
-              itemScore = 5.0
-            } else {
-              itemScore = Math.min(correctCount * 0.5, 5.0)
-            }
+            const language_code = ans.language_code || body.language_code || 'en' // fallback
+            const items = await fetchItems(ans.question_id, language_code)
+            // Use uniqueWords mode to count multiple different words from the list
+            let correctCount = calculateKeywordScore(ans.answer_text, items, { uniqueWords: true })
+
+            // 1.0 points per word, max 5 words possible
+            itemScore = Math.min(correctCount * 1.0, 5.0)
             maxScore = 5
           } else if (module.code === 'EXECUTIVE' || module.code === 'SEMANTIC') {
             const language_code = ans.language_code || body.language_code || 'en'
@@ -452,11 +469,15 @@ export const submitSession = async (req, res) => {
                 const locale = locales[language_code] || 'en-US'
                 const correctDay = date.toLocaleDateString(locale, { weekday: 'long' }).toLowerCase()
                 if (userAns === correctDay) itemScore = 1
-              } else if (acceptedStr === 'DYNAMIC_DATE_TOMORROW') {
-                const date = new Date()
-                date.setDate(date.getDate() + 1)
-                const correctDate = date.getDate().toString()
-                if (userAns === correctDate) itemScore = 1
+                const tmrwDate = new Date()
+                tmrwDate.setDate(tmrwDate.getDate() + 1)
+                const correctDate = tmrwDate.getDate().toString()
+
+                // Extract number from user answer (e.g. "25 Jan" -> "25")
+                const match = userAns.match(/\d+/)
+                if (match && match[0] === correctDate) {
+                  itemScore = 1
+                }
               } else if (acceptedStr === 'DYNAMIC_YEAR_LAST_NYE') {
                 const currentYear = new Date().getFullYear();
                 const lastNYE = (currentYear - 1).toString();
