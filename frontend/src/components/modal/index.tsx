@@ -67,9 +67,7 @@ const GenericModal: React.FC<GenericModalProps> = ({
   if (isLoading) {
     return <CustomLoader />;
   }
-
   const isCompact = size === 'compact';
-
   return (
     <StyledDialog
       onClose={onClose}
