@@ -126,7 +126,13 @@ export default function ConsentPage() {
 
   return (
     <Box p={3}>
-      <Typography variant="h4" mb={2}>Consent Forms</Typography>
+      <Typography 
+        variant="h5" 
+        sx={{ fontWeight: 600}} 
+        mb={2}
+    >
+        Consent Forms
+    </Typography>
       {forms.map((form, idx) => (
         <Accordion
           key={form.id}

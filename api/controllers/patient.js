@@ -21,7 +21,7 @@ export const getConsentSignatures = async (req, res) => {
 
   try {
     const rows = await queryDB(
-      'SELECT form1_signature, form2_signature, form3_signature FROM user_consents WHERE user_id = ?',
+      'SELECT form1_signature, form2_signature, form3_signature FROM dmac_webapp_user_consents WHERE user_id = ?',
       [userId]
     );
     const row = rows[0];
@@ -43,7 +43,7 @@ export const saveConsentSignatures = async (req, res) => {
   }
   try {
     await queryDB(
-      `INSERT INTO user_consents (user_id, form1_signature, form2_signature, form3_signature)
+      `INSERT INTO dmac_webapp_user_consents (user_id, form1_signature, form2_signature, form3_signature)
        VALUES (?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
          form1_signature = VALUES(form1_signature),
