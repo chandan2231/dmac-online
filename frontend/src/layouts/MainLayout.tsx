@@ -8,11 +8,12 @@ const styles = {
   container: {
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
     height: '100vh',
     maxHeight: '100vh',
-    overflow: 'hidden', // Prevents any overflow
+    overflowY: 'auto',
+    overflowX: 'hidden',
     width: '100%',
     maxWidth: '100vw',
   },

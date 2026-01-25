@@ -1,4 +1,5 @@
 import { IconButton, Tooltip } from '@mui/material';
+import type React from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../store';
 import { useDispatch } from 'react-redux';
@@ -11,7 +12,11 @@ import { ROUTES } from '../../../../router/router';
 import LogoutIcon from '@mui/icons-material/Logout';
 import GenericModal from '../../../../components/modal';
 
-export default function LogoutFeature() {
+type LogoutFeatureProps = {
+  children?: (openLogout: () => void) => React.ReactNode;
+};
+
+export default function LogoutFeature({ children }: LogoutFeatureProps) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isLogoutModalOpen } = useSelector((state: RootState) => state.logout);
@@ -40,15 +45,19 @@ export default function LogoutFeature() {
 
   return (
     <>
-      <Tooltip title="Logout">
-        <IconButton
-          onClick={() => handleOpenModal()}
-          aria-label="logout"
-          color="inherit"
-        >
-          <LogoutIcon />
-        </IconButton>
-      </Tooltip>
+      {children ? (
+        children(handleOpenModal)
+      ) : (
+        <Tooltip title="Logout">
+          <IconButton
+            onClick={() => handleOpenModal()}
+            aria-label="logout"
+            color="inherit"
+          >
+            <LogoutIcon />
+          </IconButton>
+        </Tooltip>
+      )}
 
       <GenericModal
         isOpen={isLogoutModalOpen}
@@ -57,6 +66,9 @@ export default function LogoutFeature() {
         title="Confirm Logout"
         cancelButtonText="No"
         submitButtonText="Yes"
+        maxWidth="sm"
+        fullWidth
+        size="compact"
       >
         Are you sure you want to logout?
       </GenericModal>

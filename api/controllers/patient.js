@@ -14,6 +14,52 @@ function queryDB(query, params = []) {
   })
 }
 
+
+export const getConsentSignatures = async (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: 'Missing userId' });
+
+  try {
+    const rows = await queryDB(
+      'SELECT form1_signature, form2_signature, form3_signature FROM user_consents WHERE user_id = ?',
+      [userId]
+    );
+    const row = rows[0];
+    if (!row) {
+      return res.json({ signatures: ['', '', ''] });
+    }
+    res.json({
+      signatures: [row.form1_signature || '', row.form2_signature || '', row.form3_signature || '']
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const saveConsentSignatures = async (req, res) => {
+  const { userId, signatures } = req.body;
+  if (!userId || !Array.isArray(signatures) || signatures.length !== 3) {
+    return res.status(400).json({ error: 'Invalid input' });
+  }
+  try {
+    await queryDB(
+      `INSERT INTO user_consents (user_id, form1_signature, form2_signature, form3_signature)
+       VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         form1_signature = VALUES(form1_signature),
+         form2_signature = VALUES(form2_signature),
+         form3_signature = VALUES(form3_signature),
+         updated_at = CURRENT_TIMESTAMP`,
+      [userId, signatures[0], signatures[1], signatures[2]]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// ...existing code...
+
 const generateConsultationId = async (country, type) => {
   const countryCode = country ? country.substring(0, 2).toUpperCase() : 'XX'
   const prefix = `CON${countryCode}${type}`
@@ -294,7 +340,7 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
   }
 
   try {
-    /* 🔹 Fetch consultant email + tokens + timezone */
+    /* Fetch consultant email + tokens + timezone */
     const consultantQuery = `SELECT id, email, google_access_token, google_refresh_token, name, time_zone FROM dmac_webapp_users WHERE id = ?`
     const consultant = await new Promise((resolve, reject) => {
       db.query(consultantQuery, [consultant_id], (err, result) =>
@@ -346,7 +392,7 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
     const eventStartISO = consultantStart.toISOString()
     const eventEndISO = consultantEnd.toISOString()
 
-    /* 🔥 SECURE SLOT FIRST (Optimistic Locking) */
+    /* SECURE SLOT FIRST (Optimistic Locking) */
     const utcDate = moment.utc(eventStartISO).format('YYYY-MM-DD')
     const utcStartTime = moment.utc(eventStartISO).format('YYYY-MM-DD HH:mm:ss')
     const utcEndTime = moment.utc(eventEndISO).format('YYYY-MM-DD HH:mm:ss')

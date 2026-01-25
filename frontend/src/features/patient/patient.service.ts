@@ -394,6 +394,29 @@ const submitMedicalHistory = async (data: unknown) => {
   }
 };
 
+const fetchConsentSignatures = async (userId: number) => {
+  try {
+    const response = await HttpService.post('consent/status', { userId });
+    return get(response, ['data', 'signatures'], ['', '', '']);
+  } catch (error: unknown) {
+    console.error('Error fetching consent signatures:', error);
+    return ['', '', ''];
+  }
+};
+
+const saveConsentSignatures = async (userId: number, signatures: string[]) => {
+  try {
+    const response = await HttpService.post('consent/sign', {
+      userId,
+      signatures,
+    });
+    return get(response, ['data'], { success: true });
+  } catch (error: unknown) {
+    console.error('Error saving consent signatures:', error);
+    return { success: false };
+  }
+};
+
 const PatientService = {
   getSubscribedProduct,
   getExpertList,
@@ -420,6 +443,8 @@ const PatientService = {
   submitAssessmentTab,
   getLatestMedicalHistory,
   submitMedicalHistory,
+  fetchConsentSignatures,
+  saveConsentSignatures,
 };
 
 export default PatientService;

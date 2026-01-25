@@ -13,6 +13,18 @@ import {
   getUserLatestCompletedProduct,
   hasLiccaSubscription
 } from './commonService.js'
+import {
+  hasSDMAC,
+  hasSDMACExpertAdvice,
+  hasSDMACLicca,
+  hasRM360Pack,
+  hasRM360Pack6SupervisedTraining
+} from '../email-templates/product-inclusion.js';
+import { getSDMACEmailContent } from '../email-templates/sdmac.js';
+import { getSDMACExpertAdviceEmailContent } from '../email-templates/sdmac_expert_advice.js';
+import { getSDMACLiccaEmailContent } from '../email-templates/sdmac_licca.js';
+import { getRM360PackEmailContent } from '../email-templates/rm360_pack.js';
+import { getRM360Pack6SupervisedTrainingEmailContent } from '../email-templates/rm360_pack_6_supervised_training.js';
 import { paymentPoolConnection } from '../paymentPoolConnection.js'
 
 export const capturePatientPayment = async (req, res) => {
@@ -44,6 +56,7 @@ export const capturePatientPayment = async (req, res) => {
 
     const targetProduct = await getProductById(productId, db)
     if (!targetProduct) throw new Error('PRODUCT_NOT_FOUND')
+    const productCode = targetProduct.product_code;
 
     const current = await getUserLatestCompletedProduct(userId, db)
     const charge = current
@@ -262,17 +275,33 @@ export const capturePatientPayment = async (req, res) => {
       }
     }
 
-    /* ------------------ SUCCESS EMAIL ------------------ */
-    const subject = 'Payment Receipt — Payment Approved'
-    const html = `
-      <p>Dear ${userName},</p>
-      <h3>Payment Successful</h3>
-      <p>Amount: $${charge.amountToCharge}</p>
-      <p>Product: ${productName}</p>
-      <p>Date: ${transactionDate} ${transactionTime}</p>
-      <p>Regards,<br/>Admin<br/>DMAC.COM</p>
-    `
-    await sendEmail(userEmail, subject, html, html)
+
+    // Select email content based on product code
+    let emailContent;
+    if (hasSDMAC(targetProduct.subscription_list, productCode)) {
+      emailContent = getSDMACEmailContent({ userName, link: '' });
+    } else if (hasSDMACExpertAdvice(targetProduct.subscription_list, productCode)) {
+      emailContent = getSDMACExpertAdviceEmailContent({ userName, link: '' });
+    } else if (hasSDMACLicca(targetProduct.subscription_list, productCode)) {
+      emailContent = getSDMACLiccaEmailContent({ userName, link: '' });
+    } else if (hasRM360Pack(targetProduct.subscription_list, productCode)) {
+      emailContent = getRM360PackEmailContent({ userName, link: '' });
+    } else if (hasRM360Pack6SupervisedTraining(targetProduct.subscription_list, productCode)) {
+      emailContent = getRM360Pack6SupervisedTrainingEmailContent({ userName, link: '' });
+    } else {
+      emailContent = {
+        subject: 'Payment Receipt — Payment Approved',
+        html: `
+          <p>Dear ${userName},</p>
+          <h3>Payment Successful</h3>
+          <p>Amount: $${charge.amountToCharge}</p>
+          <p>Product: ${productName}</p>
+          <p>Date: ${transactionDate} ${transactionTime}</p>
+          <p>Regards,<br/>Admin<br/>DMAC.COM</p>
+        `
+      };
+    }
+    await sendEmail(userEmail, emailContent.subject, emailContent.html, emailContent.html);
 
     return res.json({
       message: 'Payment captured successfully',

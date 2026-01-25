@@ -33,9 +33,14 @@ function AppAppBar() {
             color="inherit"
             component={RouterLink}
             to={ROUTES.HOME}
-            sx={{ fontSize: 24 }}
+            sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: 24 }}
           >
-            {'RM360 Global'}
+            <img
+              src="/RM360-LOGO.png"
+              alt="RM360 Logo"
+              style={{ height: 40, width: 'auto', marginRight: 8 }}
+            />
+            <span>RM360</span>
           </Link>
           <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
             <Button
