@@ -204,6 +204,9 @@ const navigateUserTo = (user: IUser | null) => {
   if (role === 'COUNTRY_ADMIN') {
     return ROUTES.COUNTRY_ADMIN_DASHBOARD;
   }
+  if (role === 'USER') {
+    return ROUTES.CONSENT;
+  }
   return ROUTES.HOME;
 };
 

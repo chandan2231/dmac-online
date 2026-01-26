@@ -23,13 +23,39 @@ import { getSidebarOptions } from '../../utils/functions';
 import { useLocation, useNavigate, matchPath } from 'react-router-dom';
 import withAuthGuard from '../../middlewares/withAuthGuard';
 import mappedIcons from './mapped-icons';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import LogoutFeature from '../../features/auth/components/logout';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { Box } from '@mui/material';
 
 const Sidebar = () => {
   const { drawerOpen, toggleDrawer } = useSidebarContext();
   const { allowedRoutes } = useSelector((state: RootState) => state.auth);
   const location = useLocation();
   const navigate = useNavigate();
+  // Consent block logic
+  const [consentFilled, setConsentFilled] = useState(true);
+  // Listen to consent status from localStorage (or could be from Redux/global state)
+  useEffect(() => {
+    // Use a localStorage key to persist consent status
+    const syncConsent = () => {
+      const filled = localStorage.getItem('consentFilled');
+      setConsentFilled(filled === 'true');
+    };
+
+    // initial sync
+    syncConsent();
+
+    // storage event only fires for OTHER tabs
+    window.addEventListener('storage', syncConsent);
+    // custom event fires in SAME tab when consent status changes
+    window.addEventListener('consentStatusChanged', syncConsent);
+
+    return () => {
+      window.removeEventListener('storage', syncConsent);
+      window.removeEventListener('consentStatusChanged', syncConsent);
+    };
+  }, []);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -74,12 +100,15 @@ const Sidebar = () => {
           width: drawerWidth,
           transition: 'width 0.3s',
           overflowX: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100vh',
         },
         backgroundColor: theme => theme.palette.background.paper,
       }}
     >
       <Toolbar />
-      <List>
+      <List sx={{ flexGrow: 1 }}>
         {sidebarOptions.map((option, index) => {
           const isActive =
             location.pathname === get(option, ['path']) ||
@@ -114,6 +143,14 @@ const Sidebar = () => {
 
                     const targetPath = get(option, ['path'], null);
                     if (!targetPath) return;
+
+                    // Block navigation if consent not filled and not on /consent
+                    if (!consentFilled && targetPath !== '/consent') {
+                      // Dispatch event to show modal in ConsentPage
+                      window.dispatchEvent(new CustomEvent('showConsentModal'));
+                      navigate('/consent');
+                      return;
+                    }
 
                     navigate(String(targetPath));
                     if (isMobile) toggleDrawer();
@@ -236,6 +273,34 @@ const Sidebar = () => {
         })}
       </List>
       {sidebarOptions.length > 0 && <Divider />}
+
+      <Box sx={{ p: 1 }}>
+        <LogoutFeature>
+          {openLogout => (
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => openLogout()}
+                sx={{
+                  minHeight: 48,
+                  justifyContent: drawerOpen || isMobile ? 'initial' : 'center',
+                  px: 2.5,
+                }}
+              >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: drawerOpen || isMobile ? 3 : 'auto',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <LogoutIcon />
+                </ListItemIcon>
+                {(drawerOpen || isMobile) && <ListItemText primary="Logout" />}
+              </ListItemButton>
+            </ListItem>
+          )}
+        </LogoutFeature>
+      </Box>
     </Drawer>
   );
 };

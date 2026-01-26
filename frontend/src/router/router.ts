@@ -56,6 +56,7 @@ import BookConsultationPage from '../pages/patient/book-consultation';
 import BookTherapistPage from '../pages/patient/book-therapist';
 import UploadDocumentsPage from '../pages/patient/upload-documents';
 import CountryAdminListingPage from '../pages/admin/country-admin-listing';
+import ConsentPage from '../pages/patient/consent';
 
 // Expert Pages
 import ConsultationListPage from '../pages/expert/consultation-list';
@@ -124,10 +125,12 @@ export const COMPONENT_MAP = {
   PatientPaymentSuccessPage,
   PatientPaymentCancelledPage,
   PatientProductsPage,
+  ConsentPage,
   BookConsultationPage,
   BookTherapistPage,
   UploadDocumentsPage,
   PatientAuthWithGooglePage,
+  
 
   // Expert Pages
   ConsultationListPage,
@@ -171,6 +174,7 @@ export const ROUTES = {
   // USER Protected routes
   PROFILE: '/profile',
   QUESTIONERS: '/questioners',
+  CONSENT: '/consent',
   PATIENT_PRODUCTS: '/patient/products',
   BOOK_THERAPIST: '/patient/book-therapist',
   UPLOAD_DOCUMENTS: '/patient/upload-documents',
@@ -339,13 +343,22 @@ export const PUBLIC_ROUTES = [
 // These routes are for Patient
 const USER_ROUTES: IAllowedRoutes[] = [
   {
+    path: ROUTES.CONSENT,
+    layout: 'MainLayout',
+    component: 'ConsentPage',
+    showInSidebar: true,
+    sideBarTitle: 'Consent',
+    sideBarIcon: 'QuizIcon',
+    isAChildOf: null,
+  },
+  {
     path: ROUTES.HOME,
     layout: 'MainLayout',
     component: 'AuthRedirectHomePage',
     // This route will be shown in the sidebar
-    showInSidebar: true,
-    sideBarTitle: 'Home',
-    sideBarIcon: 'HomeIcon',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
     isAChildOf: null,
   },
   {
@@ -379,9 +392,9 @@ const USER_ROUTES: IAllowedRoutes[] = [
     path: ROUTES.PROFILE,
     layout: 'MainLayout',
     component: 'ProfilePage',
-    showInSidebar: true,
-    sideBarTitle: 'Profile',
-    sideBarIcon: 'AccountBoxIcon',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
     isAChildOf: null,
   },
   {

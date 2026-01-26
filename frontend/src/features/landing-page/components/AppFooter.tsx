@@ -13,7 +13,7 @@ function Copyright() {
     <React.Fragment>
       {'© '}
       <Link component={RouterLink} to="/" color="inherit">
-        RM360 Global
+        RM360
       </Link>{' '}
       {new Date().getFullYear()}
     </React.Fragment>

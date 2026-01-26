@@ -15,6 +15,7 @@ import PsychologyIcon from '@mui/icons-material/Psychology';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import RateReviewIcon from '@mui/icons-material/RateReview';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 
 const mapperObject = {
   HomeIcon: HomeIcon,
@@ -34,6 +35,7 @@ const mapperObject = {
   ShoppingCartIcon: ShoppingCartIcon,
   UploadFileIcon: UploadFileIcon,
   RateReviewIcon: RateReviewIcon,
+  AssignmentTurnedInIcon: AssignmentTurnedInIcon,
   GoogleIcon: ExtensionIcon, // Placeholder for Google Icon
 };
 

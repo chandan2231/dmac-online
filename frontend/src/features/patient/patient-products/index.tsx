@@ -24,8 +24,11 @@ import { ROUTES } from '../../../router/router';
 import CustomLoader from '../../../components/loader';
 import moment from 'moment';
 import { TabHeaderLayout } from '../../../components/tab-header';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const parseProductFeature = (raw: unknown) => {
   if (Array.isArray(raw)) {
@@ -88,6 +91,26 @@ const getValueForTitle = (product: IProduct, title: string): string => {
     item => (item?.title ?? '').trim().toLowerCase() === normalizedTitle
   );
   return (match?.value ?? '').toString();
+};
+
+const renderYesNoValue = (rawValue: string) => {
+  const normalized = String(rawValue ?? '')
+    .trim()
+    .toLowerCase();
+
+  if (normalized === 'yes') {
+    return <CheckCircleIcon sx={{ color: 'success.main' }} fontSize="small" />;
+  }
+
+  if (normalized === 'no') {
+    return <CancelIcon sx={{ color: 'error.main' }} fontSize="small" />;
+  }
+
+  return (
+    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+      {rawValue}
+    </Typography>
+  );
 };
 
 const ProductCard = ({
@@ -178,7 +201,9 @@ const ProductCard = ({
                       >
                         {feature.title}
                       </TableCell>
-                      <TableCell>{feature.value}</TableCell>
+                      <TableCell align="right">
+                        {renderYesNoValue(feature.value)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -280,6 +305,14 @@ const PatientProducts = () => {
   } = useGetSubscribedProduct(user);
 
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const handleToggleUpgrade = () => {
+    setShowUpgradeOptions(v => !v);
+    requestAnimationFrame(() => {
+      containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  };
 
   if (isLoading || isSubscribedProductsLoading) {
     return <CustomLoader />;
@@ -395,12 +428,11 @@ const PatientProducts = () => {
       }
     }
 
-    const columnColors: Array<
-      'success' | 'info' | 'secondary' | 'warning' | 'primary'
-    > = ['success', 'info', 'secondary', 'warning', 'primary'];
+    const columnColors: Array<'primary'> = ['primary'];
 
     return (
       <Box
+        ref={containerRef}
         sx={{
           display: 'flex',
           flexDirection: 'column',
@@ -426,182 +458,19 @@ const PatientProducts = () => {
           rightNode={
             <Button
               variant="contained"
-              onClick={() => setShowUpgradeOptions(v => !v)}
+              onClick={handleToggleUpgrade}
+              startIcon={showUpgradeOptions ? <ArrowBackIcon /> : undefined}
             >
-              Upgrade Product
+              {showUpgradeOptions ? 'Back' : 'Upgrade Product'}
             </Button>
           }
         />
-
-        <Box>
-          {subscribedProducts.map(
-            (
-              product: IProduct & {
-                payment_id: string;
-                status: string;
-                payment_date: string;
-              },
-              index: number
-            ) => {
-              const {
-                product_description,
-                product_name,
-                product_amount,
-                payment_id,
-                payment_date,
-                status,
-                subscription_list,
-              } = product;
-              return (
-                <div className="plan" key={index}>
-                  <div className="inner">
-                    <span className="pricing">
-                      <span>${product_amount}</span>
-                    </span>
-                    <p className="title">{product_name}</p>
-                    <p className="info">{product_description}</p>
-
-                    {Array.isArray(
-                      parseProductFeature(get(product, ['feature']))
-                    ) &&
-                    parseProductFeature(get(product, ['feature'])).length ? (
-                      <TableContainer
-                        component={Paper}
-                        variant="outlined"
-                        sx={{
-                          bgcolor: 'transparent',
-                          boxShadow: 'none',
-                        }}
-                      >
-                        <Table size="small">
-                          <TableBody>
-                            {(
-                              parseProductFeature(
-                                get(product, ['feature'], [])
-                              ) as Array<{
-                                title: string;
-                                value: string;
-                              }>
-                            ).map((feature, index) => (
-                              <TableRow key={index}>
-                                <TableCell
-                                  sx={{
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  {feature.title}
-                                </TableCell>
-                                <TableCell>{feature.value}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    ) : (
-                      <ul className="features">
-                        {subscription_list.split(',').map((feature, index) => (
-                          <li key={index}>
-                            <span className="icon">
-                              <svg
-                                height="24"
-                                width="24"
-                                viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path d="M0 0h24v24H0z" fill="none"></path>
-                                <path
-                                  fill="currentColor"
-                                  d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
-                                ></path>
-                              </svg>
-                            </span>
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-
-                    <Stack
-                      direction={{ xs: 'column', sm: 'row' }}
-                      spacing={1}
-                      width="100%"
-                    >
-                      <Box flex={1}>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                          sx={{
-                            fontSize: '16px',
-                          }}
-                        >
-                          Subscription Status
-                        </Typography>
-                        <Chip
-                          label={status}
-                          size="small"
-                          color={
-                            String(status).toLowerCase() === 'completed'
-                              ? 'success'
-                              : 'warning'
-                          }
-                          sx={{
-                            fontWeight: 600,
-                            borderRadius: 1,
-                            mb: 2,
-                            color: '#fff',
-                          }}
-                        />
-                      </Box>
-                      <Box flex={1}>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                          sx={{
-                            fontSize: '16px',
-                          }}
-                        >
-                          Transaction ID
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          fontWeight="medium"
-                          sx={{ fontFamily: 'monospace' }}
-                        >
-                          {payment_id}
-                        </Typography>
-                      </Box>
-                      <Box flex={1}>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                          sx={{
-                            fontSize: '16px',
-                          }}
-                        >
-                          Payment Date
-                        </Typography>
-                        <Typography variant="body2" fontWeight="medium">
-                          {moment(payment_date).format('Do MMMM, YYYY')}
-                        </Typography>
-                      </Box>
-                    </Stack>
-
-                    <div className="action"></div>
-                  </div>
-                </div>
-              );
-            }
-          )}
-        </Box>
 
         {showUpgradeOptions ? (
           <Box
             sx={{
               width: '100%',
-              mt: 3,
+              mt: 0,
             }}
           >
             {upgradeCards.length === 0 ? (
@@ -614,7 +483,7 @@ const PatientProducts = () => {
               </Typography>
             ) : (
               <Box sx={{ width: '100%' }}>
-                <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
                   Available Upgrade Options
                 </Typography>
 
@@ -624,6 +493,9 @@ const PatientProducts = () => {
                   sx={{
                     width: '100%',
                     overflowX: 'auto',
+                    overflowY: 'hidden',
+                    WebkitOverflowScrolling: 'touch',
+                    position: 'relative',
                     borderRadius: 2,
                     backgroundColor: theme.palette.background.paper,
                   }}
@@ -631,8 +503,8 @@ const PatientProducts = () => {
                   <Table
                     size="small"
                     sx={{
-                      minWidth: 900,
-                      tableLayout: 'fixed',
+                      minWidth: { xs: 900, md: 0 },
+                      tableLayout: { xs: 'auto', md: 'fixed' },
                       width: '100%',
                     }}
                   >
@@ -640,7 +512,8 @@ const PatientProducts = () => {
                       <TableRow>
                         <TableCell
                           sx={{
-                            width: 280,
+                            width: { xs: 180, sm: 240, md: 280 },
+                            minWidth: { xs: 180, sm: 240, md: 280 },
                             position: 'sticky',
                             left: 0,
                             zIndex: 3,
@@ -677,58 +550,43 @@ const PatientProducts = () => {
                             >
                               <Box
                                 sx={{
-                                  p: 0,
+                                  p: 1.5,
                                   bgcolor: palette.main,
                                   height: '100%',
                                   display: 'flex',
                                   flexDirection: 'column',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: 0.75,
                                 }}
                               >
-                                <Box
+                                <Typography
+                                  variant="subtitle1"
                                   sx={{
-                                    fontWeight: 600,
-                                    flex: '1 1 auto',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    px: 1,
+                                    fontWeight: 700,
+                                    lineHeight: 1.15,
+                                    display: '-webkit-box',
+                                    WebkitBoxOrient: 'vertical',
+                                    WebkitLineClamp: 2,
+                                    overflow: 'hidden',
+                                    color: palette.contrastText,
+                                    textAlign: 'center',
                                   }}
                                 >
-                                  <Typography
-                                    variant="subtitle1"
-                                    sx={{
-                                      fontWeight: 700,
-                                      lineHeight: 1.2,
-                                      display: '-webkit-box',
-                                      WebkitBoxOrient: 'vertical',
-                                      WebkitLineClamp: 2,
-                                      overflow: 'hidden',
-                                      color: palette.contrastText,
-                                    }}
-                                  >
-                                    {
-                                      (item.product as UniversalType)
-                                        .product_name
-                                    }
-                                  </Typography>
-                                </Box>
+                                  {(item.product as UniversalType).product_name}
+                                </Typography>
+
                                 <Box
                                   sx={{
-                                    px: 2,
-                                    py: 1.75,
-                                    flex: '0 0 auto',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    gap: 0.5,
+                                    gap: 0.25,
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     color: palette.contrastText,
                                   }}
                                 >
-                                  <Typography
-                                    variant="h4"
-                                    sx={{ fontWeight: 900 }}
-                                  >
+                                  <Typography variant="h5" sx={{ fontWeight: 900 }}>
                                     ${displayAmount}
                                   </Typography>
                                   <Typography
@@ -762,9 +620,10 @@ const PatientProducts = () => {
                               position: 'sticky',
                               left: 0,
                               zIndex: 2,
-                              bgcolor: 'inherit',
+                              bgcolor: theme.palette.background.paper,
                               borderRight: `1px solid ${theme.palette.divider}`,
-                              width: 280,
+                              width: { xs: 180, sm: 240, md: 280 },
+                              minWidth: { xs: 180, sm: 240, md: 280 },
                             }}
                           >
                             <Typography
@@ -787,12 +646,7 @@ const PatientProducts = () => {
                                   borderLeft: `1px solid ${theme.palette.divider}`,
                                 }}
                               >
-                                <Typography
-                                  variant="body2"
-                                  sx={{ fontWeight: 600 }}
-                                >
-                                  {value}
-                                </Typography>
+                                {renderYesNoValue(value)}
                               </TableCell>
                             );
                           })}
@@ -807,7 +661,8 @@ const PatientProducts = () => {
                             zIndex: 2,
                             bgcolor: theme.palette.background.paper,
                             borderRight: `1px solid ${theme.palette.divider}`,
-                            width: 280,
+                            width: { xs: 180, sm: 240, md: 280 },
+                            minWidth: { xs: 180, sm: 240, md: 280 },
                           }}
                         />
 
@@ -889,7 +744,173 @@ const PatientProducts = () => {
               </Box>
             )}
           </Box>
-        ) : null}
+        ) : (
+          <Box>
+            {subscribedProducts.map(
+              (
+                product: IProduct & {
+                  payment_id: string;
+                  status: string;
+                  payment_date: string;
+                },
+                index: number
+              ) => {
+                const {
+                  product_description,
+                  product_name,
+                  product_amount,
+                  payment_id,
+                  payment_date,
+                  status,
+                  subscription_list,
+                } = product;
+                return (
+                  <div className="plan" key={index}>
+                    <div className="inner">
+                      <span className="pricing">
+                        <span>${product_amount}</span>
+                      </span>
+                      <p className="title">{product_name}</p>
+                      <p className="info">{product_description}</p>
+
+                      {Array.isArray(
+                        parseProductFeature(get(product, ['feature']))
+                      ) &&
+                      parseProductFeature(get(product, ['feature'])).length ? (
+                        <TableContainer
+                          component={Paper}
+                          variant="outlined"
+                          sx={{
+                            bgcolor: 'transparent',
+                            boxShadow: 'none',
+                          }}
+                        >
+                          <Table size="small">
+                            <TableBody>
+                              {(
+                                parseProductFeature(
+                                  get(product, ['feature'], [])
+                                ) as Array<{
+                                  title: string;
+                                  value: string;
+                                }>
+                              ).map((feature, index) => (
+                                <TableRow key={index}>
+                                  <TableCell
+                                    sx={{
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {feature.title}
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    {renderYesNoValue(feature.value)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      ) : (
+                        <ul className="features">
+                          {subscription_list.split(',').map((feature, index) => (
+                            <li key={index}>
+                              <span className="icon">
+                                <svg
+                                  height="24"
+                                  width="24"
+                                  viewBox="0 0 24 24"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path d="M0 0h24v24H0z" fill="none"></path>
+                                  <path
+                                    fill="currentColor"
+                                    d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
+                                  ></path>
+                                </svg>
+                              </span>
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={1}
+                        width="100%"
+                      >
+                        <Box flex={1}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            display="block"
+                            sx={{
+                              fontSize: '16px',
+                            }}
+                          >
+                            Subscription Status
+                          </Typography>
+                          <Chip
+                            label={status}
+                            size="small"
+                            color={
+                              String(status).toLowerCase() === 'completed'
+                                ? 'success'
+                                : 'warning'
+                            }
+                            sx={{
+                              fontWeight: 600,
+                              borderRadius: 1,
+                              mb: 2,
+                              color: '#fff',
+                            }}
+                          />
+                        </Box>
+                        <Box flex={1}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            display="block"
+                            sx={{
+                              fontSize: '16px',
+                            }}
+                          >
+                            Transaction ID
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            fontWeight="medium"
+                            sx={{ fontFamily: 'monospace' }}
+                          >
+                            {payment_id}
+                          </Typography>
+                        </Box>
+                        <Box flex={1}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            display="block"
+                            sx={{
+                              fontSize: '16px',
+                            }}
+                          >
+                            Payment Date
+                          </Typography>
+                          <Typography variant="body2" fontWeight="medium">
+                            {moment(payment_date).format('Do MMMM, YYYY')}
+                          </Typography>
+                        </Box>
+                      </Stack>
+
+                      <div className="action"></div>
+                    </div>
+                  </div>
+                );
+              }
+            )}
+          </Box>
+        )}
       </Box>
     );
   }

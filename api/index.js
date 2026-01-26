@@ -13,6 +13,7 @@ import theraistRoutes from './routes/therapist.js'
 import patientRoutes from './routes/patient.js'
 import payment from './routes/payment.js'
 import reviewRoutes from './routes/reviews.js'
+import consentRoutes from './routes/consent.js'
 import countryAdminRoutes from './routes/countryAdmin.js'
 
 dotenv.config({ path: `.env`, override: true })
@@ -57,6 +58,7 @@ app.use('/api/therapist', theraistRoutes)
 app.use('/api/patient', patientRoutes)
 app.use('/api/reviews', reviewRoutes)
 app.use('/api/payment', payment)
+app.use('/api/consent', consentRoutes)
 
 // PORT setup based on environment
 let PORT = 8010 // default dev port
