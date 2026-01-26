@@ -30,13 +30,19 @@ import { Box } from '@mui/material';
 
 const Sidebar = () => {
   const { drawerOpen, toggleDrawer } = useSidebarContext();
-  const { allowedRoutes } = useSelector((state: RootState) => state.auth);
+  const { allowedRoutes, user } = useSelector((state: RootState) => state.auth);
   const location = useLocation();
   const navigate = useNavigate();
+  const shouldEnforceConsent = user?.role === 'USER';
   // Consent block logic
   const [consentFilled, setConsentFilled] = useState(true);
   // Listen to consent status from localStorage (or could be from Redux/global state)
   useEffect(() => {
+    if (!shouldEnforceConsent) {
+      setConsentFilled(true);
+      return;
+    }
+
     // Use a localStorage key to persist consent status
     const syncConsent = () => {
       const filled = localStorage.getItem('consentFilled');
@@ -55,7 +61,7 @@ const Sidebar = () => {
       window.removeEventListener('storage', syncConsent);
       window.removeEventListener('consentStatusChanged', syncConsent);
     };
-  }, []);
+  }, [shouldEnforceConsent]);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -145,7 +151,11 @@ const Sidebar = () => {
                     if (!targetPath) return;
 
                     // Block navigation if consent not filled and not on /consent
-                    if (!consentFilled && targetPath !== '/consent') {
+                    if (
+                      shouldEnforceConsent &&
+                      !consentFilled &&
+                      targetPath !== '/consent'
+                    ) {
                       // Dispatch event to show modal in ConsentPage
                       window.dispatchEvent(new CustomEvent('showConsentModal'));
                       navigate('/consent');
