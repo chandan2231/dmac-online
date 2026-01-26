@@ -49,7 +49,8 @@
     font-weight: 600;
     font-size: 1.25rem;
     color: #425675;
-    margin-top: 20px;
+    margin-top: 12px;
+    padding-right: 7.5rem;
 }
 
 .plan .title+* {
