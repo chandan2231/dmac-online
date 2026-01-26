@@ -2,15 +2,19 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import PatientService from '../../../features/patient/patient.service';
-import { Box, Accordion, AccordionSummary, AccordionDetails, Typography, TextField, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import { Box, Accordion, AccordionSummary, AccordionDetails, Typography, TextField, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Button, List, ListItem, ListItemText, Stack, Divider } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useLocation, useNavigate } from 'react-router-dom';
-
+import { FORM_1_TITLE, RM_DISCLAIMER_BLOCKS } from './rmDisclaimerPrivacy';
+import {
+  FORM_2_TITLE,
+  RM_RESEARCH_CONSENT_BLOCKS,
+} from './rmResearchConsentAuthorization';
+const VISIBLE_FORMS_COUNT = 2;
 
 const forms = [
-  { id: 1, label: 'Form 1' },
-  { id: 2, label: 'Form 2' },
-  { id: 3, label: 'Form 3' },
+  { id: 1, label: FORM_1_TITLE },
+  { id: 2, label: FORM_2_TITLE },
 ];
 
 export default function ConsentPage() {
@@ -33,13 +37,17 @@ export default function ConsentPage() {
         setSavedSignatures(data);
 
         // Start at the first incomplete form; otherwise keep Form 1 on top
-        const firstIncomplete = data.findIndex((sig: string) => !(sig ?? '').trim());
+        const firstIncomplete = data
+          .slice(0, VISIBLE_FORMS_COUNT)
+          .findIndex((sig: string) => !(sig ?? '').trim());
         setExpandedIndex(firstIncomplete === -1 ? 0 : firstIncomplete);
       });
     }
   }, [user?.id]);
 
-  const allFilled = savedSignatures.every(sig => !!sig);
+  const allFilled = savedSignatures
+    .slice(0, VISIBLE_FORMS_COUNT)
+    .every(sig => !!(sig ?? '').trim());
 
   // Sync consent status to localStorage for sidebar
   useEffect(() => {
@@ -124,15 +132,102 @@ export default function ConsentPage() {
     setShowModal(false);
   };
 
+  const renderForm1Disclaimer = () =>
+    renderConsentDocument(FORM_1_TITLE, RM_DISCLAIMER_BLOCKS);
+
+  const renderConsentDocument = (
+    title: string,
+    blocks: typeof RM_DISCLAIMER_BLOCKS
+  ) => (
+    <Box
+      sx={{
+        border: theme => `1px solid ${theme.palette.divider}`,
+        borderRadius: 2,
+        p: { xs: 1.5, sm: 2 },
+        bgcolor: 'background.paper',
+        mb: 2,
+      }}
+    >
+      <Typography variant="h6" sx={{ fontWeight: 800, mb: 0.5 }}>
+        {title}
+      </Typography>
+
+      <Stack spacing={1.25}>
+        {blocks.map((block, i) => {
+          if (block.type === 'subtitle') {
+            return (
+              <Typography key={i} variant="subtitle2" color="text.secondary">
+                {block.text}
+              </Typography>
+            );
+          }
+
+          if (block.type === 'section') {
+            return (
+              <>
+                <Divider key={`d-${i}`} sx={{ my: 0.75 }} />
+                <Typography key={i} variant="subtitle1" sx={{ fontWeight: 800 }}>
+                  {block.text}
+                </Typography>
+              </>
+            );
+          }
+
+          if (block.type === 'subsection') {
+            return (
+              <Typography key={i} variant="body2" sx={{ fontWeight: 800 }}>
+                {block.text}
+              </Typography>
+            );
+          }
+
+          if (block.type === 'p') {
+            return (
+              <Typography key={i} variant="body2" sx={{ lineHeight: 1.65 }}>
+                {block.text}
+              </Typography>
+            );
+          }
+
+          if (block.type === 'bullets') {
+            return (
+              <List key={i} dense sx={{ py: 0, my: -0.5 }}>
+                {block.items.map((item, j) => (
+                  <ListItem key={j} sx={{ py: 0.25 }}>
+                    <ListItemText
+                      primary={item}
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        sx: { lineHeight: 1.55 },
+                      }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            );
+          }
+
+          return null;
+        })}
+      </Stack>
+    </Box>
+  );
+
   return (
-    <Box p={3}>
+    <Box
+      sx={{
+        p: { xs: 2, sm: 3 },
+        mx: 'auto',
+        width: '100%',
+      }}
+    >
       <Typography 
         variant="h5" 
-        sx={{ fontWeight: 600}} 
+        sx={{ fontWeight: 800 }} 
         mb={2}
-    >
+      >
         Consent Forms
-    </Typography>
+      </Typography>
       {forms.map((form, idx) => (
         <Accordion
           key={form.id}
@@ -146,33 +241,26 @@ export default function ConsentPage() {
           disabled={idx !== 0 && !(savedSignatures[idx - 1] ?? '').trim()}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography sx={{ flex: 1 }}>{form.label}</Typography>
+            <Typography sx={{ flex: 1, fontWeight: 700 }}>{form.label}</Typography>
             {savedSignatures[idx] ? (
               <Chip label="filled" color="success" size="small" sx={{ ml: 2 }} />
             ) : (
               <Chip label="not filled" color="error" size="small" sx={{ ml: 2 }} />
             )}
           </AccordionSummary>
-          <AccordionDetails>
-            <Typography mb={2}>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, urna eu tincidunt consectetur, nisi nisl aliquam nunc, eget aliquam massa nisl quis neque. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
-            </Typography>
-            <Typography mb={2}>
-              Vivamus luctus urna sed urna ultricies ac tempor dui sagittis. In condimentum facilisis porta. Sed nec diam eu diam mattis viverra. Nulla fringilla, orci ac euismod semper, magna diam porttitor mauris, quis sollicitudin sapien justo in libero.
-            </Typography>
-            <Typography mb={2}>
-              Fusce placerat enim et odio molestie sagittis. Etiam faucibus cursus urna. Ut tellus. Nulla ut erat id mauris vulputate elementum. Nullam varius.
-            </Typography>
-            <Typography mb={2}>
-              Proin quam. Etiam ultrices. Suspendisse in justo eu magna luctus suscipit. Sed lectus. Integer euismod lacus luctus magna.
-            </Typography>
+          <AccordionDetails sx={{ pt: 1.5 }}>
+            {idx === 0 ? (
+              renderForm1Disclaimer()
+            ) : idx === 1 ? (
+              renderConsentDocument(FORM_2_TITLE, RM_RESEARCH_CONSENT_BLOCKS)
+            ) : null}
             <TextField
               label="Electronic Signature"
               value={draftSignatures[idx]}
               onChange={e => handleSignatureChange(idx, e.target.value)}
               fullWidth
               variant="outlined"
-              sx={{ mb: 2 }}
+              sx={{ mt: 1, mb: 2 }}
             />
 
             <Button
