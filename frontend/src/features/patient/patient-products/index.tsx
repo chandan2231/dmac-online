@@ -679,15 +679,15 @@ const PatientProducts = () => {
                               align="center"
                               sx={{
                                 p: 0,
-                                // height: 170,
+                                bgcolor: palette.main,
+                                color: palette.contrastText,
                                 borderLeft: `1px solid ${theme.palette.divider}`,
                               }}
                             >
                               <Box
                                 sx={{
                                   p: 1.5,
-                                  bgcolor: palette.main,
-                                  height: '100%',
+                                  minHeight: 170,
                                   display: 'flex',
                                   flexDirection: 'column',
                                   alignItems: 'center',
