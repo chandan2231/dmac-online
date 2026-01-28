@@ -48,6 +48,8 @@ export const capturePatientPayment = async (req, res) => {
 
   let patient_id = null
   let isLiccaIncluded = false
+  let liccaProvisioned = false
+  let amountForLog = 0
 
   try {
     /* ------------------ CAPTURE PAYPAL PAYMENT ------------------ */
@@ -59,8 +61,7 @@ export const capturePatientPayment = async (req, res) => {
     const productCode = targetProduct.product_code;
 
     const current = await getUserLatestCompletedProduct(userId, db)
-    const charge = current
-      ? computeUpgradeCharge({ currentProduct: current, targetProduct })
+    const charge = current ? computeUpgradeCharge({ currentProduct: current, targetProduct })
       : {
           allowed: true,
           reason: null,
@@ -85,6 +86,7 @@ export const capturePatientPayment = async (req, res) => {
     if (capturedAmount === null || !Number.isFinite(capturedAmount)) {
       throw new Error('CAPTURE_AMOUNT_MISSING')
     }
+    amountForLog = Number(capturedAmount.toFixed(2))
     if (
       Number(capturedAmount.toFixed(2)) !==
       Number(charge.amountToCharge.toFixed(2))
@@ -152,11 +154,18 @@ export const capturePatientPayment = async (req, res) => {
         if (existingUser) {
           patient_id = existingUser.id
         } else {
-          const originalPassword = decryptString(user.encrypted_password)
-          const md5Password = crypto
-            .createHash('md5')
-            .update(originalPassword)
-            .digest('hex')
+          let md5Password
+          try {
+            const originalPassword = decryptString(user.encrypted_password)
+            md5Password = crypto
+              .createHash('md5')
+              .update(originalPassword)
+              .digest('hex')
+          } catch (e) {
+            throw new Error(
+              `LICCA_PASSWORD_DECRYPT_FAILED: ${e?.message ?? String(e)}`
+            )
+          }
 
           const [insertUser] = await paymentConnection.query(
             `INSERT INTO users
@@ -267,9 +276,13 @@ export const capturePatientPayment = async (req, res) => {
         )
 
         await paymentConnection.commit()
+        liccaProvisioned = true
       } catch (err) {
         if (paymentConnection) await paymentConnection.rollback()
-        throw err
+        // Do not fail a successful PayPal capture just because LICCA provisioning failed.
+        // Log and continue; admins can investigate env mismatch / legacy encrypted_password values.
+        console.error('LICCA PROVISIONING ERROR:', err)
+        liccaProvisioned = false
       } finally {
         if (paymentConnection) paymentConnection.release()
       }
@@ -306,32 +319,41 @@ export const capturePatientPayment = async (req, res) => {
     return res.json({
       message: 'Payment captured successfully',
       patient_id,
-      licca_enabled: isLiccaIncluded
+      licca_enabled: Boolean(isLiccaIncluded && liccaProvisioned)
     })
   } catch (error) {
     console.error('PAYPAL ERROR:', error)
 
-    await db.promise().query(
-      `INSERT INTO dmac_webapp_users_transaction
-       (payment_id, payer_id, amount, currency, status,
-        product_id, user_id, payment_type, failure_reason)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        orderId,
-        payerId || null,
-        null,
-        currencyCode,
-        'FAILED',
-        productId,
-        userId,
-        'paypal',
-        error.message
-      ]
-    )
+    const failureReason = error?.message ?? String(error)
+    const safeAmount = Number.isFinite(Number(amountForLog))
+      ? Number(amountForLog)
+      : 0
+
+    try {
+      await db.promise().query(
+        `INSERT INTO dmac_webapp_users_transaction
+         (payment_id, payer_id, amount, currency, status,
+          product_id, user_id, payment_type, failure_reason)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          orderId,
+          payerId || null,
+          safeAmount,
+          currencyCode,
+          'FAILED',
+          productId,
+          userId,
+          'paypal',
+          failureReason
+        ]
+      )
+    } catch (logErr) {
+      console.error('FAILED TO LOG PAYMENT FAILURE:', logErr)
+    }
 
     return res.status(400).json({
       message: 'Payment failed',
-      reason: error.message
+      reason: failureReason
     })
   }
 }
@@ -1289,6 +1311,13 @@ function encryptString(original) {
 }
 
 function decryptString(encoded) {
+  if (!encoded) {
+    throw new Error('MISSING_ENCRYPTED_PASSWORD')
+  }
+  if (!process.env.CRYPTO_SECRET_KEY || !process.env.CRYPTO_ALGORITHM) {
+    throw new Error('CRYPTO_ENV_MISSING')
+  }
+
   const key = Buffer.from(process.env.CRYPTO_SECRET_KEY, 'hex')
 
   const decipher = crypto.createDecipheriv(

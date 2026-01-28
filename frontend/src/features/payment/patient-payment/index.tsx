@@ -23,6 +23,28 @@ import Loader from '../../../components/loader';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import GenericModal from '../../../components/modal';
 import MorenCheckbox from '../../../components/checkbox';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+
+const renderYesNoValue = (rawValue: string) => {
+  const normalized = String(rawValue ?? '')
+    .trim()
+    .toLowerCase();
+
+  if (normalized === 'yes') {
+    return <CheckCircleIcon sx={{ color: 'success.main' }} fontSize="small" />;
+  }
+
+  if (normalized === 'no') {
+    return <CancelIcon sx={{ color: 'error.main' }} fontSize="small" />;
+  }
+
+  return (
+    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+      {rawValue}
+    </Typography>
+  );
+};
 
 const PatientPayment = () => {
   const navigate = useNavigate();
@@ -33,15 +55,20 @@ const PatientPayment = () => {
   const [serverAmountToPay, setServerAmountToPay] = useState<number | null>(
     null
   );
-  const [serverUpgradeFromProductId, setServerUpgradeFromProductId] = useState<
-    number | null
-  >(null);
 
   const [loading, setLoading] = useState(false);
   const [paypalSdkReady, setPaypalSdkReady] = useState(false);
 
   /** PayPal container reference */
   const paypalRef = useRef<HTMLDivElement | null>(null);
+
+  const acknowledgedRef = useRef(false);
+  const serverAmountToPayRef = useRef<number | null>(null);
+  const serverUpgradeFromProductIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    acknowledgedRef.current = acknowledged;
+  }, [acknowledged]);
 
   useEffect(() => {
     if (!state) {
@@ -146,15 +173,16 @@ const PatientPayment = () => {
 
         // Always prefer server-computed values for robust upgrades.
         if (Number.isFinite(response.amountToPay ?? NaN)) {
-          setServerAmountToPay(Number(response.amountToPay));
+          const amt = Number(response.amountToPay);
+          serverAmountToPayRef.current = amt;
+          setServerAmountToPay(amt);
         }
         const upgradeFrom =
           response.upgradeFromProductId !== undefined
             ? Number(response.upgradeFromProductId)
             : null;
-        setServerUpgradeFromProductId(
-          Number.isFinite(upgradeFrom) ? upgradeFrom : null
-        );
+        const upgradeFromSafe = Number.isFinite(upgradeFrom) ? upgradeFrom : null;
+        serverUpgradeFromProductIdRef.current = upgradeFromSafe;
 
         return response.orderId;
       },
@@ -167,8 +195,9 @@ const PatientPayment = () => {
 
         const uiAmount = Number(get(state, ['product', 'product_amount'], 0));
         const amount =
-          serverAmountToPay !== null && Number.isFinite(serverAmountToPay)
-            ? serverAmountToPay
+          serverAmountToPayRef.current !== null &&
+          Number.isFinite(serverAmountToPayRef.current)
+            ? Number(serverAmountToPayRef.current)
             : uiAmount;
 
         const payload = {
@@ -182,7 +211,7 @@ const PatientPayment = () => {
           productId,
           amount,
           upgradeFromProductId:
-            serverUpgradeFromProductId ??
+            serverUpgradeFromProductIdRef.current ??
             get(state, ['upgrade', 'upgradeFromProductId'], null),
         };
 
@@ -219,6 +248,37 @@ const PatientPayment = () => {
       container.innerHTML = '';
     };
   }, [paypalSdkReady, state, navigate]);
+
+  const triggerPayPalClick = () => {
+    const root = paypalRef.current;
+    if (!root) return;
+
+    const candidate =
+      (root.querySelector('button') as HTMLButtonElement | null) ??
+      (root.querySelector('[role="button"]') as HTMLElement | null);
+
+    if (candidate) {
+      candidate.click();
+      return;
+    }
+
+    // Fallback: if PayPal renders non-button wrappers.
+    (root as unknown as HTMLElement).click?.();
+  };
+
+  const handleAcknowledgeCancel = () => {
+    setIsAcknowledgementOpen(false);
+  };
+
+  const handleAcknowledgeConfirm = () => {
+    if (!acknowledgedRef.current) return;
+    setIsAcknowledgementOpen(false);
+
+    // Open the PayPal flow as a direct result of the Confirm click.
+    requestAnimationFrame(() => {
+      triggerPayPalClick();
+    });
+  };
 
   return (
     <Box
@@ -339,7 +399,7 @@ const PatientPayment = () => {
                             >
                               {feature.title}
                             </TableCell>
-                            <TableCell>{feature.value}</TableCell>
+                            <TableCell>{renderYesNoValue(feature.value)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -396,6 +456,7 @@ const PatientPayment = () => {
                 }}
                 onClick={e => {
                   e.preventDefault();
+                  e.stopPropagation();
                   setIsAcknowledgementOpen(true);
                 }}
               />
@@ -407,9 +468,13 @@ const PatientPayment = () => {
 
       <GenericModal
         isOpen={isAcknowledgementOpen}
-        onClose={() => setIsAcknowledgementOpen(false)}
+        onClose={handleAcknowledgeCancel}
         title="Payment Acknowledged"
-        onSubmit={() => setIsAcknowledgementOpen(false)}
+        cancelButtonText="Cancel"
+        submitButtonText="Confirm"
+        submitDisabled={!acknowledged}
+        onCancel={handleAcknowledgeCancel}
+        onSubmit={handleAcknowledgeConfirm}
         children={
           <Box>
             <Typography variant="body1">
