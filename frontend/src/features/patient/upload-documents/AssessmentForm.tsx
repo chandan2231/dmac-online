@@ -16,6 +16,8 @@ import {
   Checkbox,
   TextField,
 } from '@mui/material';
+import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
+import type { Theme } from '@mui/material/styles';
 import { useSnackbar } from 'notistack';
 import {
   useGetAssessmentStatus,
@@ -45,6 +47,54 @@ function TabPanel(props: TabPanelProps) {
     </div>
   );
 }
+
+const tabLabelWithNext = (label: string, showNextIcon: boolean) => (
+  <Box
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 0.75,
+      color: 'inherit',
+    }}
+  >
+    <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
+      {label}
+    </Box>
+    {showNextIcon ? (
+      <KeyboardDoubleArrowRightIcon sx={{ fontSize: 22, opacity: 1 }} />
+    ) : null}
+  </Box>
+);
+
+const getTabSx = (selected: boolean) => ({
+  textTransform: 'none',
+  fontWeight: selected ? 700 : 600,
+  minHeight: 44,
+  px: 1.75,
+  py: 0.75,
+  mx: 0.5,
+  my: 1,
+  borderRadius: 4,
+  color: selected ? '#fff' : 'text.primary',
+  background: (theme: Theme) =>
+    selected
+      ? `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`
+      : `linear-gradient(135deg, ${theme.palette.primary.light}55, ${theme.palette.primary.main}22)`,
+  border: (theme: Theme) =>
+    selected ? '1px solid transparent' : `1px solid ${theme.palette.primary.main}33`,
+  boxShadow: 'none',
+  transition: 'all 200ms ease',
+  '& .MuiTab-iconWrapper': { color: 'inherit' },
+  '&.Mui-selected': {
+    color: '#fff',
+  },
+  '&:hover': {
+    background: (theme: Theme) =>
+      selected
+        ? `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`
+        : `linear-gradient(135deg, ${theme.palette.primary.light}77, ${theme.palette.primary.main}33)`,
+  },
+});
 
 const satQuestions = [
   {
@@ -709,20 +759,44 @@ const AssessmentForm = ({
 
   return (
     <Paper sx={{ width: '100%', mb: 2 }}>
+      {/** Tabs show a "next" indicator (>>) to guide sequential completion */}
       <Tabs
         value={value}
         onChange={handleChange}
         variant="scrollable"
         scrollButtons="auto"
+        sx={{
+          px: 0,
+          justifyContent: 'flex-start',
+          '& .MuiTabs-scroller': {
+            pl: 0,
+            pr: 3,
+          },
+          '& .MuiTabs-flexContainer': {
+            justifyContent: 'flex-start',
+          },
+          '& .MuiTab-root:first-of-type': {
+            ml: 0,
+          },
+          '& .MuiTabs-scrollButtons': {
+            m: 0,
+          },
+          '& .MuiTabs-indicator': { display: 'none' },
+        }}
       >
-        <Tab label="Medical History" />
-        <Tab label="Sleep Apnea Test" />
-        <Tab label="Depression Diagnostic Test" />
-        <Tab label="Anxiety Diagnostic Test" />
-        <Tab label="Concussion Assessment Test" />
-        <Tab label="Disclaimer" />
-        <Tab label="Consent" />
-        {showLastTab && <Tab label="Patient Documents" />}
+        <Tab label={tabLabelWithNext('Medical History', true)} sx={getTabSx(value === 0)} />
+        <Tab label={tabLabelWithNext('Sleep Apnea Test', true)} sx={getTabSx(value === 1)} />
+        <Tab label={tabLabelWithNext('Depression Diagnostic Test', true)} sx={getTabSx(value === 2)} />
+        <Tab label={tabLabelWithNext('Anxiety Diagnostic Test', true)} sx={getTabSx(value === 3)} />
+        <Tab label={tabLabelWithNext('Concussion Assessment Test', true)} sx={getTabSx(value === 4)} />
+        <Tab label={tabLabelWithNext('Disclaimer', true)} sx={getTabSx(value === 5)} />
+        <Tab label={tabLabelWithNext('Consent', showLastTab)} sx={getTabSx(value === 6)} />
+        {showLastTab && (
+          <Tab
+            label={tabLabelWithNext('Patient Documents', false)}
+            sx={getTabSx(value === 7)}
+          />
+        )}
       </Tabs>
 
       <TabPanel value={value} index={0}>
