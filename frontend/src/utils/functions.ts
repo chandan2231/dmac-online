@@ -107,6 +107,25 @@ const getSidebarOptions = (allowedRoutes: IAllowedRoutes[] | null) => {
     return !visiblePaths.has(parentPath);
   });
 
+  // Enforce a small, predictable ordering for key patient pages.
+  // Order required: Consent, Auth With Google, Products, Questioners.
+  const preferredTopLevelOrder = new Map<ROUTES, number>([
+    [ROUTES.CONSENT, 0],
+    [ROUTES.AUTH_WITH_GOOGLE, 1],
+    [ROUTES.PATIENT_PRODUCTS, 2],
+    [ROUTES.QUESTIONERS, 3],
+  ]);
+
+  const sortedTopLevelRoutes = topLevelRoutes
+    .map((route, index) => ({ route, index }))
+    .sort((a, b) => {
+      const aOrder = preferredTopLevelOrder.get(a.route.path) ?? Number.MAX_SAFE_INTEGER;
+      const bOrder = preferredTopLevelOrder.get(b.route.path) ?? Number.MAX_SAFE_INTEGER;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return a.index - b.index;
+    })
+    .map(({ route }) => route);
+
   const toSidebarOption = (route: IAllowedRoutes): SidebarOption => {
     const routePath = route.path;
     const children: SidebarOption[] = (
@@ -131,7 +150,7 @@ const getSidebarOptions = (allowedRoutes: IAllowedRoutes[] | null) => {
     { option: SidebarOption; routes: IAllowedRoutes[]; nestedSet: Set<ROUTES> }
   >();
 
-  for (const route of topLevelRoutes) {
+  for (const route of sortedTopLevelRoutes) {
     const groupTitle = route.sideBarGroupTitle ?? null;
 
     if (!groupTitle) {

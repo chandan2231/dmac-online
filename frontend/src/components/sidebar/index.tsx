@@ -27,13 +27,53 @@ import { useMemo, useState, useEffect } from 'react';
 import LogoutFeature from '../../features/auth/components/logout';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { Box } from '@mui/material';
+import { useGetSubscribedProduct } from '../../features/patient/hooks/useGetSubscribedProduct';
+import { ROUTES } from '../../router/router';
 
 const Sidebar = () => {
   const { drawerOpen, toggleDrawer } = useSidebarContext();
   const { allowedRoutes, user } = useSelector((state: RootState) => state.auth);
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
   const shouldEnforceConsent = user?.role === 'USER';
+
+  const subscriptionUser = user?.role === 'USER' ? user : null;
+  const { data: subscribedProducts } = useGetSubscribedProduct(subscriptionUser);
+
+  const subscriptionSet = useMemo(() => {
+    const raw = String(subscribedProducts?.[0]?.subscription_list ?? '');
+    return new Set(
+      raw
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+    );
+  }, [subscribedProducts]);
+
+  const subscriptionRouteRules = useMemo(() => {
+    // Map sidebar route paths to subscription_list feature names.
+    // Using path instead of title keeps coloring stable across relogin & language changes.
+    return new Map<string, string[]>([
+      // SDMAC / Questioners
+      [ROUTES.QUESTIONERS, ['DMAC Online Test']],
+      [ROUTES.BOOK_CONSULTATION, ['Expert Consultation']],
+      // Therapist page gate checks for "Supervised 6 Session".
+      [ROUTES.BOOK_THERAPIST, ['Supervised 6 Session', 'Therapist Consultation']],
+    ]);
+  }, []);
+
+  const getSubscriptionTextColor = (
+    path: string | null | undefined
+  ): string | undefined => {
+    if (user?.role !== 'USER') return undefined;
+    if (!path) return undefined;
+    const requiredKeys = subscriptionRouteRules.get(path);
+    if (!requiredKeys) return undefined;
+
+    const isIncluded = requiredKeys.some(k => subscriptionSet.has(k));
+    return isIncluded ? theme.palette.success.main : theme.palette.error.main;
+  };
   // Consent block logic
   const [consentFilled, setConsentFilled] = useState(true);
   // Listen to consent status from localStorage (or could be from Redux/global state)
@@ -62,13 +102,44 @@ const Sidebar = () => {
       window.removeEventListener('consentStatusChanged', syncConsent);
     };
   }, [shouldEnforceConsent]);
-  const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const sidebarOptions = useMemo(
     () => getSidebarOptions(allowedRoutes),
     [allowedRoutes]
   );
+
+  const titleIconOverrides = useMemo(() => {
+    // Normalize titles to keep icon selection stable.
+    return new Map<string, string>([
+      ['consent', 'AssignmentTurnedInIcon'],
+      ['auth with google', 'GoogleIcon'],
+      ['products', 'ShoppingCartIcon'],
+      ['sdmac', 'QuizIcon'],
+      ['questioners', 'QuizIcon'],
+      ['questionar', 'QuizIcon'],
+      ['expert consultation', 'MedicalServicesIcon'],
+      ['expert advisor', 'MedicalServicesIcon'],
+      ['therapist consultation', 'PsychologyIcon'],
+      ['supervised session', 'PsychologyIcon'],
+      ['my documents', 'UploadFileIcon'],
+    ]);
+  }, []);
+
+  const getIconComponentByTitle = (
+    title: string | null,
+    fallbackIconKey: unknown
+  ) => {
+    const normalizedTitle = String(title ?? '')
+      .trim()
+      .toLowerCase();
+    const overrideIconKey = normalizedTitle
+      ? titleIconOverrides.get(normalizedTitle)
+      : undefined;
+
+    const iconKey = overrideIconKey ?? String(fallbackIconKey ?? '');
+    return mappedIcons(iconKey);
+  };
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
@@ -123,7 +194,10 @@ const Sidebar = () => {
                 typeof route === 'string' &&
                 !!matchPath(route, location.pathname)
             );
-          const IconComponent = mappedIcons(String(get(option, ['icon'])));
+          const IconComponent = getIconComponentByTitle(
+            option.title,
+            get(option, ['icon'])
+          );
 
           const children = get(option, ['children'], []) as Array<
             typeof option
@@ -190,7 +264,15 @@ const Sidebar = () => {
                     <IconComponent color={isActive ? 'primary' : 'inherit'} />
                   </ListItemIcon>
                   {(drawerOpen || isMobile) && (
-                    <ListItemText primary={option.title} />
+                    <ListItemText
+                      primary={option.title}
+                      primaryTypographyProps={{
+                        sx: {
+                          color: getSubscriptionTextColor(option.path),
+                          fontWeight: isActive ? 700 : undefined,
+                        },
+                      }}
+                    />
                   )}
                   {(drawerOpen || isMobile) && hasChildren && (
                     <ListItemIcon
@@ -222,7 +304,14 @@ const Sidebar = () => {
                             !!matchPath(route, location.pathname)
                         );
                       const ChildIconComponent = mappedIcons(
-                        String(get(child, ['icon']))
+                        // Choose icon by tab name first (fallback to backend icon)
+                        String(
+                          titleIconOverrides.get(
+                            String(child.title ?? '')
+                              .trim()
+                              .toLowerCase()
+                          ) ?? get(child, ['icon'], '')
+                        )
                       );
 
                       return (
@@ -268,7 +357,15 @@ const Sidebar = () => {
                                 />
                               </ListItemIcon>
                               {(drawerOpen || isMobile) && (
-                                <ListItemText primary={child.title} />
+                                <ListItemText
+                                  primary={child.title}
+                                  primaryTypographyProps={{
+                                    sx: {
+                                      color: getSubscriptionTextColor(child.path),
+                                      fontWeight: childIsActive ? 700 : undefined,
+                                    },
+                                  }}
+                                />
                               )}
                             </ListItemButton>
                           </Tooltip>
