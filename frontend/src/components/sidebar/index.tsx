@@ -57,6 +57,8 @@ const Sidebar = () => {
     return new Map<string, string[]>([
       // SDMAC / Questioners
       [ROUTES.QUESTIONERS, ['DMAC Online Test']],
+      // LICCA
+      [ROUTES.LICCA, ['LICCA Subscription']],
       [ROUTES.BOOK_CONSULTATION, ['Expert Consultation']],
       // Therapist page gate checks for "Supervised 6 Session".
       [ROUTES.BOOK_THERAPIST, ['Supervised 6 Session', 'Therapist Consultation']],
@@ -116,6 +118,7 @@ const Sidebar = () => {
       ['auth with google', 'GoogleIcon'],
       ['products', 'ShoppingCartIcon'],
       ['sdmac', 'QuizIcon'],
+      ['licca', 'ExtensionIcon'],
       ['questioners', 'QuizIcon'],
       ['questionar', 'QuizIcon'],
       ['expert consultation', 'MedicalServicesIcon'],

@@ -57,6 +57,7 @@ import BookTherapistPage from '../pages/patient/book-therapist';
 import UploadDocumentsPage from '../pages/patient/upload-documents';
 import CountryAdminListingPage from '../pages/admin/country-admin-listing';
 import ConsentPage from '../pages/patient/consent';
+import LiccaPage from '../pages/patient/licca';
 
 // Expert Pages
 import ConsultationListPage from '../pages/expert/consultation-list';
@@ -103,6 +104,7 @@ export const COMPONENT_MAP = {
   VerifyEmail,
   ProfilePage,
   QuestionersPage,
+  LiccaPage,
 
   // Admin Components
   DashboardPageComponent,
@@ -179,6 +181,7 @@ export const ROUTES = {
   BOOK_THERAPIST: '/patient/book-therapist',
   UPLOAD_DOCUMENTS: '/patient/upload-documents',
   AUTH_WITH_GOOGLE: '/patient/auth-with-google',
+  LICCA: '/patient/licca',
 
   // ADMIN, SUPER_ADMIN Authenticated routes
   LOGIN: '/login',
@@ -424,6 +427,15 @@ const USER_ROUTES: IAllowedRoutes[] = [
     showInSidebar: true,
     sideBarTitle: 'SDMAC',
     sideBarIcon: 'QuizIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.LICCA,
+    layout: 'MainLayout',
+    component: 'LiccaPage',
+    showInSidebar: true,
+    sideBarTitle: 'LICCA',
+    sideBarIcon: 'ExtensionIcon',
     isAChildOf: null,
   },
   {
