@@ -29,6 +29,7 @@ import TherapistListingPageComponent from '../pages/admin/tharapist-listing';
 import ConsultationsListingPageComponent from '../pages/admin/consultations-listing';
 import TherapistsConsultationsListingPageComponent from '../pages/admin/therapists-consultations-listing';
 import AdminPatientAssessmentPage from '../pages/admin/patient-assessment';
+import PartnersListingPageComponent from '../pages/admin/partners-list';
 
 // Developer Pages
 import DeveloperPageComponent from '../pages/developer';
@@ -118,6 +119,7 @@ export const COMPONENT_MAP = {
   TherapistsConsultationsListingPageComponent,
   CountryAdminListingPage,
   AdminPatientAssessmentPage,
+  PartnersListingPageComponent,
 
   // Patient Pages
   PatientRegisterPage,
@@ -202,6 +204,7 @@ export const ROUTES = {
   THERAPIST_CONSULTATIONS: '/admin/therapists-consultations',
   COUNTRY_ADMIN_LISTING: '/admin/countries-admin-listing',
   ADMIN_PATIENT_ASSESSMENT: '/admin/consultations/:patientId/assessment',
+  PARTNERS_LISTING: '/admin/partners',
 
   // Not Found
   NOT_FOUND: '*',
@@ -701,6 +704,17 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     sideBarGroupIcon: 'InventoryIcon',
     isAChildOf: null,
   },
+  {
+    path: ROUTES.PARTNERS_LISTING,
+    layout: 'MainLayout',
+    component: 'PartnersListingPageComponent',
+    showInSidebar: true,
+    sideBarTitle: "Partner's List",
+    sideBarIcon: 'GroupIcon',
+    sideBarGroupTitle: 'PARTNERS',
+    sideBarGroupIcon: 'GroupIcon',
+    isAChildOf: null,
+  },
   // {
   //   path: ROUTES.COUNTRY_ADMIN_LISTING,
   //   layout: 'MainLayout',
@@ -728,6 +742,10 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     sideBarIcon: null,
     isAChildOf: null,
   },
+];
+
+const SUPER_ADMIN_ROUTES: IAllowedRoutes[] = [
+  ...ADMIN_ROUTES,
 ];
 
 const GUEST_USER_ROUTES: IAllowedRoutes[] = [
@@ -846,7 +864,10 @@ export const getRoutesByRole = (role: UserRole): IAllowedRoutes[] => {
   if (role === 'COUNTRY_ADMIN') {
     return COUNTRY_ADMIN_ROUTES;
   }
-  if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+  if (role === 'SUPER_ADMIN') {
+    return SUPER_ADMIN_ROUTES;
+  }
+  if (role === 'ADMIN') {
     return ADMIN_ROUTES;
   }
   return GUEST_USER_ROUTES;

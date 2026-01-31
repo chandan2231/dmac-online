@@ -22,6 +22,9 @@ export const getRoleMessage = (
     case 'COUNTRY_ADMIN':
       roleText = 'Country Admin'
       break
+    case 'PARTNER':
+      roleText = 'Partner'
+      break
     default:
       roleText = 'User'
   }
