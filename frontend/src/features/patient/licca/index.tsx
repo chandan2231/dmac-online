@@ -22,7 +22,15 @@ const LiccaSubscription = () => {
       return;
     }
 
-    window.open(liccaUrl, '_blank', 'noopener,noreferrer');
+    if (!user?.email) {
+      window.alert('User email is not available. Please login again.');
+      return;
+    }
+
+    const url = new URL(liccaUrl);
+    url.searchParams.set('email', user.email);
+
+    window.open(url.toString(), '_blank', 'noopener,noreferrer');
   };
 
   if (loadingProducts) {
