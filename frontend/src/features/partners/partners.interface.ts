@@ -38,3 +38,17 @@ export interface IChangePartnerPasswordPayload {
   id: number;
   password: string;
 }
+
+export interface IAddMorePartnerUsersPayload {
+  partner_id: number;
+  added_users: number;
+  password: string;
+}
+
+export interface IPartnerAllowedUsersAddition {
+  id: number;
+  partner_id: number;
+  added_users: number;
+  added_by: number;
+  added_date: string;
+}

@@ -16,6 +16,7 @@ type GenericTableProps<T> = {
   loading?: boolean;
   maxHeight?: string;
   minHeight?: string;
+  disableVirtualization?: boolean;
 };
 
 export function GenericTable<T extends { id: string | number }>({
@@ -28,6 +29,7 @@ export function GenericTable<T extends { id: string | number }>({
   loading = false,
   maxHeight = 'calc(100vh - 200px)',
   minHeight = 'calc(100vh - 200px)',
+  disableVirtualization = false,
 }: GenericTableProps<T>) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -50,6 +52,7 @@ export function GenericTable<T extends { id: string | number }>({
         rows={rows}
         columns={updatedCols}
         getRowId={row => row[rowIdKey] as string | number}
+        disableVirtualization={disableVirtualization}
         pageSizeOptions={[5, 10, 25, 50, 100]}
         paginationModel={paginationModel}
         onPaginationModelChange={onPaginationModelChange}
@@ -58,6 +61,7 @@ export function GenericTable<T extends { id: string | number }>({
         disableRowSelectionOnClick
         onRowClick={params => onRowClick?.(params.row)}
         sx={{
+          isolation: 'isolate',
           backgroundColor: 'background.paper',
           maxHeight: maxHeight, // Adjust based on your layout
           minHeight: minHeight, // Adjust based on your layout
@@ -65,6 +69,25 @@ export function GenericTable<T extends { id: string | number }>({
             color: '#000000',
           },
           '& .MuiDataGrid-row:hover': {
+            backgroundColor: '#eee',
+          },
+          '& .sticky-right--header': {
+            position: 'sticky',
+            right: 0,
+            zIndex: 6,
+            backgroundColor: theme.palette.background.paper,
+            borderLeft: `1px solid ${theme.palette.divider}`,
+            backgroundClip: 'padding-box',
+          },
+          '& .sticky-right--cell': {
+            position: 'sticky',
+            right: 0,
+            zIndex: 5,
+            backgroundColor: theme.palette.background.paper,
+            borderLeft: `1px solid ${theme.palette.divider}`,
+            backgroundClip: 'padding-box',
+          },
+          '& .MuiDataGrid-row:hover .sticky-right--cell': {
             backgroundColor: '#eee',
           },
         }}

@@ -5,6 +5,8 @@ import type {
   IChangePartnerPasswordPayload,
   ICreatePartnerPayload,
   IPartner,
+  IPartnerAllowedUsersAddition,
+  IAddMorePartnerUsersPayload,
   IUpdatePartnerPayload,
 } from './partners.interface';
 
@@ -153,12 +155,75 @@ const changePartnerPassword = async (
   }
 };
 
+const addMorePartnerUsers = async (
+  payload: IAddMorePartnerUsersPayload
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await HttpService.post('/partner/allowed-users/add', payload);
+    return {
+      success: true,
+      message:
+        get(response, ['data', 'msg']) ||
+        get(response, ['data', 'message'], 'Allowed users updated successfully'),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      get(error, 'response.data') ||
+      'An unexpected error occurred while updating allowed users';
+
+    return {
+      success: false,
+      message: String(message),
+    };
+  }
+};
+
+const getPartnerAddedUsersHistory = async (
+  partner_id: number
+): Promise<{ success: boolean; data: IPartnerAllowedUsersAddition[]; message: string }> => {
+  try {
+    const response = await HttpService.post('/partner/allowed-users/history', {
+      partner_id,
+    });
+
+    const rows = (get(response, 'data.data', []) as IPartnerAllowedUsersAddition[]).map(
+      item => ({
+        ...item,
+        added_date: get(item, 'added_date')
+          ? moment(get(item, 'added_date')).format('YYYY-MM-DD')
+          : '',
+      })
+    );
+    return {
+      success: true,
+      data: rows || [],
+      message: 'History fetched successfully',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      get(error, 'response.data') ||
+      'An unexpected error occurred while fetching history';
+
+    return {
+      success: false,
+      data: [],
+      message: String(message),
+    };
+  }
+};
+
 const PartnerService = {
   getPartnersList,
   createPartner,
   changePartnerStatus,
   updatePartner,
   changePartnerPassword,
+  addMorePartnerUsers,
+  getPartnerAddedUsersHistory,
 };
 
 export default PartnerService;

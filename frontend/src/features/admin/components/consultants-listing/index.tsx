@@ -1,6 +1,9 @@
 import * as Yup from 'yup';
 import dayjs from 'dayjs';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import LockResetOutlinedIcon from '@mui/icons-material/LockResetOutlined';
 import CustomLoader from '../../../../components/loader';
 import AdminService from '../../admin.service';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
@@ -29,7 +32,14 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useToast } from '../../../../providers/toast-provider';
-import { IconButton, Menu, MenuItem } from '@mui/material';
+import {
+  Divider,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+} from '@mui/material';
 import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages';
 import ModernMultiSelect from '../../../../components/multi-select';
 import type { ILanguage } from '../../../../i18n/language.interface';
@@ -498,7 +508,9 @@ function ConsultantTable({
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 100,
+      width: 120,
+      headerClassName: 'sticky-right--header',
+      cellClassName: 'sticky-right--cell',
       sortable: false,
       filterable: false,
       renderCell: params => {
@@ -532,30 +544,53 @@ function ConsultantTable({
                 vertical: 'top',
                 horizontal: 'right',
               }}
+              PaperProps={{ elevation: 6, sx: { minWidth: 220, borderRadius: 2 } }}
             >
               <MenuItem
                 onClick={() => {
                   handleClose();
                   handleOpenViewModal(params.row as ConsultantState);
                 }}
+                sx={{ py: 1, px: 1.5 }}
               >
-                View Details
+                <ListItemIcon>
+                  <VisibilityOutlinedIcon sx={{ fontSize: 21 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="View Details"
+                  primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+                />
               </MenuItem>
               <MenuItem
                 onClick={() => {
                   handleClose();
                   handleOpenEditModal(params.row as ConsultantState);
                 }}
+                sx={{ py: 1, px: 1.5 }}
               >
-                Edit
+                <ListItemIcon>
+                  <EditOutlinedIcon sx={{ fontSize: 21 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Edit"
+                  primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+                />
               </MenuItem>
+              <Divider />
               <MenuItem
                 onClick={() => {
                   handleClose();
                   handleOpenPasswordModal(params.row);
                 }}
+                sx={{ py: 1, px: 1.5 }}
               >
-                Change Password
+                <ListItemIcon>
+                  <LockResetOutlinedIcon sx={{ fontSize: 21 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Change Password"
+                  primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+                />
               </MenuItem>
             </Menu>
           </>
@@ -574,6 +609,7 @@ function ConsultantTable({
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}
         loading={isLoading}
+        disableVirtualization
       />
 
       {/* Password Modal */}
@@ -1183,6 +1219,16 @@ const ConsultantsListing = () => {
             variant="text"
             startIcon={<AddCircleOutlineRoundedIcon />}
             onClick={handleOpenCreateConsultantModal}
+            sx={{
+              bgcolor: theme => theme.palette.action.hover,
+              color: theme => theme.palette.text.primary,
+              borderRadius: 2,
+              px: 2,
+              py: 1,
+              '&:hover': {
+                bgcolor: theme => theme.palette.action.selected,
+              },
+            }}
           >
             Add New Expert
           </MorenButton>

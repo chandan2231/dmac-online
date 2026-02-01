@@ -5,6 +5,14 @@ import { v4 as uuidv4 } from 'uuid'
 import crypto from 'crypto'
 import { getRoleMessage } from '../utils/roleMessages.js'
 
+const queryAsync = (sql, params = []) =>
+  new Promise((resolve, reject) => {
+    db.query(sql, params, (err, data) => {
+      if (err) reject(err)
+      resolve(data)
+    })
+  })
+
 const assertSuperAdmin = async (req, res) => {
   const loggedInUserId = req.user?.userId
   if (!loggedInUserId) {
@@ -12,20 +20,42 @@ const assertSuperAdmin = async (req, res) => {
     return false
   }
 
-  const rows = await new Promise((resolve, reject) => {
-    db.query(
-      'SELECT role FROM dmac_webapp_users WHERE id = ?',
-      [loggedInUserId],
-      (err, data) => {
-        if (err) reject(err)
-        resolve(data)
-      }
-    )
-  })
+  const rows = await queryAsync('SELECT role FROM dmac_webapp_users WHERE id = ?', [loggedInUserId])
 
   const role = Array.isArray(rows) && rows.length > 0 ? rows[0]?.role : null
   if (role !== 'ADMIN') {
     res.status(403).json({ message: 'Forbidden' })
+    return false
+  }
+
+  return true
+}
+
+const assertPasswordForAdminAction = async (req, res, passwordPlain) => {
+  const loggedInUserId = req.user?.userId
+  if (!loggedInUserId) {
+    res.status(401).json({ message: 'Unauthorized' })
+    return false
+  }
+
+  const rows = await queryAsync('SELECT password FROM dmac_webapp_users WHERE id = ?', [loggedInUserId])
+  const hashed = Array.isArray(rows) && rows.length > 0 ? rows[0]?.password : null
+
+  if (!passwordPlain) {
+    res.status(400).json({ message: 'Password is required.' })
+    return false
+  }
+
+  if (!hashed) {
+    res.status(401).json({ message: 'Unauthorized' })
+    return false
+  }
+
+  const ok = bcrypt.compareSync(String(passwordPlain), String(hashed))
+  if (!ok) {
+    res.status(401).json({
+      message: 'Incorrect password. You are not authorized to add more users.'
+    })
     return false
   }
 
@@ -200,7 +230,7 @@ export const createPartner = async (req, res) => {
       )
     })
 
-    const loginUrl = `${process.env.DOMAIN}signin`
+    const loginUrl = `${process.env.DOMAIN}login`
     const verifyLink = `${process.env.DOMAIN}verify-email/${verificationToken}`
 
     const subject = 'Welcome to RM360 as a Partner - Verify Your Email'
@@ -372,41 +402,144 @@ export const updatePartner = async (req, res) => {
     })
 
     if (allowedUsersInt != null) {
-      // active users = number of users created by this partner
-      const totalUsersRows = await new Promise((resolve, reject) => {
-        db.query(
-          'SELECT COUNT(*) AS total_users FROM dmac_webapp_users WHERE partner_id = ?',
-          [id],
-          (err, data) => {
-            if (err) reject(err)
-            resolve(data)
-          }
-        )
-      })
+      // All license/counter activity is stored in dmac_webapp_partner_users
+      // (do not rely on any mapping columns in dmac_webapp_users).
+      const existingRows = await queryAsync(
+        'SELECT active_users FROM dmac_webapp_partner_users WHERE partner_id = ?',
+        [id]
+      )
+      const existingActive =
+        Array.isArray(existingRows) && existingRows.length > 0
+          ? Number(existingRows?.[0]?.active_users ?? 0)
+          : 0
 
-      const totalUsers = Array.isArray(totalUsersRows)
-        ? Number(totalUsersRows?.[0]?.total_users ?? 0)
-        : 0
+      const remainingUsers = Math.max(allowedUsersInt - existingActive, 0)
 
-      const remainingUsers = Math.max(allowedUsersInt - totalUsers, 0)
-
-      await new Promise((resolve, reject) => {
-        db.query(
-          `UPDATE dmac_webapp_partner_users
-           SET allowed_users = ?, active_users = ?, remaining_users = ?
-           WHERE partner_id = ?`,
-          [allowedUsersInt, totalUsers, remainingUsers, id],
-          (err, data) => {
-            if (err) reject(err)
-            resolve(data)
-          }
-        )
-      })
+      await queryAsync(
+        `INSERT INTO dmac_webapp_partner_users (partner_id, allowed_users, active_users, remaining_users)
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           allowed_users = VALUES(allowed_users),
+           active_users = active_users,
+           remaining_users = VALUES(remaining_users)`,
+        [id, allowedUsersInt, existingActive, remainingUsers]
+      )
     }
 
     return res.status(200).json({ status: 200, msg: 'Partner updated successfully' })
   } catch (err) {
     console.error('Error updating partner:', err)
+    return res.status(500).json({ message: 'Internal server error.' })
+  }
+}
+
+export const addMorePartnerUsers = async (req, res) => {
+  try {
+    const ok = await assertSuperAdmin(req, res)
+    if (!ok) return
+
+    const { partner_id, added_users, password } = req.body || {}
+
+    const partnerIdInt = Number(partner_id)
+    const addedUsersInt = Number(added_users)
+
+    if (!Number.isFinite(partnerIdInt) || partnerIdInt <= 0) {
+      return res.status(400).json({ message: 'Invalid partner_id' })
+    }
+
+    if (!Number.isFinite(addedUsersInt) || !Number.isInteger(addedUsersInt) || addedUsersInt <= 0) {
+      return res.status(400).json({ message: 'added_users must be a positive integer.' })
+    }
+
+    const passwordOk = await assertPasswordForAdminAction(req, res, password)
+    if (!passwordOk) return
+
+    const partnerRows = await queryAsync(
+      "SELECT id FROM dmac_webapp_users WHERE id = ? AND role = 'PARTNER'",
+      [partnerIdInt]
+    )
+    if (!Array.isArray(partnerRows) || partnerRows.length === 0) {
+      return res.status(404).json({ message: 'Partner not found' })
+    }
+
+    const currentRows = await queryAsync(
+      'SELECT allowed_users, active_users FROM dmac_webapp_partner_users WHERE partner_id = ?',
+      [partnerIdInt]
+    )
+
+    const currentAllowed =
+      Array.isArray(currentRows) && currentRows.length > 0
+        ? Number(currentRows?.[0]?.allowed_users ?? 0)
+        : 0
+    const activeUsers =
+      Array.isArray(currentRows) && currentRows.length > 0
+        ? Number(currentRows?.[0]?.active_users ?? 0)
+        : 0
+
+    const nextAllowed = currentAllowed + addedUsersInt
+    const remainingUsers = Math.max(nextAllowed - activeUsers, 0)
+
+    await queryAsync(
+      `INSERT INTO dmac_webapp_partner_users (partner_id, allowed_users, active_users, remaining_users)
+       VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         allowed_users = VALUES(allowed_users),
+         active_users = active_users,
+         remaining_users = VALUES(remaining_users)` ,
+      [partnerIdInt, nextAllowed, activeUsers, remainingUsers]
+    )
+
+    const addedBy = req.user?.userId
+    await queryAsync(
+      `INSERT INTO dmac_webapp_partner_allowed_user_additions
+        (partner_id, added_users, added_by)
+       VALUES (?, ?, ?)` ,
+      [partnerIdInt, addedUsersInt, addedBy]
+    )
+
+    return res.status(200).json({
+      status: 200,
+      msg: 'Allowed users updated successfully',
+      data: {
+        partner_id: partnerIdInt,
+        allowed_users: nextAllowed,
+        active_users: activeUsers,
+        remaining_users: remainingUsers
+      }
+    })
+  } catch (err) {
+    console.error('Error adding more partner users:', err)
+    return res.status(500).json({ message: 'Internal server error.' })
+  }
+}
+
+export const getPartnerAddedUsersHistory = async (req, res) => {
+  try {
+    const ok = await assertSuperAdmin(req, res)
+    if (!ok) return
+
+    const { partner_id } = req.body || {}
+    const partnerIdInt = Number(partner_id)
+    if (!Number.isFinite(partnerIdInt) || partnerIdInt <= 0) {
+      return res.status(400).json({ message: 'Invalid partner_id' })
+    }
+
+    const rows = await queryAsync(
+      `SELECT
+        a.id,
+        a.partner_id,
+        a.added_users,
+        a.added_date,
+        a.added_by
+      FROM dmac_webapp_partner_allowed_user_additions a
+      WHERE a.partner_id = ?
+      ORDER BY a.added_date DESC`,
+      [partnerIdInt]
+    )
+
+    return res.status(200).json({ status: 200, data: rows || [] })
+  } catch (err) {
+    console.error('Error fetching partner added users history:', err)
     return res.status(500).json({ message: 'Internal server error.' })
   }
 }
