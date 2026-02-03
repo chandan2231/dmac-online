@@ -12,6 +12,7 @@ export interface IPartner {
   active_users: number;
   remaining_users: number;
   allowed_users: number;
+  price_per_user?: number;
   created_date: string | null;
   status: number;
 }
@@ -28,6 +29,7 @@ export interface ICreatePartnerPayload {
   time_zone: string;
   zipcode: string;
   allowed_users: number;
+  price_per_user?: number;
 }
 
 export interface IUpdatePartnerPayload extends ICreatePartnerPayload {

@@ -1019,7 +1019,7 @@ export const patientEmailVerification = (req, res) => {
 
       // Step 2: Fetch user details using token (include mobile & role since you return them)
       const userQuery = `
-        SELECT id, name, email, mobile, role
+        SELECT id, name, email, mobile, role, partner_id
         FROM dmac_webapp_users
         WHERE verification_token = ?
       `
@@ -1033,6 +1033,82 @@ export const patientEmailVerification = (req, res) => {
 
         const user = userRows[0]
         const userId = user.id
+
+        const ensurePartnerUserHasDefaultProduct = (done) => {
+          const defaultProductId = 1
+
+          if (!user.partner_id) {
+            return done(null)
+          }
+
+          const checkProductSql =
+            'SELECT id FROM dmac_webapp_registered_users_product WHERE user_id = ? AND product_id = ? LIMIT 1'
+          db.query(
+            checkProductSql,
+            [userId, defaultProductId],
+            (checkErr, checkRows) => {
+              if (checkErr) return done(checkErr)
+
+              const ensureTxnRow = () => {
+                // Add a dummy transaction row for admin/audit views.
+                const checkTxnSql =
+                  'SELECT id FROM dmac_webapp_users_transaction WHERE user_id = ? AND product_id = ? AND payment_type = ? LIMIT 1'
+                db.query(
+                  checkTxnSql,
+                  [userId, defaultProductId, 'partner'],
+                  (txnCheckErr, txnRows) => {
+                    if (txnCheckErr) return done(txnCheckErr)
+
+                    if (Array.isArray(txnRows) && txnRows.length > 0) {
+                      return done(null)
+                    }
+
+                    const insertTxnSql = `
+                      INSERT INTO dmac_webapp_users_transaction
+                        (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type, failure_reason)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    `
+
+                    db.query(
+                      insertTxnSql,
+                      [
+                        `PARTNER_ADDED_USER_${userId}`,
+                        `PARTNER_ADDED_USER_${userId}`,
+                        0,
+                        'USD',
+                        'COMPLETED',
+                        defaultProductId,
+                        userId,
+                        'partner',
+                        'Added by partner'
+                      ],
+                      (txnInsertErr) => {
+                        if (txnInsertErr) return done(txnInsertErr)
+                        return done(null)
+                      }
+                    )
+                  }
+                )
+              }
+
+              if (Array.isArray(checkRows) && checkRows.length > 0) {
+                return ensureTxnRow()
+              }
+
+              const insertProductSql =
+                'INSERT INTO dmac_webapp_registered_users_product (user_id, product_id) VALUES (?)'
+              db.query(
+                insertProductSql,
+                [[userId, defaultProductId]],
+                (insertErr) => {
+                  if (insertErr) return done(insertErr)
+
+                  return ensureTxnRow()
+                }
+              )
+            }
+          )
+        }
 
         // Step 3: JOIN to get the latest product (if any)
         // NOTE: removed stray comma after p.product_amount which caused SQL syntax error
@@ -1051,23 +1127,29 @@ export const patientEmailVerification = (req, res) => {
           LIMIT 1
         `
 
-        db.query(productJoinQuery, [userId], (prodErr, prodRows) => {
-          if (prodErr) return res.status(500).json({ error: prodErr.message })
+        ensurePartnerUserHasDefaultProduct((ensureErr) => {
+          if (ensureErr)
+            return res.status(500).json({ error: ensureErr.message })
 
-          // Format product response (null if no product assigned)
-          const product = prodRows && prodRows.length > 0 ? prodRows[0] : null
+          db.query(productJoinQuery, [userId], (prodErr, prodRows) => {
+            if (prodErr) return res.status(500).json({ error: prodErr.message })
 
-          return res.json({
-            isSuccess: true,
-            message: 'Email verified successfully',
-            user: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              mobile: user.mobile,
-              role: user.role
-            },
-            product // null allowed
+            // Format product response (null if no product assigned)
+            const product = prodRows && prodRows.length > 0 ? prodRows[0] : null
+
+            return res.json({
+              isSuccess: true,
+              message: 'Email verified successfully',
+              is_partner_user: Boolean(user.partner_id),
+              user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                mobile: user.mobile,
+                role: user.role
+              },
+              product // null allowed
+            })
           })
         })
       })

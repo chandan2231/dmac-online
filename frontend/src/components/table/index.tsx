@@ -3,11 +3,12 @@ import {
   DataGrid,
   type GridColDef,
   type GridPaginationModel,
+  type GridValidRowModel,
 } from '@mui/x-data-grid';
 
-type GenericTableProps<T> = {
+type GenericTableProps<T extends GridValidRowModel> = {
   rows: T[];
-  columns: GridColDef[];
+  columns: GridColDef<T>[];
   pageSize?: number;
   rowIdKey?: keyof T;
   onRowClick?: (row: T) => void;
@@ -19,7 +20,7 @@ type GenericTableProps<T> = {
   disableVirtualization?: boolean;
 };
 
-export function GenericTable<T extends { id: string | number }>({
+export function GenericTable<T extends GridValidRowModel & { id: string | number }>({
   rows,
   columns,
   rowIdKey = 'id',

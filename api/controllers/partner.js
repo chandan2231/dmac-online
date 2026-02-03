@@ -92,7 +92,8 @@ export const getPartnersList = async (req, res) => {
         u.status,
         COALESCE(pu.allowed_users, 0) AS allowed_users,
         COALESCE(pu.active_users, 0) AS active_users,
-        GREATEST(COALESCE(pu.allowed_users, 0) - COALESCE(pu.active_users, 0), 0) AS remaining_users
+        GREATEST(COALESCE(pu.allowed_users, 0) - COALESCE(pu.active_users, 0), 0) AS remaining_users,
+        COALESCE(pu.price_per_user, 19.99) AS price_per_user
       FROM dmac_webapp_users u
       LEFT JOIN dmac_webapp_partner_users pu
         ON pu.partner_id = u.id
@@ -131,7 +132,8 @@ export const createPartner = async (req, res) => {
       time_zone,
       zipcode,
       total_allowed_users,
-      allowed_users
+      allowed_users,
+      price_per_user
     } = req.body || {}
 
     if (
@@ -157,6 +159,16 @@ export const createPartner = async (req, res) => {
       return res
         .status(400)
         .json({ message: 'allowed_users must be a non-negative number.' })
+    }
+
+    const pricePerUserNum =
+      price_per_user == null || price_per_user === ''
+        ? 19.99
+        : Number(price_per_user)
+    if (!Number.isFinite(pricePerUserNum) || pricePerUserNum <= 0) {
+      return res
+        .status(400)
+        .json({ message: 'price_per_user must be a positive number.' })
     }
 
     const checkEmailQuery = 'SELECT id FROM dmac_webapp_users WHERE email = ?'
@@ -215,14 +227,14 @@ export const createPartner = async (req, res) => {
 
     const insertPartnerUsersQuery = `
       INSERT INTO dmac_webapp_partner_users
-        (partner_id, allowed_users, active_users, remaining_users)
-      VALUES (?, ?, ?, ?)
+        (partner_id, allowed_users, active_users, remaining_users, price_per_user)
+      VALUES (?, ?, ?, ?, ?)
     `
 
     await new Promise((resolve, reject) => {
       db.query(
         insertPartnerUsersQuery,
-        [partnerUserId, allowedUsersInt, 0, allowedUsersInt],
+        [partnerUserId, allowedUsersInt, 0, allowedUsersInt, pricePerUserNum],
         (err, data) => {
           if (err) reject(err)
           resolve(data)
@@ -336,7 +348,8 @@ export const updatePartner = async (req, res) => {
       provinceValue,
       time_zone,
       zipcode,
-      allowed_users
+      allowed_users,
+      price_per_user
     } = req.body || {}
 
     if (!id || !name || !email || !mobile || !address || !country || !provinceTitle || !provinceValue) {
@@ -346,6 +359,11 @@ export const updatePartner = async (req, res) => {
     const allowedUsersInt = allowed_users == null ? null : Number(allowed_users)
     if (allowedUsersInt != null && (!Number.isFinite(allowedUsersInt) || allowedUsersInt < 0)) {
       return res.status(400).json({ message: 'allowed_users must be a non-negative number.' })
+    }
+
+    const pricePerUserNum = price_per_user == null || price_per_user === '' ? null : Number(price_per_user)
+    if (pricePerUserNum != null && (!Number.isFinite(pricePerUserNum) || pricePerUserNum <= 0)) {
+      return res.status(400).json({ message: 'price_per_user must be a positive number.' })
     }
 
     // Ensure email is unique (excluding current partner)
@@ -423,6 +441,16 @@ export const updatePartner = async (req, res) => {
            active_users = active_users,
            remaining_users = VALUES(remaining_users)`,
         [id, allowedUsersInt, existingActive, remainingUsers]
+      )
+    }
+
+    if (pricePerUserNum != null) {
+      await queryAsync(
+        `INSERT INTO dmac_webapp_partner_users (partner_id, price_per_user)
+         VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE
+           price_per_user = VALUES(price_per_user)`,
+        [id, pricePerUserNum]
       )
     }
 

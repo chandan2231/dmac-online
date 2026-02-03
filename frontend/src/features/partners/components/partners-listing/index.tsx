@@ -57,6 +57,10 @@ const editPartnerSchema = Yup.object({
   state: Yup.string().required('State is required'),
   address: Yup.string().required('Address is required'),
   zipcode: Yup.string().required('Zipcode is required'),
+  price_per_user: Yup.number()
+    .typeError('Price per user must be a number')
+    .moreThan(0, 'Price per user must be greater than 0')
+    .required('Price per user is required'),
   allowed_users: Yup.number()
     .typeError('Allowed users must be a number')
     .integer('Must be an integer')
@@ -73,6 +77,10 @@ const createPartnerSchema = Yup.object({
   state: Yup.string().required('State is required'),
   address: Yup.string().required('Address is required'),
   zipcode: Yup.string().required('Zipcode is required'),
+  price_per_user: Yup.number()
+    .typeError('Price per user must be a number')
+    .moreThan(0, 'Price per user must be greater than 0')
+    .required('Price per user is required'),
   allowed_users: Yup.number()
     .typeError('Allowed users must be a number')
     .integer('Must be an integer')
@@ -135,6 +143,7 @@ const PartnersListing = () => {
       address: '',
       zipcode: '',
       allowed_users: 0,
+      price_per_user: 19.99,
     },
   });
 
@@ -164,6 +173,7 @@ const PartnersListing = () => {
       address: '',
       zipcode: '',
       allowed_users: 0,
+      price_per_user: 19.99,
     },
   });
 
@@ -247,6 +257,7 @@ const PartnersListing = () => {
       state: String(partner.province_id ?? ''),
       zipcode: String(partner.zipcode ?? ''),
       allowed_users: Number(partner.allowed_users ?? 0),
+      price_per_user: Number(partner.price_per_user ?? 19.99),
     });
 
     const countryOpt = COUNTRIES_LIST.find(c => c.label === partner.country);
@@ -302,6 +313,17 @@ const PartnersListing = () => {
         headerName: 'Remaining Users',
         flex: 0.7,
         minWidth: 140,
+      },
+      {
+        field: 'price_per_user',
+        headerName: 'Price / User',
+        flex: 0.6,
+        minWidth: 120,
+        valueGetter: (_value, row) => {
+          const n = Number(row?.price_per_user ?? 0);
+          if (!Number.isFinite(n) || n <= 0) return '';
+          return `$${n.toFixed(2)}`;
+        },
       },
       {
         field: 'created_date',
@@ -624,6 +646,14 @@ const PartnersListing = () => {
               helperText={errors.email?.message}
             />
           </Box>
+            <ModernInput
+              label="Price Per User"
+              placeholder="Enter price per user"
+              inputMode="decimal"
+              {...register('price_per_user')}
+              error={!!errors.price_per_user}
+              helperText={errors.price_per_user?.message}
+            />
 
           <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
             <ModernInput
@@ -827,6 +857,19 @@ const PartnersListing = () => {
 
               <Box display="flex" alignItems="center" gap={1} width="50%">
                 <Typography variant="body2" color="textSecondary" minWidth={120}>
+                  Price Per User:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {(() => {
+                    const n = Number(selectedPartner.price_per_user ?? 0);
+                    if (!Number.isFinite(n) || n <= 0) return '';
+                    return `$${n.toFixed(2)}`;
+                  })()}
+                </Typography>
+              </Box>
+
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography variant="body2" color="textSecondary" minWidth={120}>
                   Status:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
@@ -967,13 +1010,22 @@ const PartnersListing = () => {
             helperText={editErrors.address?.message}
           />
 
-          <ModernInput
-            label="Allowed Users"
-            inputMode="numeric"
-            {...registerEdit('allowed_users')}
-            error={!!editErrors.allowed_users}
-            helperText={editErrors.allowed_users?.message}
-          />
+          <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
+            <ModernInput
+              label="Allowed Users"
+              inputMode="numeric"
+              {...registerEdit('allowed_users')}
+              error={!!editErrors.allowed_users}
+              helperText={editErrors.allowed_users?.message}
+            />
+            <ModernInput
+              label="Price Per User"
+              inputMode="decimal"
+              {...registerEdit('price_per_user')}
+              error={!!editErrors.price_per_user}
+              helperText={editErrors.price_per_user?.message}
+            />
+          </Box>
 
           <MorenButton type="submit" variant="contained">
             Update Partner

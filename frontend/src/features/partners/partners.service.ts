@@ -22,6 +22,7 @@ const getPartnersList = async (): Promise<{
       active_users: Number(get(item, 'active_users', 0)),
       remaining_users: Number(get(item, 'remaining_users', 0)),
       allowed_users: Number(get(item, 'allowed_users', 0)),
+      price_per_user: Number(get(item, 'price_per_user', 0)),
       status: Number(get(item, 'status', 0)),
       created_date: get(item, 'created_date')
         ? moment(get(item, 'created_date')).format('YYYY-MM-DD')
