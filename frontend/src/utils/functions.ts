@@ -193,10 +193,9 @@ const getSidebarOptions = (allowedRoutes: IAllowedRoutes[] | null) => {
   return groupedOptions;
 };
 
-const convertLanguagesListToOptions = (
-  languages: ILanguage[] | []
-): IOption[] => {
-  return languages.map(language => ({
+const convertLanguagesListToOptions = (languages: unknown): IOption[] => {
+  if (!Array.isArray(languages)) return [];
+  return (languages as ILanguage[]).map(language => ({
     label: get(language, ['language'], ''),
     value: String(get(language, ['id'], '')),
   }));
@@ -225,6 +224,9 @@ const navigateUserTo = (user: IUser | null) => {
   }
   if (role === 'USER') {
     return ROUTES.CONSENT;
+  }
+  if (role === 'PARTNER') {
+    return ROUTES.PARTNER_CONSENT;
   }
   return ROUTES.HOME;
 };

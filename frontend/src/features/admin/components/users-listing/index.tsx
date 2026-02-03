@@ -17,6 +17,9 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useToast } from '../../../../providers/toast-provider';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { IconButton, Menu, MenuItem } from '@mui/material';
+import { ListItemIcon, ListItemText } from '@mui/material';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import LockResetOutlinedIcon from '@mui/icons-material/LockResetOutlined';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 
 type ChangePasswordFormValues = {
@@ -148,7 +151,9 @@ function UsersTable() {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 80,
+      width: 120,
+      headerClassName: 'sticky-right--header',
+      cellClassName: 'sticky-right--cell',
       sortable: false,
       filterable: false,
       renderCell: params => (
@@ -176,6 +181,7 @@ function UsersTable() {
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}
         loading={isLoading}
+        disableVirtualization
       />
 
       <Menu
@@ -184,6 +190,7 @@ function UsersTable() {
         onClose={handleMenuClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{ elevation: 6, sx: { minWidth: 220, borderRadius: 2 } }}
       >
         <MenuItem
           onClick={() => {
@@ -192,8 +199,12 @@ function UsersTable() {
               handleOpenViewModal(menuUser);
             }
           }}
+          sx={{ py: 1, px: 1.5 }}
         >
-          View Details
+          <ListItemIcon>
+            <VisibilityOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }} />
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -202,8 +213,12 @@ function UsersTable() {
               handleOpenPasswordModal(menuUser);
             }
           }}
+          sx={{ py: 1, px: 1.5 }}
         >
-          Change Password
+          <ListItemIcon>
+            <LockResetOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText primary="Change Password" primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }} />
         </MenuItem>
       </Menu>
 

@@ -1,8 +1,22 @@
 import * as Yup from 'yup';
 import { useMemo, useState } from 'react';
-import { Box, Typography, IconButton, Menu, MenuItem } from '@mui/material';
+import {
+  Box,
+  Typography,
+  IconButton,
+  Menu,
+  MenuItem,
+  Button,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+} from '@mui/material';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import LockResetOutlinedIcon from '@mui/icons-material/LockResetOutlined';
+import GroupAddOutlinedIcon from '@mui/icons-material/GroupAddOutlined';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { useQueryClient } from '@tanstack/react-query';
 import { useForm, type SubmitHandler } from 'react-hook-form';
@@ -20,9 +34,11 @@ import { COUNTRIES_LIST } from '../../../../utils/constants';
 import { useToast } from '../../../../providers/toast-provider';
 
 import type {
+  IAddMorePartnerUsersPayload,
   IChangePartnerPasswordPayload,
   ICreatePartnerPayload,
   IPartner,
+  IPartnerAllowedUsersAddition,
   IUpdatePartnerPayload,
 } from '../../partners.interface';
 import PartnerService from '../../partners.service';
@@ -41,6 +57,10 @@ const editPartnerSchema = Yup.object({
   state: Yup.string().required('State is required'),
   address: Yup.string().required('Address is required'),
   zipcode: Yup.string().required('Zipcode is required'),
+  price_per_user: Yup.number()
+    .typeError('Price per user must be a number')
+    .moreThan(0, 'Price per user must be greater than 0')
+    .required('Price per user is required'),
   allowed_users: Yup.number()
     .typeError('Allowed users must be a number')
     .integer('Must be an integer')
@@ -57,6 +77,10 @@ const createPartnerSchema = Yup.object({
   state: Yup.string().required('State is required'),
   address: Yup.string().required('Address is required'),
   zipcode: Yup.string().required('Zipcode is required'),
+  price_per_user: Yup.number()
+    .typeError('Price per user must be a number')
+    .moreThan(0, 'Price per user must be greater than 0')
+    .required('Price per user is required'),
   allowed_users: Yup.number()
     .typeError('Allowed users must be a number')
     .integer('Must be an integer')
@@ -65,6 +89,16 @@ const createPartnerSchema = Yup.object({
 });
 
 type CreatePartnerFormValues = Yup.InferType<typeof createPartnerSchema>;
+
+const addMoreUsersSchema = Yup.object({
+  added_users: Yup.number()
+    .typeError('Add users must be a number')
+    .integer('Must be an integer')
+    .min(1, 'Must be 1 or more')
+    .required('Add users is required'),
+  password: Yup.string().required('Password is required'),
+});
+type AddMoreUsersFormValues = Yup.InferType<typeof addMoreUsersSchema>;
 
 const PartnersListing = () => {
   const { showToast } = useToast();
@@ -81,9 +115,12 @@ const PartnersListing = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isAddMoreUsersModalOpen, setIsAddMoreUsersModalOpen] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState<IPartner | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuRowId, setMenuRowId] = useState<number | null>(null);
+
+  const [additionsHistory, setAdditionsHistory] = useState<IPartnerAllowedUsersAddition[]>([]);
 
   const [selectedCountry, setSelectedCountry] = useState<IOption | null>(null);
   const [selectedState, setSelectedState] = useState<IOption | null>(null);
@@ -106,6 +143,7 @@ const PartnersListing = () => {
       address: '',
       zipcode: '',
       allowed_users: 0,
+      price_per_user: 19.99,
     },
   });
 
@@ -135,6 +173,20 @@ const PartnersListing = () => {
       address: '',
       zipcode: '',
       allowed_users: 0,
+      price_per_user: 19.99,
+    },
+  });
+
+  const {
+    register: registerAddMore,
+    handleSubmit: handleSubmitAddMore,
+    reset: resetAddMore,
+    formState: { errors: addMoreErrors },
+  } = useForm<AddMoreUsersFormValues>({
+    resolver: yupResolver(addMoreUsersSchema),
+    defaultValues: {
+      added_users: 1,
+      password: '',
     },
   });
 
@@ -161,10 +213,36 @@ const PartnersListing = () => {
     setIsPasswordModalOpen(true);
   };
 
+  const openAddMoreUsers = async (partner: IPartner) => {
+    setSelectedPartner(partner);
+    setIsAddMoreUsersModalOpen(true);
+    resetAddMore({ added_users: 1, password: '' });
+
+    try {
+      const historyResult = await PartnerService.getPartnerAddedUsersHistory(partner.id);
+      if (historyResult.success) {
+        setAdditionsHistory(historyResult.data || []);
+      } else {
+        setAdditionsHistory([]);
+        showToast(historyResult.message, 'error');
+      }
+    } catch {
+      setAdditionsHistory([]);
+      showToast('Failed to fetch added users history.', 'error');
+    }
+  };
+
   const closeChangePassword = () => {
     setIsPasswordModalOpen(false);
     setSelectedPartner(null);
     resetPassword();
+  };
+
+  const closeAddMoreUsers = () => {
+    setIsAddMoreUsersModalOpen(false);
+    setSelectedPartner(null);
+    resetAddMore();
+    setAdditionsHistory([]);
   };
 
   const openEditPartner = (partner: IPartner) => {
@@ -179,6 +257,7 @@ const PartnersListing = () => {
       state: String(partner.province_id ?? ''),
       zipcode: String(partner.zipcode ?? ''),
       allowed_users: Number(partner.allowed_users ?? 0),
+      price_per_user: Number(partner.price_per_user ?? 19.99),
     });
 
     const countryOpt = COUNTRIES_LIST.find(c => c.label === partner.country);
@@ -236,6 +315,17 @@ const PartnersListing = () => {
         minWidth: 140,
       },
       {
+        field: 'price_per_user',
+        headerName: 'Price / User',
+        flex: 0.6,
+        minWidth: 120,
+        valueGetter: (_value, row) => {
+          const n = Number(row?.price_per_user ?? 0);
+          if (!Number.isFinite(n) || n <= 0) return '';
+          return `$${n.toFixed(2)}`;
+        },
+      },
+      {
         field: 'created_date',
         headerName: 'Added Date',
         flex: 0.7,
@@ -282,7 +372,9 @@ const PartnersListing = () => {
       {
         field: 'actions',
         headerName: 'Actions',
-        width: 100,
+        width: 120,
+        headerClassName: 'sticky-right--header',
+        cellClassName: 'sticky-right--cell',
         sortable: false,
         filterable: false,
         renderCell: (params: GridRenderCellParams<IPartner>) => {
@@ -304,30 +396,59 @@ const PartnersListing = () => {
                 onClose={handleCloseMenu}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                  elevation: 6,
+                  sx: { minWidth: 220, borderRadius: 2 },
+                }}
               >
                 <MenuItem
                   onClick={() => {
                     handleCloseMenu();
                     openViewDetails(params.row);
                   }}
+                  sx={{ py: 1, px: 1.5 }}
                 >
-                  View Details
+                  <ListItemIcon>
+                    <VisibilityOutlinedIcon sx={{ fontSize: 21 }} />
+                  </ListItemIcon>
+                  <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }} />
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
                     handleCloseMenu();
                     openEditPartner(params.row);
                   }}
+                  sx={{ py: 1, px: 1.5 }}
                 >
-                  Edit
+                  <ListItemIcon>
+                    <EditOutlinedIcon sx={{ fontSize: 21 }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Edit" primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }} />
                 </MenuItem>
+                <Divider />
                 <MenuItem
                   onClick={() => {
                     handleCloseMenu();
                     openChangePassword(params.row);
                   }}
+                  sx={{ py: 1, px: 1.5 }}
                 >
-                  Change Password
+                  <ListItemIcon>
+                    <LockResetOutlinedIcon sx={{ fontSize: 21 }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Change Password" primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }} />
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    handleCloseMenu();
+                    openAddMoreUsers(params.row);
+                  }}
+                  sx={{ py: 1, px: 1.5 }}
+                >
+                  <ListItemIcon>
+                    <GroupAddOutlinedIcon sx={{ fontSize: 21 }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Add More Users" primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }} />
                 </MenuItem>
               </Menu>
             </>
@@ -427,6 +548,35 @@ const PartnersListing = () => {
     setIsSubmitting(false);
   };
 
+  const onSubmitAddMoreUsers: SubmitHandler<AddMoreUsersFormValues> = async values => {
+    if (!selectedPartner) return;
+    setIsSubmitting(true);
+
+    const payload: IAddMorePartnerUsersPayload = {
+      partner_id: selectedPartner.id,
+      added_users: Number(values.added_users),
+      password: values.password,
+    };
+
+    const result = await PartnerService.addMorePartnerUsers(payload);
+    if (result.success) {
+      showToast('Users added successfully', 'success');
+      const historyResult = await PartnerService.getPartnerAddedUsersHistory(
+        selectedPartner.id
+      );
+      if (historyResult.success) setAdditionsHistory(historyResult.data || []);
+
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS_FOR_PARTNERS.GET_PARTNERS_LIST],
+      });
+      resetAddMore({ added_users: 1, password: '' });
+    } else {
+      showToast(result.message, 'error');
+    }
+
+    setIsSubmitting(false);
+  };
+
   if (isLoading || isSubmitting) return <CustomLoader />;
 
   return (
@@ -442,14 +592,29 @@ const PartnersListing = () => {
             variant="text"
             startIcon={<AddCircleOutlineRoundedIcon />}
             onClick={handleOpenCreateModal}
+            sx={{
+              bgcolor: theme => theme.palette.action.hover,
+              color: theme => theme.palette.text.primary,
+              borderRadius: 2,
+              px: 2,
+              py: 1,
+              '&:hover': {
+                bgcolor: theme => theme.palette.action.selected,
+              },
+            }}
           >
-            Add Partner's
+            Add Partner
           </MorenButton>
         }
       />
 
       <Box sx={{ mt: 2 }}>
-        <GenericTable rows={partners} columns={columns} rowIdKey="id" />
+        <GenericTable
+          rows={partners}
+          columns={columns}
+          rowIdKey="id"
+          disableVirtualization
+        />
       </Box>
 
       <GenericModal
@@ -481,6 +646,14 @@ const PartnersListing = () => {
               helperText={errors.email?.message}
             />
           </Box>
+            <ModernInput
+              label="Price Per User"
+              placeholder="Enter price per user"
+              inputMode="decimal"
+              {...register('price_per_user')}
+              error={!!errors.price_per_user}
+              helperText={errors.price_per_user?.message}
+            />
 
           <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
             <ModernInput
@@ -684,6 +857,19 @@ const PartnersListing = () => {
 
               <Box display="flex" alignItems="center" gap={1} width="50%">
                 <Typography variant="body2" color="textSecondary" minWidth={120}>
+                  Price Per User:
+                </Typography>
+                <Typography variant="body1" fontWeight="600">
+                  {(() => {
+                    const n = Number(selectedPartner.price_per_user ?? 0);
+                    if (!Number.isFinite(n) || n <= 0) return '';
+                    return `$${n.toFixed(2)}`;
+                  })()}
+                </Typography>
+              </Box>
+
+              <Box display="flex" alignItems="center" gap={1} width="50%">
+                <Typography variant="body2" color="textSecondary" minWidth={120}>
                   Status:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
@@ -824,17 +1010,105 @@ const PartnersListing = () => {
             helperText={editErrors.address?.message}
           />
 
-          <ModernInput
-            label="Allowed Users"
-            inputMode="numeric"
-            {...registerEdit('allowed_users')}
-            error={!!editErrors.allowed_users}
-            helperText={editErrors.allowed_users?.message}
-          />
+          <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
+            <ModernInput
+              label="Allowed Users"
+              inputMode="numeric"
+              {...registerEdit('allowed_users')}
+              error={!!editErrors.allowed_users}
+              helperText={editErrors.allowed_users?.message}
+            />
+            <ModernInput
+              label="Price Per User"
+              inputMode="decimal"
+              {...registerEdit('price_per_user')}
+              error={!!editErrors.price_per_user}
+              helperText={editErrors.price_per_user?.message}
+            />
+          </Box>
 
           <MorenButton type="submit" variant="contained">
             Update Partner
           </MorenButton>
+        </Box>
+      </GenericModal>
+
+      {/* Add More Users */}
+      <GenericModal
+        isOpen={isAddMoreUsersModalOpen}
+        onClose={closeAddMoreUsers}
+        title={`Add More Users${selectedPartner ? ` - ${selectedPartner.name}` : ''}`}
+        hideCancelButton
+      >
+        <Box
+          component="form"
+          onSubmit={handleSubmitAddMore(onSubmitAddMoreUsers)}
+          display="flex"
+          flexDirection="column"
+          gap={2}
+        >
+          <ModernInput
+            label="Add Users"
+            type="number"
+            inputMode="numeric"
+            required
+            {...registerAddMore('added_users')}
+            error={!!addMoreErrors.added_users}
+            helperText={addMoreErrors.added_users?.message}
+          />
+
+          <ModernInput
+            label="Password"
+            type="password"
+            placeholder="Enter your password"
+            required
+            {...registerAddMore('password')}
+            error={!!addMoreErrors.password}
+            helperText={addMoreErrors.password?.message}
+          />
+
+          <Box display="flex" justifyContent="flex-end">
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              sx={{ borderRadius: 1, minWidth: 120 }}
+            >
+              Submit
+            </Button>
+          </Box>
+
+          <Box mt={2}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+              Added Users History
+            </Typography>
+
+            {additionsHistory.length === 0 ? (
+              <Typography variant="body2" color="textSecondary">
+                No records found.
+              </Typography>
+            ) : (
+              <Box display="flex" flexDirection="column" gap={1}>
+                {additionsHistory.map(item => (
+                  <Box
+                    key={item.id}
+                    display="flex"
+                    justifyContent="space-between"
+                    p={1.5}
+                    border="1px solid #e0e0e0"
+                    borderRadius="8px"
+                  >
+                    <Typography variant="body2">
+                      Added Users: <strong>{item.added_users}</strong>
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {item.added_date}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
         </Box>
       </GenericModal>
     </Box>

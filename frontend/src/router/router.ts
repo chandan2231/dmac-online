@@ -31,6 +31,11 @@ import TherapistsConsultationsListingPageComponent from '../pages/admin/therapis
 import AdminPatientAssessmentPage from '../pages/admin/patient-assessment';
 import PartnersListingPageComponent from '../pages/admin/partners-list';
 
+// Partner Pages
+import PartnerConsentPage from '../pages/partner/consent/index';
+import PartnerUsersPage from '../pages/partner/users/index';
+import PartnerPurchaseSuccessPage from '../pages/partner/purchase-success/index';
+
 // Developer Pages
 import DeveloperPageComponent from '../pages/developer';
 
@@ -121,6 +126,11 @@ export const COMPONENT_MAP = {
   AdminPatientAssessmentPage,
   PartnersListingPageComponent,
 
+  // Partner Pages
+  PartnerConsentPage,
+  PartnerUsersPage,
+  PartnerPurchaseSuccessPage,
+
   // Patient Pages
   PatientRegisterPage,
   PatientVerifyEmailPage,
@@ -184,6 +194,11 @@ export const ROUTES = {
   UPLOAD_DOCUMENTS: '/patient/upload-documents',
   AUTH_WITH_GOOGLE: '/patient/auth-with-google',
   LICCA: '/patient/licca',
+
+  // PARTNER Protected routes
+  PARTNER_CONSENT: '/partner/consent',
+  PARTNER_USERS: '/partner/users',
+  PARTNER_PURCHASE_SUCCESS: '/partner/purchase/success',
 
   // ADMIN, SUPER_ADMIN Authenticated routes
   LOGIN: '/login',
@@ -490,6 +505,45 @@ const USER_ROUTES: IAllowedRoutes[] = [
     path: ROUTES.PATIENT_PAYMENT_CANCELLED,
     layout: 'MainLayout',
     component: 'PatientPaymentCancelledPage',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+];
+
+const PARTNER_ROUTES: IAllowedRoutes[] = [
+  {
+    path: ROUTES.PARTNER_CONSENT,
+    layout: 'MainLayout',
+    component: 'PartnerConsentPage',
+    showInSidebar: true,
+    sideBarTitle: 'Consent',
+    sideBarIcon: 'QuizIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PARTNER_USERS,
+    layout: 'MainLayout',
+    component: 'PartnerUsersPage',
+    showInSidebar: true,
+    sideBarTitle: 'User List',
+    sideBarIcon: 'GroupIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PARTNER_PURCHASE_SUCCESS,
+    layout: 'MainLayout',
+    component: 'PartnerPurchaseSuccessPage',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.NOT_FOUND,
+    layout: 'ContentOnlyLayout',
+    component: 'PageNotFound',
     showInSidebar: false,
     sideBarTitle: null,
     sideBarIcon: null,
@@ -854,6 +908,9 @@ const COUNTRY_ADMIN_ROUTES: IAllowedRoutes[] = [
 export const getRoutesByRole = (role: UserRole): IAllowedRoutes[] => {
   if (role === 'USER') {
     return USER_ROUTES;
+  }
+  if (role === 'PARTNER') {
+    return PARTNER_ROUTES;
   }
   if (role === 'EXPERT') {
     return EXPERT_ROUTES;

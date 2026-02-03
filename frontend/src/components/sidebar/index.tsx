@@ -36,7 +36,29 @@ const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
-  const shouldEnforceConsent = user?.role === 'USER';
+  const consentConfig = useMemo(() => {
+    if (user?.role === 'USER') {
+      return {
+        shouldEnforceConsent: true,
+        storageKey: 'consentFilled',
+        consentPath: ROUTES.CONSENT,
+      };
+    }
+
+    if (user?.role === 'PARTNER') {
+      return {
+        shouldEnforceConsent: true,
+        storageKey: 'partnerConsentFilled',
+        consentPath: ROUTES.PARTNER_CONSENT,
+      };
+    }
+
+    return {
+      shouldEnforceConsent: false,
+      storageKey: 'consentFilled',
+      consentPath: ROUTES.CONSENT,
+    };
+  }, [user?.role]);
 
   const subscriptionUser = user?.role === 'USER' ? user : null;
   const { data: subscribedProducts } = useGetSubscribedProduct(subscriptionUser);
@@ -80,14 +102,14 @@ const Sidebar = () => {
   const [consentFilled, setConsentFilled] = useState(true);
   // Listen to consent status from localStorage (or could be from Redux/global state)
   useEffect(() => {
-    if (!shouldEnforceConsent) {
+    if (!consentConfig.shouldEnforceConsent) {
       setConsentFilled(true);
       return;
     }
 
     // Use a localStorage key to persist consent status
     const syncConsent = () => {
-      const filled = localStorage.getItem('consentFilled');
+      const filled = localStorage.getItem(consentConfig.storageKey);
       setConsentFilled(filled === 'true');
     };
 
@@ -103,7 +125,7 @@ const Sidebar = () => {
       window.removeEventListener('storage', syncConsent);
       window.removeEventListener('consentStatusChanged', syncConsent);
     };
-  }, [shouldEnforceConsent]);
+  }, [consentConfig.shouldEnforceConsent, consentConfig.storageKey]);
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const sidebarOptions = useMemo(
@@ -229,13 +251,13 @@ const Sidebar = () => {
 
                     // Block navigation if consent not filled and not on /consent
                     if (
-                      shouldEnforceConsent &&
+                      consentConfig.shouldEnforceConsent &&
                       !consentFilled &&
-                      targetPath !== '/consent'
+                      targetPath !== consentConfig.consentPath
                     ) {
                       // Dispatch event to show modal in ConsentPage
                       window.dispatchEvent(new CustomEvent('showConsentModal'));
-                      navigate('/consent');
+                      navigate(consentConfig.consentPath);
                       return;
                     }
 

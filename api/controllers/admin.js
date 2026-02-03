@@ -594,7 +594,7 @@ export const createUsersByRole = async (req, res) => {
     })
 
     // Email setup
-    const loginUrl = `${process.env.DOMAIN}signin`
+    const loginUrl = `${process.env.DOMAIN}login`
     const verifyLink = `${process.env.DOMAIN}verify-email/${verificationToken}`
     const to = req.body.email
     const subject = 'Welcome to DMAC'

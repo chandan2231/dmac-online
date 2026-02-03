@@ -23,7 +23,8 @@ const InnerToastProvider: React.FC<{ children: ReactNode }> = ({
   const { enqueueSnackbar } = useSnackbar();
 
   const showToast = (message: string, variant: VariantType = 'default') => {
-    enqueueSnackbar(message, { variant });
+    const autoHideDuration = variant === 'error' ? 8000 : 4000;
+    enqueueSnackbar(message, { variant, autoHideDuration });
   };
 
   return (
@@ -40,7 +41,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({
     <SnackbarProvider
       maxSnack={5}
       anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      autoHideDuration={1000}
+      autoHideDuration={4000}
       Components={{
         default: ThemedSnackbar,
         success: ThemedSnackbar,

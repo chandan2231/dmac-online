@@ -1,6 +1,16 @@
 import { useMemo, useState } from 'react';
-import { Box, Typography, IconButton, Menu, MenuItem } from '@mui/material';
+import {
+  Box,
+  Typography,
+  IconButton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+} from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import type { GridColDef } from '@mui/x-data-grid';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -129,7 +139,9 @@ function ProductFeatureKeys() {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 100,
+      width: 120,
+      headerClassName: 'sticky-right--header',
+      cellClassName: 'sticky-right--cell',
       sortable: false,
       filterable: false,
       renderCell: params => {
@@ -156,14 +168,22 @@ function ProductFeatureKeys() {
               onClose={handleClose}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              PaperProps={{ elevation: 6, sx: { minWidth: 220, borderRadius: 2 } }}
             >
               <MenuItem
                 onClick={() => {
                   handleClose();
                   handleDelete(params.row.id);
                 }}
+                sx={{ py: 1, px: 1.5, color: 'error.main' }}
               >
-                Delete
+                <ListItemIcon sx={{ color: 'error.main' }}>
+                  <DeleteOutlineOutlinedIcon sx={{ fontSize: 21 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Delete"
+                  primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+                />
               </MenuItem>
             </Menu>
           </>
@@ -193,11 +213,21 @@ function ProductFeatureKeys() {
         }
         rightNode={
           <MorenButton
-            variant="contained"
+            variant="text"
+            startIcon={<AddCircleOutlineRoundedIcon />}
             onClick={handleOpenAddModal}
-            sx={{ minWidth: '140px', maxWidth: '220px', alignSelf: 'flex-end' }}
+            sx={{
+              bgcolor: theme => theme.palette.action.hover,
+              color: theme => theme.palette.text.primary,
+              borderRadius: 2,
+              px: 2,
+              py: 1,
+              '&:hover': {
+                bgcolor: theme => theme.palette.action.selected,
+              },
+            }}
           >
-            Add a Key
+            Add Feature
           </MorenButton>
         }
       />
@@ -208,6 +238,7 @@ function ProductFeatureKeys() {
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}
         loading={isLoading}
+        disableVirtualization
       />
 
       <GenericModal

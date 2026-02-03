@@ -3,6 +3,7 @@ import type { IAllowedRoutes } from '../../router/router';
 
 export type UserRole =
   | 'USER'
+  | 'PARTNER'
   | 'ADMIN'
   | 'SUPER_ADMIN'
   | 'EXPERT'

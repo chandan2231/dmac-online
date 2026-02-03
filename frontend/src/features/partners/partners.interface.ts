@@ -12,6 +12,7 @@ export interface IPartner {
   active_users: number;
   remaining_users: number;
   allowed_users: number;
+  price_per_user?: number;
   created_date: string | null;
   status: number;
 }
@@ -28,6 +29,7 @@ export interface ICreatePartnerPayload {
   time_zone: string;
   zipcode: string;
   allowed_users: number;
+  price_per_user?: number;
 }
 
 export interface IUpdatePartnerPayload extends ICreatePartnerPayload {
@@ -37,4 +39,18 @@ export interface IUpdatePartnerPayload extends ICreatePartnerPayload {
 export interface IChangePartnerPasswordPayload {
   id: number;
   password: string;
+}
+
+export interface IAddMorePartnerUsersPayload {
+  partner_id: number;
+  added_users: number;
+  password: string;
+}
+
+export interface IPartnerAllowedUsersAddition {
+  id: number;
+  partner_id: number;
+  added_users: number;
+  added_by: number;
+  added_date: string;
 }

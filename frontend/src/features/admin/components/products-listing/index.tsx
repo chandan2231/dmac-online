@@ -12,7 +12,10 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
+  Divider,
   IconButton,
+  ListItemIcon,
+  ListItemText,
   Menu,
   MenuItem,
 } from '@mui/material';
@@ -26,6 +29,10 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useToast } from '../../../../providers/toast-provider';
 import CustomLoader from '../../../../components/loader';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import PublicOutlinedIcon from '@mui/icons-material/PublicOutlined';
+import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 import ModernSelect, { type IOption } from '../../../../components/select';
 import {
@@ -399,7 +406,9 @@ function ProductsTable() {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 100,
+      width: 120,
+      headerClassName: 'sticky-right--header',
+      cellClassName: 'sticky-right--cell',
       sortable: false,
       filterable: false,
       renderCell: params => {
@@ -433,30 +442,53 @@ function ProductsTable() {
                 vertical: 'top',
                 horizontal: 'right',
               }}
+              PaperProps={{ elevation: 6, sx: { minWidth: 240, borderRadius: 2 } }}
             >
               <MenuItem
                 onClick={() => {
                   handleClose();
                   handleOpenEditModal(params.row);
                 }}
+                sx={{ py: 1, px: 1.5 }}
               >
-                Edit
+                <ListItemIcon>
+                  <EditOutlinedIcon sx={{ fontSize: 21 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Edit"
+                  primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+                />
               </MenuItem>
               <MenuItem
                 onClick={() => {
                   handleClose();
                   handleOpenViewModal(params.row);
                 }}
+                sx={{ py: 1, px: 1.5 }}
               >
-                View Details
+                <ListItemIcon>
+                  <VisibilityOutlinedIcon sx={{ fontSize: 21 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="View Details"
+                  primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+                />
               </MenuItem>
+              <Divider />
               <MenuItem
                 onClick={() => {
                   handleClose();
                   handleOpenCountryAmountModal(params.row);
                 }}
+                sx={{ py: 1, px: 1.5 }}
               >
-                Add amount by country
+                <ListItemIcon>
+                  <PublicOutlinedIcon sx={{ fontSize: 21 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Add amount by country"
+                  primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+                />
               </MenuItem>
             </Menu>
           </>
@@ -494,12 +526,18 @@ function ProductsTable() {
         }
         rightNode={
           <MorenButton
-            variant="contained"
+            variant="text"
+            startIcon={<AddCircleOutlineRoundedIcon />}
             onClick={handleOpenAddModal}
             sx={{
-              minWidth: '140px',
-              maxWidth: '180px',
-              alignSelf: 'flex-end',
+              bgcolor: theme => theme.palette.action.hover,
+              color: theme => theme.palette.text.primary,
+              borderRadius: 2,
+              px: 2,
+              py: 1,
+              '&:hover': {
+                bgcolor: theme => theme.palette.action.selected,
+              },
             }}
           >
             Add Product
@@ -513,6 +551,7 @@ function ProductsTable() {
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}
         loading={isLoading}
+        disableVirtualization
       />
 
       {/* ✅ Modal with form */}
