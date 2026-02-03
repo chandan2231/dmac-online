@@ -1,13 +1,7 @@
 import * as Yup from 'yup';
 import { useState } from 'react';
 import type { RootState } from '../../../../store/index.ts';
-import {
-  Box,
-  InputAdornment,
-  IconButton,
-  Grid,
-  Typography,
-} from '@mui/material';
+import { Box, InputAdornment, IconButton, Typography } from '@mui/material';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Visibility from '@mui/icons-material/Visibility';
@@ -87,160 +81,161 @@ const Login = () => {
           bgcolor: 'background.paper',
         }}
       >
-        <Grid container>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            height: '100%',
+          }}
+        >
           {/* Left panel - Welcome section */}
-          <Grid item xs={12} md={6}>
-            <Box
-              sx={{
-                height: '100%',
-                background:
-                  'linear-gradient(135deg, #0f7be7 0%, #2563eb 40%, #1d4ed8 100%)',
-                color: '#fff',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                px: { xs: 4, md: 5 },
-                py: { xs: 4, md: 6 },
-              }}
+          <Box
+            sx={{
+              flex: 1,
+              background:
+                'linear-gradient(135deg, #0f7be7 0%, #2563eb 40%, #1d4ed8 100%)',
+              color: '#fff',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              px: { xs: 4, md: 5 },
+              py: { xs: 4, md: 6 },
+            }}
+          >
+            <Typography
+              variant="overline"
+              sx={{ letterSpacing: 1.2, opacity: 0.9 }}
             >
-              <Typography
-                variant="overline"
-                sx={{ letterSpacing: 1.2, opacity: 0.9 }}
-              >
-                Nice to see you again
-              </Typography>
-              <Typography
-                variant="h4"
-                sx={{ fontWeight: 700, mt: 1, textTransform: 'uppercase' }}
-              >
-                Welcome back
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ mt: 2, maxWidth: 360, opacity: 0.9 }}
-              >
-                Access your RM360 account to continue managing your
-                sessions, track your progress, and stay connected with your
-                care team.
-              </Typography>
-            </Box>
-          </Grid>
+              Nice to see you again
+            </Typography>
+            <Typography
+              variant="h4"
+              sx={{ fontWeight: 700, mt: 1, textTransform: 'uppercase' }}
+            >
+              Welcome back
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ mt: 2, maxWidth: 360, opacity: 0.9 }}
+            >
+              Access your RM360 account to continue managing your sessions,
+              track your progress, and stay connected with your care team.
+            </Typography>
+          </Box>
 
           {/* Right panel - Login form */}
-          <Grid item xs={12} md={6}>
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              px: { xs: 4, md: 5 },
+              py: { xs: 4, md: 6 },
+            }}
+          >
             <Box
               sx={{
-                height: '100%',
                 display: 'flex',
-                flexDirection: 'column',
                 justifyContent: 'center',
-                px: { xs: 4, md: 5 },
-                py: { xs: 4, md: 6 },
+                mb: 2.5,
               }}
             >
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  mb: 2.5,
-                }}
-              >
-                <img
-                  src="/RM360-LOGO.png"
-                  alt="RM360 Logo"
-                  style={{ height: 96, width: 'auto' }}
-                />
-              </Box>
-
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: 700, textAlign: 'center', mb: 0.5 }}
-              >
-                Login Account
-              </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ textAlign: 'center', mb: 3 }}
-              >
-                Enter your credentials to continue to your RM360 dashboard.
-              </Typography>
-
-              <Box
-                component="form"
-                onSubmit={handleSubmit(onSubmit)}
-                display="flex"
-                flexDirection="column"
-                gap={2}
-              >
-                <ModernInput
-                  label="Email ID"
-                  placeholder="Enter your email"
-                  type="email"
-                  {...register('email')}
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <EmailOutlinedIcon fontSize="small" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <ModernInput
-                  label="Password"
-                  placeholder="Enter your password"
-                  type={showPassword ? 'text' : 'password'}
-                  {...register('password')}
-                  error={!!errors.password}
-                  helperText={errors.password?.message}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LockOutlinedIcon fontSize="small" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label={
-                            showPassword ? 'Hide password' : 'Show password'
-                          }
-                          onClick={() => setShowPassword(prev => !prev)}
-                          edge="end"
-                          size="small"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-
-                <Box mt={0.5} display="flex" justifyContent="flex-end">
-                  <Typography
-                    variant="body2"
-                    color="primary.main"
-                    sx={{ cursor: 'pointer', fontSize: 13 }}
-                    onClick={() => handleNavigation(ROUTES.FORGOT_PASSWORD)}
-                  >
-                    Forgot password?
-                  </Typography>
-                </Box>
-
-                <MorenButton
-                  type="submit"
-                  variant="contained"
-                  disabled={loading}
-                  fullWidth
-                >
-                  Login
-                </MorenButton>
-              </Box>
+              <img
+                src="/RM360-LOGO.png"
+                alt="RM360 Logo"
+                style={{ height: 96, width: 'auto' }}
+              />
             </Box>
-          </Grid>
-        </Grid>
+
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, textAlign: 'center', mb: 0.5 }}
+            >
+              Login Account
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ textAlign: 'center', mb: 3 }}
+            >
+              Enter your credentials to continue to your RM360 dashboard.
+            </Typography>
+
+            <Box
+              component="form"
+              onSubmit={handleSubmit(onSubmit)}
+              display="flex"
+              flexDirection="column"
+              gap={2}
+            >
+              <ModernInput
+                label="Email ID"
+                placeholder="Enter your email"
+                type="email"
+                {...register('email')}
+                error={!!errors.email}
+                helperText={errors.email?.message}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailOutlinedIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <ModernInput
+                label="Password"
+                placeholder="Enter your password"
+                type={showPassword ? 'text' : 'password'}
+                {...register('password')}
+                error={!!errors.password}
+                helperText={errors.password?.message}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockOutlinedIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={
+                          showPassword ? 'Hide password' : 'Show password'
+                        }
+                        onClick={() => setShowPassword(prev => !prev)}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              <Box mt={0.5} display="flex" justifyContent="flex-end">
+                <Typography
+                  variant="body2"
+                  color="primary.main"
+                  sx={{ cursor: 'pointer', fontSize: 13 }}
+                  onClick={() => handleNavigation(ROUTES.FORGOT_PASSWORD)}
+                >
+                  Forgot password?
+                </Typography>
+              </Box>
+
+              <MorenButton
+                type="submit"
+                variant="contained"
+                disabled={loading}
+                fullWidth
+              >
+                Login
+              </MorenButton>
+            </Box>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
