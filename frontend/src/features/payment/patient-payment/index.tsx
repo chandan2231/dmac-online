@@ -15,7 +15,9 @@ import {
   TableRow,
   TableCell,
   Paper,
+  Chip,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { ROUTES } from '../../../router/router';
 import Grid from '@mui/material/GridLegacy';
 import PaymentService from '../payment.service';
@@ -25,6 +27,34 @@ import GenericModal from '../../../components/modal';
 import MorenCheckbox from '../../../components/checkbox';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+
+type FeatureKV = { title: string; value: string };
+
+const parseProductFeature = (raw: unknown): FeatureKV[] => {
+  if (Array.isArray(raw)) {
+    return raw
+      .filter(Boolean)
+      .map(item => {
+        const title = String(get(item, 'title', '')).trim();
+        const value = String(get(item, 'value', '')).trim();
+        return { title, value };
+      })
+      .filter(item => item.title.length > 0);
+  }
+
+  if (typeof raw === 'string') {
+    const text = raw.trim();
+    if (!text) return [];
+    try {
+      const parsed = JSON.parse(text) as unknown;
+      return parseProductFeature(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
 
 const renderYesNoValue = (rawValue: string) => {
   const normalized = String(rawValue ?? '')
@@ -49,6 +79,7 @@ const renderYesNoValue = (rawValue: string) => {
 const PatientPayment = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
+  const theme = useTheme();
   const [acknowledged, setAcknowledged] = useState(false);
   const [isAcknowledgementOpen, setIsAcknowledgementOpen] = useState(false);
 
@@ -280,193 +311,359 @@ const PatientPayment = () => {
     });
   };
 
+  const product = get(state, ['product']);
+  const parsedFeature = parseProductFeature(get(product, 'feature'));
+  const subscriptionList: string[] = String(
+    get(product, 'subscription_list', '')
+  )
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  const amountToShow =
+    serverAmountToPay !== null && Number.isFinite(serverAmountToPay)
+      ? serverAmountToPay
+      : get(product, 'product_amount', 0);
+
   return (
     <Box
       sx={{
-        p: 4,
-        maxWidth: 1200,
-        mx: 'auto',
-        height: '100%',
-        overflowY: 'scroll',
-        // Hide scrollbar but allow scrolling
-        '&::-webkit-scrollbar': {
-          display: 'none',
-        },
-        '-ms-overflow-style': 'none', // IE and Edge
-        'scrollbar-width': 'none', // Firefox
+        bgcolor: theme.palette.grey[50],
+        py: { xs: 1.25, md: 1.75 },
+        px: { xs: 2, md: 4 },
+        width: '100%',
       }}
     >
       {loading && <Loader />}
-      <Typography
-        variant="h4"
-        fontWeight="bold"
-        textAlign="center"
-        sx={{ mb: 4 }}
+      <Box
+        sx={{
+          width: '100%',
+        }}
       >
-        Checkout
-      </Typography>
-      <Grid container spacing={4}>
-        {/* LEFT SECTION - User Details */}
-        <Grid item xs={12} md={6}>
-          <Card sx={{ borderRadius: 4, height: '100%', boxShadow: 3 }}>
-            <CardContent sx={{ p: 4 }}>
-              <Typography
-                variant="h6"
-                fontWeight="bold"
-                gutterBottom
-                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-              >
-                <PersonOutlineIcon color="primary" /> User Details
-              </Typography>
-              <Divider sx={{ my: 2 }} />
-              <Stack spacing={3}>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    Name
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {get(state, ['user', 'name'], 'N/A')}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    Email
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {get(state, ['user', 'email'], 'N/A')}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    Mobile
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {get(state, ['user', 'mobile'], 'N/A')}
-                  </Typography>
-                </Box>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* RIGHT SECTION - Product Details */}
-        <Grid item xs={12} md={6}>
-          <Card
+        <Paper
+          variant="outlined"
+          sx={{ borderRadius: 3, boxShadow: 2, overflow: 'hidden' }}
+        >
+          <Box
             sx={{
-              borderRadius: 4,
-              height: '100%',
-              boxShadow: 3,
-              position: 'relative',
-              overflow: 'visible',
+              px: { xs: 2, md: 2.75 },
+              py: { xs: 1.4, md: 1.8 },
+              borderBottom: `1px solid ${theme.palette.divider}`,
+              textAlign: 'center',
             }}
           >
-            <div className="plan">
-              <div className="inner">
-                <span className="pricing">
-                  <span>{`$${
-                    serverAmountToPay !== null &&
-                    Number.isFinite(serverAmountToPay)
-                      ? serverAmountToPay
-                      : get(state, ['product', 'product_amount'], '')
-                  }`}</span>
-                </span>
-                <p className="title">
-                  {get(state, ['product', 'product_name'], '')}
-                </p>
-                <p className="info">
-                  {get(state, ['product', 'product_description'], '')}
-                </p>
-                {Array.isArray(get(state, ['product', 'feature'])) &&
-                get(state, ['product', 'feature']).length ? (
-                  <TableContainer
-                    component={Paper}
-                    variant="outlined"
-                    sx={{ bgcolor: 'transparent', boxShadow: 'none' }}
-                  >
-                    <Table size="small">
-                      <TableBody>
-                        {(
-                          get(state, ['product', 'feature'], []) as Array<{
-                            title: string;
-                            value: string;
-                          }>
-                        ).map((feature, index) => (
-                          <TableRow key={index}>
-                            <TableCell
-                              sx={{
-                                fontWeight: 700,
-                              }}
-                            >
-                              {feature.title}
-                            </TableCell>
-                            <TableCell>{renderYesNoValue(feature.value)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                ) : (
-                  <ul className="features">
-                    {(
-                      get(state, ['product', 'subscription_list'], '') as string
-                    )
-                      .split(',')
-                      .map((feature, index) => (
-                        <li key={index}>
-                          <span className="icon">
-                            <svg
-                              height="24"
-                              width="24"
-                              viewBox="0 0 24 24"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path d="M0 0h24v24H0z" fill="none"></path>
-                              <path
-                                fill="currentColor"
-                                d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"
-                              ></path>
-                            </svg>
-                          </span>
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          </Card>
-        </Grid>
-
-        {/* PAYPAL BUTTON */}
-        <Grid
-          item
-          xs={12}
-          sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}
-        >
-          <Box sx={{ width: '100%', maxWidth: 400, position: 'relative' }}>
-            {!acknowledged && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  zIndex: 1000000,
-                }}
-                onClick={e => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsAcknowledgementOpen(true);
-                }}
-              />
-            )}
-            <div ref={paypalRef} />
+            <Typography variant="h6" fontWeight="bold">
+              Checkout
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 0.5 }}
+            >
+              Review your details and complete the payment via PayPal.
+            </Typography>
           </Box>
-        </Grid>
-      </Grid>
 
-      <GenericModal
+          <Box sx={{ px: { xs: 2, md: 2.75 }, py: { xs: 1.6, md: 2.2 } }}>
+            <Grid container spacing={2} alignItems="flex-start">
+              {/* LEFT SECTION - Product Details + PayPal */}
+              <Grid item xs={12} md={8}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      px: 1.75,
+                      py: 1.6,
+                      background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                      color: theme.palette.primary.contrastText,
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="flex-start"
+                      flexWrap="wrap"
+                      gap={2}
+                    >
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            fontWeight: 900,
+                            lineHeight: 1.2,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                          }}
+                        >
+                          {get(product, 'product_name', '')}
+                        </Typography>
+                        {get(product, 'product_description') ? (
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              mt: 0.5,
+                              opacity: 0.92,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                            }}
+                          >
+                            {get(product, 'product_description', '')}
+                          </Typography>
+                        ) : null}
+                      </Box>
+
+                      <Stack alignItems="flex-end" spacing={1}>
+                        <Chip
+                          label="Pending Payment"
+                          color="warning"
+                          size="small"
+                          sx={{
+                            fontWeight: 900,
+                            color: '#fff',
+                            fontSize: 11,
+                            height: 24,
+                            px: 1.25,
+                          }}
+                        />
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 800 }}
+                        >
+                          Amount to pay: ${Number(amountToShow ?? 0).toFixed(2)}
+                        </Typography>
+                      </Stack>
+                    </Stack>
+                  </Box>
+
+                  <Box sx={{ p: 1.75 }}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: 900, mb: 1 }}
+                    >
+                      Included Features
+                    </Typography>
+
+                    {Array.isArray(parsedFeature) && parsedFeature.length ? (
+                      <TableContainer
+                        component={Paper}
+                        variant="outlined"
+                        sx={{
+                          borderRadius: 2,
+                          boxShadow: 'none',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Table size="small">
+                          <TableBody>
+                            {parsedFeature.map((feature, idx) => (
+                              <TableRow
+                                key={`${String(feature.title)}-${idx}`}
+                                sx={{ '&:last-child td': { borderBottom: 0 } }}
+                              >
+                                <TableCell sx={{ fontWeight: 800 }}>
+                                  {feature.title}
+                                </TableCell>
+                                <TableCell align="right">
+                                  {renderYesNoValue(feature.value)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    ) : subscriptionList.length > 0 ? (
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: {
+                            xs: '1fr',
+                            sm: 'repeat(2, 1fr)',
+                          },
+                          gap: 1,
+                        }}
+                      >
+                        {subscriptionList.map((feature, idx) => (
+                          <Stack
+                            key={`${feature}-${idx}`}
+                            direction="row"
+                            alignItems="center"
+                            spacing={1}
+                            sx={{
+                              p: 1,
+                              borderRadius: 2,
+                              border: themeArg =>
+                                `1px solid ${themeArg.palette.divider}`,
+                              bgcolor: themeArg =>
+                                themeArg.palette.background.default,
+                            }}
+                          >
+                            <CheckCircleIcon
+                              fontSize="small"
+                              sx={{ color: 'success.main' }}
+                            />
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 700 }}
+                            >
+                              {feature}
+                            </Typography>
+                          </Stack>
+                        ))}
+                      </Box>
+                    ) : (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                      >
+                        No feature details available.
+                      </Typography>
+                    )}
+
+                    <Divider sx={{ my: 1.5 }} />
+                  </Box>
+                </Paper>
+              </Grid>
+
+              {/* RIGHT SECTION - User Details + Payment Summary */}
+              <Grid item xs={12} md={4}>
+                <Card
+                  elevation={0}
+                  sx={{
+                    borderRadius: 2,
+                    border: themeArg => `1px solid ${themeArg.palette.divider}`,
+                  }}
+                >
+                  <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="bold"
+                      gutterBottom
+                      sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                    >
+                      <PersonOutlineIcon color="primary" /> User Details
+                    </Typography>
+                    <Divider sx={{ my: 1 }} />
+                    <Stack spacing={1.25}>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Name
+                        </Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {get(state, ['user', 'name'], 'N/A')}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Email
+                        </Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {get(state, ['user', 'email'], 'N/A')}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Mobile
+                        </Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {get(state, ['user', 'mobile'], 'N/A')}
+                        </Typography>
+                      </Box>
+                    </Stack>
+
+                    {/* Payment summary below user details */}
+                    <Box
+                      sx={{
+                        mt: 2,
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ fontWeight: 700, mb: 0.5 }}
+                      >
+                        Payment Details
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Amount to pay:{' '}
+                        <Box component="span" sx={{ fontWeight: 700 }}>
+                          ${Number(amountToShow ?? 0).toFixed(2)}
+                        </Box>
+                      </Typography>
+                    </Box>
+
+                    {/* PayPal buttons below payment summary */}
+                    <Box
+                      sx={{
+                        mt: 1.75,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ fontWeight: 900, mb: 1 }}
+                      >
+                        Complete Payment
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 1 }}
+                      >
+                        Click the PayPal button below to complete your
+                        purchase.
+                      </Typography>
+                      <Box
+                        sx={{
+                          width: '100%',
+                          maxWidth: 260,
+                          position: 'relative',
+                          mt: 0.5,
+                        }}
+                      >
+                        {!acknowledged && (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              zIndex: 1000000,
+                            }}
+                            onClick={e => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsAcknowledgementOpen(true);
+                            }}
+                          />
+                        )}
+                        <div ref={paypalRef} />
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </Box>
+        </Paper>
+
+        <GenericModal
         isOpen={isAcknowledgementOpen}
         onClose={handleAcknowledgeCancel}
         title="Payment Acknowledged"
@@ -499,6 +696,7 @@ const PatientPayment = () => {
           </Box>
         }
       />
+      </Box>
     </Box>
   );
 };

@@ -1115,10 +1115,7 @@ export const patientEmailVerification = (req, res) => {
         const productJoinQuery = `
           SELECT 
             rup.product_id,
-            p.product_name,
-            p.product_description AS product_description,
-            p.product_amount,
-            p.subscription_list
+            p.*
           FROM dmac_webapp_registered_users_product rup
           LEFT JOIN dmac_webapp_products p 
             ON rup.product_id = p.id
