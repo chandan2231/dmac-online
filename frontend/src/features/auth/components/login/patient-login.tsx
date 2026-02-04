@@ -141,7 +141,7 @@ const PatientLogin = () => {
               <img
                 src="/RM360-LOGO.png"
                 alt="RM360 Logo"
-                style={{ height: 96, width: 'auto' }}
+                style={{ height: 150, width: 'auto' }}
               />
             </Box>
 
