@@ -83,6 +83,7 @@ const PatientLogin = () => {
             display: 'flex',
             flexDirection: { xs: 'column', md: 'row' },
             height: '100%',
+            p: '25px',
           }}
         >
           {/* Left panel - Welcome section */}
@@ -91,6 +92,7 @@ const PatientLogin = () => {
               flex: 1,
               background:
                 'linear-gradient(135deg, #0f7be7 0%, #2563eb 40%, #1d4ed8 100%)',
+              borderRadius: 3,
               color: '#fff',
               display: 'flex',
               flexDirection: 'column',
@@ -141,7 +143,7 @@ const PatientLogin = () => {
               <img
                 src="/RM360-LOGO.png"
                 alt="RM360 Logo"
-                style={{ height: 96, width: 'auto' }}
+                style={{ height: 150, width: 'auto' }}
               />
             </Box>
 
