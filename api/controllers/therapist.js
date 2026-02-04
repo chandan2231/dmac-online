@@ -11,6 +11,24 @@ export const saveTherapistAvailability = async (req, res) => {
       .json({ status: 400, message: 'Missing required fields' })
   }
 
+  // Enforce maximum 15-day window from selected start date
+  try {
+    const dayDiff = moment(endDate, 'YYYY-MM-DD').diff(
+      moment(startDate, 'YYYY-MM-DD'),
+      'days'
+    )
+
+    if (dayDiff > 14) {
+      return res.status(400).json({
+        status: 400,
+        message:
+          'Availability can be set for a maximum of 15 days at a time'
+      })
+    }
+  } catch (e) {
+    // If date parsing fails, fall through to main error handler
+  }
+
   try {
     // 1. Get Therapist's Timezone
     const userResult = await new Promise((resolve, reject) => {
@@ -30,6 +48,18 @@ export const saveTherapistAvailability = async (req, res) => {
         .status(400)
         .json({ status: 400, message: 'Therapist timezone not found' })
     }
+
+    // 2. Clear existing availability for this therapist before inserting new window
+    await new Promise((resolve, reject) => {
+      db.query(
+        `DELETE FROM dmac_webapp_therapist_availability WHERE consultant_id = ?`,
+        [userId],
+        (err, result) => {
+          if (err) return reject(err)
+          resolve(result)
+        }
+      )
+    })
 
     const values = []
 
@@ -85,9 +115,6 @@ export const saveTherapistAvailability = async (req, res) => {
       INSERT INTO dmac_webapp_therapist_availability
       (consultant_id, slot_date, start_time, end_time, is_slot_available, is_booked, is_day_off)
       VALUES ?
-      ON DUPLICATE KEY UPDATE
-      is_slot_available = VALUES(is_slot_available),
-      is_day_off = VALUES(is_day_off)
     `
 
     db.query(query, [values], (err) => {

@@ -8,8 +8,12 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import StarBorderOutlinedIcon from '@mui/icons-material/StarBorderOutlined';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -171,8 +175,13 @@ const TherapistConsultationList = ({
       headerName: 'Action',
       flex: 0.5,
       width: 80,
+      headerClassName: 'sticky-right--header',
+      cellClassName: 'sticky-right--cell',
       renderCell: params => (
-        <IconButton onClick={e => handleMenuOpen(e, params.row)}>
+        <IconButton
+          onClick={e => handleMenuOpen(e, params.row)}
+          size="small"
+        >
           <MoreVertIcon />
         </IconButton>
       ),
@@ -211,16 +220,33 @@ const TherapistConsultationList = ({
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{ elevation: 6, sx: { minWidth: 240, borderRadius: 2 } }}
       >
         {selectedConsultation && selectedConsultation.status !== 4 && (
-          <MenuItem onClick={handleRescheduleClick}>
-            Reschedule Booking
+          <MenuItem onClick={handleRescheduleClick} sx={{ py: 1, px: 1.5 }}>
+            <ListItemIcon>
+              <EditOutlinedIcon sx={{ fontSize: 21 }} />
+            </ListItemIcon>
+            <ListItemText
+              primary="Reschedule Booking"
+              primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+            />
           </MenuItem>
         )}
         {selectedConsultation &&
           selectedConsultation.status === 4 &&
           enableReviews && (
-            <MenuItem onClick={handleRateClick}>Rating</MenuItem>
+            <MenuItem onClick={handleRateClick} sx={{ py: 1, px: 1.5 }}>
+              <ListItemIcon>
+                <StarBorderOutlinedIcon sx={{ fontSize: 21 }} />
+              </ListItemIcon>
+              <ListItemText
+                primary="Rating"
+                primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+              />
+            </MenuItem>
           )}
       </Menu>
     </Box>
