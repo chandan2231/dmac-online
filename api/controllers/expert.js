@@ -11,6 +11,23 @@ export const saveExpertAvailability = async (req, res) => {
       .json({ status: 400, message: 'Missing required fields' })
   }
 
+  // Enforce maximum 15-day window from selected start date
+  try {
+    const dayDiff = moment(endDate, 'YYYY-MM-DD').diff(
+      moment(startDate, 'YYYY-MM-DD'),
+      'days'
+    )
+
+    if (dayDiff > 14) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Availability can be set for a maximum of 15 days at a time'
+      })
+    }
+  } catch (e) {
+    // If date parsing fails, fall through to main error handler
+  }
+
   try {
     // 1. Get Expert's Timezone
     const userResult = await new Promise((resolve, reject) => {
@@ -30,6 +47,18 @@ export const saveExpertAvailability = async (req, res) => {
         .status(400)
         .json({ status: 400, message: 'Expert timezone not found' })
     }
+
+    // 2. Clear existing availability for this expert before inserting new window
+    await new Promise((resolve, reject) => {
+      db.query(
+        `DELETE FROM dmac_webapp_expert_availability WHERE consultant_id = ?`,
+        [userId],
+        (err, result) => {
+          if (err) return reject(err)
+          resolve(result)
+        }
+      )
+    })
 
     const values = []
 

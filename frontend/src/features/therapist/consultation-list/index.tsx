@@ -12,8 +12,12 @@ import {
   Autocomplete,
   TextField,
   Button,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -279,8 +283,13 @@ const TherapistConsultationList = () => {
       headerName: 'Actions',
       width: 100,
       sortable: false,
+      headerClassName: 'sticky-right--header',
+      cellClassName: 'sticky-right--cell',
       renderCell: params => (
-        <IconButton onClick={e => handleMenuClick(e, params.row)}>
+        <IconButton
+          onClick={e => handleMenuClick(e, params.row)}
+          size="small"
+        >
           <MoreVertIcon />
         </IconButton>
       ),
@@ -346,14 +355,35 @@ const TherapistConsultationList = () => {
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
         onClose={handleMenuClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{ elevation: 6, sx: { minWidth: 260, borderRadius: 2 } }}
       >
         <MenuItem
           onClick={handleEditStatusClick}
           disabled={menuConsultation?.consultation_status === 4}
+          sx={{ py: 1, px: 1.5 }}
         >
-          Edit Status
+          <ListItemIcon>
+            <EditOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="Edit Status"
+            primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+          />
         </MenuItem>
-        <MenuItem onClick={handleViewDocumentsClick}>View Documents</MenuItem>
+        <MenuItem
+          onClick={handleViewDocumentsClick}
+          sx={{ py: 1, px: 1.5 }}
+        >
+          <ListItemIcon>
+            <DescriptionOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="View Documents"
+            primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+          />
+        </MenuItem>
       </Menu>
     </Box>
   );

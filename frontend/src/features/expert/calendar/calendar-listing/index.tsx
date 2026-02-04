@@ -1,11 +1,21 @@
 import type { IAvailabilitySlot, ISlotsData } from '../../expert.interface';
 import { useEffect, useState } from 'react';
 import type { GridColDef } from '@mui/x-data-grid';
-import { Box, IconButton, Menu, MenuItem, Typography } from '@mui/material';
+import {
+  Box,
+  IconButton,
+  Menu,
+  MenuItem,
+  Typography,
+  ListItemIcon,
+  ListItemText,
+} from '@mui/material';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 import { GenericTable } from '../../../../components/table';
 import ModernSwitch from '../../../../components/switch';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../store';
 import { get } from 'lodash';
@@ -154,6 +164,8 @@ const CalendarListing = ({
       field: 'actions',
       headerName: 'Actions',
       width: 80,
+      headerClassName: 'sticky-right--header',
+      cellClassName: 'sticky-right--cell',
       renderCell: params => {
         return (
           <IconButton
@@ -199,13 +211,29 @@ const CalendarListing = ({
         onClose={handleMenuClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{ elevation: 6, sx: { minWidth: 220, borderRadius: 2 } }}
       >
-        <MenuItem onClick={handleViewDetails}>View Details</MenuItem>
+        <MenuItem onClick={handleViewDetails} sx={{ py: 1, px: 1.5 }}>
+          <ListItemIcon>
+            <VisibilityOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="View Details"
+            primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+          />
+        </MenuItem>
         <MenuItem
           onClick={handleUpdateSlot}
           disabled={selectedRow?.is_day_off !== 1}
+          sx={{ py: 1, px: 1.5 }}
         >
-          Update Slot
+          <ListItemIcon>
+            <EditOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="Update Slot"
+            primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+          />
         </MenuItem>
       </Menu>
 
