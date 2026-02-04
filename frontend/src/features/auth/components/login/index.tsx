@@ -86,7 +86,6 @@ const Login = () => {
             display: 'flex',
             flexDirection: { xs: 'column', md: 'row' },
             height: '100%',
-            p: '25px',
           }}
         >
           {/* Left panel - Welcome section */}

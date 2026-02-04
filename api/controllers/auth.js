@@ -852,22 +852,75 @@ export const forgetPasswordVerifyEmail = (req, res) => {
   }
 }
 
-export const resetPassword = (req, res) => {
+export const resetPassword = async (req, res) => {
   const { token, password } = req.body
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(400).json({ msg: 'Invalid or expired token' })
+
+  try {
+    // Verify reset token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
     const userId = decoded.id
+
+    // Update password in primary webapp database
     const salt = bcrypt.genSaltSync(10)
     const hashedPassword = bcrypt.hashSync(password, salt)
-    db.query(
-      'UPDATE dmac_webapp_users SET password = ? WHERE id = ?',
-      [hashedPassword, userId],
-      (err) => {
-        if (err) return res.status(500).json({ error: err.msg })
-        res.json({ msg: 'Password reset successful!' })
+    const encryptedPasswordString = encryptString(password)
+
+    await new Promise((resolve, reject) => {
+      db.query(
+        'UPDATE dmac_webapp_users SET password = ?, encrypted_password = ? WHERE id = ?',
+        [hashedPassword, encryptedPasswordString, userId],
+        err => {
+          if (err) return reject(err)
+          resolve()
+        }
+      )
+    })
+
+    // Also update password in LICCA (users & share_users_list) if mapping exists
+    let paymentConnection
+    try {
+      paymentConnection = await paymentPoolConnection.promise().getConnection()
+
+      const [[mapping]] = await paymentConnection.query(
+        `SELECT licca_user_id FROM dmac_webapp_licca_user_mapping
+         WHERE webapp_user_id = ?
+         LIMIT 1`,
+        [userId]
+      )
+
+      if (mapping && mapping.licca_user_id) {
+        const liccaUserId = mapping.licca_user_id
+        const md5Password = crypto
+          .createHash('md5')
+          .update(password)
+          .digest('hex')
+
+        await paymentConnection.query(
+          'UPDATE users SET password = ? WHERE id = ?',
+          [md5Password, liccaUserId]
+        )
+
+        await paymentConnection.query(
+          'UPDATE share_users_list SET password = ? WHERE patient_id = ?',
+          [md5Password, liccaUserId]
+        )
       }
-    )
-  })
+    } catch (liccaErr) {
+      console.error('LICCA PASSWORD SYNC ERROR:', liccaErr)
+      // Do not fail password reset if LICCA sync fails; log for investigation.
+    } finally {
+      if (paymentConnection) paymentConnection.release()
+    }
+
+    return res.json({ msg: 'Password reset successful!' })
+  } catch (err) {
+    if (err?.name === 'JsonWebTokenError' || err?.name === 'TokenExpiredError') {
+      return res.status(400).json({ msg: 'Invalid or expired token' })
+    }
+
+    console.error('RESET PASSWORD ERROR:', err)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
 }
 
 export const logout = (req, res) => {
