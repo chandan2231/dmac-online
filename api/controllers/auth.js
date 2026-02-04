@@ -314,7 +314,13 @@ export const capturePatientPayment = async (req, res) => {
         `
       };
     }
-    await sendEmail(userEmail, emailContent.subject, emailContent.html, emailContent.html);
+    await sendEmail(
+      userEmail,
+      emailContent.subject,
+      emailContent.html,
+      emailContent.html,
+      emailContent.attachments
+    );
 
     return res.json({
       message: 'Payment captured successfully',
