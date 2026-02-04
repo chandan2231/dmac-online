@@ -2,13 +2,14 @@
 import sgMail from '@sendgrid/mail'
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
-const sendEmail = async (to, subject, text, html) => {
+const sendEmail = async (to, subject, text, html, attachments) => {
   const msg = {
     to: to,
     from: 'help@retainmemory.com', // Your email (registered with SendGrid)
     subject: subject,
     text: text,
-    html: html
+    html: html,
+    ...(attachments ? { attachments } : {})
   }
 
   try {

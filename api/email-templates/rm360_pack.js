@@ -1,4 +1,54 @@
 // RM360_PACK Email Content Generator
+
+const memoryEvaluationFormText = `
+RM360 Memory Evaluation Blood Test Order
+
+Ordering Physician name: ________________________________________________
+
+Physician Address: ______________________________________________________
+
+Physician Phone: ____________________________  Fax: ______________________
+
+Date of Order: ______________________
+
+Pt Name: __________________________________________
+
+DOB: ______________________________________________
+
+Lab Test order on serum level
+
+Homocysteine  
+Vitamin B12  
+Folate level  
+Ferritin level  
+Vitamin D Level /Vitamin D, 25-Hydroxy/  
+ANA Titer & Type  
+Magnesium Level  
+TSH  
+Comprehensive Metabolic Panel  
+Hemoglobin A1C  
+LDL  
+C Reactive Protein  
+
+Diagnosis: Memory loss R41.3,  Dementia F01.50, Thyroid deficiency E03.9, Anemia:D64.9, Prediabetic  RO37.3, Memory dysfunction as late effect of traumatic brain injury R41.3
+
+Payer/Insurance___________________ Insured Name_______________
+
+Plan# ______________________   Group#_______________________________
+
+__________________
+Physician Signature
+
+Physician Name _____________________________ Date:____________
+`;
+
+const memoryEvaluationFormAttachment = {
+  filename: 'RM360_Memory_Evaluation_Blood_Test_Order.txt',
+  type: 'text/plain',
+  disposition: 'attachment',
+  content: Buffer.from(memoryEvaluationFormText, 'utf-8').toString('base64'),
+};
+
 export function getRM360PackEmailContent({ userName, link }) {
   return {
     subject: 'Thank you for ordering RM360 Pack',
@@ -51,6 +101,7 @@ export function getRM360PackEmailContent({ userName, link }) {
       <b>RM360 Administration</b>
       <h4>Important Disclaimer</h4>
       <p>DMAC™, RM360™, and LICCA™ are not medical diagnoses and do not replace professional medical evaluation or treatment. This program is designed to support understanding of cognitive function and guide discussions with qualified healthcare providers. Individual results may vary.</p>
-    `
+    `,
+    attachments: [memoryEvaluationFormAttachment],
   };
 }
