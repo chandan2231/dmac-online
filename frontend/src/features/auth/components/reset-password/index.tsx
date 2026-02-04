@@ -58,6 +58,7 @@ const ResetPassword = () => {
             display: 'flex',
             flexDirection: { xs: 'column', md: 'row' },
             height: '100%',
+            p: '25px',
           }}
         >
           {/* Left panel - Info section */}
@@ -66,6 +67,7 @@ const ResetPassword = () => {
               flex: 1,
               background:
                 'linear-gradient(135deg, #0f7be7 0%, #2563eb 40%, #1d4ed8 100%)',
+              borderRadius: 3,
               color: '#fff',
               display: 'flex',
               flexDirection: 'column',
