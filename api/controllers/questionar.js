@@ -109,16 +109,21 @@ export const getQuestionWithFollowUps = (req, res) => {
       o.code AS option_code,
       ot.text AS option_text,
       a.id AS alert_id,
-      at.text AS alert_text
+      COALESCE(at.text, at_en.text) AS alert_text
     FROM dmac_webapp_questions q
     JOIN dmac_webapp_questions_translations qt
       ON q.id = qt.question_id AND qt.language_code = ?
+    JOIN dmac_webapp_question_options_map om
+      ON q.id = om.question_id
     JOIN dmac_webapp_question_options o
+      ON om.option_id = o.id
     JOIN dmac_webapp_question_option_translations ot
       ON o.id = ot.option_id AND ot.language_code = ?
     LEFT JOIN dmac_webapp_question_alerts a ON q.alert_id = a.id
     LEFT JOIN dmac_webapp_question_alert_translations at
       ON a.id = at.alert_id AND at.language_code = ?
+    LEFT JOIN dmac_webapp_question_alert_translations at_en
+      ON a.id = at_en.alert_id AND at_en.language_code = 'en'
     WHERE q.sequence_no = ?
     ORDER BY q.parent_question_id IS NULL DESC, q.id ASC
   `
@@ -194,6 +199,33 @@ export const getQuestionWithFollowUps = (req, res) => {
   })
 }
 
+export const saveQuestionnaireAnswer = (req, res) => {
+  const { userId, questionId, mainAnswer, followUpAnswer } = req.body
+
+  if (!userId || !questionId) {
+    return res.status(400).json({ message: 'Missing required fields' })
+  }
+
+  const query = `
+    INSERT INTO dmac_webapp_questionnaire_answers 
+    (user_id, question_id, main_answer, follow_up_answer) 
+    VALUES (?, ?, ?, ?)
+  `
+
+  db.query(
+    query,
+    [userId, questionId, mainAnswer, followUpAnswer || null],
+    (err, result) => {
+      if (err) {
+        console.error('Error saving answer:', err)
+        return res.status(500).json({ message: 'Error saving answer' })
+      }
+      res.status(200).json({ message: 'Answer saved successfully' })
+    }
+  )
+}
+
+
 export const getPageContent = (req, res) => {
   const { pageKey } = req.params
   const { lang } = req.query
@@ -202,7 +234,7 @@ export const getPageContent = (req, res) => {
   }
 
   const query = `
-    SELECT t.title, t.content, t.doctor_info, t.link_text, t.button_text
+    SELECT t.title, t.content, t.doctor_info, t.link_text, t.button_text, t.secondary_button_text
     FROM dmac_webapp_page p
     JOIN dmac_webapp_page_translations t ON p.id = t.page_id
     WHERE p.page_key = ? AND t.language_code = ?
@@ -244,3 +276,42 @@ export const getUiTexts = (req, res) => {
     return res.status(200).json(response)
   })
 }
+
+export const getUserQuestionnaireAnswers = (req, res) => {
+  const userId = req.user?.userId || req.query.userId; // Prefer authenticated user, allow query param for admin scenarios if needed later
+  const lang = req.query.lang || 'en'
+
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized: User ID required' });
+  }
+
+  const query = `
+    SELECT 
+      qa.id,
+      qa.question_id,
+      qa.main_answer,
+      qa.follow_up_answer,
+      qa.created_at,
+      qt.text as question_text,
+      q.sequence_no
+    FROM dmac_webapp_questionnaire_answers qa
+    JOIN dmac_webapp_questions q ON qa.question_id = q.id
+    LEFT JOIN dmac_webapp_questions_translations qt ON q.id = qt.question_id AND qt.language_code = ?
+    WHERE qa.user_id = ?
+    ORDER BY q.sequence_no ASC, qa.created_at DESC
+  `
+
+  db.query(query, [lang, userId], (err, rows) => {
+    if (err) {
+      console.error('Error fetching user answers:', err);
+      return res.status(500).json({ error: 'Database error fetching answers' });
+    }
+
+    // Group by question_id to get only the latest answer per question if multiple exist? 
+    // Or just return all history. The requirement "get the answers" usually implies the current state.
+    // The query orders by created_at DESC, so we can filter in JS if unique per question needed.
+    // For now, returning full list.
+
+    res.json(rows);
+  });
+} 

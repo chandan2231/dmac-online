@@ -33,6 +33,12 @@ const StyledButton = styled(Button)(({ theme }) => ({
       backgroundColor: theme.palette.action.hover,
     },
   },
+
+  '&.Mui-disabled': {
+    backgroundColor: theme.palette.action.disabledBackground,
+    color: theme.palette.action.disabled,
+    boxShadow: 'none',
+  },
 }));
 
 const MorenButton = React.forwardRef<HTMLButtonElement, ButtonProps>(

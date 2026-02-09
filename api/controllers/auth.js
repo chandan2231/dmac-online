@@ -1170,43 +1170,85 @@ export const getPatientProductByUserId = async (req, res) => {
   })
 }
 
-function encryptString(original) {
-  const key = Buffer.from(process.env.CRYPTO_SECRET_KEY, 'hex')
+export const validateTokenAndGetUser = (req, res) => {
+  const { token } = req.body
 
-  const cipher = crypto.createCipheriv(
-    process.env.CRYPTO_ALGORITHM,
-    key,
-    Buffer.alloc(16, 0)
-  )
-
-  cipher.setAutoPadding(true)
-
-  let encrypted = cipher.update(original, 'utf8', 'base64')
-  encrypted += cipher.final('base64')
-
-  return encrypted
-}
-
-function decryptString(encoded) {
-  if (!encoded) {
-    throw new Error('MISSING_ENCRYPTED_PASSWORD')
-  }
-  if (!process.env.CRYPTO_SECRET_KEY || !process.env.CRYPTO_ALGORITHM) {
-    throw new Error('CRYPTO_ENV_MISSING')
+  if (!token) {
+    return res.status(400).json({
+      status: 400,
+      isValid: false,
+      message: 'Token is required'
+    })
   }
 
-  const key = Buffer.from(process.env.CRYPTO_SECRET_KEY, 'hex')
+  // Verify the JWT token
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({
+        status: 401,
+        isValid: false,
+        message: 'Invalid or expired token'
+      })
+    }
 
-  const decipher = crypto.createDecipheriv(
-    process.env.CRYPTO_ALGORITHM,
-    key,
-    Buffer.alloc(16, 0)
-  )
+    const userId = decoded.userId
 
-  decipher.setAutoPadding(true)
+    // Fetch user details from database
+    const query = `
+      SELECT 
+        u.*,
+        l.code AS language_code
+      FROM dmac_webapp_users u
+      LEFT JOIN dmac_webapp_language l
+        ON l.id = u.language
+      WHERE u.id = ? 
+        AND u.status = ?;
+    `
 
-  let decrypted = decipher.update(encoded, 'base64', 'utf8')
-  decrypted += decipher.final('utf8')
+    db.query(query, [userId, 1], (err, data) => {
+      if (err) {
+        console.error('Database Error:', err)
+        return res.status(500).json({
+          status: 500,
+          isValid: false,
+          message: 'Internal Server Error'
+        })
+      }
 
-  return decrypted
+      if (data.length === 0) {
+        return res.status(404).json({
+          status: 404,
+          isValid: false,
+          message: 'User not found or inactive'
+        })
+      }
+
+      const user = data[0]
+
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user
+
+      const userData = {
+        name: user.name,
+        email: user.email,
+        id: user.id,
+        token: token,
+        language: user.language,
+        phone: user.mobile,
+        languageCode: user.language_code,
+        role: user.role,
+        patient_payment: user.patient_payment,
+        google_access_token: user.google_access_token,
+        google_refresh_token: user.google_refresh_token,
+        time_zone: user.time_zone
+      }
+
+      return res.status(200).json({
+        status: 200,
+        isValid: true,
+        message: 'Token is valid',
+        user: userData
+      })
+    })
+  })
 }

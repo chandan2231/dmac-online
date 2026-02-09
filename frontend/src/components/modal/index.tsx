@@ -1,4 +1,4 @@
-import React, { type ReactNode } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -7,10 +7,12 @@ import {
   IconButton,
   Typography,
   type DialogProps,
+  Box,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import MorenButton from '../button';
+import TextToSpeech from '../TextToSpeech';
 import CustomLoader from '../loader';
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
@@ -25,17 +27,20 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
   },
 }));
 
-type GenericModalProps = {
+interface GenericModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
-  subTitle?: string;
-  children?: ReactNode;
   onSubmit?: () => void;
-  hideSubmitButton?: boolean;
-  hideCancelButton?: boolean;
+  title?: string;
   submitButtonText?: string;
   cancelButtonText?: string;
+  hideCancelButton?: boolean;
+  children: React.ReactNode;
+  enableAudio?: boolean;
+  instructionText?: string;
+  languageCode?: string;
+  subTitle?: string;
+  hideSubmitButton?: boolean;
   maxWidth?: DialogProps['maxWidth'];
   fullWidth?: boolean;
   size?: 'default' | 'compact';
@@ -43,6 +48,8 @@ type GenericModalProps = {
   isLoading?: boolean;
   renderHtmlContent?: string;
   submitDisabled?: boolean;
+  audioButtonLabel?: string;
+  audioButtonAlignment?: 'left' | 'right' | 'center';
 };
 
 const GenericModal: React.FC<GenericModalProps> = ({
@@ -63,6 +70,11 @@ const GenericModal: React.FC<GenericModalProps> = ({
   isLoading = false,
   renderHtmlContent = null,
   submitDisabled = false,
+  enableAudio = false,
+  instructionText = '',
+  languageCode = 'en',
+  audioButtonLabel,
+  audioButtonAlignment = 'right',
 }) => {
   if (isLoading) {
     return <CustomLoader />;
@@ -145,7 +157,22 @@ const GenericModal: React.FC<GenericModalProps> = ({
       ) : null}
 
       {(onSubmit || !hideCancelButton) && (
-        <DialogActions>
+        <DialogActions sx={{ justifyContent: 'flex-end', gap: 1 }}>
+          {enableAudio && instructionText && (
+            <Box sx={{
+              marginRight: audioButtonAlignment === 'left' ? 'auto' : (audioButtonAlignment === 'center' ? 'auto' : 0),
+              marginLeft: audioButtonAlignment === 'center' ? 'auto' : 0,
+              width: 'auto' // Ensure Box doesn't expand unexpectedly
+            }}>
+              <TextToSpeech
+                text={instructionText}
+                languageCode={languageCode}
+                iconSize="large"
+                color="primary"
+                label={audioButtonLabel}
+              />
+            </Box>
+          )}
           {!hideCancelButton && (
             <MorenButton
               onClick={() => {
@@ -171,6 +198,10 @@ const GenericModal: React.FC<GenericModalProps> = ({
               variant="contained"
               disabled={submitDisabled}
               sx={{
+                minWidth: '160px',
+                // width: 'auto',
+                // fontSize: '1.2rem',
+                py: 1.5,
                 maxWidth: '150px',
                 width: isCompact ? 'auto' : undefined,
                 px: isCompact ? 2 : undefined,

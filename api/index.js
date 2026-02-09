@@ -13,6 +13,8 @@ import theraistRoutes from './routes/therapist.js'
 import patientRoutes from './routes/patient.js'
 import payment from './routes/payment.js'
 import reviewRoutes from './routes/reviews.js'
+import gameRoutes from './routes/game.js'
+import moduleRoutes from './routes/modules.js'
 import consentRoutes from './routes/consent.js'
 import countryAdminRoutes from './routes/countryAdmin.js'
 import partnerRoutes from './routes/partner.js'
@@ -59,6 +61,9 @@ app.use('/api/expert', expertRoutes)
 app.use('/api/therapist', theraistRoutes)
 app.use('/api/patient', patientRoutes)
 app.use('/api/reviews', reviewRoutes)
+app.use('/api/game', gameRoutes)
+app.use('/api/modules', moduleRoutes)
+
 app.use('/api/payment', payment)
 app.use('/api/consent', consentRoutes)
 app.use('/api/partner', partnerRoutes)
@@ -67,7 +72,7 @@ app.use('/api/partner-portal', partnerPortalRoutes)
 // PORT setup based on environment
 let PORT = 8010 // default dev port
 if (process.env.NODE_ENV === 'localhost') PORT = 8800
-if (process.env.NODE_ENV === 'production') PORT = 8000
+if (process.env.NODE_ENV === 'production') PORT = 4000
 
 // Listen on 0.0.0.0 so it is accessible from outside
 app.listen(PORT, '0.0.0.0', () => {

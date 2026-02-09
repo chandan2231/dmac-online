@@ -134,16 +134,25 @@ const DocumentReviewPdfTemplate = (clinicalSiteDetailObj, protocolIdObj) => {
   return template
 }
 
+const DmacGameReportPdfTemplate = (data) => {
+  const template = {
+    content: `${htmlTemplates.dmacGameReportHTMLTemplate(data)}`
+  }
+  return template
+}
+
 const protocolAmendmentRequestPdfTemplate = {
   ClinicalSitePdfTemplate,
   MultiSiteSponsorPdfTemplate,
   PrincipalInvestigatorPdfTemplate,
-  DocumentReviewPdfTemplate
+  DocumentReviewPdfTemplate,
+  DmacGameReportPdfTemplate
 }
 
 const PdfTemplates = {
   ContinuingReviewPdfTemplate,
-  protocolAmendmentRequestPdfTemplate
+  protocolAmendmentRequestPdfTemplate,
+  DmacGameReportPdfTemplate
 }
 
 export default PdfTemplates

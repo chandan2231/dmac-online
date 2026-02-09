@@ -1,0 +1,199 @@
+import React from 'react';
+import { TextField, InputAdornment, IconButton, type TextFieldProps } from '@mui/material';
+import MicIcon from '@mui/icons-material/Mic';
+import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+import { keyframes } from '@mui/system';
+
+// Pulsing animation for when listening - creates pink glow ring like image 2
+const pulseRed = keyframes`
+  0% {
+    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 15px rgba(255, 138, 128, 0.2);
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: 0 0 0 20px rgba(255, 138, 128, 0);
+    transform: scale(1);
+  }
+`;
+
+interface SpeechInputProps extends Omit<TextFieldProps, 'onChange'> {
+    value: string;
+    onChange: (value: string) => void;
+    onSpeechResult?: (transcript: string) => void;
+    onTranscriptChange?: (transcript: string) => void;
+    languageCode?: string;
+    enableModeSelection?: boolean;
+}
+
+const SpeechInput: React.FC<SpeechInputProps> = ({
+    value,
+    onChange,
+    onSpeechResult,
+    onTranscriptChange,
+    languageCode = 'en-US',
+    placeholder = 'Type or click mic to speak',
+    enableModeSelection = false,
+    ...textFieldProps
+}) => {
+    const { isListening, transcript, startListening, stopListening } = useSpeechRecognition({
+        languageCode,
+        onResult: (result) => {
+            if (onSpeechResult) {
+                onSpeechResult(result);
+            } else {
+                onChange(result);
+            }
+        }
+    });
+
+    // State for split mode removed. we want buttons always visible with TextField.
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
+    // Auto-stop timer logic (same as before)
+    const silenceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    React.useEffect(() => {
+        if (onTranscriptChange) {
+            onTranscriptChange(transcript);
+        }
+        if (isListening && transcript) {
+            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = setTimeout(() => {
+                stopListening();
+            }, 3000);
+        }
+        return () => {
+            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        };
+    }, [transcript, isListening, stopListening, onTranscriptChange]);
+
+    React.useEffect(() => {
+        return () => {
+            stopListening();
+        };
+    }, [stopListening]);
+
+    const handleMicClick = () => {
+        if (isListening) stopListening();
+        else startListening();
+    };
+
+    const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        onChange(e.target.value);
+    };
+
+    const handleTypeClick = () => {
+        if (inputRef.current) {
+            inputRef.current.focus();
+        }
+    };
+
+    const displayValue = isListening && transcript
+        ? (value ? `${value} ${transcript}` : transcript)
+        : value;
+
+    // --- RENDER LOGIC ---
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+
+            <TextField
+                {...textFieldProps}
+                inputRef={inputRef}
+                value={displayValue}
+                onChange={handleTextChange}
+                placeholder={placeholder}
+                multiline
+                minRows={1}
+                maxRows={4}
+                slotProps={{
+                    input: {
+                        style: { fontSize: '1.3rem' },
+                        ...textFieldProps.slotProps?.input,
+                        // If mode selection is enabled, we hide the internal persistent mic icon
+                        // because we have the big "Speak" button below.
+                        endAdornment: !enableModeSelection ? (
+                            <InputAdornment position="end">
+                                <IconButton
+                                    onClick={handleMicClick}
+                                    edge="end"
+                                    sx={{
+                                        background: isListening
+                                            ? '#f44336'
+                                            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        color: 'white',
+                                        width: 40,
+                                        height: 40,
+                                        marginRight: '-8px',
+                                        transition: 'all 0.3s ease',
+                                        animation: isListening ? `${pulseRed} 1.5s ease-in-out infinite` : 'none',
+                                        '&:hover': {
+                                            background: isListening
+                                                ? '#e53935'
+                                                : 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                                            transform: 'scale(1.05)',
+                                            boxShadow: isListening
+                                                ? '0 0 20px rgba(244, 67, 54, 0.6)'
+                                                : '0 4px 15px rgba(102, 126, 234, 0.4)',
+                                        },
+                                    }}
+                                >
+                                    <MicIcon sx={{ fontSize: 22 }} />
+                                </IconButton>
+                            </InputAdornment>
+                        ) : null
+                    }
+                }}
+            />
+
+            {/* Buttons Row */}
+            {enableModeSelection && (
+                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+                    <IconButton
+                        onClick={handleMicClick}
+                        sx={{
+                            borderRadius: '8px',
+                            padding: '16px 28px',
+                            background: isListening ? '#f44336' : '#274765', // Red when listening, default Blue
+                            color: 'white',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 1,
+                            width: '140px',
+                            '&:hover': { background: isListening ? '#d32f2f' : '#1c3550' }
+                        }}
+                    >
+                        <MicIcon sx={{ fontSize: 32 }} />
+                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{isListening ? 'STOP' : 'SPEAK'}</span>
+                    </IconButton>
+
+                    <IconButton
+                        onClick={handleTypeClick}
+                        sx={{
+                            borderRadius: '8px',
+                            padding: '16px 28px',
+                            border: '2px solid #274765',
+                            color: '#274765',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 1,
+                            width: '140px',
+                            '&:hover': { background: '#f5f5f5' }
+                        }}
+                    >
+                        <span style={{ fontSize: '1.8rem', lineHeight: '1' }}>⌨</span>
+                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>TYPE</span>
+                    </IconButton>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+export default SpeechInput;
+

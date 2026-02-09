@@ -64,11 +64,44 @@ const getReadDisclaimer = async (
   }
 };
 
+const getPreTestPageDetails = async (
+  languageCode: string
+): Promise<IFalsePositiveInfo | null> => {
+  try {
+    const response = await HttpService.get(
+      `/questionar/page/dmac_pre_test?lang=${languageCode}`
+    );
+    return get(response, ['data'], null) as IFalsePositiveInfo;
+  } catch (error) {
+    console.error('Error fetching pre-test page details:', error);
+    return null;
+  }
+};
+
+
+
+const saveAnswer = async (data: {
+  userId: number;
+  questionId: number;
+  mainAnswer: string;
+  followUpAnswer?: string | null;
+}): Promise<any> => {
+  try {
+    const response = await HttpService.post('/questionar/answer', data);
+    return get(response, ['data'], null);
+  } catch (error) {
+    console.error('Error saving answer:', error);
+    return null;
+  }
+};
+
 const QuestionersService = {
   getQuestions,
   getDisclaimerPageDetails,
   getFalsePositivePageDetails,
   getReadDisclaimer,
+  getPreTestPageDetails,
+  saveAnswer,
 };
 
 export default QuestionersService;
