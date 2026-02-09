@@ -9,8 +9,8 @@ router.get('/:sequenceNo', getQuestionWithFollowUps);
 router.get('/page/:pageKey', getPageContent);
 router.get('/ui/texts/', getUiTexts);
 router.post('/answer', authenticateUserWithBearer, saveQuestionnaireAnswer);
-router.get('/:sequenceNo', authenticateUser, getQuestionWithFollowUps);
-router.get('/page/:pageKey', authenticateUser, getPageContent);
-router.get('/ui/texts/', authenticateUser, getUiTexts);
+router.get('/:sequenceNo', authenticateUserWithBearer, getQuestionWithFollowUps);
+router.get('/page/:pageKey', authenticateUserWithBearer, getPageContent);
+router.get('/ui/texts/', authenticateUserWithBearer, getUiTexts);
 
 export default router
