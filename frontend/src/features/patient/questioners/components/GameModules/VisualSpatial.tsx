@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
-import MorenButton from '../../../../../components/button';
 import GenericModal from '../../../../../components/modal';
 import type { SessionData } from '../../../../../services/gameApi';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
@@ -11,10 +10,6 @@ import cube_first from '../../../../../assets/visualSpatial/cube_first.webp';
 import cube_second from '../../../../../assets/visualSpatial/cube_second.webp';
 import cube_third from '../../../../../assets/visualSpatial/cube_third.webp';
 import cube_fourth from '../../../../../assets/visualSpatial/cube_fourth.webp';
-import cube_option_one from '../../../../../assets/visualSpatial/cube_option_one.webp';
-import cube_option_two from '../../../../../assets/visualSpatial/cube_option_two.webp';
-import cube_option_three from '../../../../../assets/visualSpatial/cube_option_three.webp';
-import cube_option_four from '../../../../../assets/visualSpatial/cube_option_four.webp';
 
 import star_first from '../../../../../assets/visualSpatial/star_first.webp';
 import star_second from '../../../../../assets/visualSpatial/star_second.webp';
@@ -34,14 +29,6 @@ import dis11 from '../../../../../assets/visualSpatial/dis11.webp';
 import dis12 from '../../../../../assets/visualSpatial/dis12.webp';
 import dis13 from '../../../../../assets/visualSpatial/dis13.webp';
 import dis14 from '../../../../../assets/visualSpatial/dis14.webp';
-import dis21 from '../../../../../assets/visualSpatial/dis21.webp';
-import dis22 from '../../../../../assets/visualSpatial/dis22.webp';
-import dis23 from '../../../../../assets/visualSpatial/dis23.webp';
-import dis24 from '../../../../../assets/visualSpatial/dis24.webp';
-import dis31 from '../../../../../assets/visualSpatial/dis31.webp';
-import dis32 from '../../../../../assets/visualSpatial/dis32.webp';
-import dis33 from '../../../../../assets/visualSpatial/dis33.webp';
-import dis34 from '../../../../../assets/visualSpatial/dis34.webp';
 
 interface VisualSpatialProps {
     session: SessionData;
@@ -94,19 +81,25 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
 
     // Map API rounds to use static images if configured
     const processedRounds = (session.questions || []).map((round, index) => {
+        const roundOptions = round.options ?? [];
+
         if (USE_STATIC_IMAGES && index < STATIC_IMAGE_SETS.length) {
             const staticSet = STATIC_IMAGE_SETS[index];
             return {
                 ...round,
                 target_image_url: staticSet.target,
-                options: round.options.map((opt, optIndex) => ({
+                options: roundOptions.map((opt, optIndex) => ({
                     ...opt,
-                    image_url: staticSet.options[optIndex] || staticSet.options[0]
+                    image_url: staticSet.options[optIndex] ?? staticSet.options[0]
                 }))
             };
         }
+
         // Use API URLs when S3 ready
-        return round;
+        return {
+            ...round,
+            options: roundOptions
+        };
     });
 
     const startRound = () => {
@@ -156,7 +149,6 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
     };
 
     const currentRound = processedRounds[currentRoundIndex];
-    const totalRounds = processedRounds.length;
 
     return (
         <Box sx={{

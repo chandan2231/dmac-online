@@ -45,7 +45,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     const [modules, setModules] = useState<Module[]>([]);
 
     // Load initial index from localStorage
-    const [currentModuleIndex, setCurrentModuleIndex] = useState(() => {
+    const [, setCurrentModuleIndex] = useState(() => {
         // We store ID, but state uses index. We'll need to resolve this once modules are loaded.
         // For now, start at 0, and effect will adjust if needed.
         return 0;

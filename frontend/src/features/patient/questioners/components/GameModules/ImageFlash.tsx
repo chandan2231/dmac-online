@@ -46,14 +46,6 @@ interface ImageFlashProps {
     isRecallOnly?: boolean;
 }
 
-// Type for SpeechRecognition
-declare global {
-    interface Window {
-        SpeechRecognition: any;
-        webkitSpeechRecognition: any;
-    }
-}
-
 const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }: ImageFlashProps) => {
     const { languageConstants } = useLanguageConstantContext();
 

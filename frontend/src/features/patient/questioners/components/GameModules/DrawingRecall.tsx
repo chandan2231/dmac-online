@@ -75,6 +75,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     };
 
     const handleSeek = (event: any, newValue: number | number[]) => {
+        void event;
         if (videoRef.current) {
             const seekTime = ((newValue as number) / 100) * duration;
             videoRef.current.currentTime = seekTime;

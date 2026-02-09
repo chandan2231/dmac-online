@@ -41,5 +41,6 @@ export const Default: Story = {
     subTitle: 'Modal Subtitle',
     isOpen: false,
     onClose: () => {},
+    children: null,
   },
 };
