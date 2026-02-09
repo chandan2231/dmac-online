@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, Slider, IconButton } from '@mui/material';
+import { PlayArrow, Pause } from '@mui/icons-material';
 import { type SessionData } from '../../../../../services/gameApi';
 import GenericModal from '../../../../../components/modal';
+import ConfirmationModal from '../../../../../components/modal/ConfirmationModal';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 import referenceDrawing from '../../../../../assets/image_draw.png';
+import instructionVideo from '../../../../../assets/drawingModuleVideo/Video_20260207_172612_306.mp4';
 
 
 interface DrawingRecallProps {
@@ -39,6 +42,49 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     const [currentStart, setCurrentStart] = useState<Point | null>(null);
     const [shapes, setShapes] = useState<DrawnShape[]>([]);
 
+    // Video State
+    const [isPlaying, setIsPlaying] = useState(true);
+    const [progress, setProgress] = useState(0);
+    const [duration, setDuration] = useState(0);
+
+    const togglePlay = () => {
+        if (videoRef.current) {
+            if (isPlaying) {
+                videoRef.current.pause();
+            } else {
+                videoRef.current.play();
+            }
+            setIsPlaying(!isPlaying);
+        }
+    };
+
+    const handleTimeUpdate = () => {
+        if (videoRef.current) {
+            const curr = videoRef.current.currentTime;
+            const dur = videoRef.current.duration;
+            if (dur > 0) {
+                setProgress((curr / dur) * 100);
+            }
+        }
+    };
+
+    const handleLoadedMetadata = () => {
+        if (videoRef.current) {
+            setDuration(videoRef.current.duration);
+        }
+    };
+
+    const handleSeek = (event: any, newValue: number | number[]) => {
+        if (videoRef.current) {
+            const seekTime = ((newValue as number) / 100) * duration;
+            videoRef.current.currentTime = seekTime;
+            setProgress(newValue as number);
+        }
+    };
+
+    // Confirmation Modal State
+    const [showConfirmation, setShowConfirmation] = useState(false);
+
     const startText = getLanguageText(languageConstants, 'game_start') || 'Start';
     const nextText = getLanguageText(languageConstants, 'game_next') || 'NEXT';
     const instructionsText = getLanguageText(languageConstants, 'game_instructions') || 'Instructions';
@@ -66,6 +112,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
         if (videoRef.current) {
             videoRef.current.currentTime = 0;
             videoRef.current.play();
+            setIsPlaying(true);
         }
     };
 
@@ -252,18 +299,102 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
         }
     };
 
+    const calculateScore = (shapesToScore: DrawnShape[]) => {
+        let score = 0;
+        const TOLERANCE = 20;
+
+        const lines = shapesToScore.filter(s => s.type === 'line');
+        const rects = shapesToScore.filter(s => s.type === 'rectangle');
+
+        // 1. One Horizontal Line (0.5)
+        const activeHorizontal = lines.filter(l =>
+            Math.abs(l.start.y - l.end.y) < TOLERANCE &&
+            Math.abs(l.start.x - l.end.x) > TOLERANCE
+        );
+        if (activeHorizontal.length >= 1) score += 0.5;
+
+        // 2. Two Vertical Lines (0.5 + 0.5)
+        const activeVertical = lines.filter(l =>
+            Math.abs(l.start.x - l.end.x) < TOLERANCE &&
+            Math.abs(l.start.y - l.end.y) > TOLERANCE
+        );
+        if (activeVertical.length >= 2) score += 1.0;
+        else if (activeVertical.length === 1) score += 0.5;
+
+        // 3. Two Angle (Diagonal) Lines (0.5 + 0.5)
+        const activeAngle = lines.filter(l =>
+            Math.abs(l.start.x - l.end.x) >= TOLERANCE &&
+            Math.abs(l.start.y - l.end.y) >= TOLERANCE
+        );
+        if (activeAngle.length >= 2) score += 1.0;
+        else if (activeAngle.length === 1) score += 0.5;
+
+        // 4. Two Squares (0.5 + 0.5)
+        if (rects.length >= 2) score += 1.0;
+        else if (rects.length === 1) score += 0.5;
+
+        // 5. Vertical line touching the rectangle (0.5 + 0.5 = 1.0)
+        let isTouching = false;
+        // Check intersections or proximity between any vertical line and any rectangle
+        for (const v of activeVertical) {
+            for (const r of rects) {
+                // Rect bounds
+                const minX = Math.min(r.start.x, r.end.x);
+                const maxX = Math.max(r.start.x, r.end.x);
+                const minY = Math.min(r.start.y, r.end.y);
+                const maxY = Math.max(r.start.y, r.end.y);
+                const t = TOLERANCE;
+
+                // Check endpoints near borders
+                const points = [v.start, v.end];
+                for (const p of points) {
+                    const nearVert = (Math.abs(p.x - minX) < t || Math.abs(p.x - maxX) < t) && (p.y >= minY - t && p.y <= maxY + t);
+                    const nearHorz = (Math.abs(p.y - minY) < t || Math.abs(p.y - maxY) < t) && (p.x >= minX - t && p.x <= maxX + t);
+                    if (nearVert || nearHorz) {
+                        isTouching = true;
+                        break;
+                    }
+                }
+                if (isTouching) break;
+            }
+            if (isTouching) break;
+        }
+        if (isTouching) score += 1.0;
+
+        return score;
+    };
+
     const handleSubmit = () => {
+        // If no shapes drawn, show confirmation
+        if (shapes.length === 0) {
+            setShowConfirmation(true);
+            return;
+        }
+        processSubmit();
+    };
+
+    const handleConfirmSubmit = () => {
+        setShowConfirmation(false);
+        processSubmit();
+    };
+
+    const processSubmit = () => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
         // Convert canvas to base64 image
         const canvasData = canvas.toDataURL('image/png');
 
+        // Calculate Score
+        const calculatedScore = calculateScore(shapes);
+        console.log('Calculated Drawing Recall Score:', calculatedScore);
+
         const payload = {
             question_id: session.questions?.[0]?.question_id,
             answer_text: JSON.stringify(shapes),
             canvas_data: canvasData,
-            language_code: languageCode
+            language_code: languageCode,
+            score: calculatedScore
         };
 
         onComplete(payload);
@@ -312,7 +443,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
+        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 4 }}>
             {/* Instruction Modal - Shows initially and before memorize phase */}
             <GenericModal
                 isOpen={phase === 'instruction' || phase === 'memorize_instruction'}
@@ -323,6 +454,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                 onSubmit={phase === 'instruction' ? handleInstructionSubmit : handleMemorizeInstructionSubmit}
                 enableAudio={true}
                 audioButtonLabel={audioInstructionText}
+                audioButtonAlignment="center"
                 instructionText={
                     phase === 'instruction'
                         ? (session.module?.description || session.instructions || '')
@@ -345,31 +477,115 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                         Instructions
                     </Typography>
 
-                    <Box sx={{ width: '100%', bgcolor: '#000', borderRadius: 2, overflow: 'hidden' }}>
+                    <Box sx={{
+                        width: '320px',
+                        height: '600px',
+                        bgcolor: '#000',
+                        borderRadius: '30px',
+                        overflow: 'hidden',
+                        border: '12px solid #222',
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
                         <video
                             ref={videoRef}
-                            controls
+                            onClick={togglePlay}
+                            onTimeUpdate={handleTimeUpdate}
+                            onLoadedMetadata={handleLoadedMetadata}
+                            onPlay={() => setIsPlaying(true)}
+                            onPause={() => setIsPlaying(false)}
                             autoPlay
-                            style={{ width: '100%', height: 'auto', maxHeight: '400px' }}
+                            style={{
+                                width: '600px', // Matches container height
+                                height: '320px', // Matches container width
+                                transform: 'rotate(90deg)',
+                                objectFit: 'contain'
+                            }}
                             // Placeholder source - user to add logic for video file
-                            src=""
+                            src={instructionVideo}
                         >
                             Your browser does not support the video tag.
                         </video>
+
+                        {/* Custom Controls Overlay */}
+                        <Box sx={{
+                            position: 'absolute',
+                            bottom: 20,
+                            left: 0,
+                            width: '100%',
+                            px: 3,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            zIndex: 10,
+                            // Gradient background for visibility
+                            background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+                            pb: 1,
+                            pt: 4
+                        }}>
+                            <IconButton onClick={togglePlay} sx={{ color: 'white' }}>
+                                {isPlaying ? <Pause /> : <PlayArrow />}
+                            </IconButton>
+
+                            <Slider
+                                value={progress}
+                                onChange={handleSeek}
+                                sx={{
+                                    color: 'white',
+                                    '& .MuiSlider-thumb': {
+                                        width: 12,
+                                        height: 12,
+                                        '&:hover, &.Mui-focusVisible': {
+                                            boxShadow: '0px 0px 0px 8px rgba(255, 255, 255, 0.16)',
+                                        },
+                                    },
+                                    '& .MuiSlider-rail': {
+                                        opacity: 0.5,
+                                    },
+                                }}
+                            />
+                        </Box>
                     </Box>
 
                     <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
                         <Button
                             variant="outlined"
                             onClick={handleVideoRepeat}
-                            sx={{ px: 4, textTransform: 'uppercase' }}
+                            sx={{
+                                borderColor: '#274765',
+                                color: '#274765',
+                                minWidth: '180px',
+                                fontWeight: 'bold',
+                                borderWidth: 2,
+                                borderRadius: '12px',
+                                px: 4,
+                                py: 2,
+                                textTransform: 'uppercase',
+                                '&:hover': {
+                                    borderWidth: 2,
+                                    borderColor: '#1e3650',
+                                    backgroundColor: 'rgba(39, 71, 101, 0.04)'
+                                }
+                            }}
                         >
                             {repeatText}
                         </Button>
                         <Button
                             variant="contained"
                             onClick={handleVideoNext}
-                            sx={{ px: 4, textTransform: 'uppercase' }}
+                            sx={{
+                                backgroundColor: '#274765',
+                                color: 'white',
+                                minWidth: '180px',
+                                fontWeight: 'bold',
+                                borderRadius: '12px',
+                                px: 4,
+                                py: 2,
+                                textTransform: 'uppercase'
+                            }}
                         >
                             {nextText}
                         </Button>
@@ -483,8 +699,8 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                             bgcolor: '#274765',
                             color: 'white',
                             px: 6,
-                            py: 1.5,
-                            fontSize: '1.1rem',
+                            py: 2.5,
+                            fontSize: '1.2rem',
                             fontWeight: 'bold',
                             '&:hover': { bgcolor: '#1565c0' },
                             mt: 2
@@ -494,6 +710,12 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                     </Button>
                 </Box>
             )}
+
+            <ConfirmationModal
+                open={showConfirmation}
+                onClose={() => setShowConfirmation(false)}
+                onConfirm={handleConfirmSubmit}
+            />
         </Box>
     );
 };

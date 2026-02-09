@@ -7,6 +7,7 @@ import {
   IconButton,
   Typography,
   type DialogProps,
+  Box,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
@@ -46,6 +47,7 @@ interface GenericModalProps {
   renderHtmlContent?: string;
   submitDisabled?: boolean;
   audioButtonLabel?: string;
+  audioButtonAlignment?: 'left' | 'right' | 'center';
 };
 
 const GenericModal: React.FC<GenericModalProps> = ({
@@ -68,6 +70,7 @@ const GenericModal: React.FC<GenericModalProps> = ({
   instructionText = '',
   languageCode = 'en',
   audioButtonLabel,
+  audioButtonAlignment = 'right',
 }) => {
   if (isLoading) {
     return <CustomLoader />;
@@ -143,13 +146,19 @@ const GenericModal: React.FC<GenericModalProps> = ({
       {(onSubmit || !hideCancelButton) && (
         <DialogActions sx={{ justifyContent: 'flex-end', gap: 1 }}>
           {enableAudio && instructionText && (
-            <TextToSpeech
-              text={instructionText}
-              languageCode={languageCode}
-              iconSize="large"
-              color="primary"
-              label={audioButtonLabel}
-            />
+            <Box sx={{
+              marginRight: audioButtonAlignment === 'left' ? 'auto' : (audioButtonAlignment === 'center' ? 'auto' : 0),
+              marginLeft: audioButtonAlignment === 'center' ? 'auto' : 0,
+              width: 'auto' // Ensure Box doesn't expand unexpectedly
+            }}>
+              <TextToSpeech
+                text={instructionText}
+                languageCode={languageCode}
+                iconSize="large"
+                color="primary"
+                label={audioButtonLabel}
+              />
+            </Box>
           )}
           {!hideCancelButton && (
             <MorenButton
@@ -173,8 +182,10 @@ const GenericModal: React.FC<GenericModalProps> = ({
               variant="contained"
               disabled={submitDisabled}
               sx={{
-                minWidth: '150px',
+                minWidth: '160px',
                 width: 'auto',
+                fontSize: '1.2rem',
+                py: 1.5
               }}
             >
               {submitButtonText}

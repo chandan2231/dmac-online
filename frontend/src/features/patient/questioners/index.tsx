@@ -29,26 +29,26 @@ const Questioners = () => {
   const [falsePositive, setFalsePositive] = useState(() => loadState('falsePositive'));
   const [isPreTestCompleted, setIsPreTestCompleted] = useState(() => loadState('isPreTestCompleted'));
   const { user } = useSelector((state: RootState) => state.auth);
+  const languageCode = get(user, 'languageCode', 'en');
 
   const [showExitWarning, setShowExitWarning] = useState(false);
-  const { data: attemptStatus } = useTestAttempts();
+  const { data: attemptStatus, isLoading: isLoadingAttempts } = useTestAttempts(languageCode);
   const navigate = useNavigate();
 
   const handleAllModulesComplete = () => {
-    // Handle completion, maybe navigate home?
-    // Once complete, we can stop warning (though status update might handle navigation)
+    // Handle completion
   };
+
+  // --- Hooks (Must be before any return) ---
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isPreTestCompleted && falsePositive) { // falsePositive is actually Instructions screen, so if PreTest done = test started
+      if (isPreTestCompleted && falsePositive) {
         e.preventDefault();
-        e.returnValue = ''; // Chrome requires returnValue to be set
+        e.returnValue = '';
       }
     };
-
     window.addEventListener('beforeunload', handleBeforeUnload);
-
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
@@ -56,47 +56,18 @@ const Questioners = () => {
 
   // History Trap for Back Button
   useEffect(() => {
-    // Only trap if test has started
     if (isPreTestCompleted) {
-      // Logic:
-      // 1. Push a state to history so "Back" doesn't actually leave the page.
-      // 2. Listen for 'popstate' (Back button).
-      // 3. Show warning and handle response.
-
-      // Push dummy state to create a history buffer
       window.history.pushState(null, document.title, window.location.href);
-
       const handlePopState = () => {
-        // Prevent default navigation is tricky with popstate, but by pushing state we are already "safe"
-        // as we land on the previous entry which is the same page.
-
-        // Show warning
         setShowExitWarning(true);
-
-        // Push state AGAIN to re-arm the trap immediately, so if they click cancel/stay, they are still trapped.
-        // If they choose to exit, we will manually navigate away.
         window.history.pushState(null, document.title, window.location.href);
       };
-
       window.addEventListener('popstate', handlePopState);
-
       return () => {
         window.removeEventListener('popstate', handlePopState);
       };
     }
   }, [isPreTestCompleted]);
-
-  const handleStay = () => {
-    setShowExitWarning(false);
-  };
-
-  const handleExit = () => {
-    setShowExitWarning(false);
-    // Explicitly navigate to home or allow normal back behavior (but history is messy now, so explicit nav is safer)
-    // Also clearing persistence might be handled by PreTest on new start, or we can clear here if needed.
-    // For now, just navigate home.
-    navigate(ROUTES.HOME);
-  };
 
   // Persist state changes
   useEffect(() => {
@@ -114,6 +85,68 @@ const Questioners = () => {
   useEffect(() => {
     localStorage.setItem('dmac_flow_isPreTestCompleted', JSON.stringify(isPreTestCompleted));
   }, [isPreTestCompleted]);
+
+
+  const handleStay = () => {
+    setShowExitWarning(false);
+  };
+
+  const handleExit = () => {
+    setShowExitWarning(false);
+    navigate(ROUTES.HOME);
+  };
+
+  // --- Conditional Renders ---
+
+  if (isLoadingAttempts) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</Box>;
+  }
+
+  if (attemptStatus?.isCompleted) {
+    return (
+      <Box
+        display="flex"
+        sx={{
+          flexDirection: 'column',
+          width: { xs: '95%', sm: '90%', md: '80%' },
+          maxWidth: '800px',
+          margin: '0 auto',
+          height: '100%',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <Box sx={{
+          bgcolor: '#e8f5e9',
+          color: '#2e7d32',
+          p: 4,
+          borderRadius: 2,
+          textAlign: 'center',
+          fontWeight: 'medium',
+          fontSize: '1.25rem',
+          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
+        }}>
+          {attemptStatus.completionMessage || "The Digital Memory and Cognitive Assessment has been successfully completed. Your cognitive assessment report, including recommendations, will be emailed to you within 48 hours."}
+        </Box>
+        <Box sx={{ mt: 4 }}>
+          <button
+            onClick={() => navigate(ROUTES.HOME)}
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              cursor: 'pointer',
+              backgroundColor: '#1976d2',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px'
+            }}
+          >
+            Home
+          </button>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -158,6 +191,7 @@ const Questioners = () => {
           userId={Number(get(user, 'id', 0))}
           languageCode={(get(user, 'languageCode') as string) || 'en'}
           onAllModulesComplete={handleAllModulesComplete}
+          lastCompletedModuleId={attemptStatus?.lastModuleCompleted?.id}
         />
       ) : null}
 

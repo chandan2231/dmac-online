@@ -24,22 +24,19 @@ interface Connection {
 }
 
 // Fixed positions based on the user's screenshot
-// L is center-ish, 5 is right, M is below 5...
+// 5 is Top Center, M is Right of 5, O (0) is Bottom Center...
 const FIXED_POSITIONS: Record<string, { x: number, y: number }> = {
-    'L': { x: 50, y: 45 },
-    '5': { x: 67, y: 45 },
-    'M': { x: 67, y: 60 },
-    '6': { x: 80, y: 65 },
-    '11': { x: 65, y: 30 },
-    'R': { x: 50, y: 18 },
-    '10': { x: 25, y: 22 },
-    'Q': { x: 35, y: 33 },
-    '9': { x: 15, y: 45 },
-    'P': { x: 35, y: 53 },
-    '8': { x: 18, y: 68 },
-    'O': { x: 40, y: 78 },
-    '7': { x: 52, y: 63 },
-    'N': { x: 70, y: 78 },
+    '5': { x: 50, y: 20 },
+    'M': { x: 65, y: 30 },
+    '6': { x: 80, y: 50 },
+    'N': { x: 60, y: 50 },
+    '7': { x: 70, y: 70 },
+    'O': { x: 50, y: 70 }, // Displayed as 0 in new design
+    '10': { x: 30, y: 70 },
+    '8': { x: 40, y: 50 },
+    'Q': { x: 20, y: 50 },
+    '9': { x: 20, y: 30 },
+    'P': { x: 35, y: 30 }
 };
 
 const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
@@ -65,6 +62,12 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
     useEffect(() => {
         let items = session.questions?.[0]?.items || [];
 
+        // Filter out L, R, 11 as per new requirement
+        items = items.filter((item: any) => {
+            const key = item.image_key || item.display_text;
+            return !['L', 'R', '11'].includes(key);
+        });
+
         // Explicitly sort items by order to ensure strict sequence
         // API returns 'order', handle potential string/number mix
         items = [...items].sort((a: any, b: any) => {
@@ -74,16 +77,18 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
         });
 
         const newDots: Dot[] = items.map((item: any, index: number) => {
-            const label = item.image_key || item.display_text || '?';
+            const label = item.display_text || item.image_key || '?';
             // Default to random if label not found in map (fallback)
-            const pos = FIXED_POSITIONS[label] || {
+            // Use image_key for position lookup to be safe if display_text changes
+            const lookupKey = item.image_key || label;
+            const pos = FIXED_POSITIONS[lookupKey] || FIXED_POSITIONS[label] || {
                 x: Math.random() * 80 + 10,
                 y: Math.random() * 80 + 10
             };
 
             return {
-                id: index, // index reflects the sorted order (0=L, 1=5, 2=M, 3=6...)
-                label,
+                id: index, // index reflects the sorted order
+                label, // Should display '0' if DB updated, else 'O'
                 x: pos.x,
                 y: pos.y
             };
@@ -92,20 +97,12 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
         setDots(newDots);
         setStartTime(Date.now());
 
-        // Pre-fill connection L (0) -> 5 (1) -> M (2)
-        // Check if we have at least 3 dots to start from M
-        if (newDots.length >= 3) {
-            setConnections([
-                { from: 0, to: 1 },
-                { from: 1, to: 2 }
-            ]);
-            setLastConnectedIndex(2);
-        } else if (newDots.length >= 2) {
-            // Fallback just in case
+        // Pre-fill connection 5 (0) -> M (1)
+        // Check if we have at least 2 dots
+        if (newDots.length >= 2) {
             setConnections([{ from: 0, to: 1 }]);
             setLastConnectedIndex(1);
         } else if (newDots.length === 1) {
-            // Should not happen in this game, but safety
             setLastConnectedIndex(0);
         }
 
@@ -188,7 +185,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
 
     const getDotColor = (index: number, isConnected: boolean) => {
         // L (0) and 5 (1) are always RED (as per screenshot/mockup request)
-        if (index === 0 || index === 1) return '#d32f2f'; // Red
+        if (index === 0) return '#d32f2f'; // Red
 
         // If connected (user tapped), GREEN
         if (isConnected) return '#4caf50'; // Green
@@ -198,7 +195,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <GenericModal
                 isOpen={showInstruction}
                 onClose={() => { }}
@@ -208,6 +205,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
                 onSubmit={handleInstructionSubmit}
                 enableAudio={true}
                 audioButtonLabel={audioInstructionText}
+                audioButtonAlignment="center"
                 instructionText={session.instructions || ''}
                 languageCode={session.language_code || 'en'}
             >
@@ -253,8 +251,8 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
                                 left: `${dot.x}%`,
                                 top: `${dot.y}%`,
                                 transform: 'translate(-50%, -50%)',
-                                width: 44,
-                                height: 44,
+                                width: 65,
+                                height: 65,
                                 borderRadius: '50%',
                                 bgcolor: getDotColor(dot.id, isConnected),
                                 color: 'white',
@@ -262,7 +260,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 fontWeight: 'bold',
-                                fontSize: '1rem',
+                                fontSize: '1.5rem',
                                 cursor: 'pointer',
                                 userSelect: 'none',
                                 boxShadow: 3,

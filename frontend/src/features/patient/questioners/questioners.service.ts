@@ -78,12 +78,30 @@ const getPreTestPageDetails = async (
   }
 };
 
+
+
+const saveAnswer = async (data: {
+  userId: number;
+  questionId: number;
+  mainAnswer: string;
+  followUpAnswer?: string | null;
+}): Promise<any> => {
+  try {
+    const response = await HttpService.post('/questionar/answer', data);
+    return get(response, ['data'], null);
+  } catch (error) {
+    console.error('Error saving answer:', error);
+    return null;
+  }
+};
+
 const QuestionersService = {
   getQuestions,
   getDisclaimerPageDetails,
   getFalsePositivePageDetails,
   getReadDisclaimer,
   getPreTestPageDetails,
+  saveAnswer,
 };
 
 export default QuestionersService;

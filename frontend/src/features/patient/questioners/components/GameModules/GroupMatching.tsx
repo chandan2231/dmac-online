@@ -161,7 +161,7 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', p: 2, overflowY: 'auto' }}>
+        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 2, overflowY: 'auto' }}>
             <GenericModal
                 isOpen={gameState === 'instruction'}
                 onClose={() => { }}
@@ -171,6 +171,7 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
                 onSubmit={handleInstructionSubmit}
                 enableAudio={true}
                 audioButtonLabel={t.audioInstruction}
+                audioButtonAlignment="center"
                 instructionText={session.instructions || ''}
                 languageCode={languageCode}
             >

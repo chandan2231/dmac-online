@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import MorenButton from '../../../../../components/button';
 import GenericModal from '../../../../../components/modal';
+import ConfirmationModal from '../../../../../components/modal/ConfirmationModal';
 import type { SessionData } from '../../../../../services/gameApi';
 import SpeechInput from '../../../../../components/SpeechInput';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
@@ -21,9 +22,10 @@ interface AudioStoryRecallProps {
     session: SessionData;
     onComplete: (answers: any[]) => void;
     languageCode: string;
+    isRecallOnly?: boolean;
 }
 
-const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecallProps) => {
+const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = false }: AudioStoryRecallProps) => {
     const { languageConstants } = useLanguageConstantContext();
 
     // Translations
@@ -34,10 +36,10 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
         repeat: getLanguageText(languageConstants, 'game_repeat'),
         playing: getLanguageText(languageConstants, 'game_playing'),
         completed: getLanguageText(languageConstants, 'game_completed_status'),
-        enterAnswers: getLanguageText(languageConstants, 'game_enter_answers'),
+        enterAnswers: getLanguageText(languageConstants, 'game_answer_now') || 'Answer Now',
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder') || 'Type your recall here...',
         validationError: getLanguageText(languageConstants, 'game_validation_error'),
-        answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW',
+        answerNow: getLanguageText(languageConstants, 'game_next') || 'NEXT',
         audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
 
@@ -49,6 +51,9 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
     // Current input
     const [inputText, setInputText] = useState('');
     const [error, setError] = useState('');
+
+    // Confirmation Modal State
+    const [showConfirmation, setShowConfirmation] = useState(false);
 
     const stories = session.questions || [];
     const currentStory = stories[currentStoryIndex];
@@ -110,7 +115,11 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
     };
 
     const handleNextFromInstruction = () => {
-        setPhase('playing_audio');
+        if (isRecallOnly) {
+            setPhase('recall');
+        } else {
+            setPhase('playing_audio');
+        }
     };
 
     const handleNextFromPostInstruction = () => {
@@ -127,13 +136,20 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
 
     const handleSubmitAnswer = () => {
         // Validation removed as per request
-        /*
         if (!inputText.trim()) {
-            setError(t.validationError);
+            setShowConfirmation(true);
             return;
         }
-        */
 
+        processSubmit();
+    };
+
+    const handleConfirmSubmit = () => {
+        setShowConfirmation(false);
+        processSubmit();
+    };
+
+    const processSubmit = () => {
         const answer = {
             question_id: currentStory.question_id,
             answer_text: inputText.trim()
@@ -162,11 +178,12 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
         <Box sx={{
             width: '100%',
             height: '100%',
+            minHeight: '80vh',
+            position: 'relative',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: phase === 'recall' ? 'flex-start' : 'center',
-            pt: phase === 'recall' ? 12 : 0
+            justifyContent: 'center',
         }}>
 
             {/* Pre Audio Instruction Modal */}
@@ -179,6 +196,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
                 onSubmit={handleNextFromInstruction}
                 enableAudio={true}
                 audioButtonLabel={t.audioInstruction}
+                audioButtonAlignment="center"
                 instructionText={currentStory.prompt_text || ''}
                 languageCode={languageCode}
             >
@@ -198,6 +216,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
                 onSubmit={handleNextFromPostInstruction}
                 enableAudio={true}
                 audioButtonLabel={t.audioInstruction}
+                audioButtonAlignment="center"
                 instructionText={currentStory.post_instruction_text || ''}
                 languageCode={languageCode}
             >
@@ -256,9 +275,23 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
 
                         <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
                             <MorenButton
-                                variant="contained"
+                                variant="outlined"
                                 onClick={handleRepeat}
-                                sx={{ width: '150px', backgroundColor: '#274765' }}
+                                sx={{
+                                    borderColor: '#274765',
+                                    color: '#274765',
+                                    minWidth: '180px',
+                                    fontWeight: 'bold',
+                                    borderWidth: 2,
+                                    borderRadius: '12px',
+                                    px: 4,
+                                    py: 2,
+                                    '&:hover': {
+                                        borderWidth: 2,
+                                        borderColor: '#1e3650',
+                                        backgroundColor: 'rgba(39, 71, 101, 0.04)'
+                                    }
+                                }}
                             >
                                 {t.repeat || 'REPEAT'}
                             </MorenButton>
@@ -266,7 +299,16 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
                             <MorenButton
                                 variant="contained"
                                 onClick={handleNextFromComplete}
-                                sx={{ minWidth: '160px', px: 2, backgroundColor: '#274765' }}>
+                                sx={{
+                                    minWidth: '180px',
+                                    backgroundColor: '#274765',
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    borderRadius: '12px',
+                                    px: 4,
+                                    py: 2,
+                                    fontSize: '1.1rem'
+                                }}>
                                 {t.answerNow}
                             </MorenButton>
                         </Box>
@@ -277,21 +319,10 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
             {/* Recall Phase */}
             {
                 phase === 'recall' && (
-                    <Box sx={{ width: '100%', maxWidth: '600px', p: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <Box sx={{ width: '100%', maxWidth: '600px', p: 2, pb: 25, display: 'flex', flexDirection: 'column', gap: 3 }}>
                         <Typography variant="h6" sx={{ textAlign: 'center' }}>
                             {t.enterAnswers}
                         </Typography>
-
-                        {/* Show Post-instruction text again as helper? Or prompt text?
-                        Request says: "answer screen". Usually we show the question/prompt.
-                        But the prompt "Please increase volume..." is irrelevant now.
-                        And post-instruction "Please recall..." is relevant.
-                        Let's show post_instruction_text here as the prompt.
-                     */}
-                        {/* Show Post-instruction text again as helper? Or prompt text?
-                        Request says: "remove this selected text from answer screen"
-                        So we remove the Typography showing post_instruction_text.
-                     */}
 
                         <SpeechInput
                             fullWidth
@@ -300,6 +331,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
                             onSpeechResult={(text) => setInputText(prev => prev + ' ' + text)}
                             languageCode={languageCode}
                             placeholder={t.inputPlaceholder}
+                            enableModeSelection={true}
                         />
 
                         {error && (
@@ -309,13 +341,31 @@ const AudioStoryRecall = ({ session, onComplete, languageCode }: AudioStoryRecal
                         <MorenButton
                             variant="contained"
                             onClick={handleSubmitAnswer}
-                            sx={{ width: '100%', mt: 2 }}
+                            sx={{
+                                position: 'absolute',
+                                bottom: '150px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                width: '90%',
+                                maxWidth: '600px',
+                                zIndex: 10,
+                                mt: 2,
+                                fontSize: '1.2rem',
+                                py: 1.5,
+                                fontWeight: 'bold'
+                            }}
                         >
                             {t.answerNow}
                         </MorenButton>
                     </Box >
                 )
             }
+
+            <ConfirmationModal
+                open={showConfirmation}
+                onClose={() => setShowConfirmation(false)}
+                onConfirm={handleConfirmSubmit}
+            />
         </Box >
     );
 };

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import MorenButton from '../../../../../components/button';
 import GenericModal from '../../../../../components/modal';
+import ConfirmationModal from '../../../../../components/modal/ConfirmationModal';
 import type { SessionData } from '../../../../../services/gameApi';
 import SpeechInput from '../../../../../components/SpeechInput';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
@@ -32,6 +33,9 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
     const [inputText, setInputText] = useState('');
     const [answers, setAnswers] = useState<any[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Confirmation Modal State
+    const [showConfirmation, setShowConfirmation] = useState(false);
 
     // Refs to handle microphone race conditions
     const liveTranscriptRef = useRef('');
@@ -76,19 +80,25 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
 
     const submitAnswer = (textValue: string, isAuto: boolean = false) => {
         if (!currentQuestion) return;
-        // If already transitioning and not auto (auto can force? no, obey lock), return
-        // Actually if auto fires, we want to force it? 
-        // If manual submit happened, isSubmitting is true.
-        // Timer check "!isSubmitting" above handles race.
 
         if (isTransitioningRef.current && !isAuto) return;
 
-        isTransitioningRef.current = true;
-        setIsSubmitting(true);
-
-        // Combine committed text with any pending live transcript
+        // Check for empty input (manual only)
+        // If auto, we proceed regardless of empty since it's a timeout.
         const pendingText = liveTranscriptRef.current;
         const finalAnswerText = (textValue + ' ' + pendingText).trim();
+
+        if (!isAuto && !finalAnswerText) {
+            setShowConfirmation(true);
+            return;
+        }
+
+        processSubmission(finalAnswerText);
+    };
+
+    const processSubmission = (finalAnswerText: string) => {
+        isTransitioningRef.current = true;
+        setIsSubmitting(true);
 
         const newAnswer = {
             question_id: currentQuestion.question_id,
@@ -109,6 +119,14 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
         }
     };
 
+    const handleConfirmSubmit = () => {
+        setShowConfirmation(false);
+        // User confirmed YES to empty answer
+        const pendingText = liveTranscriptRef.current;
+        const finalAnswerText = (inputTextRef.current + ' ' + pendingText).trim();
+        processSubmission(finalAnswerText);
+    };
+
     const handleNext = () => {
         submitAnswer(inputText);
     };
@@ -121,15 +139,16 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
         <Box sx={{
             width: '100%',
             height: '100%',
+            minHeight: '80vh',
+            position: 'relative',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'flex-start',
-            pt: 10,
+            justifyContent: 'center',
             px: 2
         }}>
             {/* Instruction Modal */}
-            <GenericModal
+            < GenericModal
                 isOpen={phase === 'instruction'}
                 onClose={() => { }}
                 title={`${session.module?.name || ''} ${t.instructions}`}
@@ -138,21 +157,24 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
                 onSubmit={handleStart}
                 enableAudio={true}
                 audioButtonLabel={t.audioInstruction}
+                audioButtonAlignment="center"
                 instructionText={session.instructions || ''}
                 languageCode={languageCode}
             >
                 <Typography sx={{ fontSize: '1.2rem', color: '#333' }}>
                     {session.instructions}
                 </Typography>
-            </GenericModal>
+            </GenericModal >
 
             {phase === 'playing' && currentQuestion && (
-                <Box sx={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <Box sx={{ width: '100%', maxWidth: '600px', pb: 25, display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {/* Date/Time Header similar to screenshot? Using simple layout for now */}
 
                     <Typography variant="h5" sx={{ textAlign: 'center', color: '#666', mb: 2 }}>
                         {currentQuestion.prompt_text}
                     </Typography>
+
+
 
                     <Box sx={{ width: '100%' }}>
                         <SpeechInput
@@ -175,7 +197,8 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
                                 }
                             }}
                             languageCode={languageCode}
-                            placeholder={t.enterAnswers}
+                            placeholder={t.inputPlaceholder}
+                            enableModeSelection={true}
                         />
                     </Box>
 
@@ -186,13 +209,31 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
                         variant="contained"
                         onClick={handleNext}
                         disabled={isSubmitting}
-                        sx={{ width: '100%', mt: 2, backgroundColor: '#274765' }}
+                        sx={{
+                            position: 'absolute',
+                            bottom: '150px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            width: '90%',
+                            maxWidth: '600px',
+                            zIndex: 10,
+                            backgroundColor: '#274765',
+                            fontSize: '1.2rem',
+                            py: 2.5,
+                            fontWeight: 'bold'
+                        }}
                     >
-                        {isSubmitting ? 'Submitting...' : t.answerNow}
+                        {isSubmitting ? 'Submitting...' : t.next}
                     </MorenButton>
                 </Box>
             )}
-        </Box>
+
+            <ConfirmationModal
+                open={showConfirmation}
+                onClose={() => setShowConfirmation(false)}
+                onConfirm={handleConfirmSubmit}
+            />
+        </Box >
     );
 };
 

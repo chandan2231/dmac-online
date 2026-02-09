@@ -15,19 +15,31 @@ type IPreTestProps = {
 
 const PreTest = ({ setPreTestCompleted }: IPreTestProps) => {
     const { user } = useSelector((state: RootState) => state.auth);
+    const languageCode = get(user, ['languageCode'], 'en');
     const {
         data: preTestDetails,
         isPending: isLoadingPreTestDetails,
-    } = useGetPreTestPageDetails(get(user, ['languageCode'], 'en'));
+    } = useGetPreTestPageDetails(languageCode);
 
-    const { data: attemptStatus, isLoading: isLoadingAttempts } = useTestAttempts();
+    const { data: attemptStatus, isLoading: isLoadingAttempts } = useTestAttempts(languageCode);
 
     const handleStart = async () => {
-        if (!attemptStatus?.allowed) return;
+        if (!attemptStatus?.allowed || attemptStatus?.isCompleted) return;
 
         try {
             const userId = Number(get(user, 'id', 0));
-            const languageCode = get(user, 'languageCode', 'en');
+
+            // CHECK FOR RESUME capability
+            // If the user has completed at least one module (and not finished all), 
+            // we should resume, not restart.
+            if (attemptStatus?.lastModuleCompleted && !attemptStatus.isCompleted) {
+                // Resume flow: Just allow the ModuleRunner to mount.
+                // ModuleRunner will detect lastCompletedModuleId via props and resume.
+                setPreTestCompleted(true);
+                return;
+            }
+
+            // NEW ATTEMPT Flow
             // Force new session for Module 1 (Image Flash) to count attempt
             // The module ID for Image Flash is 1 (based on previous queries)
 
@@ -45,6 +57,35 @@ const PreTest = ({ setPreTestCompleted }: IPreTestProps) => {
 
     if (isLoadingPreTestDetails || isLoadingAttempts) {
         return <CustomLoader />;
+    }
+
+    if (attemptStatus?.isCompleted) {
+        return (
+            <Box
+                display="flex"
+                sx={{
+                    flexDirection: 'column',
+                    width: { xs: '95%', sm: '90%', md: '80%' },
+                    maxWidth: '800px',
+                    margin: '0 auto',
+                    py: { xs: 5, md: 10 },
+                    alignItems: 'center'
+                }}
+            >
+                <Box sx={{
+                    bgcolor: '#e8f5e9',
+                    color: '#2e7d32',
+                    p: 4,
+                    borderRadius: 2,
+                    textAlign: 'center',
+                    fontWeight: 'medium',
+                    fontSize: '1.25rem',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
+                }}>
+                    {attemptStatus.completionMessage || "The Digital Memory and Cognitive Assessment has been successfully completed. Your cognitive assessment report, including recommendations, will be emailed to you within 48 hours."}
+                </Box>
+            </Box>
+        );
     }
 
     return (

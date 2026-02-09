@@ -62,7 +62,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
     const [phase, setPhase] = useState<'instruction' | 'target' | 'selection'>('instruction');
     const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
     const [answers, setAnswers] = useState<{ question_id: number, selected_option_key: string }[]>([]);
-    const [countdown, setCountdown] = useState(3);
+    const [countdown, setCountdown] = useState(5);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
     // Configuration: Set to false when images are uploaded to S3
@@ -72,7 +72,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
     const STATIC_IMAGE_SETS = [
         {
             target: cube_first,
-            options: [cube_option_one, cube_option_two, cube_option_three, cube_option_four]
+            options: [cube_first, cube_second, cube_third, cube_fourth]
         },
         {
             target: star_first,
@@ -111,7 +111,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
 
     const startRound = () => {
         setPhase('target');
-        setCountdown(2);
+        setCountdown(5);
         setSelectedOption(null);
     };
 
@@ -162,6 +162,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
         <Box sx={{
             width: '100%',
             height: '100%',
+            minHeight: '80vh',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -178,6 +179,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
                 onSubmit={handleStart}
                 enableAudio={true}
                 audioButtonLabel={t.audioInstruction}
+                audioButtonAlignment="center"
                 instructionText={session.instructions || ''}
                 languageCode={languageCode}
             >
@@ -195,13 +197,6 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
                     width: '100%',
                     maxWidth: '800px'
                 }}>
-                    {/* <Typography variant="h5" sx={{ mb: 2, color: '#666', fontWeight: 600 }}>
-                        Remember this image
-                    </Typography>
-                    <Typography variant="h6" sx={{ mb: 3, color: '#999' }}>
-                        Round {currentRoundIndex + 1} of {totalRounds}
-                    </Typography> */}
-
                     <Box sx={{ position: 'relative', width: '100%', maxWidth: '600px' }}>
                         <Box
                             component="img"
@@ -215,26 +210,6 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
                                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                             }}
                         />
-                        {countdown > 0 && (
-                            <Box sx={{
-                                position: 'absolute',
-                                top: 20,
-                                right: 20,
-                                background: '#f44336',
-                                color: 'white',
-                                width: 60,
-                                height: 60,
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '2rem',
-                                fontWeight: 'bold',
-                                boxShadow: '0 4px 15px rgba(244, 67, 54, 0.4)'
-                            }}>
-                                {countdown}
-                            </Box>
-                        )}
                     </Box>
                 </Box>
             )}
@@ -242,13 +217,6 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
             {/* Selection Phase - Choose matching image */}
             {phase === 'selection' && currentRound && (
                 <Box sx={{ width: '100%', maxWidth: '800px' }}>
-                    {/* <Typography variant="h5" sx={{ mb: 2, textAlign: 'center', color: '#666', fontWeight: 600 }}>
-                        Select the matching image
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 3, textAlign: 'center', color: '#999' }}>
-                        Round {currentRoundIndex + 1} of {totalRounds}
-                    </Typography> */}
-
                     <Box sx={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(2, 1fr)',

@@ -2,7 +2,7 @@ import HttpService from './HttpService';
 
 export type Module = {
     id: number;
-    code: 'VISUAL_SPATIAL' | 'AUDIO_STORY' | 'AUDIO_STORY_2' | 'AUDIO_WORDS' | 'IMAGE_FLASH' | 'CONNECT_DOTS' | 'EXECUTIVE' | 'SEMANTIC' | 'NUMBER_RECALL' | 'DRAWING_RECALL' | 'REVERSE_NUMBER_RECALL' | 'COLOR_RECALL' | 'VISUAL_PICTURE_RECALL' | 'GROUP_MATCHING' | 'AUDIO_WORDS_RECALL';
+    code: 'VISUAL_SPATIAL' | 'AUDIO_STORY' | 'AUDIO_STORY_2' | 'AUDIO_WORDS' | 'IMAGE_FLASH' | 'CONNECT_DOTS' | 'EXECUTIVE' | 'SEMANTIC' | 'NUMBER_RECALL' | 'DRAWING_RECALL' | 'REVERSE_NUMBER_RECALL' | 'COLOR_RECALL' | 'VISUAL_PICTURE_RECALL' | 'GROUP_MATCHING' | 'AUDIO_WORDS_RECALL' | 'AUDIO_STORY_1_RECALL' | 'AUDIO_STORY_2_RECALL' | 'DISINHIBITION_SQ_TRI' | 'VISUAL_NUMBER_RECALL' | 'LETTER_DISINHIBITION';
     name: string;
     description: string;
     max_score: number;
@@ -69,6 +69,17 @@ export interface AttemptStatus {
     count: number;
     max_attempts: number;
     allowed: boolean;
+    totalModules?: number;
+    completedModules?: number;
+    isCompleted?: boolean;
+    lastModuleCompleted?: {
+        id: number;
+        name: string;
+        code: string;
+        created_at: string;
+        score: number;
+    } | null;
+    completionMessage?: string;
 }
 
 const getModules = async (): Promise<{ modules: Module[] }> => {
@@ -86,8 +97,8 @@ const startSession = async (moduleId: number, userId: number, languageCode: stri
     return res.data;
 };
 
-const getAttemptStatus = async (): Promise<AttemptStatus> => {
-    const res = await HttpService.get('/modules/attempts');
+const getAttemptStatus = async (languageCode: string = 'en'): Promise<AttemptStatus> => {
+    const res = await HttpService.get(`/modules/attempts?language=${languageCode}`);
     return res.data;
 };
 
@@ -100,7 +111,11 @@ const GameApi = {
     getModules,
     startSession,
     submitSession,
-    getAttemptStatus
+    getAttemptStatus,
+    getReportPdf: async () => {
+        const res = await HttpService.get('/modules/report/pdf', { responseType: 'blob' });
+        return res.data;
+    }
 };
 
 export default GameApi;

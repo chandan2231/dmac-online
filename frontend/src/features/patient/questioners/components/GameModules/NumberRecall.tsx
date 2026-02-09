@@ -50,9 +50,9 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
         next: getLanguageText(languageConstants, 'game_next'),
         playing: getLanguageText(languageConstants, 'game_playing'),
         completed: getLanguageText(languageConstants, 'game_completed_status'),
-        enterAnswers: getLanguageText(languageConstants, 'game_enter_answers'),
+        enterAnswers: getLanguageText(languageConstants, 'game_answer_now') || 'Answer Now', // Changed from game_enter_answers
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder') || 'Type the numbers...',
-        answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW',
+        answerNow: getLanguageText(languageConstants, 'game_next') || 'NEXT', // Changed from game_answer_now/ANSWER NOW
         validationError: getLanguageText(languageConstants, 'game_validation_error') || 'Please enter an answer',
         audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
@@ -177,11 +177,12 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
         <Box sx={{
             width: '100%',
             height: '100%',
+            minHeight: '80vh',
+            position: 'relative',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: phase === 'input' ? 'flex-start' : 'center',
-            pt: phase === 'input' ? 12 : 0,
+            justifyContent: 'center',
             gap: 4
         }}>
             {/* Instruction Modal */}
@@ -195,6 +196,7 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                 instructionText={session.instructions || "You will hear number sequences. After each, type what you heard."}
                 enableAudio={true} // Read instructions
                 audioButtonLabel={t.audioInstruction}
+                audioButtonAlignment="center"
                 languageCode={languageCode}
             >
                 <Typography>{session.instructions || "You will hear number sequences. After each, type what you heard."}</Typography>
@@ -259,9 +261,23 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
 
                     <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
                         <MorenButton
-                            variant="contained"
+                            variant="outlined"
                             onClick={handleRepeat}
-                            sx={{ width: '150px', backgroundColor: '#274765' }}
+                            sx={{
+                                borderColor: '#274765',
+                                color: '#274765',
+                                minWidth: '180px',
+                                fontWeight: 'bold',
+                                borderWidth: 2,
+                                borderRadius: '12px',
+                                px: 4,
+                                py: 2,
+                                '&:hover': {
+                                    borderWidth: 2,
+                                    borderColor: '#1e3650',
+                                    backgroundColor: 'rgba(39, 71, 101, 0.04)'
+                                }
+                            }}
                         >
                             {t.next === 'SIGUIENTE' ? 'REPETIR' : 'REPEAT'}
                         </MorenButton>
@@ -269,7 +285,16 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                         <MorenButton
                             variant="contained"
                             onClick={handleNextFromComplete}
-                            sx={{ minWidth: '160px', px: 2, backgroundColor: '#274765' }}>
+                            sx={{
+                                minWidth: '180px',
+                                backgroundColor: '#274765',
+                                color: 'white',
+                                fontWeight: 'bold',
+                                borderRadius: '12px',
+                                px: 4,
+                                py: 2,
+                                fontSize: '1.1rem'
+                            }}>
                             {t.answerNow}
                         </MorenButton>
                     </Box>
@@ -278,7 +303,7 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
 
             {/* Input State */}
             {phase === 'input' && (
-                <Box sx={{ width: '100%', maxWidth: '600px', p: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box sx={{ width: '100%', maxWidth: '600px', p: 2, pb: 25, display: 'flex', flexDirection: 'column', gap: 3 }}>
                     <Typography variant="h6" sx={{ textAlign: 'center' }}>
                         {t.enterAnswers}
                     </Typography>
@@ -293,6 +318,7 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                         }}
                         languageCode={languageCode}
                         placeholder={t.inputPlaceholder}
+                        enableModeSelection={true}
                     />
 
                     {error && (
@@ -302,7 +328,18 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                     <MorenButton
                         variant="contained"
                         onClick={handleSubmit}
-                        sx={{ width: '100%', mt: 2 }}
+                        sx={{
+                            position: 'absolute',
+                            bottom: '150px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            width: '90%',
+                            maxWidth: '600px',
+                            zIndex: 10,
+                            fontSize: '1.2rem',
+                            py: 2.5,
+                            fontWeight: 'bold'
+                        }}
                     >
                         {t.answerNow}
                     </MorenButton>

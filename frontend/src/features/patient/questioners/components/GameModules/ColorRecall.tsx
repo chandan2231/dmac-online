@@ -25,8 +25,9 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
     const t = {
         instructions: getLanguageText(languageConstants, 'game_instruction') || 'Instructions',
         start: getLanguageText(languageConstants, 'game_start') || 'START',
-        answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'SUBMIT',
+        answerNow: getLanguageText(languageConstants, 'game_next') || 'NEXT', // Changed from game_answer_now/SUBMIT
         inputPlaceholder: 'Enter Answers (e.g., red blue)',
+        audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
 
     const question = session.questions?.[0];
@@ -64,7 +65,7 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', p: 3 }}>
+        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 3 }}>
 
             {/* Instruction Modal */}
             <GenericModal
@@ -75,31 +76,19 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
                 submitButtonText={t.start}
                 onSubmit={handleInstructionSubmit}
                 instructionText={session.module?.description || session.instructions}
-                languageCode={languageCode}
                 enableAudio={true}
+                audioButtonLabel={t.audioInstruction}
+                audioButtonAlignment="center"
+                languageCode={languageCode}
             >
                 <Typography>{session.module?.description || session.instructions}</Typography>
             </GenericModal>
 
-            {/* Timer Display */}
-            {!showInstruction && (
-                <Box sx={{
-                    alignSelf: 'flex-end',
-                    mb: 2,
-                    p: 1,
-                    border: '2px solid #274765',
-                    borderRadius: '8px',
-                    backgroundColor: timeLeft < 10 ? '#ffebee' : '#e3f2fd'
-                }}>
-                    <Typography variant="h6" sx={{ color: timeLeft < 10 ? 'red' : '#274765', fontWeight: 'bold' }}>
-                        Time Left: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-                    </Typography>
-                </Box>
-            )}
+
 
             {/* Input Area */}
             {!showInstruction && (
-                <Box sx={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: 3, mt: 4 }}>
+                <Box sx={{ width: '100%', maxWidth: '600px', pb: 25, display: 'flex', flexDirection: 'column', gap: 3, mt: 4 }}>
                     <Typography variant="h6" sx={{ textAlign: 'center' }}>
                         {question?.prompt_text || "Please enter the colors you recall"}
                     </Typography>
@@ -114,12 +103,24 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
                         }}
                         languageCode={languageCode}
                         placeholder={t.inputPlaceholder}
+                        enableModeSelection={true}
                     />
 
                     <MorenButton
                         variant="contained"
                         onClick={handleSubmit}
-                        sx={{ width: '100%', mt: 2 }}
+                        sx={{
+                            position: 'absolute',
+                            bottom: '150px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            width: '90%',
+                            maxWidth: '600px',
+                            zIndex: 10,
+                            fontSize: '1.2rem',
+                            py: 2.5,
+                            fontWeight: 'bold'
+                        }}
                     >
                         {t.answerNow}
                     </MorenButton>

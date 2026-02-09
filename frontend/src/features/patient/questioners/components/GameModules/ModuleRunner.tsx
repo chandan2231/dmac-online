@@ -12,6 +12,9 @@ import NumberRecall from './NumberRecall';
 import DrawingRecall from './DrawingRecall';
 import ColorRecall from './ColorRecall';
 import GroupMatching from './GroupMatching';
+import DisinhibitionSqTri from './DisinhibitionSqTri';
+import VisualNumberRecall from './VisualNumberRecall';
+import LetterDisinhibition from './LetterDisinhibition';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 import GenericModal from '../../../../../components/modal';
@@ -22,9 +25,10 @@ interface ModuleRunnerProps {
     userId: number; // Actually userId might come from auth context inside here or passed down
     languageCode: string;
     onAllModulesComplete: () => void;
+    lastCompletedModuleId?: number | null;
 }
 
-const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunnerProps) => {
+const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastCompletedModuleId }: ModuleRunnerProps) => {
     const { languageConstants } = useLanguageConstantContext();
     const navigate = useNavigate();
 
@@ -63,7 +67,24 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
                 let startId = sorted.length > 0 ? sorted[0].id : 0;
                 let startIndex = 0;
 
-                if (savedId) {
+                // Priority 1: Check backend last completed module
+                if (lastCompletedModuleId) {
+                    const lastIndex = sorted.findIndex(m => m.id === lastCompletedModuleId);
+                    if (lastIndex !== -1) {
+                        // Ensure we don't go out of bounds
+                        if (lastIndex < sorted.length - 1) {
+                            startIndex = lastIndex + 1;
+                            startId = sorted[startIndex].id;
+                        } else {
+                            // All modules completed
+                            // This case usually handled by parent (isCompleted check), but safe to handle here
+                            onAllModulesComplete();
+                            return;
+                        }
+                    }
+                }
+                // Priority 2: localStorage (only if backend info not available or start from beginning)
+                else if (savedId) {
                     const foundIndex = sorted.findIndex(m => m.id === Number(savedId));
                     if (foundIndex !== -1) {
                         startId = Number(savedId);
@@ -86,7 +107,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             }
         };
         fetchModules();
-    }, []);
+    }, [lastCompletedModuleId]);
 
     const startModuleSession = async (moduleId: number) => {
         setLoading(true);
@@ -189,8 +210,31 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
     };
 
     const handleGroupMatchingComplete = (answers: any[]) => {
+        // Parse scores from text "Score: 1" and sum them up
+        const total = answers.reduce((acc, curr) => {
+            const match = (curr.answer_text || '').match(/Score:\s*(\d+)/);
+            return acc + (match ? parseInt(match[1], 10) : 0);
+        }, 0);
+
+        handleModuleSubmit({
+            answers,
+            score: total
+        });
+    };
+
+    const handleDisinhibitionSqTriComplete = (answers: any[]) => {
+        handleModuleSubmit({
+            answers,
+            // Pass score explicitly if it's in the answers array object or let backend handle it 
+            // The component sends [{ question_id, answer_text, score }]
+            score: answers[0]?.score
+        });
+    };
+
+    const handleLetterDisinhibitionComplete = (answers: any[]) => {
         handleModuleSubmit({
             answers
+            // score removed, calculated in backend
         });
     };
 
@@ -252,6 +296,16 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
                 answer_text: 'skipped via dev button'
             }));
             console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
+            handleAudioStoryComplete(dummyAnswers);
+        }
+        else if (code === 'AUDIO_STORY_1_RECALL' || code === 'AUDIO_STORY_2_RECALL') {
+            // Construct dummy answers for stories - same as audio story
+            const stories = session.questions || [];
+            const dummyAnswers = stories.map(story => ({
+                question_id: story.question_id,
+                answer_text: 'skipped via dev button'
+            }));
+            console.log('[ModuleRunner] Skipping AudioStoryRecall with payload:', dummyAnswers);
             handleAudioStoryComplete(dummyAnswers);
         }
         else if (code === 'AUDIO_WORDS') {
@@ -328,6 +382,45 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
                 answer_text: 'Skipped - Score 0'
             }));
             handleGroupMatchingComplete(dummyAnswers);
+        } else if (code === 'DISINHIBITION_SQ_TRI') {
+            const dummyAnswers = [{
+                question_id: session.questions?.[0]?.question_id,
+                answer_text: 'Skipped - Score 0',
+                score: 0
+            }];
+            handleDisinhibitionSqTriComplete(dummyAnswers);
+        } else if (code === 'VISUAL_NUMBER_RECALL') {
+            const questions = session.questions || [];
+            const dummyAnswers = questions.map(q => ({
+                question_id: q.question_id,
+                answer_text: '123'
+            }));
+            console.log('[ModuleRunner] Skipping VisualNumberRecall with payload:', dummyAnswers);
+            handleNumberRecallComplete(dummyAnswers);
+        } else if (code === 'LETTER_DISINHIBITION') {
+            const dummyAnswers = [{
+                question_id: session.questions?.[0]?.question_id,
+                answer_text: 'Skipped - Score 0',
+                score: 0
+            }];
+            console.log('[ModuleRunner] Skipping LetterDisinhibition');
+            handleLetterDisinhibitionComplete(dummyAnswers);
+        }
+    };
+
+    const handleDownloadPdf = async () => {
+        try {
+            const blob = await GameApi.getReportPdf();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `DMAC_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (error) {
+            console.error("Failed to download PDF", error);
+            // Optionally set error or show toast if available
         }
     };
 
@@ -354,9 +447,14 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
                 submitButtonText={t.homeButton}
                 onSubmit={handleGoHome}
             >
-                <Typography sx={{ fontSize: '1.2rem', textAlign: 'center', color: '#4caf50', fontWeight: 500 }}>
-                    {t.completionMessage}
-                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <Typography sx={{ fontSize: '1.2rem', textAlign: 'center', color: '#4caf50', fontWeight: 500 }}>
+                        {t.completionMessage}
+                    </Typography>
+                    <Button variant="contained" color="primary" onClick={handleDownloadPdf}>
+                        Download PDF Report
+                    </Button>
+                </Box>
             </GenericModal>
 
             {!showCompletion && moduleCode === 'IMAGE_FLASH' && (
@@ -367,6 +465,9 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             )}
             {!showCompletion && (moduleCode === 'AUDIO_STORY' || moduleCode === 'AUDIO_STORY_2') && (
                 <AudioStoryRecall session={session} onComplete={handleAudioStoryComplete} languageCode={languageCode} />
+            )}
+            {!showCompletion && (moduleCode === 'AUDIO_STORY_1_RECALL' || moduleCode === 'AUDIO_STORY_2_RECALL') && (
+                <AudioStoryRecall session={session} onComplete={handleAudioStoryComplete} languageCode={languageCode} isRecallOnly={true} />
             )}
             {!showCompletion && moduleCode === 'AUDIO_WORDS' && (
                 <AudioWordsRecall session={session} onComplete={handleAudioWordsComplete} languageCode={languageCode} />
@@ -394,6 +495,15 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete }: ModuleRunn
             )}
             {!showCompletion && moduleCode === 'AUDIO_WORDS_RECALL' && (
                 <AudioWordsRecall session={session} onComplete={handleAudioWordsComplete} languageCode={languageCode} isRecallOnly={true} />
+            )}
+            {!showCompletion && moduleCode === 'DISINHIBITION_SQ_TRI' && (
+                <DisinhibitionSqTri session={session} onComplete={handleDisinhibitionSqTriComplete} languageCode={languageCode} />
+            )}
+            {!showCompletion && moduleCode === 'VISUAL_NUMBER_RECALL' && (
+                <VisualNumberRecall session={session} onComplete={handleNumberRecallComplete} languageCode={languageCode} />
+            )}
+            {!showCompletion && moduleCode === 'LETTER_DISINHIBITION' && (
+                <LetterDisinhibition session={session} onComplete={handleLetterDisinhibitionComplete} languageCode={languageCode} />
             )}
         </Box>
     );

@@ -26,6 +26,7 @@ interface SpeechInputProps extends Omit<TextFieldProps, 'onChange'> {
     onSpeechResult?: (transcript: string) => void;
     onTranscriptChange?: (transcript: string) => void;
     languageCode?: string;
+    enableModeSelection?: boolean;
 }
 
 const SpeechInput: React.FC<SpeechInputProps> = ({
@@ -35,6 +36,7 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
     onTranscriptChange,
     languageCode = 'en-US',
     placeholder = 'Type or click mic to speak',
+    enableModeSelection = false,
     ...textFieldProps
 }) => {
     const { isListening, transcript, startListening, stopListening } = useSpeechRecognition({
@@ -45,41 +47,30 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
             } else {
                 onChange(result);
             }
-            // resetTranscript is now handled internally by the hook
         }
     });
 
-    // Auto-stop timer after 3 seconds of silence
+    // State for split mode removed. we want buttons always visible with TextField.
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
+    // Auto-stop timer logic (same as before)
     const silenceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
     React.useEffect(() => {
-        // Broadcast transcript changes
         if (onTranscriptChange) {
             onTranscriptChange(transcript);
         }
-
-        // When transcript changes (user is speaking), reset the silence timer
         if (isListening && transcript) {
-            // Clear existing timer
-            if (silenceTimerRef.current) {
-                clearTimeout(silenceTimerRef.current);
-            }
-
-            // Set new timer to stop after 3 seconds of silence
+            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
             silenceTimerRef.current = setTimeout(() => {
                 stopListening();
             }, 3000);
         }
-
-        // Cleanup timer on effect re-run
         return () => {
-            if (silenceTimerRef.current) {
-                clearTimeout(silenceTimerRef.current);
-            }
+            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         };
-    }, [transcript, isListening, stopListening]);
+    }, [transcript, isListening, stopListening, onTranscriptChange]);
 
-    // Cleanup listening on unmount
     React.useEffect(() => {
         return () => {
             stopListening();
@@ -87,71 +78,122 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
     }, [stopListening]);
 
     const handleMicClick = () => {
-        if (isListening) {
-            // Stop listening (toggle off)
-            stopListening();
-        } else {
-            // Start listening (toggle on)
-            startListening();
-        }
+        if (isListening) stopListening();
+        else startListening();
     };
 
     const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         onChange(e.target.value);
     };
 
-    // Show accumulated value with interim transcript appended while listening
+    const handleTypeClick = () => {
+        if (inputRef.current) {
+            inputRef.current.focus();
+        }
+    };
+
     const displayValue = isListening && transcript
         ? (value ? `${value} ${transcript}` : transcript)
         : value;
 
+    // --- RENDER LOGIC ---
+
     return (
-        <TextField
-            {...textFieldProps}
-            value={displayValue}
-            onChange={handleTextChange}
-            placeholder={placeholder}
-            multiline
-            minRows={1}
-            maxRows={4}
-            slotProps={{
-                input: {
-                    ...textFieldProps.slotProps?.input,
-                    endAdornment: (
-                        <InputAdornment position="end">
-                            <IconButton
-                                onClick={handleMicClick}
-                                edge="end"
-                                sx={{
-                                    background: isListening
-                                        ? '#f44336'  // Solid red when listening
-                                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Purple gradient when idle
-                                    color: 'white',
-                                    width: 40,
-                                    height: 40,
-                                    marginRight: '-8px',
-                                    transition: 'all 0.3s ease',
-                                    animation: isListening ? `${pulseRed} 1.5s ease-in-out infinite` : 'none',
-                                    '&:hover': {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+
+            <TextField
+                {...textFieldProps}
+                inputRef={inputRef}
+                value={displayValue}
+                onChange={handleTextChange}
+                placeholder={placeholder}
+                multiline
+                minRows={1}
+                maxRows={4}
+                slotProps={{
+                    input: {
+                        style: { fontSize: '1.3rem' },
+                        ...textFieldProps.slotProps?.input,
+                        // If mode selection is enabled, we hide the internal persistent mic icon
+                        // because we have the big "Speak" button below.
+                        endAdornment: !enableModeSelection ? (
+                            <InputAdornment position="end">
+                                <IconButton
+                                    onClick={handleMicClick}
+                                    edge="end"
+                                    sx={{
                                         background: isListening
-                                            ? '#e53935'  // Darker red on hover when listening
-                                            : 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
-                                        transform: 'scale(1.05)',
-                                        boxShadow: isListening
-                                            ? '0 0 20px rgba(244, 67, 54, 0.6)'
-                                            : '0 4px 15px rgba(102, 126, 234, 0.4)',
-                                    },
-                                }}
-                            >
-                                <MicIcon sx={{ fontSize: 22 }} />
-                            </IconButton>
-                        </InputAdornment>
-                    ),
-                }
-            }}
-        />
+                                            ? '#f44336'
+                                            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        color: 'white',
+                                        width: 40,
+                                        height: 40,
+                                        marginRight: '-8px',
+                                        transition: 'all 0.3s ease',
+                                        animation: isListening ? `${pulseRed} 1.5s ease-in-out infinite` : 'none',
+                                        '&:hover': {
+                                            background: isListening
+                                                ? '#e53935'
+                                                : 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                                            transform: 'scale(1.05)',
+                                            boxShadow: isListening
+                                                ? '0 0 20px rgba(244, 67, 54, 0.6)'
+                                                : '0 4px 15px rgba(102, 126, 234, 0.4)',
+                                        },
+                                    }}
+                                >
+                                    <MicIcon sx={{ fontSize: 22 }} />
+                                </IconButton>
+                            </InputAdornment>
+                        ) : null
+                    }
+                }}
+            />
+
+            {/* Buttons Row */}
+            {enableModeSelection && (
+                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+                    <IconButton
+                        onClick={handleMicClick}
+                        sx={{
+                            borderRadius: '8px',
+                            padding: '16px 28px',
+                            background: isListening ? '#f44336' : '#274765', // Red when listening, default Blue
+                            color: 'white',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 1,
+                            width: '140px',
+                            '&:hover': { background: isListening ? '#d32f2f' : '#1c3550' }
+                        }}
+                    >
+                        <MicIcon sx={{ fontSize: 32 }} />
+                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{isListening ? 'STOP' : 'SPEAK'}</span>
+                    </IconButton>
+
+                    <IconButton
+                        onClick={handleTypeClick}
+                        sx={{
+                            borderRadius: '8px',
+                            padding: '16px 28px',
+                            border: '2px solid #274765',
+                            color: '#274765',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 1,
+                            width: '140px',
+                            '&:hover': { background: '#f5f5f5' }
+                        }}
+                    >
+                        <span style={{ fontSize: '1.8rem', lineHeight: '1' }}>⌨</span>
+                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>TYPE</span>
+                    </IconButton>
+                </div>
+            )}
+        </div>
     );
 };
+
 
 export default SpeechInput;
 

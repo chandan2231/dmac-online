@@ -114,7 +114,7 @@ app.use('/api/modules', moduleRoutes)
 
 // PORT setup based on environment
 let PORT = 8010 // default dev port
-if (process.env.NODE_ENV === 'localhost') PORT = 5500
+if (process.env.NODE_ENV === 'localhost') PORT = 8800
 if (process.env.NODE_ENV === 'production') PORT = 4000
 
 // Listen on 0.0.0.0 so it is accessible from outside
