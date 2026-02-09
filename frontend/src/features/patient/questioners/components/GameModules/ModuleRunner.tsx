@@ -427,7 +427,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     return (
         <Box sx={{ width: '100%', height: '100%' }}>
             {/* Remove this block when deploying to production */}
-            <Box sx={{ position: 'fixed', top: 16, right: 16, zIndex: 99999 }}>
+            {/* <Box sx={{ position: 'fixed', top: 16, right: 16, zIndex: 99999 }}>
                 <Button
                     variant="contained"
                     color="error"
@@ -436,7 +436,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                 >
                     Skip (Dev)
                 </Button>
-            </Box>
+            </Box> */}
 
             {/* Completion Modal */}
             <GenericModal
