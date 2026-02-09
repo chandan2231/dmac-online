@@ -1,6 +1,7 @@
 export const QUERY_KEYS_FOR_QUESTIONERS = {
   GET_DISCLAIMER_PAGE_DETAILS: 'getDisclaimerPageDetails',
   GET_FALSE_POSITIVE_PAGE_DETAILS: 'getFalsePositivePageDetails',
+  GET_PRE_TEST_PAGE_DETAILS: 'getPreTestPageDetails',
   GET_QUESTIONERS: 'getQuestioners',
   GET_READ_DISCLAIMER: 'getReadDisclaimer',
 } as const;

@@ -33,38 +33,59 @@ const Disclaimer = ({ setIsDisclaimerAccepted }: IDisclaimerProps) => {
       display="flex"
       sx={{
         flexDirection: 'column',
-        width: '80%',
+        width: { xs: '90%', md: '80%' },
+        maxWidth: '800px',
+        margin: '0 auto',
+        textAlign: 'center'
       }}
-      gap={1}
+      gap={3}
     >
       {/* Title */}
-      <Box sx={{ fontWeight: 'bold', fontSize: '20px' }}>
+      <Box sx={{ fontWeight: 'bold', fontSize: '1.75rem', color: '#2c3e50' }}>
         {get(disclaimerDetails, ['title'], '')}
       </Box>
 
       {/* Content */}
-      <Box>{get(disclaimerDetails, ['content'], '')}</Box>
+      <Box sx={{ textAlign: 'left', lineHeight: 1.6, fontSize: '1.05rem', color: '#333' }}>
+        {get(disclaimerDetails, ['content'], '')}
+      </Box>
 
       {/* Doctor Info */}
-      <Box>{get(disclaimerDetails, ['doctor_info'], '')}</Box>
+      <Box sx={{
+        whiteSpace: 'pre-wrap',
+        fontWeight: 600,
+        fontSize: '1rem',
+        color: '#000',
+        mt: 2
+      }}>
+        {get(disclaimerDetails, ['doctor_info'], '')}
+      </Box>
 
       {/* Link Text */}
       <Box
         sx={{
-          color: 'blue',
-          textDecoration: 'none',
+          color: 'text.primary',
+          textDecoration: 'underline',
           cursor: 'pointer',
-          mb: 2,
+          fontWeight: 500,
+          '&:hover': { opacity: 0.8 }
         }}
         onClick={() => setIsReadDisclaimer(!isReadDisclaimer)}
       >
         {get(disclaimerDetails, ['link_text'], '')}
       </Box>
 
-      <Box>
+      <Box width="100%">
         <MorenButton
           variant="contained"
           onClick={() => setIsDisclaimerAccepted(true)}
+          sx={{
+            width: '100%',
+            py: 1.5,
+            fontSize: '1.1rem',
+            fontWeight: 700,
+            borderRadius: 2
+          }}
         >
           {get(disclaimerDetails, ['button_text'], '')}
         </MorenButton>
@@ -75,7 +96,9 @@ const Disclaimer = ({ setIsDisclaimerAccepted }: IDisclaimerProps) => {
         renderHtmlContent={get(readDisclaimerData, ['content'], '')}
         onClose={() => setIsReadDisclaimer(false)}
         title={get(readDisclaimerData, ['title'], '')}
-      />
+      >
+        {null}
+      </GenericModal>
     </Box>
   );
 };

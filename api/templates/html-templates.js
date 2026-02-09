@@ -1,1334 +1,689 @@
-import questionsToRender from './constant.js'
+// ================================
+// DMAC Game Report HTML Template
+// ================================
 
-const getMappedStatus = (status) => {
-  const statusType = Number(status)
+const dmacGameReportHTMLTemplate = (data) => {
+    const {
+        patientName = '',
+        reportDate = new Date().toLocaleDateString(),
+        categories = []
+    } = data
 
-  if (statusType === 1) return 'Created'
-  if (statusType === 2) return 'Under Review'
-  if (statusType === 3) return 'Approved'
-  if (statusType === 4) return 'Approved'
+    // Helper to get score string
+    const getScore = (catName) => {
+        // Mapping internal names to ensure we pick the right one
+        // categoryDisplayNames map is implicit in how we call this function
+        const cat = categories.find(c => c.name === catName);
+        return cat ? cat.percentage.toFixed(2) + '%' : '0.00%';
+    };
 
-  return ''
-}
+    // --- Graph Generation Logic ---
+    const generateGraph = () => {
+        // Data mapping in order of the report
+        const targetOrder = [
+            { key: 'Immediate Visual Recall', label: 'Visual Memory' }, // Test 6
+            { key: 'Immediate Auditory Recall', label: 'Auditory Memory' }, // Test 11
+            { key: 'Delayed Recall', label: 'Delayed Recall' }, // Test 5
+            { key: 'Disinhibition', label: 'Disinhibition' }, // Test 10
+            { key: 'Attention', label: 'Processing Speed' }, // Test 2
+            { key: 'Executive Function', label: 'Executive' }, // Test 3
+            { key: 'Semantic / Language', label: 'Language' }, // Test 7
+            { key: 'Number Recall', label: 'Attention' }, // Test 1
+            { key: 'Working Memory', label: 'Working Memory' } // Test 4
+        ];
 
-// const getCreatedData = (createDate) => {
-//   if (createDate) {
-//     const date = new Date(createDate)
-//     return date.toDateString()
-//   }
-//   return ''
-// }
+        const graphData = targetOrder.map(item => {
+            const cat = categories.find(c => c.name === item.key);
+            return {
+                name: item.label,
+                value: cat ? cat.percentage : 0
+            };
+        });
 
-const getCreatedData = (createDate) => {
-  if (createDate) {
-    const date = new Date(createDate)
-    return date.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    })
-  }
-  return ''
-}
+        const width = 700;
+        const height = 400;
+        const margin = { top: 20, right: 20, bottom: 120, left: 50 };
+        const contentWidth = width - margin.left - margin.right;
+        const contentHeight = height - margin.top - margin.bottom;
 
-// base template
-const renderHeader = (props) => {
-  const { title } = props
-  return `<div><h3>${title}</h3></div>`
-}
+        const barWidth = 30;
+        const gap = (contentWidth - (graphData.length * barWidth)) / (graphData.length + 1);
 
-const RenderBody = (children) => {
-  return `<body style="padding:25">${children}</body>`
-}
-
-const RenderTextOnly = (text) => {
-  return `<div>
-      <p>${text}</p>
-    </div>`
-}
-
-const RenderSubTextAnswer = (answer, answerObject) => {
-  return `<div>
-          ${
-            answerObject[answer]
-              ? `<span>${answerObject[answer]}</span>`
-              : `<h4>N/A</h4>`
-          }
-      </div>`
-}
-
-const RenderQuestion = (sequence, text) => {
-  return `<div>
-      <h3>Question ${sequence}</h3>${text ? `<span>${text}</span>` : ``}
-    </div>`
-}
-
-const RenderSubOptions = (subOptions) => {
-  return `<div>
-      ${
-        subOptions
-          ? `<ul>
-        ${Object.keys(subOptions)
-          .map((key) => {
-            return `<li>${subOptions[key]}</li>`
-          })
-          .join('')}
-      </ul>`
-          : ''
-      }
-    </div>`
-}
-
-const RenderAnswer = (answerObject, answer) => {
-  return `<div>
-      <h4>Answer</h4>
-      <div>
-        ${
-          answerObject[answer]
-            ? `<span>${answerObject[answer]}</span>`
-            : `<h4>N/A</h4>`
+        // Y-Axis Grid Lines (10% increments)
+        let gridLines = '';
+        let yLabels = '';
+        for (let i = 0; i <= 10; i++) {
+            const p = i * 10;
+            const y = contentHeight - (contentHeight * (p / 100));
+            gridLines += `<line x1="0" y1="${y}" x2="${contentWidth}" y2="${y}" stroke="#e0e0e0" stroke-width="1" />`;
+            yLabels += `<text x="-10" y="${y + 4}" text-anchor="end" font-size="10" fill="#666">${p}%</text>`;
         }
+
+        // Bars and X-Labels
+        let bars = '';
+        graphData.forEach((d, i) => {
+            const x = margin.left + gap + (i * (barWidth + gap));
+            const barHeight = contentHeight * (d.value / 100);
+            const y = margin.top + contentHeight - barHeight;
+
+            let color = '#6f4e37'; // brown < 20
+            if (d.value >= 80) color = '#2ecc71';
+            else if (d.value >= 60) color = '#3498db';
+            else if (d.value >= 40) color = '#f1c40f';
+            else if (d.value >= 20) color = '#e74c3c';
+
+            bars += `
+            <rect x="${x - margin.left}" y="${y - margin.top}" width="${barWidth}" height="${barHeight}" fill="${color}" />
+            <text x="${x - margin.left + barWidth / 2}" y="${y - margin.top - 5}" text-anchor="middle" font-size="10" font-weight="bold" fill="#333">${Math.round(d.value)}%</text>
+            
+            <g transform="translate(${x - margin.left + barWidth / 2}, ${contentHeight + 15})">
+                <text transform="rotate(45)" text-anchor="start" font-size="10" fill="#333">${d.name}</text>
+            </g>
+          `;
+        });
+
+        return `
+        <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(${margin.left}, ${margin.top})">
+                ${gridLines}
+                ${yLabels}
+                <line x1="0" y1="0" x2="0" y2="${contentHeight}" stroke="#333" stroke-width="1" />
+                <line x1="0" y1="${contentHeight}" x2="${contentWidth}" y2="${contentHeight}" stroke="#333" stroke-width="1" />
+                ${bars}
+                <text x="${-contentHeight / 2}" y="-35" transform="rotate(-90)" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">Percentage (%)</text>
+            </g>
+        </svg>
+      `;
+    }
+
+    const generateTBIGraph = () => {
+        const targetOrder = [
+            { key: 'Semantic / Language', label: 'Language' },
+            { key: 'Immediate Auditory Recall', label: 'Auditory' },
+            { key: 'Immediate Visual Recall', label: 'Visual' },
+            { key: 'Delayed Recall', label: 'Delayed Recall' }
+        ];
+
+        const graphData = targetOrder.map(item => {
+            const cat = categories.find(c => c.name === item.key);
+            return {
+                name: item.label,
+                value: cat ? cat.percentage : 0
+            };
+        });
+
+        const width = 600;
+        const height = 300; // Slightly shorter for this section
+        const margin = { top: 30, right: 20, bottom: 50, left: 50 };
+        const contentWidth = width - margin.left - margin.right;
+        const contentHeight = height - margin.top - margin.bottom;
+
+        // Bar Logic
+        const barWidth = 60; // Wider bars since fewer items
+        const gap = (contentWidth - (graphData.length * barWidth)) / (graphData.length + 1);
+
+        // Y-Axis Grid
+        let gridLines = '';
+        let yLabels = '';
+        for (let i = 0; i <= 10; i += 2) { // 20% increments for cleaner look on smaller graph? or 10%
+            const p = i * 10;
+            const y = contentHeight - (contentHeight * (p / 100));
+            gridLines += `<line x1="0" y1="${y}" x2="${contentWidth}" y2="${y}" stroke="#e0e0e0" stroke-width="1" />`;
+            yLabels += `<text x="-10" y="${y + 4}" text-anchor="end" font-size="10" fill="#666">${p}%</text>`;
+        }
+
+        let bars = '';
+        graphData.forEach((d, i) => {
+            const x = margin.left + gap + (i * (barWidth + gap));
+            const barHeight = contentHeight * (d.value / 100);
+            const y = margin.top + contentHeight - barHeight;
+
+            // Using a standard blue color as per reference image, or dynamic? 
+            // Reference image shows uniform blue (#4285F4 approx).
+            // User said "dynamic", usually implies scores. Let's use the score colors for consistency with the rest of the report.
+            // But if they want it to look EXACTLY like the image, maybe uniform blue?
+            // "We need this graph there ..lets make sure this is dynamic.... as well"
+            // I'll stick to the report's color coding scheme (Red/Yellow/Green) because that adds value.
+            let color = '#6f4e37';
+            if (d.value >= 80) color = '#2ecc71';
+            else if (d.value >= 60) color = '#3498db';
+            else if (d.value >= 40) color = '#f1c40f';
+            else if (d.value >= 20) color = '#e74c3c';
+
+            bars += `
+            <rect x="${x - margin.left}" y="${y - margin.top}" width="${barWidth}" height="${barHeight}" fill="${color}" />
+            <text x="${x - margin.left + barWidth / 2}" y="${y - margin.top - 5}" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">${Math.round(d.value)}%</text>
+            <text x="${x - margin.left + barWidth / 2}" y="${contentHeight + 20}" text-anchor="middle" font-size="12" fill="#333">${d.name}</text>
+          `;
+        });
+
+        return `
+        <div class="graph-container" style="height: 350px;"> <!-- Override height -->
+            <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+                <g transform="translate(${margin.left}, ${margin.top})">
+                    <!-- Title inside SVG or handled by HTML header? HTML header exists. -->
+                    ${gridLines}
+                    ${yLabels}
+                    <line x1="0" y1="0" x2="0" y2="${contentHeight}" stroke="#333" stroke-width="1" />
+                    <line x1="0" y1="${contentHeight}" x2="${contentWidth}" y2="${contentHeight}" stroke="#333" stroke-width="1" />
+                    ${bars}
+                </g>
+            </svg>
+        </div>
+    `;
+    }
+
+    // --- Bell Curve / UCPAS Logic ---
+    const erf = (x) => {
+        const sign = x >= 0 ? 1 : -1;
+        x = Math.abs(x);
+        const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
+        const p = 0.3275911;
+        const t = 1.0 / (1.0 + p * x);
+        const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+        return sign * y;
+    }
+
+
+    const generateBellCurve = () => {
+        const getCatVal = (name) => {
+            const c = categories.find(cat => cat.name === name);
+            return c ? c.percentage : 0;
+        };
+
+        const d = getCatVal('Delayed Recall');
+        const a = getCatVal('Attention');
+        const w = getCatVal('Working Memory');
+        const e = getCatVal('Executive Function');
+
+        const mu = 50;
+        const sd = 15;
+        const ucpas = (d + a + w + e) / 4.0;
+        const z = (ucpas - mu) / sd;
+        const phi = (zVal) => 0.5 * (1 + erf(zVal / Math.SQRT2));
+        const percentile = Math.max(0, Math.min(100, phi(z) * 100));
+
+        let band = "Average range";
+        if (percentile < 10) band = "Very low";
+        else if (percentile < 25) band = "Below average";
+        else if (percentile < 75) band = "Average range";
+        else if (percentile < 90) band = "Above average";
+        else band = "High";
+
+        const width = 700;
+        const height = 300;
+        const margin = { top: 20, right: 30, bottom: 50, left: 30 };
+        const graphW = width - margin.left - margin.right;
+        const graphH = height - margin.top - margin.bottom;
+        const minZ = -3.5;
+        const maxZ = 3.5;
+
+        const mapX = (zVal) => margin.left + ((zVal - minZ) / (maxZ - minZ)) * graphW;
+        const maxDensity = 0.3989;
+        const mapY = (density) => (margin.top + graphH) - ((density / maxDensity) * graphH);
+
+        let pathD = `M ${mapX(minZ)} ${mapY(0)}`;
+        for (let i = minZ; i <= maxZ; i += 0.1) {
+            const density = (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * i * i);
+            pathD += ` L ${mapX(i)} ${mapY(density)}`;
+        }
+        pathD += ` L ${mapX(maxZ)} ${mapY(0)} Z`;
+
+        const plotZ = Math.max(minZ, Math.min(maxZ, z));
+        const userX = mapX(plotZ);
+        const userDensity = (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * plotZ * plotZ);
+        const userY = mapY(userDensity);
+
+        return `
+      <div style="margin-top: 40px; text-align: center;">
+        <h3 style="margin-bottom: 20px; color: #2c3e50;">UCPAS & Percentile Ranking</h3>
+        <div style="background: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 8px; display: inline-block; margin-bottom: 20px;">
+            <div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">UCPAS Score: <span style="color: #2980b9;">${ucpas.toFixed(2)}</span></div>
+            <div style="font-size: 14px; margin-bottom: 5px;">Percentile: <b>${percentile.toFixed(1)}th</b></div>
+            <div style="font-size: 14px; color: #555;">Interpretation: <b>${band}</b></div>
+        </div>
+        <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" style="border: 1px solid #eee; background: white;">
+            <defs>
+                <linearGradient id="bellGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#3498db;stop-opacity:0.6" />
+                    <stop offset="100%" style="stop-color:#3498db;stop-opacity:0.2" />
+                </linearGradient>
+            </defs>
+            <path d="${pathD}" fill="url(#bellGradient)" stroke="#2980b9" stroke-width="2" />
+            <line x1="${userX}" y1="${userY}" x2="${userX}" y2="${margin.top + graphH}" stroke="#e74c3c" stroke-width="3" stroke-dasharray="0" />
+            <circle cx="${userX}" cy="${userY}" r="6" fill="#e74c3c" />
+            <text x="${userX}" y="${userY - 10}" text-anchor="middle" font-weight="bold" fill="#e74c3c" font-size="12">You</text>
+            
+            <text x="${mapX(-2)}" y="${height - 20}" text-anchor="middle" font-size="11" fill="#7f8c8d">-2σ</text>
+            <text x="${mapX(-1)}" y="${height - 20}" text-anchor="middle" font-size="11" fill="#7f8c8d">-1σ</text>
+            <text x="${mapX(0)}" y="${height - 20}" text-anchor="middle" font-size="11" fill="#7f8c8d">Mean</text>
+            <text x="${mapX(1)}" y="${height - 20}" text-anchor="middle" font-size="11" fill="#7f8c8d">+1σ</text>
+            <text x="${mapX(2)}" y="${height - 20}" text-anchor="middle" font-size="11" fill="#7f8c8d">+2σ</text>
+
+            <text x="${width / 2}" y="${height - 5}" text-anchor="middle" font-size="12" font-style="italic" fill="#95a5a6">Population Distribution (Bell Curve)</text>
+        </svg>
       </div>
-    </div>`
-}
+    `;
+    };
 
-const RenderAnswerPro = (answerObject, answer) => {
-  return `<div>
-      <p>
-        ${
-          answerObject[answer]
-            ? `<span>${answerObject[answer]}</span>`
-            : `<h4>N/A</h4>`
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDMAC-AI 5.0 Comprehensive Cognitive Test Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-      </p>
-    </div>`
-}
 
-const RenderCheckboxAnswer = (checkBoxObject, answerObject) => {
-  const { header, options, answer } = checkBoxObject
-  if (!options) return ''
-  return `
-    <div>
-      <h4>${header}</h4>
-      ${options
-        .map((option) => {
-          const isChecked = answerObject[answer]?.includes(option.value)
-          if (!isChecked) return ''
-          return `
-            <div>
-              <input
-                type="checkbox"
-                id="${option.value}"
-                name="${option.value}"
-                value="${option.value}"
-                checked
-                disabled
-              />
-              <label for="${option.value}">${option.label}</label>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #2c5aa0;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #2c5aa0;
+            font-size: 24px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .header .test-info {
+            margin-top: 15px;
+        }
+
+        .header .test-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            background-color: #2c5aa0;
+            color: white;
+            padding: 12px 15px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .section-title.gray {
+            background-color: transparent;
+            color: #999;
+            padding: 12px 0;
+            border-bottom: none;
+        }
+
+        .section-subtitle {
+            color: #2c5aa0;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            margin-top: 20px;
+        }
+
+        .content {
+            padding: 0 15px;
+            text-align: justify;
+        }
+
+        .content p {
+            margin-bottom: 12px;
+        }
+
+        .content ul {
+            margin-left: 20px;
+            margin-bottom: 12px;
+        }
+
+        .content li {
+            margin-bottom: 8px;
+        }
+
+        .score-categories {
+            background-color: white;
+            padding: 20px 15px;
+            border-left: 5px solid #2c5aa0;
+            margin: 15px 0;
+        }
+
+        .score-categories ul {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .score-categories li {
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .score-categories li:last-child {
+            border-bottom: none;
+        }
+
+        .color-indicator {
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            margin-right: 15px;
+            vertical-align: middle;
+            border: 2px solid #ccc;
+            border-radius: 3px;
+        }
+
+        .green { background-color: #4CAF50; border-color: #4CAF50; }
+        .blue { background-color: #2196F3; border-color: #2196F3; }
+        .yellow { background-color: #FFC107; border-color: #FFC107; }
+        .red { background-color: #F44336; border-color: #F44336; }
+        .dark-brown { background-color: #5D4037; border-color: #5D4037; }
+
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .mapping-table th {
+            background-color: #2c5aa0;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .mapping-table td {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+        }
+
+        .mapping-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .mapping-table tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .score-cell {
+            font-weight: bold;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .graph-placeholder {
+            background-color: #f0f0f0;
+            border: 2px dashed #2c5aa0;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            color: #666;
+            font-style: italic;
+        }
+        
+        /* Helper to ensure graph fits */
+        .graph-container svg {
+             max-width: 100%;
+             height: auto;
+        }
+
+        .highlight-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2c5aa0;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .disclaimer {
+            background-color: #fff9e6;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            margin-top: 30px;
+            border-radius: 5px;
+        }
+
+        .disclaimer h3 {
+            color: #f57c00;
+            margin-bottom: 10px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #2c5aa0;
+            color: #666;
+        }
+
+        .bold-text {
+            font-weight: bold;
+        }
+
+        .emoji {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1>SDMAC-AI 5.0 Comprehensive Cognitive Test Report</h1>
+            <div class="test-info">
+                <p><strong>Name:</strong> ${patientName}</p>
+                <p><strong>Date of the test:</strong> ${reportDate}</p>
             </div>
-          `
-        })
-        .join('')}
-    </div>`
-}
-
-const RenderElplanation = (answerObject, explanation) => {
-  return `<div>
-      <h4>Explanation</h4>
-      ${
-        answerObject[explanation]
-          ? `<p>${answerObject[explanation]}</p>`
-          : `N/A`
-      }
-    </div>`
-}
-
-const RenderDocuments = (answerObject, documentHeader, documentName) => {
-  return `<div>
-      ${
-        documentHeader && answerObject['documents']?.length > 0
-          ? `<h4>${documentHeader}</h4>
-        ${answerObject['documents']
-          ?.map((docListItem) => {
-            if (docListItem['document_name'] === documentName) {
-              return `<div><a href=${docListItem[documentName]} target='_blank'>${docListItem['file_url']}</a></div>`
-            }
-          })
-          .join('')}`
-          : `<h4>No Documents Uploaded</h4>`
-      }
-    </div>`
-}
-
-const RenderSingleCheckboxAnswer = (answerObject, checkBoxObject) => {
-  const { label, value } = checkBoxObject || {}
-  const isChecked = answerObject[value] === 'Yes' ? true : false
-  return `
-    <div>
-      <input type="checkbox" ${isChecked ? 'checked' : 'disabled'} />
-      <label>${label}</label>
-    </div>`
-}
-
-const RenderSingleCheckboxAnswerPro = (answerObject, checkBoxObject) => {
-  const { label, value } = checkBoxObject || {}
-  const isChecked = Number(answerObject[value]) === 1 ? true : false
-  return `
-    <div>
-      <input type="checkbox" ${isChecked ? 'checked' : 'disabled'} />
-      <label>${label}</label>
-    </div>`
-}
-
-// Render functions for each question
-const RenderRiskAssessmentFirstQuestion = (questionObject, answerObject) => {
-  const { question1 } = questionObject
-  const { text, answer, explanation, documentHeader, documentName } = question1
-  const sequence = 1
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  ${RenderElplanation(answerObject, explanation)}
-  ${RenderDocuments(answerObject, documentHeader, documentName)}
-  </div>`
-}
-
-const RenderRiskAssessmentSecondQuestion = (questionObject, answerObject) => {
-  const { question2 } = questionObject
-  const { text, answer, subOptions, explanation } = question2
-  const sequence = 2
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderSubOptions(subOptions)}
-  ${RenderAnswer(answerObject, answer)}
-  ${RenderElplanation(answerObject, explanation)}
-  </div>`
-}
-
-const RenderInformedConsentProcessFirstQuestion = (
-  questionObject,
-  answerObject
-) => {
-  const { question1 } = questionObject
-  const { text, answer, documentHeader, documentName } = question1
-  const sequence = 1
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  ${RenderDocuments(answerObject, documentHeader, documentName)}
-  </div>`
-}
-
-const RenderInformedConsentProcessSecondQuestion = (
-  questionObject,
-  answerObject
-) => {
-  const { question2 } = questionObject
-  const { text, answer } = question2
-  const sequence = 2
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  </div>`
-}
-
-const RenderInformedConsentThirdQuestion = (questionObject, answerObject) => {
-  const { question3 } = questionObject
-  const { text, answer, explanation } = question3
-  const sequence = 3
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  ${RenderElplanation(answerObject, explanation)}
-  </div>`
-}
-
-const RenderInformedConsentProcessFourthQuestion = (
-  questionObject,
-  answerObject
-) => {
-  const { question4 } = questionObject
-  const { text, answer, explanation } = question4
-  const sequence = 4
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  ${RenderElplanation(answerObject, explanation)}
-  </div>`
-}
-
-const RenderInformedConsentFifthQuestion = (questionObject, answerObject) => {
-  const { question5 } = questionObject
-  const {
-    text,
-    subOptions,
-    answer,
-    explanation,
-    documentHeader,
-    documentName
-  } = question5
-  const sequence = 5
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderSubOptions(subOptions)}
-  ${RenderAnswer(answerObject, answer)}
-  ${RenderElplanation(answerObject, explanation)}
-  ${RenderDocuments(answerObject, documentHeader, documentName)}
-  </div>`
-}
-
-const RenderInvestigatorInstuationInfoFirstQuestion = (
-  questionObject,
-  answerObject
-) => {
-  const { question1 } = questionObject
-  const { text, answer, checkboxes, documentHeader, documentName } = question1
-  const sequence = 1
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  ${RenderCheckboxAnswer(answerObject, checkboxes)}
-  ${RenderDocuments(answerObject, documentHeader, documentName)}
-  </div>`
-}
-
-const RenderInvestigatorInstuationInfoSecondQuestion = (
-  questionObject,
-  answerObject
-) => {
-  const { question2 } = questionObject
-  const { text, answer, explanation, documentHeader, documentName } = question2
-  const sequence = 2
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  ${RenderElplanation(answerObject, explanation)}
-  ${RenderDocuments(answerObject, documentHeader, documentName)}
-  </div>`
-}
-
-const RenderInvestigatorInstuationInfoThirdQuestion = (
-  questionObject,
-  answerObject
-) => {
-  const { question3 } = questionObject
-  const { text, answer, documentHeader, documentName, subTexts, checkboxes } =
-    question3
-  const firstSubText = subTexts[0]
-  const secoundSubText = subTexts[1]
-  const sequence = 3
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  ${RenderCheckboxAnswer(answerObject, checkboxes)}
-  ${RenderTextOnly(secoundSubText.text)}
-  ${RenderSubTextAnswer(answerObject, secoundSubText.answer)}
-  ${RenderDocuments(answerObject, documentHeader, documentName)}
-  ${RenderTextOnly(firstSubText.text)}
-  ${RenderSubTextAnswer(answerObject, firstSubText.answer)}
-  ${RenderElplanation(answerObject, firstSubText.explanation)}
-  </div>`
-}
-
-const RenderInvestigatorInstuationInfoFourthQuestion = (
-  questionObject,
-  answerObject
-) => {
-  const { question4 } = questionObject
-  const { text, answer, explanation, documentHeader, documentName } = question4
-  const sequence = 4
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  ${RenderElplanation(answerObject, explanation)}
-  ${RenderDocuments(answerObject, documentHeader, documentName)}
-  </div>`
-}
-
-const RenderInvestigatorInstuationInfoFifthQuestion = (
-  questionObject,
-  answerObject
-) => {
-  const { question5 } = questionObject
-  const { text, answer, explanation } = question5
-  const sequence = 5
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  ${RenderElplanation(answerObject, explanation)}
-  </div>`
-}
-
-const RenderResearchProgressInfoFirstQuestion = (
-  questionObject,
-  answerObject
-) => {
-  const { question1 } = questionObject
-  const { text, answer } = question1
-  const sequence = 1
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  </div>`
-}
-
-const RenderResearchProgressInfoSecondQuestion = (
-  questionObject,
-  answerObject
-) => {
-  const { question2 } = questionObject
-  const { text, answer, subTexts } = question2
-  const firstSubText = subTexts[0]
-  const secoundSubText = subTexts[1]
-  const thirstSubtext = subTexts[2]
-  const fourthSubText = subTexts[3]
-  const sequence = 2
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  ${RenderTextOnly(firstSubText.text)}
-  ${RenderSubTextAnswer(answerObject, firstSubText.answer)}
-  ${
-    answerObject['sub_withdrew'] >= 1 &&
-    `<div>
-     ${RenderTextOnly(secoundSubText.text)}
-     ${RenderSubTextAnswer(answerObject, secoundSubText.answer)}
-    </div>`
-  }
-  ${RenderTextOnly(thirstSubtext.text)}
-  ${RenderSubTextAnswer(answerObject, thirstSubtext.answer)}
-  ${
-    answerObject['sub_terminated_before_completion'] >= 1 &&
-    `<div>
-     ${RenderTextOnly(fourthSubText.text)}
-     ${RenderSubTextAnswer(answerObject, fourthSubText.answer)}
-    </div>`
-  }
-  </div>`
-}
-
-const RenderResearchProgressInfoThirdQuestion = (
-  questionObject,
-  answerObject
-) => {
-  const { question3 } = questionObject
-  const { text, answer, subTexts, documentHeader, documentName } = question3
-  const sequence = 3
-  const firstSubText = subTexts[0]
-  const secoundSubText = subTexts[1]
-  const thirdSubText = subTexts[2]
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-
-  ${RenderTextOnly(firstSubText.text)}
-  ${RenderSubTextAnswer(answerObject, firstSubText.answer)}
-
-  ${
-    answerObject['adverse_event_submission'] === 'No' &&
-    `<div>
-    ${RenderTextOnly(secoundSubText.text)}
-    ${RenderSubTextAnswer(answerObject, secoundSubText.answer)}
-
-    ${RenderTextOnly(thirdSubText.text)}
-    ${RenderSubTextAnswer(answerObject, thirdSubText.answer)}
-
-    ${RenderDocuments(answerObject, documentHeader, documentName)}
-  </div>`
-  }
-
-  </div>`
-}
-
-const RenderResearchProgressInfoFourthQuestion = (
-  questionObject,
-  answerObject
-) => {
-  const { question4 } = questionObject
-  const { text, answer } = question4
-  const sequence = 4
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  </div>`
-}
-
-const RenderResearchProgressInfoFifthQuestion = (
-  questionObject,
-  answerObject
-) => {
-  const { question5 } = questionObject
-  const { text, answer, explanation, subTexts } = question5
-  const firstSubText = subTexts[0]
-  const sequence = 5
-  return `<div>
-  ${RenderQuestion(sequence, text)}
-  ${RenderAnswer(answerObject, answer)}
-  ${
-    answerObject['last_approval_change'] === 'Yes' &&
-    `<div>
-     ${RenderTextOnly(firstSubText.text)}
-     ${RenderSubTextAnswer(answerObject, firstSubText.answer)}
-    </div>`
-  }
-  ${RenderElplanation(answerObject, explanation)}
-  </div>`
-}
-
-const continuingReviewHTMLTemplate = (templateProps) => {
-  const { continuingReviewQuestions } = questionsToRender
-  const {
-    riskAssessment,
-    informedConsentProcess,
-    investigatorInstuationInfo,
-    researchProgressInfo
-    // submissionAdditionalInfo
-  } = continuingReviewQuestions
-  const {
-    risk_assessment,
-    informed_consent_process,
-    investigator_instuation_info,
-    research_progress_info
-    // protocol_details
-  } = templateProps
-  const children = `
-      <main>
-        <h1>
-          ${templateProps.headerText} (${templateProps.protocolId})
-        </h1>
-        <div style="page-break-after: always;">
-          ${renderHeader(riskAssessment)}
-          ${RenderRiskAssessmentFirstQuestion(riskAssessment, risk_assessment)}
-          ${RenderRiskAssessmentSecondQuestion(riskAssessment, risk_assessment)}
         </div>
 
-        <div style="page-break-after: always;">
-          ${renderHeader(informedConsentProcess)}
-          ${RenderInformedConsentProcessFirstQuestion(
-            informedConsentProcess,
-            informed_consent_process
-          )}
-          ${RenderInformedConsentProcessSecondQuestion(
-            informedConsentProcess,
-            informed_consent_process
-          )}
-          ${RenderInformedConsentThirdQuestion(
-            informedConsentProcess,
-            informed_consent_process
-          )}
-          ${RenderInformedConsentProcessFourthQuestion(
-            informedConsentProcess,
-            informed_consent_process
-          )}
-          ${RenderInformedConsentFifthQuestion(
-            informedConsentProcess,
-            informed_consent_process
-          )}
+        <!-- Introduction Section -->
+        <div class="section">
+            <div class="section-title">Self-Administered Cognitive Assessment Test Battery (SDMAC)</div>
+            <div class="content">
+                <p><strong>Human cognition is the ability to understand, learn, remember, and interact with the surroundings.</strong></p>
+                
+                <p>This process happens continuously through visual and auditory input, allowing the brain to interpret information, make decisions, and respond appropriately.</p>
+                
+                <p>The Self-Administered Memory & Attention Cognitive Test is performed under standardized testing conditions using clear and simple instructions. It is conducted through Self-Digital Memory & Attention Cognitive Assessment (SDMAC), an online digital cognitive testing tool.</p>
+                
+                <p><strong>SDMAC has been extensively researched in both:</strong> Healthy individuals and Individuals with cognitive impairment, including memory loss and dementia</p>
+                
+                <p><strong>SDMAC evaluates 10 different cognitive domain functions using:</strong> Audio-visual interactive test batteries, Timed in sequential cognitive tasks on Digital screen–based responses</p>
+                
+                <p>These domains assess how well different brain circuits function during thinking, memory, attention, and problem-solving activities.</p>
+                
+                <div class="highlight-box">
+                    <p><strong>Test Performance & Accuracy</strong> depends on sincere effort and active participation. The Users must carefully follow instructions with tasks that are time-limited and designed to measure real-time cognitive processing. Greater engagement leads to more reliable results. Our DMAC research and data analysed by third parties has reported <strong>"sensitivity of 86.5%, specificity of 89.3%, and an overall correct classification rate of 87.2% of the SDMAC".</strong></p>
+                </div>
+                
+                <p>Each cognitive domain is scored individually and displayed as a percentage, reflecting the strength of that specific brain circuit. The four major cognitive domain functions are further analyzed and compared to the individual with cognitive impaired and normal cognitive functioning in the community to determine the percentile score on bell curve.</p>
+                
+                <p>Moderate to severe impairment scores indicate a significant reduction in the brain's ability to: Process information, Maintain attention, Store or retrieve memory, Perform complex cognitive tasks. These findings suggest difficulty across multiple cognitive domains.</p>
+            </div>
         </div>
 
-        <div style="page-break-after: always;">
-          ${renderHeader(investigatorInstuationInfo)}
-          ${RenderInvestigatorInstuationInfoFirstQuestion(
-            investigatorInstuationInfo,
-            investigator_instuation_info
-          )}
-          ${RenderInvestigatorInstuationInfoSecondQuestion(
-            investigatorInstuationInfo,
-            investigator_instuation_info
-          )}
-          ${RenderInvestigatorInstuationInfoThirdQuestion(
-            investigatorInstuationInfo,
-            investigator_instuation_info
-          )}
-          ${RenderInvestigatorInstuationInfoFourthQuestion(
-            investigatorInstuationInfo,
-            investigator_instuation_info
-          )}
-          ${RenderInvestigatorInstuationInfoFifthQuestion(
-            investigatorInstuationInfo,
-            investigator_instuation_info
-          )}
+        <!-- Score Categories Section -->
+        <div class="section">
+            <div class="section-subtitle">Cognitive Score Categories and Interpretation:</div>
+            <div class="score-categories">
+                <ul>
+                    <li><span class="color-indicator green"></span><strong>≥ 80%</strong> → Normal cognitive function</li>
+                    <li><span class="color-indicator blue"></span><strong>60% – 79%</strong> → Mild cognitive impairment</li>
+                    <li><span class="color-indicator yellow"></span><strong>40% – 59%</strong> → Moderate cognitive impairment</li>
+                    <li><span class="color-indicator red"></span><strong>20% – 39%</strong> → Moderately severe cognitive impairment</li>
+                    <li><span class="color-indicator dark-brown"></span><strong>&lt; 20%</strong> → Severe cognitive impairment</li>
+                </ul>
+            </div>
         </div>
 
-        <div style="page-break-after: always;">
-          ${renderHeader(researchProgressInfo)}
-          ${RenderResearchProgressInfoFirstQuestion(
-            researchProgressInfo,
-            research_progress_info
-          )}
-          ${RenderResearchProgressInfoSecondQuestion(
-            researchProgressInfo,
-            research_progress_info
-          )}
-          ${RenderResearchProgressInfoThirdQuestion(
-            researchProgressInfo,
-            research_progress_info
-          )}
-          ${RenderResearchProgressInfoFourthQuestion(
-            researchProgressInfo,
-            research_progress_info
-          )}
-          ${RenderResearchProgressInfoFifthQuestion(
-            researchProgressInfo,
-            research_progress_info
-          )}
-        </div>
-      </main>
-   `
-  return RenderBody(children)
-}
-
-// Protocol Amendment Request
-
-// Clinical Site
-const ClinicalSiteHTMLTemplate = (templateProps) => {
-  const { protocolDetails } = questionsToRender
-  const { clinicalReviewQuestions } = protocolDetails
-  const {
-    headerText,
-    protocolId,
-    protocolType,
-    protocol_information,
-    investigator_information,
-    study_information,
-    informed_consent,
-    protocol_procedure,
-    protocol_details
-  } = templateProps
-  const {
-    informedConsentForm,
-    investigatorInformation,
-    protocolInformation,
-    protocolProcedure,
-    studyInformation,
-    submissinForm,
-    submissionAdditionalInfo
-  } = clinicalReviewQuestions
-
-  // additional details
-  const { created_at, status } = protocol_details
-
-  const statusToRender = getMappedStatus(status)
-  const createdDateToRender = getCreatedData(created_at)
-
-  const children = `<main>
-        <h2 style="text-align: center;">${headerText}</h2>
-        <h3 style="text-align: center;">Protocol Number : ${protocolId}</h3>
-      <h4 style="text-align: center;">Status : ${statusToRender} | Created Date : ${createdDateToRender}</h4>
-         <div style="page-break-after: always;">
-         ${renderHeader(protocolInformation)}
-         ${RenderQuestion(1, protocolInformation.question1.text)}
-         ${RenderAnswer(
-           protocol_information,
-           protocolInformation.question1.answer
-         )}
-          ${protocolInformation.question1.subTexts
-            ?.map((subText, index) => {
-              return `<div>
-              ${subText?.text ? RenderQuestion(index + 2, subText.text) : ''}
-              ${
-                subText?.answer
-                  ? RenderAnswer(protocol_information, subText.answer)
-                  : ''
-              }
-              ${
-                subText?.explanation
-                  ? RenderElplanation(protocol_information, subText.explanation)
-                  : ''
-              }
-            </div>`
-            })
-            .join('')}
-          ${RenderDocuments(
-            protocol_information,
-            protocolInformation.question1.documentHeader,
-            protocolInformation.question1.documentName
-          )}
+        <!-- DMAC-NAS Framework Section -->
+        <div class="section">
+            <div class="section-title gray">Neuroanatomical Signature of DMAC Scores with Mapping (DMAC-NAS Framework)</div>
+            <div class="content">
+                <p>The DMAC Neuroanatomical Signature (DMAC-NAS) translates multidomain cognitive test performance into brain-region–specific functional vulnerability patterns.</p>
+                
+                <p>Each DMAC battery maps to dominant neural networks; the pattern of deficits across the 10 batteries creates a "signature", not just a score.</p>
+                
+                <div class="section-subtitle">DMAC Cognitive Test Batteries → Dominant Brain Network Mapping Score</div>
+                
+                <table class="mapping-table">
+                    <thead>
+                        <tr>
+                            <th>Functional Domain</th>
+                            <th>Core Cognitive Function</th>
+                            <th>Primary Neuroanatomical Network</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Cog. Test-1</td>
+                            <td>Attention & Concentration</td>
+                            <td>Frontal–Parietal Network, Brainstem arousal</td>
+                            <td class="score-cell">${getScore('Number Recall')}</td>
+                        </tr>
+                        <tr>
+                            <td>Cog. Test-2</td>
+                            <td>Processing Speed / Reaction Time</td>
+                            <td>Frontal–Cerebellar–Brainstem</td>
+                            <td class="score-cell">${getScore('Attention')}</td>
+                        </tr>
+                        <tr>
+                            <td>Cog. Test-3</td>
+                            <td>Executive Function</td>
+                            <td>Dorsolateral Prefrontal Cortex</td>
+                            <td class="score-cell">${getScore('Executive Function')}</td>
+                        </tr>
+                        <tr>
+                            <td>Cog. Test-4</td>
+                            <td>Working Memory</td>
+                            <td>Frontal–Temporal Network</td>
+                            <td class="score-cell">${getScore('Working Memory')}</td>
+                        </tr>
+                        <tr>
+                            <td>Cog. Test-5</td>
+                            <td>Delayed Recall Memory</td>
+                            <td>Medial Temporal (Hippocampus) network</td>
+                            <td class="score-cell">${getScore('Delayed Recall')}</td>
+                        </tr>
+                        <tr>
+                            <td>Cog. Test-6</td>
+                            <td>Visual Memory</td>
+                            <td>Occipital–Temporal Network</td>
+                            <td class="score-cell">${getScore('Immediate Visual Recall')}</td>
+                        </tr>
+                        <tr>
+                            <td>Cog. Test-7</td>
+                            <td>Language & Naming</td>
+                            <td>Temporal–Parietal Language Network</td>
+                            <td class="score-cell">${getScore('Semantic / Language')}</td>
+                        </tr>
+                        <tr>
+                            <td>Cog. Test-8</td>
+                            <td>Immediate Visuospatial & Visual Attention</td>
+                            <td>Parietal–Occipital Network</td>
+                            <td class="score-cell">${getScore('Immediate Visual Recall')}</td>
+                        </tr>
+                        <tr>
+                            <td>Cog. Test-9</td>
+                            <td>Motor Planning & Coordination</td>
+                            <td>Cerebellar–Parietal–Frontal</td>
+                            <td class="score-cell">${getScore('Executive Function')}</td>
+                        </tr>
+                        <tr>
+                            <td>Cog. Test-10</td>
+                            <td>Disinhibition Behavioral / Emotional Regulation</td>
+                            <td>Orbitofrontal–Limbic Network</td>
+                            <td class="score-cell">${getScore('Disinhibition')}</td>
+                        </tr>
+                        <tr>
+                            <td>Cog. Test-11</td>
+                            <td>Immediate Auditory Memory</td>
+                            <td>Temporal–frontal–limbic network</td>
+                            <td class="score-cell">${getScore('Immediate Auditory Recall')}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-         <div style="page-break-after: always;">
-          ${renderHeader(investigatorInformation)}
-           ${investigatorInformation.subTexts
-             ?.map((subText) => {
-               return `<div>
-              ${
-                subText?.text
-                  ? RenderQuestion(subText.sequence, subText.text)
-                  : ''
-              }
-              ${
-                subText?.answer
-                  ? RenderAnswer(investigator_information, subText.answer)
-                  : ''
-              }
-              ${
-                subText?.explanation
-                  ? RenderElplanation(
-                      investigator_information,
-                      subText.explanation
-                    )
-                  : ''
-              }
-              ${
-                subText?.checkboxes
-                  ? RenderCheckboxAnswer(
-                      investigator_information,
-                      subText.checkboxes
-                    )
-                  : ''
-              }
-            </div>`
-             })
-             .join('')}
-            ${investigatorInformation?.documentsUploadedList
-              ?.map((docListItem) => {
-                return `${RenderDocuments(
-                  investigator_information,
-                  docListItem.documentHeader,
-                  docListItem.documentName
-                )}`
-              })
-              .join('')}
+        <!-- Graph Placeholders -->
+        <div class="section">
+            <div class="section-subtitle"><span class="emoji">📌</span> Graph on y axis 10% increment X axis Cognitive functioning</div>
+            <div class="graph-container">
+                 ${generateGraph()}
+            </div>
         </div>
 
-        <div style="page-break-after: always;">
-          ${renderHeader(studyInformation)}
-          ${RenderQuestion(1, studyInformation.question1.text)}
-          ${RenderAnswer(study_information, studyInformation.question1.answer)}
-          ${RenderElplanation(
-            study_information,
-            studyInformation.question1.explanation
-          )}
-          ${RenderDocuments(
-            study_information,
-            studyInformation.documentsUploadedList[0].documentHeader,
-            studyInformation.documentsUploadedList[0].documentName
-          )}
+        <div class="section">
+            <div class="section-subtitle">Traumatic Brain Injury Pattern Graph</div>
+            ${generateTBIGraph()}
         </div>
 
-        <div style="page-break-after: always;">
-        ${renderHeader(informedConsentForm)}
-        ${RenderCheckboxAnswer(
-          informed_consent,
-          informedConsentForm.checkboxes
-        )}
-        ${informedConsentForm.subTexts
-          ?.map((subText) => {
-            return `<div>
-          ${subText?.text ? RenderQuestion(subText.sequence, subText.text) : ''}
-          ${
-            subText?.answer
-              ? RenderAnswer(informed_consent, subText.answer)
-              : ''
-          }
-          ${
-            subText?.explanation
-              ? RenderElplanation(informed_consent, subText.explanation)
-              : ''
-          }
-        </div>`
-          })
-          .join('')}
-        ${informedConsentForm.documentsUploadedList
-          ?.map((docListItem) => {
-            return `${RenderDocuments(
-              informed_consent,
-              docListItem.documentHeader,
-              docListItem.documentName
-            )}`
-          })
-          .join('')}
-          ${RenderTextOnly(informedConsentForm.declaration.header)}
-          ${RenderSingleCheckboxAnswer(
-            informed_consent,
-            informedConsentForm.declaration.checkBox
-          )}
+        <div class="section">
+            <div class="section-subtitle">Your Percentile Cognitive functional Score in comparison</div>
+            <div class="graph-container">
+                 ${generateBellCurve()}
+            </div>
         </div>
 
-        <div style="page-break-after: always;">
-        ${renderHeader(protocolProcedure)}
-        ${RenderCheckboxAnswer(
-          protocol_procedure,
-          protocolProcedure.checkboxes
-        )}
-        ${RenderCheckboxAnswer(
-          protocol_procedure,
-          protocolProcedure.checkboxes2
-        )}
-        ${protocolProcedure.subTexts
-          ?.map((subText) => {
-            return `<div>
-          ${subText?.text ? RenderQuestion(subText.sequence, subText.text) : ''}
-          ${
-            subText?.answer
-              ? RenderAnswer(protocol_procedure, subText.answer)
-              : ''
-          }
-          ${
-            subText?.explanation
-              ? RenderElplanation(protocol_procedure, subText.explanation)
-              : ''
-          }
-            </div>`
-          })
-          .join('')}
-          ${RenderCheckboxAnswer(
-            protocol_procedure,
-            protocolProcedure.checkboxes3
-          )}
-          ${RenderQuestion(
-            protocolProcedure.question3.sequence,
-            protocolProcedure.question3.text
-          )}
-          ${RenderAnswer(
-            protocol_procedure,
-            protocolProcedure.question3.answer
-          )}
-          ${RenderQuestion(
-            protocolProcedure.question4.sequence,
-            protocolProcedure.question4.text
-          )}
-          ${RenderAnswer(
-            protocol_procedure,
-            protocolProcedure.question4.answer
-          )}
-          ${RenderTextOnly(protocolProcedure.question4.explanation.header)}
-          ${RenderElplanation(
-            protocol_procedure,
-            protocolProcedure.question4.explanation.answer
-          )}
-          ${RenderDocuments(
-            protocol_procedure,
-            protocolProcedure.documentHeader,
-            protocolProcedure.documentName
-          )}
-          ${RenderSingleCheckboxAnswer(
-            protocol_procedure,
-            protocolProcedure.checkBox
-          )}
+        <!-- LICCA and Training Section -->
+        <div class="section">
+            <div class="section-title">Personalized Training & Brain Exercise</div>
+            <div class="content">
+                <p>The Self-DMAC cognitive test scores and questionnaire results are collectively processed through an AI-driven algorithm to generate personalized training plans within the Life Integrated Computerized Cognitive Application (LICCA). LICCA delivers targeted cognitive exercises designed to strengthen brain circuits and cognitive functions through repeated practice and adaptive engagement.</p>
+                
+                <div class="highlight-box">
+                    <p>The SDMAC cognitive test scores are intended for cognitive screening and wellness monitoring only and are not confirmatory neuropsychological diagnostic tests. Individuals are advised to consult their physician or neurologist for formal neuropsychological evaluation and for any medical diagnosis, intervention, or treatment decisions.</p>
+                </div>
+                
+                <p><strong>RM360 Brain training exercise</strong> by repeated practice strengthens brain circuits, improves communication between areas so the brain works more efficiently and supports better daily functioning. Think of it as rewiring and strengthening cognitive pathways.</p>
+            </div>
         </div>
 
-        <div style="page-break-after: always;">
-         ${renderHeader(submissinForm)}
-         ${RenderTextOnly(submissinForm.text)}
-
-         ${RenderSingleCheckboxAnswerPro(protocol_details, submissionAdditionalInfo.checkBox1)}
-         ${RenderSingleCheckboxAnswerPro(protocol_details, submissionAdditionalInfo.checkBox2)}
-
-         ${RenderTextOnly(submissionAdditionalInfo.text)}
-         ${RenderAnswerPro(protocol_details, submissionAdditionalInfo.answer)}
-        </div>
-    </main>`
-  return RenderBody(children)
-}
-
-// Multi-Site Sponsor
-const MultiSiteSponsorHTMLTemplate = (templateProps) => {
-  const { protocolDetails } = questionsToRender
-  const { multiSiteSponsorQuestions } = protocolDetails
-  const {
-    headerText,
-    protocolId,
-    protocolType,
-    protocol_information,
-    contact_information,
-    study_information,
-    informed_consent,
-    protocol_procedure,
-    protocol_details
-  } = templateProps
-  const {
-    contactInformation,
-    informedConsentForm,
-    protocolInformation,
-    protocolProcedure,
-    studyInformation,
-    submissinForm,
-    submissionAdditionalInfo
-  } = multiSiteSponsorQuestions
-
-  // additional details
-  const { created_at, status } = protocol_details
-
-  const statusToRender = getMappedStatus(status)
-  const createdDateToRender = getCreatedData(created_at)
-
-  const children = `<main>
-      <h2 style="text-align: center;">${headerText}</h2>
-      <h3 style="text-align: center;">Protocol Number : ${protocolId}</h3>
-      <h4 style="text-align: center;">Status : ${statusToRender} | Created Date : ${createdDateToRender}</h4>
-      <div style="page-break-after: always;">
-        ${renderHeader(protocolInformation)}
-        ${RenderQuestion(1, protocolInformation.question1.text)}
-        ${RenderAnswer(
-          protocol_information,
-          protocolInformation.question1.answer
-        )}
-        ${protocolInformation.subTexts
-          ?.map((subText) => {
-            return `<div>
-          ${RenderQuestion(subText.sequence, subText.text)}
-          ${RenderAnswer(protocol_information, subText.answer)}
-          ${
-            subText.explanation
-              ? RenderElplanation(protocol_information, subText.explanation)
-              : ''
-          }
-        </div>`
-          })
-          .join('')}
-        ${RenderDocuments(
-          protocol_information,
-          protocolInformation.documentHeader,
-          protocolInformation.documentName
-        )}
-      </div>
-
-       <div style="page-break-after: always;">
-        ${renderHeader(contactInformation)}
-        ${contactInformation.subQuestions
-          ?.map((subTexts) => {
-            return `<div> 
-          ${subTexts.header ? RenderTextOnly(subTexts.header) : ''}
-          ${
-            subTexts.text
-              ? RenderQuestion(subTexts.sequence, subTexts.text)
-              : ''
-          }
-          ${
-            subTexts.answer
-              ? RenderAnswer(contact_information, subTexts.answer)
-              : ''
-          }
-        </div>`
-          })
-          .join('')}
-       ${contactInformation.subQuestions2
-         ?.map((subText) => {
-           return `<div> 
-          ${subText.header ? RenderTextOnly(subText.header) : ''}
-          ${subText.text ? RenderQuestion(subText.sequence, subText.text) : ''}
-          ${
-            subText.answer
-              ? RenderAnswer(contact_information, subText.answer)
-              : ''
-          }
-        </div>`
-         })
-         .join('')}
-      </div>
-
-       <div style="page-break-after: always;">
-        ${renderHeader(studyInformation)}
-        ${RenderQuestion(1, studyInformation.question1.text)}
-        ${RenderAnswer(study_information, studyInformation.question1.answer)}
-        ${RenderElplanation(
-          study_information,
-          studyInformation.question1.explanation
-        )}
-        ${RenderDocuments(
-          study_information,
-          studyInformation.documentsUploadedList[0].documentHeader,
-          studyInformation.documentsUploadedList[0].documentName
-        )}
-      </div>
-
-       <div style="page-break-after: always;">
-        ${renderHeader(informedConsentForm)}
-        ${RenderCheckboxAnswer(
-          informed_consent,
-          informedConsentForm.checkboxes
-        )}
-        ${informedConsentForm.subTexts
-          ?.map((subText) => {
-            return `<div>
-          ${subText.text ? RenderQuestion(subText.sequence, subText.text) : ''}
-          ${
-            subText.answer ? RenderAnswer(informed_consent, subText.answer) : ''
-          }
-          ${
-            subText.explanation
-              ? RenderElplanation(informed_consent, subText.explanation)
-              : ''
-          }
-        </div>`
-          })
-          .join('')}
-        ${RenderDocuments(
-          informed_consent,
-          informedConsentForm.documentHeader,
-          informedConsentForm.documentName
-        )}
-        ${RenderTextOnly(informedConsentForm.declaration.header)}
-        ${RenderSingleCheckboxAnswer(
-          informed_consent,
-          informedConsentForm.declaration.checkBox
-        )}
-      </div>
-
-      <div style="page-break-after: always;">
-        ${renderHeader(protocolProcedure)}
-        ${RenderCheckboxAnswer(
-          protocol_procedure,
-          protocolProcedure.checkboxes
-        )}
-        ${RenderCheckboxAnswer(
-          protocol_procedure,
-          protocolProcedure.checkboxes2
-        )}
-        ${protocolProcedure.subTexts
-          ?.map((subText) => {
-            return `<div>
-          ${subText.text ? RenderQuestion(subText.sequence, subText.text) : ''}
-          ${
-            subText.answer
-              ? RenderAnswer(protocol_procedure, subText.answer)
-              : ''
-          }
-          ${
-            subText.explanation
-              ? RenderElplanation(protocol_procedure, subText.explanation)
-              : ''
-          }
-        </div>`
-          })
-          .join('')}
-        ${RenderCheckboxAnswer(
-          protocol_procedure,
-          protocolProcedure.checkboxes3
-        )}
-         ${protocolProcedure.subTexts2
-           ?.map((subText) => {
-             return `<div>
-          ${subText.text ? RenderQuestion(subText.sequence, subText.text) : ''}
-          ${
-            subText.answer
-              ? RenderAnswer(protocol_procedure, subText.answer)
-              : ''
-          }
-          ${
-            subText.explanation
-              ? `${RenderTextOnly(subText.explanation.header)}
-              ${RenderElplanation(
-                protocol_procedure,
-                subText.explanation.answer
-              )}`
-              : ''
-          }
-        </div>`
-           })
-           .join('')}
-        ${RenderDocuments(
-          protocol_procedure,
-          protocolProcedure.documentHeader,
-          protocolProcedure.documentName
-        )}
-        ${RenderSingleCheckboxAnswer(
-          protocol_procedure,
-          protocolProcedure.checkBox
-        )}
-        
-      </div>
-
-      <div style="page-break-after: always;">
-       ${renderHeader(submissinForm)}
-       ${RenderTextOnly(submissinForm.text)}
-        
-        ${RenderSingleCheckboxAnswerPro(protocol_details, submissionAdditionalInfo.checkBox1)}
-        ${RenderSingleCheckboxAnswerPro(protocol_details, submissionAdditionalInfo.checkBox2)}
-
-         ${RenderTextOnly(submissionAdditionalInfo.text)}
-         ${RenderAnswerPro(protocol_details, submissionAdditionalInfo.answer)}
-      </div>
-    </main>`
-  return RenderBody(children)
-}
-
-// Principal Investigator
-const PrincipalInvestigatorHTMLTemplate = (templateProps) => {
-  const { protocolDetails } = questionsToRender
-  const { principalInvestigatorQuestions } = protocolDetails
-  const {
-    headerText,
-    protocolId,
-    protocolType,
-    investigator_protocol_information,
-    consent_information,
-    protocol_details
-  } = templateProps
-  const {
-    informedConsentForm,
-    investigatorInformation,
-    submissinForm,
-    submissionAdditionalInfo
-  } = principalInvestigatorQuestions
-
-  // additional details
-  const { created_at, status, protocol_user_type } = protocol_details
-
-  const statusToRender = getMappedStatus(status)
-  const createdDateToRender = getCreatedData(created_at)
-
-  const children = `<main>
-      <h2 style="text-align: center;">${headerText} (${protocol_user_type})</h2>
-      <h3 style="text-align: center;">Protocol Number : ${protocolId}</h3>
-      <h4 style="text-align: center;">Status : ${statusToRender} | Created Date : ${createdDateToRender}</h4>
-      <div style="page-break-after: always;">
-        ${renderHeader(investigatorInformation)}
-        ${investigatorInformation.subQuestions
-          ?.map((subQuestion) => {
-            return `<div>
-          ${RenderQuestion(subQuestion.sequence, subQuestion.text)}
-          ${RenderAnswer(investigator_protocol_information, subQuestion.answer)}
-            </div>`
-          })
-          .join('')}
-          ${RenderTextOnly(investigatorInformation.question1.text)}
-          ${investigatorInformation.question1.subTexts
-            ?.map((subText) => {
-              return `<div>
-            ${RenderQuestion(subText.sequence, subText.text)}
-            ${RenderAnswer(investigator_protocol_information, subText.answer)}
-            </div>`
-            })
-            .join('')}
-         
-          ${RenderQuestion(
-            investigatorInformation.question2.sequence,
-            investigatorInformation.question2.text
-          )}
-          ${RenderAnswer(
-            investigator_protocol_information,
-            investigatorInformation.question2.answer
-          )}
-          ${RenderQuestion(
-            investigatorInformation.question3.sequence,
-            investigatorInformation.question3.text
-          )}
-          ${RenderAnswer(
-            investigator_protocol_information,
-            investigatorInformation.question3.answer
-          )}
-          ${RenderElplanation(
-            investigator_protocol_information,
-            investigatorInformation.question3.explanation
-          )}
-
-          ${investigatorInformation.documentsUploadedList
-            ?.map((docListItem) => {
-              return `${RenderDocuments(
-                investigator_protocol_information,
-                docListItem.documentHeader,
-                docListItem.documentName
-              )}`
-            })
-            .join('')}
+        <!-- Disclaimer Section -->
+        <div class="disclaimer">
+            <h3>Disclaimer</h3>
+            <p>SDMAC has been researched and developed to assess cognitive domain strengths and weaknesses. It is not intended for medical diagnosis and does not replace professional medical evaluation or treatment. This program is designed to support understanding of cognitive function and cognitive impairment and to help guide discussions with qualified healthcare providers. Individual results may vary.</p>
         </div>
 
-        <div style="page-break-after: always;">
-        ${renderHeader(informedConsentForm)}
-        ${RenderQuestion(1, informedConsentForm.question1.text)}
-        ${informedConsentForm.question1.subTexts
-          ?.map((subText) => {
-            return `<div>
-          ${RenderQuestion(subText.sequence, subText.text)}
-          ${RenderAnswer(consent_information, subText.answer)}
-          </div>`
-          })
-          .join('')}
-          ${RenderTextOnly(informedConsentForm.declaration.header)}
-          ${RenderSingleCheckboxAnswer(
-            consent_information,
-            informedConsentForm.checkBox
-          )}
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Contact@regainmemory.com</strong></p>
         </div>
-
-        <div style="page-break-after: always;">
-        ${renderHeader(submissinForm)}
-        ${RenderTextOnly(submissinForm.text)}
-        
-        ${RenderSingleCheckboxAnswerPro(protocol_details, submissionAdditionalInfo.checkBox1)}
-        ${RenderSingleCheckboxAnswerPro(protocol_details, submissionAdditionalInfo.checkBox2)}
-
-         ${RenderTextOnly(submissionAdditionalInfo.text)}
-         ${RenderAnswerPro(protocol_details, submissionAdditionalInfo.answer)}
-       </div>
-          
-    </main>`
-  return RenderBody(children)
-}
-
-// Document Review
-const DocumentReviewHTMLTemplate = (templateProps) => {
-  const { protocolDetails } = questionsToRender
-  const { documentReviewQuestions } = protocolDetails
-  const {
-    headerText,
-    protocolId,
-    protocolType,
-    protocol_information,
-    investigator_information,
-    informed_consent,
-    protocol_details
-  } = templateProps
-  const {
-    informedConsentForm,
-    investigatorInformation,
-    protocolInformation,
-    submissinForm,
-    submissionAdditionalInfo
-  } = documentReviewQuestions
-
-  // additional details
-  const { created_at, status } = protocol_details
-
-  const statusToRender = getMappedStatus(status)
-  const createdDateToRender = getCreatedData(created_at)
-
-  const children = `<main>
-        <h2 style="text-align: center;">${headerText}</h2>
-        <h3 style="text-align: center;">Protocol Number : ${protocolId}</h3>
-      <h4 style="text-align: center;">Status : ${statusToRender} | Created Date : ${createdDateToRender}</h4>
-         <div style="page-break-after: always;">
-         ${renderHeader(protocolInformation)}
-         ${RenderQuestion(1, protocolInformation.question1.text)}
-         ${RenderAnswer(
-           protocol_information,
-           protocolInformation.question1.answer
-         )}
-          ${protocolInformation.question1.subTexts
-            ?.map((subText, index) => {
-              return `<div>
-              ${subText?.text ? RenderQuestion(index + 2, subText.text) : ''}
-              ${
-                subText?.answer
-                  ? RenderAnswer(protocol_information, subText.answer)
-                  : ''
-              }
-              ${
-                subText?.explanation
-                  ? RenderElplanation(protocol_information, subText.explanation)
-                  : ''
-              }
-            </div>`
-            })
-            .join('')}
-          ${RenderDocuments(
-            protocol_information,
-            protocolInformation.question1.documentHeader,
-            protocolInformation.question1.documentName
-          )}
-        </div>
-
-          <div style="page-break-after: always;">
-            ${renderHeader(investigatorInformation)}
-            ${investigatorInformation.subTexts
-              ?.map((subText) => {
-                return `<div>
-              ${
-                subText?.text
-                  ? RenderQuestion(subText.sequence, subText.text)
-                  : ''
-              }
-              ${
-                subText?.answer
-                  ? RenderAnswer(investigator_information, subText.answer)
-                  : ''
-              }
-              ${
-                subText?.explanation
-                  ? RenderElplanation(
-                      investigator_information,
-                      subText.explanation
-                    )
-                  : ''
-              }
-              ${
-                subText?.checkboxes
-                  ? RenderCheckboxAnswer(
-                      investigator_information,
-                      subText.checkboxes
-                    )
-                  : ''
-              }
-            </div>`
-              })
-              .join('')}
-            ${investigatorInformation?.documentsUploadedList
-              ?.map((docListItem) => {
-                return `${RenderDocuments(
-                  investigator_information,
-                  docListItem.documentHeader,
-                  docListItem.documentName
-                )}`
-              })
-              .join('')}
-          </div>
-        <div style="page-break-after: always;">
-        ${renderHeader(informedConsentForm)}
-        ${RenderCheckboxAnswer(
-          informed_consent,
-          informedConsentForm.checkboxes
-        )}
-        ${informedConsentForm.subTexts
-          ?.map((subText) => {
-            return `<div>
-          ${subText?.text ? RenderQuestion(subText.sequence, subText.text) : ''}
-          ${
-            subText?.answer
-              ? RenderAnswer(informed_consent, subText.answer)
-              : ''
-          }
-          ${
-            subText?.explanation
-              ? RenderElplanation(informed_consent, subText.explanation)
-              : ''
-          }
-        </div>`
-          })
-          .join('')}
-        ${informedConsentForm.documentsUploadedList
-          ?.map((docListItem) => {
-            return `${RenderDocuments(
-              informed_consent,
-              docListItem.documentHeader,
-              docListItem.documentName
-            )}`
-          })
-          .join('')}
-          ${RenderTextOnly(informedConsentForm.declaration.header)}
-          ${RenderSingleCheckboxAnswer(
-            informed_consent,
-            informedConsentForm.declaration.checkBox
-          )}
-        </div>
-        <div style="page-break-after: always;">
-        ${renderHeader(submissinForm)}
-        ${RenderTextOnly(submissinForm.text)}
-
-         ${RenderTextOnly(submissionAdditionalInfo.checkBox1.label)}
-         ${RenderSingleCheckboxAnswerPro(protocol_details, submissionAdditionalInfo.checkBox1)}
-
-        ${RenderSingleCheckboxAnswerPro(protocol_details, submissionAdditionalInfo.checkBox1)}
-        ${RenderSingleCheckboxAnswerPro(protocol_details, submissionAdditionalInfo.checkBox2)}
-
-         ${RenderTextOnly(submissionAdditionalInfo.text)}
-         ${RenderAnswerPro(protocol_details, submissionAdditionalInfo.answer)}
-         </div>
-    </main>`
-  return RenderBody(children)
-}
-
-const protocolAmendmentRequestHTMLTemplate = {
-  ClinicalSiteHTMLTemplate,
-  MultiSiteSponsorHTMLTemplate,
-  PrincipalInvestigatorHTMLTemplate,
-  DocumentReviewHTMLTemplate
+    </div>
+</body>
+</html>
+  `
 }
 
 const htmlTemplates = {
-  continuingReviewHTMLTemplate,
-  protocolAmendmentRequestHTMLTemplate
+    dmacGameReportHTMLTemplate
 }
 
 export default htmlTemplates

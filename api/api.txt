@@ -1,0 +1,538 @@
+Cool, let’s lock this in properly now:
+**Same DB you already have + clean, predictable APIs + clear FE calling flow.**
+
+I’ll break it into:
+
+1. API list (endpoints + purpose)
+2. Detailed request/response payloads (for both modules)
+3. Front-end integration flow (what to call, when, and what to do with responses)
+
+---
+
+## 1. API List (high level)
+
+Base URL example: `/api`
+
+### 1.1 Game & Modules
+
+1. **GET `/api/game/instructions`**
+
+   * Get global game instructions (per language).
+
+2. **GET `/api/modules`**
+
+   * Get ordered list of active modules (for now you’ll only use first two).
+
+---
+
+### 1.2 Module lifecycle
+
+3. **POST `/api/modules/:moduleCode/session/start`**
+
+   * Start a session for given module and language.
+   * Returns `session_id` + all config/content needed to run that module on FE.
+
+4. **POST `/api/modules/:moduleCode/session/:sessionId/submit`**
+
+   * Submit answers for that module (text for Image Flash / MCQ selection for Visual Spatial).
+   * Returns score, status, and `next_module_code`.
+
+---
+
+## 2. Endpoint Details + Example Payloads
+
+### Common note
+
+* `moduleCode` will be:
+
+  * `"IMAGE_FLASH"` for Module 1
+  * `"VISUAL_SPATIAL"` for Module 2
+* `language_code` like `"en"`, `"hi"`.
+
+---
+
+### 2.1 GET `/api/game/instructions`
+
+**Purpose**
+Show the initial generic game instructions after login, before modules.
+
+**Request (query params)**
+
+```http
+GET /api/game/instructions?language_code=hi
+```
+
+**Response**
+
+```json
+{
+  "language_code": "hi",
+  "title": "खेल शुरू होने से पहले",
+  "instructions": [
+    "आपको अलग-अलग प्रकार के खेल दिखाए जाएंगे।",
+    "हर खेल में दिए गए निर्देश को ध्यान से पढ़ें या सुनें।",
+    "कोई दिक्कत हो तो स्टाफ से मदद लें।"
+  ]
+}
+```
+
+---
+
+### 2.2 GET `/api/modules`
+
+**Purpose**
+Get the ordered list of modules (for FE to decide flow).
+
+**Request**
+
+```http
+GET /api/modules
+```
+
+**Response**
+
+```json
+{
+  "modules": [
+    {
+      "id": 1,
+      "code": "IMAGE_FLASH",
+      "name": "Image Flash Memory",
+      "description": "Show 5 images and then ask user to recall them.",
+      "order_index": 1,
+      "max_score": 5,
+      "is_active": true
+    },
+    {
+      "id": 2,
+      "code": "VISUAL_SPATIAL",
+      "name": "Visual Spatial Selection",
+      "description": "Show target image then 4 options; user selects matching image.",
+      "order_index": 2,
+      "max_score": 5,
+      "is_active": true
+    }
+  ]
+}
+```
+
+---
+
+### 2.3 POST `/api/modules/IMAGE_FLASH/session/start`
+
+**Purpose**
+Start Module 1 for a user and language, and get all images+audios in sequence.
+
+**Request**
+
+```http
+POST /api/modules/IMAGE_FLASH/session/start
+Content-Type: application/json
+
+{
+  "user_id": 123,
+  "language_code": "hi"
+}
+```
+
+**Backend uses:**
+
+* `modules` (code = IMAGE_FLASH)
+* `questions` (flash_recall, module_id=1)
+* `question_items` (sequence items)
+* `question_item_i18n` (filter by `language_code`)
+
+**Response**
+
+```json
+{
+  "session_id": 1001,
+  "module": {
+    "id": 1,
+    "code": "IMAGE_FLASH",
+    "name": "Image Flash Memory",
+    "max_score": 5
+  },
+  "language_code": "hi",
+  "question": {
+    "question_id": 1,
+    "prompt_text": "जितनी तस्वीरें याद हों, उनके नाम लिखिए",
+    "items": [
+      {
+        "question_item_id": 1,
+        "order": 1,
+        "image_key": "car",
+        "image_url": "https://cdn.example.com/images/car.png",
+        "audio_url": "https://cdn.example.com/audio/hi/gaadi.mp3"
+      },
+      {
+        "question_item_id": 2,
+        "order": 2,
+        "image_key": "pen",
+        "image_url": "https://cdn.example.com/images/pen.png",
+        "audio_url": "https://cdn.example.com/audio/hi/pen.mp3"
+      },
+      {
+        "question_item_id": 3,
+        "order": 3,
+        "image_key": "bird",
+        "image_url": "https://cdn.example.com/images/bird.png",
+        "audio_url": "https://cdn.example.com/audio/hi/panchi.mp3"
+      },
+      {
+        "question_item_id": 4,
+        "order": 4,
+        "image_key": "boat",
+        "image_url": "https://cdn.example.com/images/boat.png",
+        "audio_url": "https://cdn.example.com/audio/hi/naav.mp3"
+      },
+      {
+        "question_item_id": 5,
+        "order": 5,
+        "image_key": "bus",
+        "image_url": "https://cdn.example.com/images/bus.png",
+        "audio_url": "https://cdn.example.com/audio/hi/bas.mp3"
+      }
+    ]
+  },
+  "instructions": "You will see 5 images displayed one at a time for 5 seconds each. Then you will be asked to recall them."
+}
+```
+
+---
+
+### 2.4 POST `/api/modules/IMAGE_FLASH/session/:sessionId/submit`
+
+**Purpose**
+User completed recall text input. Backend scores and closes module.
+
+**Request**
+
+```http
+POST /api/modules/IMAGE_FLASH/session/1001/submit
+Content-Type: application/json
+
+{
+  "question_id": 1,
+  "language_code": "hi",
+  "answer_text": "gaadi bus pen"
+}
+```
+
+**Backend scoring idea (conceptual):**
+
+* Load all `question_items` for `question_id=1` → item ids 1..5.
+* For those ids, load `question_item_i18n` where `language_code = 'hi'`.
+* Build set of accepted answers from `accepted_answers` for each item.
+* Split user `answer_text` by spaces, normalize, count matches, max 5.
+* Update `sessions.score` and `status='completed'`.
+* Save a row in `responses`.
+
+**Response**
+
+```json
+{
+  "session_id": 1001,
+  "module_code": "IMAGE_FLASH",
+  "language_code": "hi",
+  "score": 3,
+  "max_score": 5,
+  "correct_count": 3,
+  "total_items": 5,
+  "status": "completed",
+  "next_module_code": "VISUAL_SPATIAL"
+}
+```
+
+---
+
+### 2.5 POST `/api/modules/VISUAL_SPATIAL/session/start`
+
+**Purpose**
+Start Module 2, return all 5 rounds with target + 4 options each.
+(No language-specific content here unless later you add audio or labels.)
+
+**Request**
+
+```http
+POST /api/modules/VISUAL_SPATIAL/session/start
+Content-Type: application/json
+
+{
+  "user_id": 123,
+  "language_code": "en"
+}
+```
+
+**Backend uses:**
+
+* `modules` (code = VISUAL_SPATIAL) → id=2
+* `questions` where `module_id=2` order by `order_index`
+* For each question → `question_options` (4 options)
+
+Backend can compute `target_image_url` as the `image_url` of the `is_correct=1` option.
+
+**Response**
+
+```json
+{
+  "session_id": 2001,
+  "module": {
+    "id": 2,
+    "code": "VISUAL_SPATIAL",
+    "name": "Visual Spatial Selection",
+    "max_score": 5
+  },
+  "language_code": "en",
+  "rounds": [
+    {
+      "question_id": 2,
+      "round_order": 1,
+      "prompt_text": "Select the same cube as shown.",
+      "target_image_url": "https://cdn.example.com/images/cube3.png",
+      "options": [
+        { "option_key": "cube1", "image_url": "https://cdn.example.com/images/cube1.png" },
+        { "option_key": "cube2", "image_url": "https://cdn.example.com/images/cube2.png" },
+        { "option_key": "cube3", "image_url": "https://cdn.example.com/images/cube3.png" },
+        { "option_key": "cube4", "image_url": "https://cdn.example.com/images/cube4.png" }
+      ]
+    },
+    {
+      "question_id": 3,
+      "round_order": 2,
+      "prompt_text": "Select the same bee as shown.",
+      "target_image_url": "https://cdn.example.com/images/bee2.png",
+      "options": [
+        { "option_key": "bee1", "image_url": "https://cdn.example.com/images/bee1.png" },
+        { "option_key": "bee2", "image_url": "https://cdn.example.com/images/bee2.png" },
+        { "option_key": "bee3", "image_url": "https://cdn.example.com/images/bee3.png" },
+        { "option_key": "bee4", "image_url": "https://cdn.example.com/images/bee4.png" }
+      ]
+    }
+    // ... rounds 3, 4, 5
+  ],
+  "instructions": "You will be shown an image. Then select the same image from 4 choices."
+}
+```
+
+---
+
+### 2.6 POST `/api/modules/VISUAL_SPATIAL/session/:sessionId/submit`
+
+**Purpose**
+Submit all 5 round answers together and compute final score.
+
+**Request**
+
+```http
+POST /api/modules/VISUAL_SPATIAL/session/2001/submit
+Content-Type: application/json
+
+{
+  "answers": [
+    { "question_id": 2, "selected_option_key": "cube3" },
+    { "question_id": 3, "selected_option_key": "bee1" },
+    { "question_id": 4, "selected_option_key": "star4" },
+    { "question_id": 5, "selected_option_key": "face3" },
+    { "question_id": 6, "selected_option_key": "cube2" }
+  ]
+}
+```
+
+**Backend scoring idea:**
+
+For each answer:
+
+```sql
+SELECT is_correct
+FROM question_options
+WHERE question_id = :qid
+  AND option_key = :selected_option_key;
+```
+
+Sum `is_correct` (0/1) to compute score (0–5).
+Update `sessions.score`, `status='completed'`.
+Insert one `responses` row per answer.
+
+**Response**
+
+```json
+{
+  "session_id": 2001,
+  "module_code": "VISUAL_SPATIAL",
+  "score": 3,
+  "max_score": 5,
+  "status": "completed",
+  "next_module_code": null
+}
+```
+
+---
+
+## 3. Front-end Integration & Call Flow
+
+Here’s the **practical flow** for your FE dev (React Native or web, same idea):
+
+---
+
+### 3.1 After login & global instructions
+
+1. User logs in → you already have token/user_id.
+2. Call **`GET /api/game/instructions?language_code=<lang>`**
+
+   * Show generic instructions screen.
+3. On “Start Game” button:
+
+   * Call **`GET /api/modules`**
+
+   * Sort by `order_index` (though backend should already send ordered).
+
+   * Store module list in state, e.g.:
+
+     ```ts
+     const [modules, setModules] = useState([
+       { code: 'IMAGE_FLASH', ... },
+       { code: 'VISUAL_SPATIAL', ... }
+     ]);
+     ```
+
+   * Go to module 1 (index 0).
+
+---
+
+### 3.2 Module 1 (Image Flash) FE flow
+
+1. Call **`POST /api/modules/IMAGE_FLASH/session/start`**:
+
+   ```json
+   {
+     "user_id": 123,
+     "language_code": "hi"
+   }
+   ```
+
+2. Backend returns:
+
+   * `session_id`
+   * `question.items[]` with `order`, `image_url`, `audio_url`
+
+3. FE logic:
+
+   * Show module instructions.
+
+   * Play sequence:
+
+     * For each item in `items` sorted by `order`:
+
+       * Show `image_url`
+       * Play `audio_url`
+       * Wait 5 seconds (or your configured time)
+
+   * Optional “Repeat” button:
+
+     * Simply re-run the same loop with same data (no new API call).
+
+   * After viewing:
+
+     * Show text box: “Type all images you remember”
+     * Optionally voice input → convert to text → fill `answer_text`.
+
+4. On submit:
+
+   * Call **`POST /api/modules/IMAGE_FLASH/session/{session_id}/submit`** with:
+
+     ```json
+     {
+       "question_id": 1,
+       "language_code": "hi",
+       "answer_text": "gaadi bus pen"
+     }
+     ```
+
+   * Read response:
+
+     * Show “Score: 3 / 5”
+     * Read `next_module_code` → `"VISUAL_SPATIAL"`
+
+5. Navigate to Module 2.
+
+---
+
+### 3.3 Module 2 (Visual Spatial) FE flow
+
+1. Call **`POST /api/modules/VISUAL_SPATIAL/session/start`**:
+
+   ```json
+   {
+     "user_id": 123,
+     "language_code": "en"
+   }
+   ```
+
+2. Backend returns:
+
+   * `session_id`
+   * `rounds`: array of 5 rounds, each with:
+
+     * `question_id`
+     * `target_image_url`
+     * `options` (4 image options + keys)
+
+3. FE logic per round:
+
+   * For `round` in `rounds` (respect `round_order`):
+
+     1. Show **target image only** (`target_image_url`) for 3 seconds.
+     2. Then show grid of 4 options (2×2).
+     3. User taps one → store:
+
+        ```ts
+        {
+          question_id: round.question_id,
+          selected_option_key: tappedOption.option_key
+        }
+        ```
+   * After all 5 rounds answered:
+
+     * Build `answers[]` array.
+
+4. On final submit:
+
+   * Call **`POST /api/modules/VISUAL_SPATIAL/session/{session_id}/submit`**:
+
+     ```json
+     {
+       "answers": [
+         { "question_id": 2, "selected_option_key": "cube3" },
+         { "question_id": 3, "selected_option_key": "bee1" },
+         ...
+       ]
+     }
+     ```
+
+   * Read response:
+
+     * Show “Visual Spatial Score: X / 5”
+     * Since `next_module_code` is `null` → show game summary / exit.
+
+---
+
+### 3.4 Summary of APIs FE must integrate
+
+**Mandatory now:**
+
+1. `GET /api/game/instructions?language_code=xx`
+2. `GET /api/modules`
+3. `POST /api/modules/IMAGE_FLASH/session/start`
+4. `POST /api/modules/IMAGE_FLASH/session/{sessionId}/submit`
+5. `POST /api/modules/VISUAL_SPATIAL/session/start`
+6. `POST /api/modules/VISUAL_SPATIAL/session/{sessionId}/submit`
+
+This design:
+
+* Fits your current two modules cleanly.
+* Scales to all 16 modules later (they just become more `questions` / `question_items` / `question_options`).
+* Handles multiple languages using `language_code` and `question_item_i18n`.
+
+If you want, next I can draft **NestJS controller/service skeletons** for these endpoints that map directly to your MySQL schema.
+

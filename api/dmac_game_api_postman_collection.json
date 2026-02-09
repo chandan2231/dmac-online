@@ -1,0 +1,221 @@
+{
+	"info": {
+		"_postman_id": "dmac-game-api-collection",
+		"name": "DMAC Game API",
+		"description": "API collection for DMAC Game Modules (Image Flash & Visual Spatial)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "General",
+			"item": [
+				{
+					"name": "Get Game Instructions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8010/api/game/instructions?language_code=en",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8010",
+							"path": [
+								"api",
+								"game",
+								"instructions"
+							],
+							"query": [
+								{
+									"key": "language_code",
+									"value": "en",
+									"description": "Language code (en, hi, etc.)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Modules",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8010/api/modules",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8010",
+							"path": [
+								"api",
+								"modules"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Module 1: Image Flash",
+			"item": [
+				{
+					"name": "Start Session (Image Flash)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_id\": 1,\n    \"language_code\": \"en\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8010/api/modules/1/session/start",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8010",
+							"path": [
+								"api",
+								"modules",
+								"1",
+								"session",
+								"start"
+							],
+							"description": "Starts module with ID 1 (IMAGE_FLASH)"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Answers (Image Flash)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"question_id\": 1,\n    \"language_code\": \"en\",\n    \"answer_text\": \"car pen bird boat bus\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8010/api/modules/1/session/:sessionId/submit",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8010",
+							"path": [
+								"api",
+								"modules",
+								"1",
+								"session",
+								":sessionId",
+								"submit"
+							],
+							"variable": [
+								{
+									"key": "sessionId",
+									"value": "REPLACE_WITH_ACTUAL_SESSION_ID"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Module 2: Visual Spatial",
+			"item": [
+				{
+					"name": "Start Session (Visual Spatial)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_id\": 1,\n    \"language_code\": \"en\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8010/api/modules/2/session/start",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8010",
+							"path": [
+								"api",
+								"modules",
+								"2",
+								"session",
+								"start"
+							],
+							"description": "Starts module with ID 2 (VISUAL_SPATIAL)"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Answers (Visual Spatial)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"answers\": [\n        { \"question_id\": 2, \"selected_option_key\": \"cube3\" },\n        { \"question_id\": 3, \"selected_option_key\": \"bee2\" },\n        { \"question_id\": 4, \"selected_option_key\": \"star4\" },\n        { \"question_id\": 5, \"selected_option_key\": \"face1\" },\n        { \"question_id\": 6, \"selected_option_key\": \"cube2\" }\n    ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8010/api/modules/2/session/:sessionId/submit",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8010",
+							"path": [
+								"api",
+								"modules",
+								"2",
+								"session",
+								":sessionId",
+								"submit"
+							],
+							"variable": [
+								{
+									"key": "sessionId",
+									"value": "REPLACE_WITH_ACTUAL_SESSION_ID"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

@@ -13,7 +13,8 @@ import {
   successPatientPayment,
   canclePatientPayment,
   patientLogin,
-  getPatientProductByUserId
+  getPatientProductByUserId,
+  validateTokenAndGetUser
 } from '../controllers/auth.js'
 
 import { authenticateUser } from '../utils/middleware.js'
@@ -37,5 +38,8 @@ router.post('/patient/capturePayment', capturePatientPayment)
 router.post('/patient/successPayment', successPatientPayment)
 router.post('/patient/cancelPayment', canclePatientPayment)
 router.post('/patient/getProductByUserId', authenticateUser, getPatientProductByUserId)
+
+// Token validation for email links
+router.post('/validate-token', validateTokenAndGetUser)
 
 export default router
