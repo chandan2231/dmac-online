@@ -6,7 +6,7 @@ import {
   forgetPasswordVerifyEmail,
   resetPassword,
   emailVerification,
-  patinetRegistration,
+  patientRegistration,
   patientEmailVerification,
   createPatientPayment,
   capturePatientPayment,
@@ -16,7 +16,12 @@ import {
   getPatientProductByUserId,
   validateTokenAndGetUser
 } from '../controllers/auth.js'
+
+import { authenticateUser } from '../utils/middleware.js'
+
 const router = express.Router()
+
+
 router.post('/login', login)
 router.post('/register', register)
 router.post('/logout', logout)
@@ -25,14 +30,14 @@ router.post('/password/reset/', resetPassword)
 router.post('/email/verify/', emailVerification)
 
 // Customers registration and login journey
-router.post('/patient/registration', patinetRegistration)
+router.post('/patient/registration', patientRegistration)
 router.post('/patient/email/verify/', patientEmailVerification)
 router.post('/patient/login', patientLogin)
 router.post('/patient/createPayment', createPatientPayment)
 router.post('/patient/capturePayment', capturePatientPayment)
 router.post('/patient/successPayment', successPatientPayment)
 router.post('/patient/cancelPayment', canclePatientPayment)
-router.post('/patient/getProductByUserId', getPatientProductByUserId)
+router.post('/patient/getProductByUserId', authenticateUser, getPatientProductByUserId)
 
 // Token validation for email links
 router.post('/validate-token', validateTokenAndGetUser)

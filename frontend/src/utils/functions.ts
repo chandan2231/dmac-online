@@ -45,16 +45,32 @@ const setLocalStorageItem = (
 };
 
 const getNestedRoutes = (
-  path: string | null,
+  path: ROUTES | null,
   allowedRoutes: IAllowedRoutes[] | null
-) => {
-  if (!allowedRoutes) {
+): ROUTES[] => {
+  if (!allowedRoutes || !path) {
     return [];
   }
 
-  return allowedRoutes
-    .filter(route => get(route, ['isAChildOf'], null) === path)
-    .map(route => get(route, ['path'], null));
+  const visited = new Set<ROUTES>();
+
+  const collect = (parentPath: ROUTES): ROUTES[] => {
+    if (visited.has(parentPath)) {
+      return [];
+    }
+
+    visited.add(parentPath);
+
+    const children = allowedRoutes.filter(
+      route => route.isAChildOf === parentPath
+    );
+    const directPaths = children.map(route => route.path);
+    const descendantPaths = children.flatMap(route => collect(route.path));
+
+    return [...directPaths, ...descendantPaths];
+  };
+
+  return collect(path);
 };
 
 const getSidebarOptions = (allowedRoutes: IAllowedRoutes[] | null) => {
@@ -62,20 +78,124 @@ const getSidebarOptions = (allowedRoutes: IAllowedRoutes[] | null) => {
     return [];
   }
 
-  return allowedRoutes
-    .filter(route => route.showInSidebar)
-    .map(route => ({
-      path: get(route, ['path'], null),
-      title: get(route, ['sideBarTitle']),
-      icon: get(route, ['sideBarIcon']),
-      nestedRoutes: getNestedRoutes(get(route, ['path'], null), allowedRoutes),
-    }));
+  type SidebarOption = {
+    key: string;
+    path: ROUTES | null;
+    title: string | null;
+    icon: IAllowedRoutes['sideBarIcon'] | IAllowedRoutes['sideBarGroupIcon'];
+    nestedRoutes: ROUTES[];
+    children: SidebarOption[];
+  };
+
+  const visibleRoutes = allowedRoutes.filter(route => route.showInSidebar);
+  const visiblePaths = new Set<ROUTES>(visibleRoutes.map(route => route.path));
+
+  const childrenByParent = new Map<ROUTES, IAllowedRoutes[]>();
+  for (const route of visibleRoutes) {
+    const parentPath = route.isAChildOf;
+    if (!parentPath) continue;
+    if (!visiblePaths.has(parentPath)) continue;
+
+    const current = childrenByParent.get(parentPath) ?? [];
+    current.push(route);
+    childrenByParent.set(parentPath, current);
+  }
+
+  const topLevelRoutes = visibleRoutes.filter(route => {
+    const parentPath = route.isAChildOf;
+    if (!parentPath) return true;
+    return !visiblePaths.has(parentPath);
+  });
+
+  // Enforce a small, predictable ordering for key patient pages.
+  // Order required: Consent, Auth With Google, Products, Questioners.
+  const preferredTopLevelOrder = new Map<ROUTES, number>([
+    [ROUTES.CONSENT, 0],
+    [ROUTES.AUTH_WITH_GOOGLE, 1],
+    [ROUTES.PATIENT_PRODUCTS, 2],
+    [ROUTES.QUESTIONERS, 3],
+  ]);
+
+  const sortedTopLevelRoutes = topLevelRoutes
+    .map((route, index) => ({ route, index }))
+    .sort((a, b) => {
+      const aOrder = preferredTopLevelOrder.get(a.route.path) ?? Number.MAX_SAFE_INTEGER;
+      const bOrder = preferredTopLevelOrder.get(b.route.path) ?? Number.MAX_SAFE_INTEGER;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return a.index - b.index;
+    })
+    .map(({ route }) => route);
+
+  const toSidebarOption = (route: IAllowedRoutes): SidebarOption => {
+    const routePath = route.path;
+    const children: SidebarOption[] = (
+      childrenByParent.get(routePath) ?? []
+    ).map(toSidebarOption);
+
+    return {
+      key: routePath,
+      path: routePath,
+      title: route.sideBarTitle,
+      icon: route.sideBarIcon,
+      nestedRoutes: getNestedRoutes(routePath, allowedRoutes),
+      children,
+    };
+  };
+
+  // Sidebar grouping (accordion) based on route metadata.
+  // Only groups top-level routes; nested routes still use isAChildOf.
+  const groupedOptions: SidebarOption[] = [];
+  const groups = new Map<
+    string,
+    { option: SidebarOption; routes: IAllowedRoutes[]; nestedSet: Set<ROUTES> }
+  >();
+
+  for (const route of sortedTopLevelRoutes) {
+    const groupTitle = route.sideBarGroupTitle ?? null;
+
+    if (!groupTitle) {
+      groupedOptions.push(toSidebarOption(route));
+      continue;
+    }
+
+    let group = groups.get(groupTitle);
+    if (!group) {
+      const groupOption: SidebarOption = {
+        key: `group:${groupTitle}`,
+        path: null,
+        title: groupTitle,
+        icon: route.sideBarGroupIcon ?? route.sideBarIcon,
+        nestedRoutes: [],
+        children: [],
+      };
+      group = { option: groupOption, routes: [], nestedSet: new Set() };
+      groups.set(groupTitle, group);
+      groupedOptions.push(groupOption);
+    }
+
+    group.routes.push(route);
+  }
+
+  for (const group of groups.values()) {
+    const children = group.routes.map(toSidebarOption);
+    group.option.children = children;
+
+    for (const child of children) {
+      if (child.path) group.nestedSet.add(child.path);
+      for (const nestedPath of child.nestedRoutes) {
+        group.nestedSet.add(nestedPath);
+      }
+    }
+
+    group.option.nestedRoutes = Array.from(group.nestedSet);
+  }
+
+  return groupedOptions;
 };
 
-const convertLanguagesListToOptions = (
-  languages: ILanguage[] | []
-): IOption[] => {
-  return languages.map(language => ({
+const convertLanguagesListToOptions = (languages: unknown): IOption[] => {
+  if (!Array.isArray(languages)) return [];
+  return (languages as ILanguage[]).map(language => ({
     label: get(language, ['language'], ''),
     value: String(get(language, ['id'], '')),
   }));
@@ -98,6 +218,15 @@ const navigateUserTo = (user: IUser | null) => {
   const role = get(user, ['role'], 'USER');
   if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
     return ROUTES.ADMIN_DASHBOARD;
+  }
+  if (role === 'COUNTRY_ADMIN') {
+    return ROUTES.COUNTRY_ADMIN_DASHBOARD;
+  }
+  if (role === 'USER') {
+    return ROUTES.CONSENT;
+  }
+  if (role === 'PARTNER') {
+    return ROUTES.PARTNER_CONSENT;
   }
   return ROUTES.HOME;
 };

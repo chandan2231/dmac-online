@@ -11,6 +11,23 @@ export const saveExpertAvailability = async (req, res) => {
       .json({ status: 400, message: 'Missing required fields' })
   }
 
+  // Enforce maximum 15-day window from selected start date
+  try {
+    const dayDiff = moment(endDate, 'YYYY-MM-DD').diff(
+      moment(startDate, 'YYYY-MM-DD'),
+      'days'
+    )
+
+    if (dayDiff > 14) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Availability can be set for a maximum of 15 days at a time'
+      })
+    }
+  } catch (e) {
+    // If date parsing fails, fall through to main error handler
+  }
+
   try {
     // 1. Get Expert's Timezone
     const userResult = await new Promise((resolve, reject) => {
@@ -30,6 +47,18 @@ export const saveExpertAvailability = async (req, res) => {
         .status(400)
         .json({ status: 400, message: 'Expert timezone not found' })
     }
+
+    // 2. Clear existing availability for this expert before inserting new window
+    await new Promise((resolve, reject) => {
+      db.query(
+        `DELETE FROM dmac_webapp_expert_availability WHERE consultant_id = ?`,
+        [userId],
+        (err, result) => {
+          if (err) return reject(err)
+          resolve(result)
+        }
+      )
+    })
 
     const values = []
 
@@ -787,5 +816,84 @@ export const getPatientDocuments = async (req, res) => {
   } catch (error) {
     console.error('Error fetching patient documents:', error)
     res.status(500).json({ message: 'Error fetching documents' })
+  }
+}
+
+export const getPatientAssessmentStatus = async (req, res) => {
+  const { patient_id } = req.body
+
+  if (!patient_id) {
+    return res.status(400).json({ message: 'Patient ID is required' })
+  }
+
+  try {
+    const tables = [
+      'dmac_webapp_assessment_cat',
+      'dmac_webapp_assessment_sat',
+      'dmac_webapp_assessment_dat',
+      'dmac_webapp_assessment_adt',
+      'dmac_webapp_assessment_disclaimer',
+      'dmac_webapp_assessment_research_consent'
+    ]
+    const results = {}
+    const keyMap = {
+      dmac_webapp_assessment_cat: 'cat',
+      dmac_webapp_assessment_sat: 'sat',
+      dmac_webapp_assessment_dat: 'dat',
+      dmac_webapp_assessment_adt: 'adt',
+      dmac_webapp_assessment_disclaimer: 'disclaimer',
+      dmac_webapp_assessment_research_consent: 'consent'
+    }
+
+    for (const table of tables) {
+      const query = `SELECT data FROM ${table} WHERE user_id = ? ORDER BY id DESC LIMIT 1`
+      const result = await new Promise((resolve, reject) => {
+        db.query(query, [patient_id], (err, data) => {
+          if (err) reject(err)
+          resolve(data)
+        })
+      })
+      results[keyMap[table]] = result.length > 0 ? result[0].data : null
+    }
+
+    res.status(200).json(results)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error fetching assessment status' })
+  }
+}
+
+export const getPatientMedicalHistory = async (req, res) => {
+  const { patient_id } = req.body
+
+  if (!patient_id) {
+    return res.status(400).json({ message: 'Patient ID is required' })
+  }
+
+  try {
+    const query = `
+      SELECT id, data, created_at
+      FROM dmac_webapp_medical_history
+      WHERE user_id = ?
+      ORDER BY id DESC
+      LIMIT 1
+    `
+    const rows = await new Promise((resolve, reject) => {
+      db.query(query, [patient_id], (err, result) => {
+        if (err) reject(err)
+        resolve(result)
+      })
+    })
+
+    res.status(200).json(rows.length ? rows[0] : null)
+  } catch (error) {
+    console.error('Error fetching patient medical history:', error)
+    if (error?.code === 'ER_NO_SUCH_TABLE') {
+      return res.status(500).json({
+        message:
+          'Medical history table is missing. Run create_medical_history_table.js (or your DB migration) to create dmac_webapp_medical_history.'
+      })
+    }
+    res.status(500).json({ message: 'Error fetching medical history' })
   }
 }

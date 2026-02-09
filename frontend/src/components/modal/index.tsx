@@ -42,6 +42,8 @@ interface GenericModalProps {
   subTitle?: string;
   hideSubmitButton?: boolean;
   maxWidth?: DialogProps['maxWidth'];
+  fullWidth?: boolean;
+  size?: 'default' | 'compact';
   onCancel?: () => void | null;
   isLoading?: boolean;
   renderHtmlContent?: string;
@@ -62,6 +64,8 @@ const GenericModal: React.FC<GenericModalProps> = ({
   submitButtonText = 'Submit',
   cancelButtonText = 'Cancel',
   maxWidth = 'lg',
+  fullWidth = true,
+  size = 'default',
   onCancel = null,
   isLoading = false,
   renderHtmlContent = null,
@@ -75,21 +79,30 @@ const GenericModal: React.FC<GenericModalProps> = ({
   if (isLoading) {
     return <CustomLoader />;
   }
-
+  const isCompact = size === 'compact';
   return (
     <StyledDialog
       onClose={onClose}
       open={isOpen}
       aria-labelledby="generic-modal-title"
-      fullWidth
+      fullWidth={fullWidth}
       maxWidth={maxWidth}
+      sx={
+        isCompact
+          ? {
+              '& .MuiDialogContent-root': { padding: 1.5 },
+              '& .MuiDialogActions-root': { padding: 1.25, gap: 1 },
+              '& .MuiPaper-root': { borderRadius: 2 },
+            }
+          : undefined
+      }
     >
       <DialogTitle
         id="generic-modal-title"
         sx={{
           m: 0,
-          p: 2,
-          fontSize: '1.5rem',
+          p: isCompact ? 1.5 : 2,
+          fontSize: isCompact ? '1.125rem' : '1.5rem',
           backgroundColor: theme => theme.palette.primary.main,
           color: theme => theme.palette.common.white,
         }}
@@ -102,8 +115,8 @@ const GenericModal: React.FC<GenericModalProps> = ({
         onClick={onClose}
         sx={{
           position: 'absolute',
-          right: 8,
-          top: 8,
+          right: isCompact ? 6 : 8,
+          top: isCompact ? 6 : 8,
           color: theme => theme.palette.common.white,
           backgroundColor: theme => theme.palette.grey[700],
           '&:hover': {
@@ -111,7 +124,7 @@ const GenericModal: React.FC<GenericModalProps> = ({
           },
         }}
       >
-        <CloseIcon />
+        <CloseIcon fontSize={isCompact ? 'small' : 'medium'} />
       </IconButton>
 
       {renderHtmlContent && (
@@ -124,7 +137,7 @@ const GenericModal: React.FC<GenericModalProps> = ({
       )}
 
       {children || subTitle ? (
-        <DialogContent>
+        <DialogContent sx={isCompact ? { py: 1.5 } : undefined}>
           {subTitle && (
             <Typography
               variant="h6"
@@ -171,6 +184,9 @@ const GenericModal: React.FC<GenericModalProps> = ({
               variant="outlined"
               sx={{
                 maxWidth: '150px',
+                width: isCompact ? 'auto' : undefined,
+                px: isCompact ? 2 : undefined,
+                fontSize: isCompact ? 14 : undefined,
               }}
             >
               {cancelButtonText}
@@ -183,9 +199,13 @@ const GenericModal: React.FC<GenericModalProps> = ({
               disabled={submitDisabled}
               sx={{
                 minWidth: '160px',
-                width: 'auto',
-                fontSize: '1.2rem',
-                py: 1.5
+                // width: 'auto',
+                // fontSize: '1.2rem',
+                py: 1.5,
+                maxWidth: '150px',
+                width: isCompact ? 'auto' : undefined,
+                px: isCompact ? 2 : undefined,
+                fontSize: isCompact ? 14 : undefined,
               }}
             >
               {submitButtonText}

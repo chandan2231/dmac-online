@@ -3,10 +3,12 @@ import type { IAllowedRoutes } from '../../router/router';
 
 export type UserRole =
   | 'USER'
+  | 'PARTNER'
   | 'ADMIN'
   | 'SUPER_ADMIN'
   | 'EXPERT'
-  | 'THERAPIST';
+  | 'THERAPIST'
+  | 'COUNTRY_ADMIN';
 
 export interface IUser {
   id: string;
@@ -21,6 +23,10 @@ export interface IUser {
   google_access_token: string | null;
   google_refresh_token: string | null;
   time_zone: string | null;
+  country: string;
+  state: string;
+  province_title: string;
+  province_id: string;
 }
 
 export interface IAuthState {
@@ -62,4 +68,8 @@ export interface IRegisterPayload {
   language?: string;
   stateTitle?: string;
   timeZone?: string;
+  weight?: number;
+  weight_unit?: string;
+  height?: number;
+  height_unit?: string;
 }

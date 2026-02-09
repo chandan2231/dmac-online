@@ -11,17 +11,14 @@ import googleAuth from './routes/googleAuth.js'
 import expertRoutes from './routes/expert.js'
 import theraistRoutes from './routes/therapist.js'
 import patientRoutes from './routes/patient.js'
-
-import researchRoutes from './routes/researchInfo.js'
-import protocolRoutes from './routes/protocol.js'
-import continuinReviewRoutes from './routes/continuinReview.js'
-import eventAndRequest from './routes/eventAndRequest.js'
-import communication from './routes/communication.js'
 import payment from './routes/payment.js'
-import externalMonitor from './routes/externalMonitor.js'
 import reviewRoutes from './routes/reviews.js'
 import gameRoutes from './routes/game.js'
 import moduleRoutes from './routes/modules.js'
+import consentRoutes from './routes/consent.js'
+import countryAdminRoutes from './routes/countryAdmin.js'
+import partnerRoutes from './routes/partner.js'
+import partnerPortalRoutes from './routes/partnerPortal.js'
 
 dotenv.config({ path: `.env`, override: true })
 const app = express()
@@ -38,79 +35,39 @@ app.use((req, res, next) => {
 
 app.use(cookieParser())
 
-// if (process.env.NODE_ENV === 'localhost') {
-//   app.use(cors({ origin: 'http://localhost:3010' }))
-// } else if (process.env.NODE_ENV === 'development') {
-//   const allowedOrigins = ['http://18.220.202.114']
-//   const corsOptions = {
-//     origin: function (origin, callback) {
-//       if (!origin || allowedOrigins.includes(origin)) {
-//         callback(null, true)
-//       } else {
-//         callback(new Error('Not allowed by CORS'))
-//       }
-//     },
-//     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//     allowedHeaders: ['Content-Type', 'Authorization'],
-//     credentials: true,
-//     preflightContinue: false
-//   }
-//   app.use(cors({ origin: ['http://18.220.202.114'] }))
-//   app.use(cors(corsOptions))
-// } else {
-//   const allowedOrigins = ['http://18.220.202.114']
-//   const corsOptions = {
-//     origin: function (origin, callback) {
-//       if (!origin || allowedOrigins.includes(origin)) {
-//         callback(null, true)
-//       } else {
-//         callback(new Error('Not allowed by CORS'))
-//       }
-//     },
-//     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//     allowedHeaders: ['Content-Type', 'Authorization'],
-//     credentials: true,
-//     preflightContinue: false
-//   }
-//   app.use(cors({ origin: ['http://18.220.202.114'] }))
-//   app.use(cors(corsOptions))
-// }
-
-
-const allowedOrigins = ['http://18.220.202.114', 'http://localhost:3010', 'http://localhost:3011'] // add localhost for dev
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}))
+const allowedOrigins = ['https://dev.retainmemory.com', 'http://localhost:3010'] // add localhost for dev
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  })
+)
 
 app.use('/api/language', languageRoutes)
 app.use('/api/questionar', questionarRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/country-admin', countryAdminRoutes)
 app.use('/api/google', googleAuth)
 app.use('/api/expert', expertRoutes)
 app.use('/api/therapist', theraistRoutes)
 app.use('/api/patient', patientRoutes)
-
-app.use('/api/researchInfo', researchRoutes)
-app.use('/api/protocol', protocolRoutes)
-app.use('/api/continuinReview', continuinReviewRoutes)
-app.use('/api/eventAndRequest', eventAndRequest)
-app.use('/api/communication', communication)
-app.use('/api/payment', payment)
-app.use('/api/externalMonitor', externalMonitor)
 app.use('/api/reviews', reviewRoutes)
 app.use('/api/game', gameRoutes)
 app.use('/api/modules', moduleRoutes)
 
+app.use('/api/payment', payment)
+app.use('/api/consent', consentRoutes)
+app.use('/api/partner', partnerRoutes)
+app.use('/api/partner-portal', partnerPortalRoutes)
 
 // PORT setup based on environment
 let PORT = 8010 // default dev port
@@ -121,17 +78,3 @@ if (process.env.NODE_ENV === 'production') PORT = 4000
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API running on port ${PORT}`)
 })
-
-// if (process.env.NODE_ENV === 'localhost') {
-//   app.listen(8800, () => {
-//     console.log('API Working!')
-//   })
-// } else if (process.env.NODE_ENV === 'development') {
-//   app.listen(8010, () => {
-//     console.log('Dev API Working!')
-//   })
-// } else {
-//   app.listen(8000, () => {
-//     console.log('Dev API Working!')
-//   })
-// }

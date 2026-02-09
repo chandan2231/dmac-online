@@ -18,6 +18,7 @@ type MorenCardProps = {
   children?: React.ReactNode;
   maxHeight?: number | string;
   minHeight?: number | string;
+  headerContent?: React.ReactNode;
   descriptionVariant?:
     | OverridableStringUnion<
         'inherit' | TypographyVariant,
@@ -35,6 +36,7 @@ const MorenCard: React.FC<MorenCardProps> = ({
   maxHeight = '100%',
   minHeight = 0,
   children,
+  headerContent,
   descriptionVariant = 'body2',
   cardStyles = {},
 }) => {
@@ -60,6 +62,15 @@ const MorenCard: React.FC<MorenCardProps> = ({
         />
       )}
       <CardContent>
+        {headerContent && (
+          <Box
+            mb={2}
+            display="flex"
+            justifyContent="center"
+          >
+            {headerContent}
+          </Box>
+        )}
         <Box mb={2}>
           <Typography gutterBottom variant="h6" component="div">
             {title}

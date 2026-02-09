@@ -8,6 +8,9 @@ import ForgotPassword from '../pages/auth/forgot-password';
 import AuthRedirectHomePage from '../pages/patient/home';
 import PageNotFound from '../pages/not-found';
 import LandingPageComponent from '../pages/landing-page';
+import PublicProductsListingPageComponent from '../pages/products-listing';
+import PrivacyPolicyPage from '../pages/privacy-policy';
+import TermsOfServicePage from '../pages/terms-of-service';
 
 // Protected Pages
 import ResetPassword from '../pages/auth/reset-password';
@@ -19,11 +22,22 @@ import QuestionersPage from '../pages/patient/questioners';
 import DashboardPageComponent from '../pages/admin/dashboard';
 import UsersListingPageComponent from '../pages/admin/users-listing';
 import ProductsListingPageComponent from '../pages/admin/products-listing';
+import ProductFeatureKeysPageComponent from '../pages/admin/product-feature-keys';
 import ConsultantsListingPageComponent from '../pages/admin/consultants-listing';
 import TransactionsListingPageComponent from '../pages/admin/transactions-listing';
 import TherapistListingPageComponent from '../pages/admin/tharapist-listing';
 import ConsultationsListingPageComponent from '../pages/admin/consultations-listing';
 import TherapistsConsultationsListingPageComponent from '../pages/admin/therapists-consultations-listing';
+import AdminPatientAssessmentPage from '../pages/admin/patient-assessment';
+import PartnersListingPageComponent from '../pages/admin/partners-list';
+
+// Partner Pages
+import PartnerConsentPage from '../pages/partner/consent/index';
+import PartnerUsersPage from '../pages/partner/users/index';
+import PartnerPurchaseSuccessPage from '../pages/partner/purchase-success/index';
+
+// Developer Pages
+import DeveloperPageComponent from '../pages/developer';
 
 // Layouts
 import MainLayout from '../layouts/MainLayout';
@@ -35,6 +49,9 @@ import PatientLayout from '../layouts/PatientLayout';
 // Patient Pages
 import PatientRegisterPage from '../pages/auth/register/patient-register';
 import PatientVerifyEmailPage from '../pages/auth/verify-email/patient-verify-email';
+// const PatientPaymentPage = lazy(
+//   () => import('../pages/payment/patient-payment')
+// );
 import PatientPaymentPage from '../pages/payment/patient-payment';
 import PatientLoginPage from '../pages/auth/login/patient-login';
 import PatientPaymentSuccessPage from '../pages/payment/patient-payment-success';
@@ -44,6 +61,9 @@ import PatientAuthWithGooglePage from '../pages/patient/auth-with-google';
 import BookConsultationPage from '../pages/patient/book-consultation';
 import BookTherapistPage from '../pages/patient/book-therapist';
 import UploadDocumentsPage from '../pages/patient/upload-documents';
+import CountryAdminListingPage from '../pages/admin/country-admin-listing';
+import ConsentPage from '../pages/patient/consent';
+import LiccaPage from '../pages/patient/licca';
 
 // Expert Pages
 import ConsultationListPage from '../pages/expert/consultation-list';
@@ -51,12 +71,16 @@ import TransactionHistoryPage from '../pages/expert/transaction-history';
 import ExpertHomePage from '../pages/expert/home';
 import CalendarPage from '../pages/expert/calendar';
 import ExpertReviewsPage from '../pages/expert/reviews';
+import PatientAssessmentPage from '../pages/expert/patient-assessment';
 
 // Therapist Pages
 import TherapistHomePage from '../pages/therapist/home';
 import CalendarPageForTherapist from '../pages/therapist/calendar';
 import TherapistConsultationListPage from '../pages/therapist/consultation-list';
 import TherapistReviewsPage from '../pages/therapist/reviews';
+import TherapistPatientAssessmentPage from '../pages/therapist/patient-assessment';
+
+// Developer Pages
 
 export const LAYOUT_MAP = {
   BaseLayout,
@@ -76,6 +100,9 @@ export const COMPONENT_MAP = {
   PageNotFound,
   AuthRedirectHomePage,
   LandingPageComponent,
+  PublicProductsListingPageComponent,
+  PrivacyPolicyPage,
+  TermsOfServicePage,
 
   // These are the components that will be dynamically rendered based on the backend configuration
   // and can be accessed only after authentication
@@ -83,16 +110,26 @@ export const COMPONENT_MAP = {
   VerifyEmail,
   ProfilePage,
   QuestionersPage,
+  LiccaPage,
 
   // Admin Components
   DashboardPageComponent,
   UsersListingPageComponent,
   ProductsListingPageComponent,
+  ProductFeatureKeysPageComponent,
   ConsultantsListingPageComponent,
   TransactionsListingPageComponent,
   TherapistListingPageComponent,
   ConsultationsListingPageComponent,
   TherapistsConsultationsListingPageComponent,
+  CountryAdminListingPage,
+  AdminPatientAssessmentPage,
+  PartnersListingPageComponent,
+
+  // Partner Pages
+  PartnerConsentPage,
+  PartnerUsersPage,
+  PartnerPurchaseSuccessPage,
 
   // Patient Pages
   PatientRegisterPage,
@@ -102,10 +139,12 @@ export const COMPONENT_MAP = {
   PatientPaymentSuccessPage,
   PatientPaymentCancelledPage,
   PatientProductsPage,
+  ConsentPage,
   BookConsultationPage,
   BookTherapistPage,
   UploadDocumentsPage,
   PatientAuthWithGooglePage,
+  
 
   // Expert Pages
   ConsultationListPage,
@@ -113,12 +152,17 @@ export const COMPONENT_MAP = {
   ExpertHomePage,
   CalendarPage,
   ExpertReviewsPage,
+  PatientAssessmentPage,
 
   // Therapist Pages
   TherapistHomePage,
   CalendarPageForTherapist,
   TherapistConsultationListPage,
   TherapistReviewsPage,
+  TherapistPatientAssessmentPage,
+
+  // Developer Pages
+  DeveloperPageComponent,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -126,6 +170,9 @@ export type ComponentKey = keyof typeof COMPONENT_MAP;
 export const ROUTES = {
   // Public routes
   HOME: '/',
+  PRODUCTS_LISTING: '/products',
+  PRIVACY_POLICY: '/privacy-policy',
+  TERMS_OF_SERVICE: '/terms-of-service',
 
   // USER Authenticated routes
   PATIENT_LOGIN: '/patient/login',
@@ -141,10 +188,17 @@ export const ROUTES = {
   // USER Protected routes
   PROFILE: '/profile',
   QUESTIONERS: '/questioners',
+  CONSENT: '/consent',
   PATIENT_PRODUCTS: '/patient/products',
   BOOK_THERAPIST: '/patient/book-therapist',
   UPLOAD_DOCUMENTS: '/patient/upload-documents',
   AUTH_WITH_GOOGLE: '/patient/auth-with-google',
+  LICCA: '/patient/licca',
+
+  // PARTNER Protected routes
+  PARTNER_CONSENT: '/partner/consent',
+  PARTNER_USERS: '/partner/users',
+  PARTNER_PURCHASE_SUCCESS: '/partner/purchase/success',
 
   // ADMIN, SUPER_ADMIN Authenticated routes
   LOGIN: '/login',
@@ -159,15 +213,20 @@ export const ROUTES = {
   TRANSACTIONS: '/admin/transactions',
   CONSULTANTS: '/admin/consultants',
   PRODUCTS: '/admin/products',
+  PRODUCT_FEATURE_KEYS: '/admin/product-feature-keys',
   THERAPISTS: '/admin/therapists',
   CONSULTATIONS: '/admin/consultations',
-  Therapists_CONSULTATIONS: '/admin/therapists-consultations',
+  THERAPIST_CONSULTATIONS: '/admin/therapists-consultations',
+  COUNTRY_ADMIN_LISTING: '/admin/countries-admin-listing',
+  ADMIN_PATIENT_ASSESSMENT: '/admin/consultations/:patientId/assessment',
+  PARTNERS_LISTING: '/admin/partners',
 
   // Not Found
   NOT_FOUND: '*',
 
   // EXPERT Protected routes
   EXPERT_CONSULTATIONS: '/expert/consultations',
+  EXPERT_PATIENT_ASSESSMENT: '/expert/patient-assessment/:patientId',
   EXPERT_TRANSACTIONS: '/expert/transactions',
   EXPERT_CALENDAR: '/expert/calendar',
   EXPERT_REVIEWS: '/expert/reviews',
@@ -175,7 +234,22 @@ export const ROUTES = {
   // THERAPIST Protected routes
   THERAPIST_CALENDAR: '/therapist/calendar',
   THERAPIST_CONSULTATION_LIST: '/therapist/consultation-list',
+  THERAPIST_PATIENT_ASSESSMENT:
+    '/therapist/consultation-list/:patientId/assessment',
   THERAPIST_REVIEWS: '/therapist/reviews',
+
+  // COUNTRY ADMIN Protected routes
+  COUNTRY_ADMIN_DASHBOARD: '/country-admin/dashboard',
+  COUNTRY_ADMIN_USERS_LISTING: '/country-admin/users',
+  COUNTRY_ADMIN_TRANSACTIONS: '/country-admin/transactions',
+  COUNTRY_ADMIN_CONSULTANTS: '/country-admin/consultants',
+  COUNTRY_ADMIN_THERAPISTS: '/country-admin/therapists',
+  COUNTRY_ADMIN_CONSULTATIONS: '/country-admin/consultations',
+  COUNTRY_ADMIN_THERAPIST_CONSULTATIONS:
+    '/country-admin/therapists-consultations',
+
+  // Developer Route
+  DEVELOPER: '/developer',
 } as const;
 
 export type ROUTES = (typeof ROUTES)[keyof typeof ROUTES];
@@ -188,6 +262,8 @@ export interface IAllowedRoutes {
   showInSidebar: boolean;
   sideBarIcon: MapperObjectKey | null;
   sideBarTitle: string | null;
+  sideBarGroupTitle?: string | null;
+  sideBarGroupIcon?: MapperObjectKey | null;
   isAChildOf: ROUTES | null;
 }
 
@@ -198,6 +274,21 @@ export const PUBLIC_ROUTES = [
     path: ROUTES.HOME,
     layout: LAYOUT_MAP['BaseLayout'],
     component: COMPONENT_MAP['LandingPageComponent'],
+  },
+  {
+    path: ROUTES.PRODUCTS_LISTING,
+    layout: LAYOUT_MAP['BaseLayout'],
+    component: COMPONENT_MAP['PublicProductsListingPageComponent'],
+  },
+  {
+    path: ROUTES.PRIVACY_POLICY,
+    layout: LAYOUT_MAP['BaseLayout'],
+    component: COMPONENT_MAP['PrivacyPolicyPage'],
+  },
+  {
+    path: ROUTES.TERMS_OF_SERVICE,
+    layout: LAYOUT_MAP['BaseLayout'],
+    component: COMPONENT_MAP['TermsOfServicePage'],
   },
   // Admin, Therapist, Super Admin and Expert Login and Registration Routes
   {
@@ -261,6 +352,11 @@ export const PUBLIC_ROUTES = [
     layout: LAYOUT_MAP['PatientLayout'],
     component: COMPONENT_MAP['PatientLoginPage'],
   },
+  {
+    path: ROUTES.DEVELOPER,
+    layout: LAYOUT_MAP['BaseLayout'],
+    component: COMPONENT_MAP['DeveloperPageComponent'],
+  },
 ];
 
 // For protected routes, we can define them here
@@ -268,13 +364,22 @@ export const PUBLIC_ROUTES = [
 // These routes are for Patient
 const USER_ROUTES: IAllowedRoutes[] = [
   {
+    path: ROUTES.CONSENT,
+    layout: 'MainLayout',
+    component: 'ConsentPage',
+    showInSidebar: true,
+    sideBarTitle: 'Consent',
+    sideBarIcon: 'QuizIcon',
+    isAChildOf: null,
+  },
+  {
     path: ROUTES.HOME,
     layout: 'MainLayout',
     component: 'AuthRedirectHomePage',
     // This route will be shown in the sidebar
-    showInSidebar: true,
-    sideBarTitle: 'Home',
-    sideBarIcon: 'HomeIcon',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
     isAChildOf: null,
   },
   {
@@ -308,20 +413,12 @@ const USER_ROUTES: IAllowedRoutes[] = [
     path: ROUTES.PROFILE,
     layout: 'MainLayout',
     component: 'ProfilePage',
-    showInSidebar: true,
-    sideBarTitle: 'Profile',
-    sideBarIcon: 'AccountBoxIcon',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
     isAChildOf: null,
   },
-  {
-    path: ROUTES.QUESTIONERS,
-    layout: 'MainLayout',
-    component: 'QuestionersPage',
-    showInSidebar: true,
-    sideBarTitle: 'Questioners',
-    sideBarIcon: 'QuizIcon',
-    isAChildOf: null,
-  },
+  
   {
     path: ROUTES.NOT_FOUND,
     layout: 'ContentOnlyLayout',
@@ -342,11 +439,29 @@ const USER_ROUTES: IAllowedRoutes[] = [
     isAChildOf: null,
   },
   {
+    path: ROUTES.QUESTIONERS,
+    layout: 'MainLayout',
+    component: 'QuestionersPage',
+    showInSidebar: true,
+    sideBarTitle: 'SDMAC',
+    sideBarIcon: 'QuizIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.LICCA,
+    layout: 'MainLayout',
+    component: 'LiccaPage',
+    showInSidebar: true,
+    sideBarTitle: 'LICCA',
+    sideBarIcon: 'ExtensionIcon',
+    isAChildOf: null,
+  },
+  {
     path: ROUTES.BOOK_CONSULTATION,
     layout: 'MainLayout',
     component: 'BookConsultationPage',
     showInSidebar: true,
-    sideBarTitle: 'Expert Consultation',
+    sideBarTitle: 'Expert Advisor',
     sideBarIcon: 'MedicalServicesIcon',
     isAChildOf: null,
   },
@@ -355,7 +470,7 @@ const USER_ROUTES: IAllowedRoutes[] = [
     layout: 'MainLayout',
     component: 'BookTherapistPage',
     showInSidebar: true,
-    sideBarTitle: 'Therapist Consultation',
+    sideBarTitle: 'Supervised Session',
     sideBarIcon: 'PsychologyIcon',
     isAChildOf: null,
   },
@@ -397,6 +512,45 @@ const USER_ROUTES: IAllowedRoutes[] = [
   },
 ];
 
+const PARTNER_ROUTES: IAllowedRoutes[] = [
+  {
+    path: ROUTES.PARTNER_CONSENT,
+    layout: 'MainLayout',
+    component: 'PartnerConsentPage',
+    showInSidebar: true,
+    sideBarTitle: 'Consent',
+    sideBarIcon: 'QuizIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PARTNER_USERS,
+    layout: 'MainLayout',
+    component: 'PartnerUsersPage',
+    showInSidebar: true,
+    sideBarTitle: 'User List',
+    sideBarIcon: 'GroupIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PARTNER_PURCHASE_SUCCESS,
+    layout: 'MainLayout',
+    component: 'PartnerPurchaseSuccessPage',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.NOT_FOUND,
+    layout: 'ContentOnlyLayout',
+    component: 'PageNotFound',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+];
+
 const EXPERT_ROUTES: IAllowedRoutes[] = [
   {
     path: ROUTES.HOME,
@@ -426,6 +580,15 @@ const EXPERT_ROUTES: IAllowedRoutes[] = [
     sideBarTitle: 'Consultations',
     sideBarIcon: 'EventIcon',
     isAChildOf: null,
+  },
+  {
+    path: ROUTES.EXPERT_PATIENT_ASSESSMENT,
+    layout: 'MainLayout',
+    component: 'PatientAssessmentPage',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: ROUTES.EXPERT_CONSULTATIONS,
   },
   {
     path: ROUTES.EXPERT_TRANSACTIONS,
@@ -485,6 +648,15 @@ const THERAPIST_ROUTES: IAllowedRoutes[] = [
     sideBarIcon: 'RateReviewIcon',
     isAChildOf: null,
   },
+  {
+    path: ROUTES.THERAPIST_PATIENT_ASSESSMENT,
+    layout: 'MainLayout',
+    component: 'TherapistPatientAssessmentPage',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: ROUTES.THERAPIST_CONSULTATION_LIST,
+  },
 ];
 
 const ADMIN_ROUTES: IAllowedRoutes[] = [
@@ -492,9 +664,8 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     path: ROUTES.ADMIN_DASHBOARD,
     layout: 'MainLayout',
     component: 'DashboardPageComponent',
-    // This route will be shown in the sidebar
     showInSidebar: true,
-    sideBarTitle: 'Dashboard',
+    sideBarTitle: 'DASHBOARD',
     sideBarIcon: 'DashboardIcon',
     isAChildOf: null,
   },
@@ -502,71 +673,119 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     path: ROUTES.USERS_LISTING,
     layout: 'MainLayout',
     component: 'UsersListingPageComponent',
-    // This route will be shown in the sidebar
     showInSidebar: true,
     sideBarTitle: 'Users List',
     sideBarIcon: 'GroupIcon',
+    sideBarGroupTitle: 'USERS',
+    sideBarGroupIcon: 'GroupIcon',
     isAChildOf: null,
   },
   {
     path: ROUTES.TRANSACTIONS,
     layout: 'MainLayout',
     component: 'TransactionsListingPageComponent',
-    // This route will be shown in the sidebar
     showInSidebar: true,
-    sideBarTitle: 'User’s Transactions',
+    sideBarTitle: 'Transactions',
     sideBarIcon: 'ReceiptLongIcon',
+    sideBarGroupTitle: 'USERS',
+    sideBarGroupIcon: 'GroupIcon',
     isAChildOf: null,
   },
   {
     path: ROUTES.CONSULTANTS,
     layout: 'MainLayout',
     component: 'ConsultantsListingPageComponent',
-    // This route will be shown in the sidebar
     showInSidebar: true,
     sideBarTitle: 'Experts List',
     sideBarIcon: 'BadgeIcon',
-    isAChildOf: null,
-  },
-  {
-    path: ROUTES.THERAPISTS,
-    layout: 'MainLayout',
-    component: 'TherapistListingPageComponent',
-    // This route will be shown in the sidebar
-    showInSidebar: true,
-    sideBarTitle: 'Therapists List',
-    sideBarIcon: 'BadgeIcon',
-    isAChildOf: null,
-  },
-  {
-    path: ROUTES.PRODUCTS,
-    layout: 'MainLayout',
-    component: 'ProductsListingPageComponent',
-    // This route will be shown in the sidebar
-    showInSidebar: true,
-    sideBarTitle: 'Products List',
-    sideBarIcon: 'InventoryIcon',
+    sideBarGroupTitle: 'EXPERTS',
+    sideBarGroupIcon: 'GroupIcon',
     isAChildOf: null,
   },
   {
     path: ROUTES.CONSULTATIONS,
     layout: 'MainLayout',
     component: 'ConsultationsListingPageComponent',
-    // This route will be shown in the sidebar
     showInSidebar: true,
-    sideBarTitle: 'Experts Consultations',
+    sideBarTitle: 'Expert Consultations',
     sideBarIcon: 'EventIcon',
+    sideBarGroupTitle: 'EXPERTS',
+    sideBarGroupIcon: 'GroupIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.THERAPISTS,
+    layout: 'MainLayout',
+    component: 'TherapistListingPageComponent',
+    showInSidebar: true,
+    sideBarTitle: 'Therapists List',
+    sideBarIcon: 'BadgeIcon',
+    sideBarGroupTitle: 'THERAPISTS',
+    sideBarGroupIcon: 'GroupIcon',
     isAChildOf: null,
   },
   {
     path: ROUTES.THERAPIST_CONSULTATION_LIST,
     layout: 'MainLayout',
     component: 'TherapistsConsultationsListingPageComponent',
-    // This route will be shown in the sidebar
     showInSidebar: true,
     sideBarTitle: 'Therapists Consultations',
     sideBarIcon: 'EventIcon',
+    sideBarGroupTitle: 'THERAPISTS',
+    sideBarGroupIcon: 'GroupIcon',
     isAChildOf: null,
+  },
+  
+  {
+    path: ROUTES.PRODUCT_FEATURE_KEYS,
+    layout: 'MainLayout',
+    component: 'ProductFeatureKeysPageComponent',
+    showInSidebar: true,
+    sideBarTitle: 'Product Features',
+    sideBarIcon: 'ExtensionIcon',
+    sideBarGroupTitle: 'PRODUCTS',
+    sideBarGroupIcon: 'InventoryIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PRODUCTS,
+    layout: 'MainLayout',
+    component: 'ProductsListingPageComponent',
+    showInSidebar: true,
+    sideBarTitle: 'Products List',
+    sideBarIcon: 'InventoryIcon',
+    sideBarGroupTitle: 'PRODUCTS',
+    sideBarGroupIcon: 'InventoryIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.PARTNERS_LISTING,
+    layout: 'MainLayout',
+    component: 'PartnersListingPageComponent',
+    showInSidebar: true,
+    sideBarTitle: "Partner's List",
+    sideBarIcon: 'GroupIcon',
+    sideBarGroupTitle: 'PARTNERS',
+    sideBarGroupIcon: 'GroupIcon',
+    isAChildOf: null,
+  },
+  // {
+  //   path: ROUTES.COUNTRY_ADMIN_LISTING,
+  //   layout: 'MainLayout',
+  //   component: 'CountryAdminListingPage',
+  //   showInSidebar: true,
+  //   sideBarTitle: 'Country Managers',
+  //   sideBarIcon: 'BadgeIcon',
+  //   isAChildOf: null,
+  // },
+  {
+    path: ROUTES.ADMIN_PATIENT_ASSESSMENT,
+    layout: 'MainLayout',
+    component: 'AdminPatientAssessmentPage',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: ROUTES.CONSULTATIONS,
   },
   {
     path: ROUTES.QUESTIONERS,
@@ -586,6 +805,10 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     sideBarIcon: null,
     isAChildOf: null,
   },
+];
+
+const SUPER_ADMIN_ROUTES: IAllowedRoutes[] = [
+  ...ADMIN_ROUTES,
 ];
 
 const GUEST_USER_ROUTES: IAllowedRoutes[] = [
@@ -609,9 +832,94 @@ const GUEST_USER_ROUTES: IAllowedRoutes[] = [
   },
 ];
 
+const COUNTRY_ADMIN_ROUTES: IAllowedRoutes[] = [
+  {
+    path: ROUTES.COUNTRY_ADMIN_DASHBOARD,
+    layout: 'MainLayout',
+    component: 'DashboardPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Dashboard',
+    sideBarIcon: 'DashboardIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.COUNTRY_ADMIN_USERS_LISTING,
+    layout: 'MainLayout',
+    component: 'UsersListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Users List',
+    sideBarIcon: 'GroupIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.COUNTRY_ADMIN_TRANSACTIONS,
+    layout: 'MainLayout',
+    component: 'TransactionsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'User’s Transactions',
+    sideBarIcon: 'ReceiptLongIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.COUNTRY_ADMIN_CONSULTANTS,
+    layout: 'MainLayout',
+    component: 'ConsultantsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Experts List',
+    sideBarIcon: 'BadgeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.COUNTRY_ADMIN_THERAPISTS,
+    layout: 'MainLayout',
+    component: 'TherapistListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Therapists List',
+    sideBarIcon: 'BadgeIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.COUNTRY_ADMIN_CONSULTATIONS,
+    layout: 'MainLayout',
+    component: 'ConsultationsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Experts Consultations',
+    sideBarIcon: 'EventIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.COUNTRY_ADMIN_THERAPIST_CONSULTATIONS,
+    layout: 'MainLayout',
+    component: 'TherapistsConsultationsListingPageComponent',
+    // This route will be shown in the sidebar
+    showInSidebar: true,
+    sideBarTitle: 'Therapists Consultations',
+    sideBarIcon: 'EventIcon',
+    isAChildOf: null,
+  },
+  {
+    path: ROUTES.NOT_FOUND,
+    layout: 'ContentOnlyLayout',
+    component: 'PageNotFound',
+    showInSidebar: false,
+    sideBarTitle: null,
+    sideBarIcon: null,
+    isAChildOf: null,
+  },
+];
+
 export const getRoutesByRole = (role: UserRole): IAllowedRoutes[] => {
   if (role === 'USER') {
     return USER_ROUTES;
+  }
+  if (role === 'PARTNER') {
+    return PARTNER_ROUTES;
   }
   if (role === 'EXPERT') {
     return EXPERT_ROUTES;
@@ -619,7 +927,13 @@ export const getRoutesByRole = (role: UserRole): IAllowedRoutes[] => {
   if (role === 'THERAPIST') {
     return THERAPIST_ROUTES;
   }
-  if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+  if (role === 'COUNTRY_ADMIN') {
+    return COUNTRY_ADMIN_ROUTES;
+  }
+  if (role === 'SUPER_ADMIN') {
+    return SUPER_ADMIN_ROUTES;
+  }
+  if (role === 'ADMIN') {
     return ADMIN_ROUTES;
   }
   return GUEST_USER_ROUTES;

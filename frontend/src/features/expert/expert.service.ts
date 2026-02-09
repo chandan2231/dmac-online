@@ -205,6 +205,33 @@ const getPatientDocuments = async (patientId: number) => {
   }
 };
 
+const getPatientAssessmentStatus = async (patientId: number) => {
+  try {
+    const response = await HttpService.post(
+      '/expert/patient-assessment-status',
+      {
+        patient_id: patientId,
+      }
+    );
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching patient assessment status:', error);
+    return null;
+  }
+};
+
+const getPatientMedicalHistory = async (patientId: number) => {
+  try {
+    const response = await HttpService.post('/expert/patient-medical-history', {
+      patient_id: patientId,
+    });
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching patient medical history:', error);
+    return null;
+  }
+};
+
 const getExpertReviews = async (expertId: string) => {
   try {
     const response = await HttpService.get(`/reviews/expert/list/${expertId}`);
@@ -226,6 +253,8 @@ const ExpertService = {
   getExpertPatients,
   getExpertReview,
   getPatientDocuments,
+  getPatientAssessmentStatus,
+  getPatientMedicalHistory,
   getExpertReviews,
 };
 

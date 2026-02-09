@@ -1,6 +1,9 @@
 import * as Yup from 'yup';
 import dayjs from 'dayjs';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import LockResetOutlinedIcon from '@mui/icons-material/LockResetOutlined';
 import CustomLoader from '../../../../components/loader';
 import AdminService from '../../admin.service';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
@@ -10,7 +13,7 @@ import ModernInput from '../../../../components/input';
 import ModernSwitch from '../../../../components/switch';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useState, useEffect } from 'react';
-import { Box, Typography, Rating } from '@mui/material';
+import { Box, Typography, Rating, Chip } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 import { GenericTable } from '../../../../components/table';
@@ -29,12 +32,21 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useToast } from '../../../../providers/toast-provider';
-import { IconButton, Menu, MenuItem } from '@mui/material';
+import {
+  Divider,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+} from '@mui/material';
 import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages';
 import ModernMultiSelect from '../../../../components/multi-select';
 import type { ILanguage } from '../../../../i18n/language.interface';
 import { useQuery } from '@tanstack/react-query';
 import MorenCard from '../../../../components/card';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../../../store';
 
 const FINANCE_MANAGER_LIST = [
   {
@@ -267,6 +279,8 @@ function ConsultantTable({
   onViewReviews: (consultant: IConsultant) => void;
 }) {
   const { data, isLoading, refetch } = useGetConsultantsListing();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const isCountryAdmin = user?.role === 'COUNTRY_ADMIN';
   const { data: listingResponse } = useLanguageList({
     USER_TYPE: 'EXPERT',
   });
@@ -475,9 +489,28 @@ function ConsultantTable({
       },
     },
     {
+      field: 'ratings',
+      headerName: 'Ratings',
+      width: 140,
+      sortable: false,
+      filterable: false,
+      renderCell: params => (
+        <Chip
+          label="View Ratings"
+          size="small"
+          variant="filled"
+          clickable
+          color="primary"
+          onClick={() => onViewReviews(params.row)}
+        />
+      ),
+    },
+    {
       field: 'actions',
       headerName: 'Actions',
-      width: 100,
+      width: 120,
+      headerClassName: 'sticky-right--header',
+      cellClassName: 'sticky-right--cell',
       sortable: false,
       filterable: false,
       renderCell: params => {
@@ -511,38 +544,53 @@ function ConsultantTable({
                 vertical: 'top',
                 horizontal: 'right',
               }}
+              PaperProps={{ elevation: 6, sx: { minWidth: 220, borderRadius: 2 } }}
             >
               <MenuItem
                 onClick={() => {
                   handleClose();
                   handleOpenViewModal(params.row as ConsultantState);
                 }}
+                sx={{ py: 1, px: 1.5 }}
               >
-                View Details
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  handleClose();
-                  onViewReviews(params.row);
-                }}
-              >
-                View Ratings
+                <ListItemIcon>
+                  <VisibilityOutlinedIcon sx={{ fontSize: 21 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="View Details"
+                  primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+                />
               </MenuItem>
               <MenuItem
                 onClick={() => {
                   handleClose();
                   handleOpenEditModal(params.row as ConsultantState);
                 }}
+                sx={{ py: 1, px: 1.5 }}
               >
-                Edit
+                <ListItemIcon>
+                  <EditOutlinedIcon sx={{ fontSize: 21 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Edit"
+                  primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+                />
               </MenuItem>
+              <Divider />
               <MenuItem
                 onClick={() => {
                   handleClose();
                   handleOpenPasswordModal(params.row);
                 }}
+                sx={{ py: 1, px: 1.5 }}
               >
-                Change Password
+                <ListItemIcon>
+                  <LockResetOutlinedIcon sx={{ fontSize: 21 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Change Password"
+                  primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+                />
               </MenuItem>
             </Menu>
           </>
@@ -561,6 +609,7 @@ function ConsultantTable({
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}
         loading={isLoading}
+        disableVirtualization
       />
 
       {/* Password Modal */}
@@ -638,6 +687,7 @@ function ConsultantTable({
                 }}
                 fullWidth
                 searchable
+                disabled={isCountryAdmin}
               />
               {errors.country && (
                 <Typography color="error">{errors.country.message}</Typography>
@@ -1040,6 +1090,8 @@ function ConsultantTable({
 
 /* -------------------- CONSULTANTS LISTING -------------------- */
 const ConsultantsListing = () => {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const isCountryAdmin = user?.role === 'COUNTRY_ADMIN';
   const [createConsultantModalOpen, setCreateConsultantModalOpen] =
     useState(false);
   const [selectedConsultantForReviews, setSelectedConsultantForReviews] =
@@ -1066,8 +1118,24 @@ const ConsultantsListing = () => {
     defaultValues: { state: '', languages: [] },
   });
 
-  const handleOpenCreateConsultantModal = () =>
+  const handleOpenCreateConsultantModal = () => {
     setCreateConsultantModalOpen(true);
+    if (isCountryAdmin && user) {
+      const countryOpt = COUNTRIES_LIST.find(c => c.label === user.country);
+      if (countryOpt) {
+        setSelectedCountry(countryOpt);
+        setValue('country', countryOpt.label, { shouldValidate: true });
+
+        const stateOpt = countryOpt.states.find(
+          s => s.value === user.province_id
+        );
+        if (stateOpt) {
+          setSelectedState(stateOpt);
+          setValue('state', stateOpt.value, { shouldValidate: true });
+        }
+      }
+    }
+  };
   const handleCloseCreateConsultantModal = () => {
     setCreateConsultantModalOpen(false);
     reset();
@@ -1151,6 +1219,16 @@ const ConsultantsListing = () => {
             variant="text"
             startIcon={<AddCircleOutlineRoundedIcon />}
             onClick={handleOpenCreateConsultantModal}
+            sx={{
+              bgcolor: theme => theme.palette.action.hover,
+              color: theme => theme.palette.text.primary,
+              borderRadius: 2,
+              px: 2,
+              py: 1,
+              '&:hover': {
+                bgcolor: theme => theme.palette.action.selected,
+              },
+            }}
           >
             Add New Expert
           </MorenButton>
@@ -1221,6 +1299,7 @@ const ConsultantsListing = () => {
                 }}
                 fullWidth
                 searchable
+                disabled={isCountryAdmin}
               />
               {errors.country && (
                 <Typography color="error">{errors.country.message}</Typography>

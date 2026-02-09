@@ -9,20 +9,35 @@ import {
   updateConsultationStatus,
   rescheduleTherapistConsultation,
   getTherapistPatients,
-  getPatientDocuments
+  getPatientDocuments,
+  getPatientAssessmentStatus,
+  getPatientMedicalHistory
 } from '../controllers/therapist.js'
+
+import { authenticateUser } from '../utils/middleware.js'
 
 const router = express.Router()
 
-router.post('/save/slot', saveTherapistAvailability)
-router.post('/get/slots', getTherapistAvailability)
-router.post('/get/slot', getAvailableSlots)
-router.post('/toggle-day-off', toggleDayOff)
-router.post('/update-day-slots', updateDaySlots)
-router.post('/consultation-list', getConsultationList)
-router.post('/update-status', updateConsultationStatus)
-router.post('/reschedule', rescheduleTherapistConsultation)
-router.post('/patients', getTherapistPatients)
-router.post('/patient-documents', getPatientDocuments)
+router.post('/save/slot', authenticateUser, saveTherapistAvailability)
+router.post('/get/slots', authenticateUser, getTherapistAvailability)
+router.post('/get/slot', authenticateUser, getAvailableSlots)
+router.post('/toggle-day-off', authenticateUser, toggleDayOff)
+router.post('/update-day-slots', authenticateUser, updateDaySlots)
+router.post('/consultation-list', authenticateUser, getConsultationList)
+router.post('/update-status', authenticateUser, updateConsultationStatus)
+router.post('/reschedule', authenticateUser, rescheduleTherapistConsultation)
+router.post('/patients', authenticateUser, getTherapistPatients)
+router.post('/patient-documents', authenticateUser, getPatientDocuments)
+router.post(
+  '/patient-assessment-status',
+  authenticateUser,
+  getPatientAssessmentStatus
+)
+
+router.post(
+  '/patient-medical-history',
+  authenticateUser,
+  getPatientMedicalHistory
+)
 
 export default router

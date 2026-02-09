@@ -332,6 +332,10 @@ const getPatientEmailVerification = async (payload: { token: string }) => {
       message: response.data.message || 'Email verified successfully',
       user: get(response, ['data', 'user'], null) as IUser | null,
       product: get(response, ['data', 'product'], null) as unknown,
+      isPartnerUser: Boolean(
+        get(response, ['data', 'is_partner_user'], false) ||
+          get(response, ['data', 'user', 'partner_id'], null)
+      ),
     };
   } catch (error: unknown) {
     const message =

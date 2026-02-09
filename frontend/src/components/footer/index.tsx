@@ -15,7 +15,7 @@ const Footer = () => {
       }}
     >
       <Typography variant="body2" color="textSecondary">
-        © {getCurrentYear()} DMAC. All rights reserved.
+        © {getCurrentYear()} RM360. All rights reserved.
       </Typography>
     </Box>
   );

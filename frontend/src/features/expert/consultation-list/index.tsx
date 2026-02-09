@@ -9,8 +9,12 @@ import {
   Autocomplete,
   TextField,
   Button,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import { useSelector } from 'react-redux';
 import { get } from 'lodash';
 import dayjs from 'dayjs';
@@ -22,12 +26,12 @@ import { GenericTable } from '../../../components/table';
 import { TabHeaderLayout } from '../../../components/tab-header';
 import { useGetConsultations } from '../hooks/useGetConsultations';
 import { useGetExpertPatients } from '../hooks/useGetExpertPatients';
-import { useState } from 'react';
+import { type MouseEvent, useState } from 'react';
 import UpdateStatusModal from './UpdateStatusModal';
 import ReviewModal from './ReviewModal';
-import DocumentsModal from './DocumentsModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
 import { useToast } from '../../../providers/toast-provider';
+import { useNavigate } from 'react-router-dom';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -46,6 +50,7 @@ interface IConsultation {
 }
 
 const ConsultationList = () => {
+  const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
   const { showToast } = useToast();
   const [selectedPatient, setSelectedPatient] = useState<{
@@ -79,12 +84,6 @@ const ConsultationList = () => {
   const [selectedReviewConsultationId, setSelectedReviewConsultationId] =
     useState<number | null>(null);
 
-  const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
-  const [selectedPatientForDocs, setSelectedPatientForDocs] = useState<{
-    id: number;
-    name: string;
-  } | null>(null);
-
   const handleOpenModal = (consultation: IConsultation) => {
     setSelectedConsultation(consultation);
     setIsModalOpen(true);
@@ -96,7 +95,7 @@ const ConsultationList = () => {
   };
 
   const handleMenuClick = (
-    event: React.MouseEvent<HTMLButtonElement>,
+    event: MouseEvent<HTMLButtonElement>,
     consultation: IConsultation
   ) => {
     setMenuAnchor(event.currentTarget);
@@ -115,21 +114,14 @@ const ConsultationList = () => {
     handleMenuClose();
   };
 
-  const handleViewReviewClick = () => {
-    if (menuConsultation) {
-      setSelectedReviewConsultationId(menuConsultation.id);
-      setReviewModalOpen(true);
-    }
-    handleMenuClose();
+  const handleOpenReviewModal = (consultationId: number) => {
+    setSelectedReviewConsultationId(consultationId);
+    setReviewModalOpen(true);
   };
 
   const handleViewDocumentsClick = () => {
     if (menuConsultation) {
-      setSelectedPatientForDocs({
-        id: menuConsultation.patient_id,
-        name: menuConsultation.patient_name,
-      });
-      setDocumentsModalOpen(true);
+      navigate(`/expert/patient-assessment/${menuConsultation.patient_id}`);
     }
     handleMenuClose();
   };
@@ -137,11 +129,6 @@ const ConsultationList = () => {
   const handleCloseReviewModal = () => {
     setReviewModalOpen(false);
     setSelectedReviewConsultationId(null);
-  };
-
-  const handleCloseDocumentsModal = () => {
-    setDocumentsModalOpen(false);
-    setSelectedPatientForDocs(null);
   };
 
   const handleSubmitStatus = (status: number, notes: string) => {
@@ -268,12 +255,35 @@ const ConsultationList = () => {
       },
     },
     {
+      field: 'review',
+      headerName: 'Review',
+      flex: 1,
+      maxWidth: 140,
+      sortable: false,
+      filterable: false,
+      renderCell: params => (
+        <Chip
+          label="View Review"
+          size="small"
+          variant="filled"
+          clickable
+          color="primary"
+          onClick={() => handleOpenReviewModal(params.row.id)}
+        />
+      ),
+    },
+    {
       field: 'actions',
       headerName: 'Actions',
       flex: 1,
       maxWidth: 80,
+      headerClassName: 'sticky-right--header',
+      cellClassName: 'sticky-right--cell',
       renderCell: params => (
-        <IconButton onClick={e => handleMenuClick(e, params.row)}>
+        <IconButton
+          onClick={e => handleMenuClick(e, params.row)}
+          size="small"
+        >
           <MoreVertIcon />
         </IconButton>
       ),
@@ -338,25 +348,36 @@ const ConsultationList = () => {
         onClose={handleCloseReviewModal}
         consultationId={selectedReviewConsultationId}
       />
-      <DocumentsModal
-        open={documentsModalOpen}
-        onClose={handleCloseDocumentsModal}
-        patientId={selectedPatientForDocs?.id || null}
-        patientName={selectedPatientForDocs?.name || ''}
-      />
       <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
         onClose={handleMenuClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{ elevation: 6, sx: { minWidth: 260, borderRadius: 2 } }}
       >
         <MenuItem
           onClick={handleEditStatusClick}
           disabled={menuConsultation?.consultation_status === 4}
+          sx={{ py: 1, px: 1.5 }}
         >
-          Edit Status
+          <ListItemIcon>
+            <EditOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="Edit Status"
+            primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+          />
         </MenuItem>
-        <MenuItem onClick={handleViewReviewClick}>View Review</MenuItem>
-        <MenuItem onClick={handleViewDocumentsClick}>View Documents</MenuItem>
+        <MenuItem onClick={handleViewDocumentsClick} sx={{ py: 1, px: 1.5 }}>
+          <ListItemIcon>
+            <DescriptionOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="View Assessment & Documents"
+            primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+          />
+        </MenuItem>
       </Menu>
     </Box>
   );

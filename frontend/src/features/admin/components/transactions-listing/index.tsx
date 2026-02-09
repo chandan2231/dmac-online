@@ -1,12 +1,14 @@
 import type { GridColDef } from '@mui/x-data-grid';
 import { useState } from 'react';
 import { Box, Typography, IconButton, Menu, MenuItem } from '@mui/material';
+import { ListItemIcon, ListItemText } from '@mui/material';
 import { GenericTable } from '../../../../components/table';
 import CustomLoader from '../../../../components/loader';
 import { useGetTransactionsListing } from '../../hooks/useGetTransactionsListing';
 import type { ITransaction, TransactionFilter } from '../../admin.interface';
 import { get } from 'lodash';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import GenericModal from '../../../../components/modal';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 
@@ -70,7 +72,9 @@ function TransactionsTable() {
     {
       field: 'actions',
       headerName: 'Actions',
-      flex: 0.5,
+      width: 120,
+      headerClassName: 'sticky-right--header',
+      cellClassName: 'sticky-right--cell',
       sortable: false,
       filterable: false,
       renderCell: params => (
@@ -95,6 +99,7 @@ function TransactionsTable() {
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}
         loading={isLoading}
+        disableVirtualization
       />
 
       {/* Row Actions Menu */}
@@ -110,14 +115,19 @@ function TransactionsTable() {
           vertical: 'top',
           horizontal: 'right',
         }}
+        PaperProps={{ elevation: 6, sx: { minWidth: 220, borderRadius: 2 } }}
       >
         <MenuItem
           onClick={() => {
             if (menuTransaction) handleOpenViewModal(menuTransaction);
             handleMenuClose();
           }}
+          sx={{ py: 1, px: 1.5 }}
         >
-          View Details
+          <ListItemIcon>
+            <VisibilityOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }} />
         </MenuItem>
       </Menu>
 

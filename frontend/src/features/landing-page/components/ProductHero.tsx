@@ -13,11 +13,11 @@ export default function ProductHero() {
       })}
     >
       {/* Increase the network loading priority of the background image. */}
-      <img
+      {/* <img
         style={{ display: 'none' }}
         src={backgroundImage}
         alt="increase priority"
-      />
+      /> */}
       <LandingPageTypography
         color="inherit"
         align="center"
@@ -25,7 +25,7 @@ export default function ProductHero() {
         marked="center"
         sx={{ color: 'common.white' }}
       >
-        Solution to Memory Loss
+        Understand Your Cognitive Health—Online
       </LandingPageTypography>
       <LandingPageTypography
         color="inherit"
@@ -33,8 +33,9 @@ export default function ProductHero() {
         variant="h5"
         sx={{ mb: 4, mt: { xs: 4, sm: 10 }, color: 'common.white' }}
       >
-        Regain Memory 360 (RM360) is a research-backed brain workout for memory
-        loss and cognitive decline.
+        RM360™ combines DMAC™ comprehensive online cognitive testing, expert
+        clinical guidance, and personalized brain training with LICCA™—all
+        accessible from home.
       </LandingPageTypography>
 
       <LandingPageTypography variant="body2" color="inherit" sx={{ mt: 2 }}>
