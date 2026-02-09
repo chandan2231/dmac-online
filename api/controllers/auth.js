@@ -26,6 +26,7 @@ import { getSDMACLiccaEmailContent } from '../email-templates/sdmac_licca.js';
 import { getRM360PackEmailContent } from '../email-templates/rm360_pack.js';
 import { getRM360Pack6SupervisedTrainingEmailContent } from '../email-templates/rm360_pack_6_supervised_training.js';
 import { paymentPoolConnection } from '../paymentPoolConnection.js'
+import { LICCA_DB_PREFIX } from '../utils/liccaDbPrefix.js'
 
 export const capturePatientPayment = async (req, res) => {
   const {
@@ -147,7 +148,7 @@ export const capturePatientPayment = async (req, res) => {
         if (!user) throw new Error('USER_NOT_FOUND')
 
         const [[existingUser]] = await paymentConnection.query(
-          `SELECT id FROM users WHERE username = ? LIMIT 1`,
+          `SELECT id FROM ${LICCA_DB_PREFIX}\`users\` WHERE username = ? LIMIT 1`,
           [user.email]
         )
 
@@ -168,7 +169,7 @@ export const capturePatientPayment = async (req, res) => {
           }
 
           const [insertUser] = await paymentConnection.query(
-            `INSERT INTO users
+            `INSERT INTO ${LICCA_DB_PREFIX}\`users\`
              (user_role, username, password, firstName, address, city, state,
               zipCode, country, mobileNo, time_zone, clinic_id, active,
               is_quesionaire, is_test, dateCreated, added_from)
@@ -197,7 +198,7 @@ export const capturePatientPayment = async (req, res) => {
           patient_id = insertUser.insertId
 
           await paymentConnection.query(
-            `INSERT INTO share_users_list
+            `INSERT INTO ${LICCA_DB_PREFIX}\`share_users_list\`
              (patient_id, user_role, username, password, firstName, address,
               city, state, zipCode, country, mobileNo, time_zone, clinic_id,
               active, is_quesionaire, is_test, dateCreated, added_from)
@@ -239,7 +240,7 @@ export const capturePatientPayment = async (req, res) => {
         const clinic_id = 9
 
         const [[lastPayment]] = await paymentConnection.query(
-          `SELECT * FROM user_payment_details
+          `SELECT * FROM ${LICCA_DB_PREFIX}\`user_payment_details\`
            WHERE user_id = ? ORDER BY id DESC LIMIT 1`,
           [patient_id]
         )
@@ -255,20 +256,20 @@ export const capturePatientPayment = async (req, res) => {
                 .unix()
 
         await paymentConnection.query(
-          `INSERT INTO user_payment_details
+          `INSERT INTO ${LICCA_DB_PREFIX}\`user_payment_details\`
            (user_id, product_group_id, product_id, start_ts, end_ts, clinic_id)
            VALUES (?, ?, ?, ?, ?, ?)`,
           [patient_id, group_id, licca_product_id, now_ts, end_ts, clinic_id]
         )
 
         await paymentConnection.query(
-          `DELETE FROM user_product_expiry
+          `DELETE FROM ${LICCA_DB_PREFIX}\`user_product_expiry\`
            WHERE user_id = ? AND product_group_id = ?`,
           [patient_id, group_id]
         )
 
         await paymentConnection.query(
-          `INSERT INTO user_product_expiry
+          `INSERT INTO ${LICCA_DB_PREFIX}\`user_product_expiry\`
            (user_id, product_group_id, product_id, expiry_ts,
             is_active, clinic_id)
            VALUES (?, ?, ?, ?, ?, ?)`,
@@ -364,268 +365,6 @@ export const capturePatientPayment = async (req, res) => {
   }
 }
 
-// export const capturePatientPayment = async (req, res) => {
-//   const {
-//     orderId,
-//     payerId,
-//     amount,
-//     currencyCode,
-//     productId,
-//     userId,
-//     userName,
-//     userEmail,
-//     productName
-//   } = req.body
-
-//   const transactionDate = moment().format('YYYY-MM-DD')
-//   const transactionTime = moment().format('HH:mm:ss')
-//   const datetime = moment().format('YYYY-MM-DD HH:mm:ss')
-
-//   const captureOrderRequest = new paypal.orders.OrdersCaptureRequest(orderId)
-//   captureOrderRequest.requestBody({ payer_id: payerId })
-
-//   try {
-//     /* ------------------ CAPTURE PAYPAL PAYMENT ------------------ */
-//     const captureResult = await client().execute(captureOrderRequest)
-//     const paymentStatus = captureResult.result.status
-
-//     /* Always log transaction */
-//     await db.promise().query(
-//       `INSERT INTO dmac_webapp_users_transaction
-//        (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type)
-//        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-//       [
-//         captureResult.result.id,
-//         payerId,
-//         amount,
-//         currencyCode,
-//         paymentStatus,
-//         productId,
-//         userId,
-//         'paypal'
-//       ]
-//     )
-
-//     /* ------------------ ONLY PROCEED IF COMPLETED ------------------ */
-//     if (paymentStatus !== 'COMPLETED') {
-//       throw new Error('PAYMENT_NOT_COMPLETED')
-//     }
-
-//     /* ------------------ GET PRODUCT DETAILS ------------------ */
-//     const product = await getProductById(productId, db)
-
-//     if (!product) {
-//       throw new Error('PRODUCT_NOT_FOUND')
-//     }
-//     const isLiccaIncluded = hasLiccaSubscription(product.subscription_list)
-
-//     /* Mark patient as paid */
-//     await db.promise().query(
-//       `UPDATE dmac_webapp_users
-//        SET patient_payment = 1, patient_payment_date = ?
-//        WHERE id = ?`,
-//       [datetime, userId]
-//     )
-//     if (isLiccaIncluded) {
-//       /* Get user info */
-//       const [users] = await db
-//         .promise()
-//         .query(`SELECT * FROM dmac_webapp_users WHERE id = ?`, [userId])
-
-//       if (!users.length) {
-//         return res.status(200).json({ message: 'User data not found' })
-//       }
-//       const user = users[0]
-//       /* ------------------ DECRYPT + CONVERT PASSWORD TO MD5 ------------------ */
-//       const originalPassword = decryptString(user.encrypted_password)
-
-//       const md5Password = crypto
-//         .createHash('md5')
-//         .update(originalPassword)
-//         .digest('hex')
-
-//       /* ------------------ INSERT INTO MAIN users TABLE ------------------ */
-//       const [insertUserResult] = await db.promise().query(
-//         `INSERT INTO users
-//           (user_role, username, password, firstName, address, city, state, zipCode, country, mobileNo, time_zone, clinic_id, active, is_quesionaire, is_test, dateCreated, added_from)
-//           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//         [
-//           'User',
-//           user.email,
-//           md5Password,
-//           user.name,
-//           user.address,
-//           user.state,
-//           user.province_title,
-//           user.zip_code,
-//           user.country,
-//           user.mobile,
-//           user.time_zone,
-//           9,
-//           1,
-//           0,
-//           0,
-//           new Date(),
-//           3
-//         ]
-//       )
-
-//       const patient_id = insertUserResult.insertId
-
-//       /* ------------------ INSERT INTO mapping ------------------ */
-
-//       await db.promise().query(`INSERT INTO dmac_webapp_licca_user_mapping (webapp_user_id, licca_user_id) VALUES (?, ?)`, [userId, patient_id])
-
-//       /* ------------------ INSERT INTO share_users_list ------------------ */
-//       await db.promise().query(
-//         `INSERT INTO share_users_list
-//           (patient_id, user_role, username, password, firstName, address, city, state, zipCode, country, mobileNo, time_zone, clinic_id, active, is_quesionaire, is_test, dateCreated, added_from)
-//           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//         [
-//           patient_id,
-//           'User',
-//           user.email,
-//           md5Password,
-//           user.name,
-//           user.address,
-//           user.state,
-//           user.province_title,
-//           user.zip_code,
-//           user.country,
-//           user.mobile,
-//           user.time_zone,
-//           9,
-//           1,
-//           0,
-//           0,
-//           new Date(),
-//           3
-//         ]
-//       )
-
-//       /* ------------------ LICCA / PRODUCT VALIDITY ------------------ */
-//       const licca_product_id = 100
-//       const group_id = 100
-//       const licca_validity = 90
-//       const clinic_id = 9
-
-//       const [[lastPayment]] = await db.promise().query(
-//         `SELECT * FROM user_payment_details
-//         WHERE user_id = ? ORDER BY id DESC LIMIT 1`,
-//         [patient_id]
-//       )
-
-//       const now_ts = moment().unix()
-//       let end_ts
-
-//       if (!lastPayment || lastPayment.end_ts <= now_ts) {
-//         end_ts = moment().add(licca_validity, 'days').endOf('day').unix()
-//       } else {
-//         end_ts = moment
-//           .unix(lastPayment.end_ts)
-//           .add(licca_validity, 'days')
-//           .endOf('day')
-//           .unix()
-//       }
-
-//       /* Insert payment cycle */
-//       await db.promise().query(
-//         `INSERT INTO user_payment_details
-//         (user_id, product_group_id, product_id, start_ts, end_ts, clinic_id)
-//         VALUES (?, ?, ?, ?, ?, ?)`,
-//         [patient_id, group_id, licca_product_id, now_ts, end_ts, clinic_id]
-//       )
-
-//       /* Update expiry */
-//       await db
-//         .promise()
-//         .query(
-//           `DELETE FROM user_product_expiry WHERE user_id = ? AND product_group_id = ?`,
-//           [patient_id, group_id]
-//         )
-
-//       await db.promise().query(
-//         `INSERT INTO user_product_expiry
-//         (user_id, product_group_id, product_id, expiry_ts, is_active, clinic_id)
-//         VALUES (?, ?, ?, ?, ?, ?)`,
-//         [patient_id, group_id, licca_product_id, end_ts, 1, clinic_id]
-//       )
-//     }
-
-//     /* ------------------ SUCCESS EMAIL ------------------ */
-//     const subject = 'Payment Receipt — Payment Approved'
-//     const html = `
-//       <p>Dear ${userName},</p>
-//       <h3>Receipt of Successful Payment</h3>
-//       <table>
-//         <tr><td><strong>Status:</strong></td><td>SUCCESS</td></tr>
-//         <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
-//         <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
-//         <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
-//         <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
-//       </table>
-//       <p>No service tax due to Tax Exempt Status.</p>
-//       <p>Please note: The above payment is non-refundable.</p>
-//       <p>Regards,<br/>Admin<br/>DMAC.COM</p>
-//     `
-
-//     await sendEmail(userEmail, subject, html, html)
-
-//     /* Final Response */
-//     return res.json({
-//       message: 'Payment captured successfully',
-//       patient_id
-//     })
-//   } catch (error) {
-//     console.error('PayPal CAPTURE ERROR:', error)
-
-//     const failReason =
-//       error?.result?.message || error?.message || 'Payment failed'
-
-//     /* Log failed payment */
-//     await db.promise().query(
-//       `INSERT INTO dmac_webapp_users_transaction
-//        (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type, failure_reason)
-//        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//       [
-//         orderId,
-//         payerId || null,
-//         amount,
-//         currencyCode,
-//         'FAILED',
-//         productId,
-//         userId,
-//         'paypal',
-//         failReason
-//       ]
-//     )
-
-//     /* Failure email */
-//     if (userEmail) {
-//       const subject = 'Payment Receipt — Payment Failed'
-//       const html = `
-//         <p>Dear ${userName},</p>
-//         <h3>Payment Failed</h3>
-//         <table>
-//           <tr><td><strong>Status:</strong></td><td>FAILED</td></tr>
-//           <tr><td><strong>Reason:</strong></td><td>${failReason}</td></tr>
-//           <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
-//           <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
-//           <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
-//           <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
-//         </table>
-//         <p>Please retry the payment.</p>
-//         <p>Regards,<br/>Admin<br/>DMAC.COM</p>
-//       `
-//       await sendEmail(userEmail, subject, html, html)
-//     }
-
-//     return res.status(400).json({
-//       message: 'Payment failed',
-//       reason: failReason
-//     })
-//   }
-// }
 
 export const emailVerification = (req, res) => {
   const { token } = req.body
@@ -896,12 +635,12 @@ export const resetPassword = async (req, res) => {
           .digest('hex')
 
         await paymentConnection.query(
-          'UPDATE users SET password = ? WHERE id = ?',
+          `UPDATE ${LICCA_DB_PREFIX}\`users\` SET password = ? WHERE id = ?`,
           [md5Password, liccaUserId]
         )
 
         await paymentConnection.query(
-          'UPDATE share_users_list SET password = ? WHERE patient_id = ?',
+          `UPDATE ${LICCA_DB_PREFIX}\`share_users_list\` SET password = ? WHERE patient_id = ?`,
           [md5Password, liccaUserId]
         )
       }
