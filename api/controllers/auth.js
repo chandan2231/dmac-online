@@ -1252,3 +1252,45 @@ export const validateTokenAndGetUser = (req, res) => {
     })
   })
 }
+
+function encryptString(original) {
+  const key = Buffer.from(process.env.CRYPTO_SECRET_KEY, 'hex')
+
+  const cipher = crypto.createCipheriv(
+    process.env.CRYPTO_ALGORITHM,
+    key,
+    Buffer.alloc(16, 0)
+  )
+
+  cipher.setAutoPadding(true)
+
+  let encrypted = cipher.update(original, 'utf8', 'base64')
+  encrypted += cipher.final('base64')
+
+  return encrypted
+}
+
+function decryptString(encoded) {
+  if (!encoded) {
+    throw new Error('MISSING_ENCRYPTED_PASSWORD')
+  }
+  if (!process.env.CRYPTO_SECRET_KEY || !process.env.CRYPTO_ALGORITHM) {
+    throw new Error('CRYPTO_ENV_MISSING')
+  }
+
+  const key = Buffer.from(process.env.CRYPTO_SECRET_KEY, 'hex')
+
+  const decipher = crypto.createDecipheriv(
+    process.env.CRYPTO_ALGORITHM,
+    key,
+    Buffer.alloc(16, 0)
+  )
+
+  decipher.setAutoPadding(true)
+
+  let decrypted = decipher.update(encoded, 'base64', 'utf8')
+  decrypted += decipher.final('utf8')
+
+  return decrypted
+}
+
