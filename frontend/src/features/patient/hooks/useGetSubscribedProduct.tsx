@@ -5,7 +5,7 @@ import PatientService from '../patient.service';
 
 export function useGetSubscribedProduct(user: IUser | null) {
   return useQuery({
-    queryKey: [QUERY_KEYS_FOR_PATIENT.GET_SUBSCRIBED_PRODUCTS],
+    queryKey: [QUERY_KEYS_FOR_PATIENT.GET_SUBSCRIBED_PRODUCTS, user?.id ?? null],
     queryFn: () => PatientService.getSubscribedProduct(user),
     enabled: !!user,
   });

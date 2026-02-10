@@ -8,8 +8,10 @@ export const oauth2Client = new google.auth.OAuth2(
 
 export const getGoogleAuthURL = (userId) => {
   const scopes = [
-    'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/calendar'
+    'openid',
+    'email',
+    'https://www.googleapis.com/auth/calendar.events'
+
   ]
 
   const url = oauth2Client.generateAuthUrl({

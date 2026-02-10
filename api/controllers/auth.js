@@ -3,9 +3,368 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import sendEmail from '../emailService.js'
 import { v4 as uuidv4 } from 'uuid'
-import { createHash } from 'crypto'
 import { client } from '../paypalConfig.js'
 import paypal from '@paypal/checkout-server-sdk'
+import crypto from 'crypto'
+import moment from 'moment'
+import {
+  computeUpgradeCharge,
+  getProductById,
+  getUserLatestCompletedProduct,
+  hasLiccaSubscription
+} from './commonService.js'
+import {
+  hasSDMAC,
+  hasSDMACExpertAdvice,
+  hasSDMACLicca,
+  hasRM360Pack,
+  hasRM360Pack6SupervisedTraining
+} from '../email-templates/product-inclusion.js';
+import { getSDMACEmailContent } from '../email-templates/sdmac.js';
+import { getSDMACExpertAdviceEmailContent } from '../email-templates/sdmac_expert_advice.js';
+import { getSDMACLiccaEmailContent } from '../email-templates/sdmac_licca.js';
+import { getRM360PackEmailContent } from '../email-templates/rm360_pack.js';
+import { getRM360Pack6SupervisedTrainingEmailContent } from '../email-templates/rm360_pack_6_supervised_training.js';
+import { paymentPoolConnection } from '../paymentPoolConnection.js'
+import { LICCA_DB_PREFIX } from '../utils/liccaDbPrefix.js'
+
+export const capturePatientPayment = async (req, res) => {
+  const {
+    orderId,
+    payerId,
+    currencyCode,
+    productId,
+    userId,
+    userName,
+    userEmail,
+    productName
+  } = req.body
+
+  const transactionDate = moment().format('YYYY-MM-DD')
+  const transactionTime = moment().format('HH:mm:ss')
+  const datetime = moment().format('YYYY-MM-DD HH:mm:ss')
+
+  const captureOrderRequest = new paypal.orders.OrdersCaptureRequest(orderId)
+  captureOrderRequest.requestBody({ payer_id: payerId })
+
+  let patient_id = null
+  let isLiccaIncluded = false
+  let liccaProvisioned = false
+  let amountForLog = 0
+
+  try {
+    /* ------------------ CAPTURE PAYPAL PAYMENT ------------------ */
+    const captureResult = await client().execute(captureOrderRequest)
+    const paymentStatus = captureResult.result.status
+
+    const targetProduct = await getProductById(productId, db)
+    if (!targetProduct) throw new Error('PRODUCT_NOT_FOUND')
+    const productCode = targetProduct.product_code;
+
+    const current = await getUserLatestCompletedProduct(userId, db)
+    const charge = current ? computeUpgradeCharge({ currentProduct: current, targetProduct })
+      : {
+          allowed: true,
+          reason: null,
+          amountToCharge: Number(
+            Number(targetProduct.product_amount).toFixed(2)
+          ),
+          isUpgrade: false,
+          upgradeFromProductId: null,
+          fullProductAmount: Number(targetProduct.product_amount),
+          currentProductAmount: null
+        }
+
+    if (!charge.allowed) {
+      throw new Error(charge.reason)
+    }
+
+    const capturedAmountValue =
+      captureResult?.result?.purchase_units?.[0]?.payments?.captures?.[0]
+        ?.amount?.value ?? null
+    const capturedAmount =
+      capturedAmountValue !== null ? Number(capturedAmountValue) : null
+    if (capturedAmount === null || !Number.isFinite(capturedAmount)) {
+      throw new Error('CAPTURE_AMOUNT_MISSING')
+    }
+    amountForLog = Number(capturedAmount.toFixed(2))
+    if (
+      Number(capturedAmount.toFixed(2)) !==
+      Number(charge.amountToCharge.toFixed(2))
+    ) {
+      throw new Error('AMOUNT_MISMATCH')
+    }
+
+    await db.promise().query(
+      `INSERT INTO dmac_webapp_users_transaction
+       (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type,
+        is_upgrade, upgrade_from_product_id, full_product_amount, price_difference_amount)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        captureResult.result.id,
+        payerId,
+        charge.amountToCharge,
+        currencyCode,
+        paymentStatus,
+        productId,
+        userId,
+        'paypal',
+        charge.isUpgrade ? 1 : 0,
+        charge.upgradeFromProductId,
+        charge.fullProductAmount,
+        charge.isUpgrade ? charge.amountToCharge : null
+      ]
+    )
+
+    if (paymentStatus !== 'COMPLETED') {
+      throw new Error('PAYMENT_NOT_COMPLETED')
+    }
+
+    /* ------------------ PRODUCT CHECK ------------------ */
+    isLiccaIncluded = hasLiccaSubscription(targetProduct.subscription_list)
+
+    /* ------------------ MARK PAYMENT DONE ------------------ */
+    await db.promise().query(
+      `UPDATE dmac_webapp_users
+       SET patient_payment = 1, patient_payment_date = ?
+       WHERE id = ?`,
+      [datetime, userId]
+    )
+
+    /* ------------------ LICCA FLOW (POOL ONLY) ------------------ */
+    if (isLiccaIncluded) {
+      let paymentConnection
+
+      try {
+        paymentConnection = await paymentPoolConnection
+          .promise()
+          .getConnection()
+        await paymentConnection.beginTransaction()
+
+        const [[user]] = await paymentConnection.query(
+          `SELECT * FROM dmac_webapp_users WHERE id = ? LIMIT 1`,
+          [userId]
+        )
+        if (!user) throw new Error('USER_NOT_FOUND')
+
+        const [[existingUser]] = await paymentConnection.query(
+          `SELECT id FROM ${LICCA_DB_PREFIX}\`users\` WHERE username = ? LIMIT 1`,
+          [user.email]
+        )
+
+        if (existingUser) {
+          patient_id = existingUser.id
+        } else {
+          let md5Password
+          try {
+            const originalPassword = decryptString(user.encrypted_password)
+            md5Password = crypto
+              .createHash('md5')
+              .update(originalPassword)
+              .digest('hex')
+          } catch (e) {
+            throw new Error(
+              `LICCA_PASSWORD_DECRYPT_FAILED: ${e?.message ?? String(e)}`
+            )
+          }
+
+          const [insertUser] = await paymentConnection.query(
+            `INSERT INTO ${LICCA_DB_PREFIX}\`users\`
+             (user_role, username, password, firstName, address, city, state,
+              zipCode, country, mobileNo, time_zone, clinic_id, active,
+              is_quesionaire, is_test, dateCreated, added_from)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              'User',
+              user.email,
+              md5Password,
+              user.name,
+              user.address,
+              user.state,
+              user.province_title,
+              user.zip_code,
+              user.country,
+              user.mobile,
+              user.time_zone,
+              9,
+              1,
+              0,
+              0,
+              new Date(),
+              3
+            ]
+          )
+
+          patient_id = insertUser.insertId
+
+          await paymentConnection.query(
+            `INSERT INTO ${LICCA_DB_PREFIX}\`share_users_list\`
+             (patient_id, user_role, username, password, firstName, address,
+              city, state, zipCode, country, mobileNo, time_zone, clinic_id,
+              active, is_quesionaire, is_test, dateCreated, added_from)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              patient_id,
+              'User',
+              user.email,
+              md5Password,
+              user.name,
+              user.address,
+              user.state,
+              user.province_title,
+              user.zip_code,
+              user.country,
+              user.mobile,
+              user.time_zone,
+              9,
+              1,
+              0,
+              0,
+              new Date(),
+              3
+            ]
+          )
+        }
+
+        await paymentConnection.query(
+          `INSERT IGNORE INTO dmac_webapp_licca_user_mapping
+           (webapp_user_id, licca_user_id)
+           VALUES (?, ?)`,
+          [userId, patient_id]
+        )
+
+        /* ------------------ LICCA VALIDITY ------------------ */
+        const licca_product_id = 100
+        const group_id = 100
+        const licca_validity = 90
+        const clinic_id = 9
+
+        const [[lastPayment]] = await paymentConnection.query(
+          `SELECT * FROM ${LICCA_DB_PREFIX}\`user_payment_details\`
+           WHERE user_id = ? ORDER BY id DESC LIMIT 1`,
+          [patient_id]
+        )
+
+        const now_ts = moment().unix()
+        const end_ts =
+          !lastPayment || lastPayment.end_ts <= now_ts
+            ? moment().add(licca_validity, 'days').endOf('day').unix()
+            : moment
+                .unix(lastPayment.end_ts)
+                .add(licca_validity, 'days')
+                .endOf('day')
+                .unix()
+
+        await paymentConnection.query(
+          `INSERT INTO ${LICCA_DB_PREFIX}\`user_payment_details\`
+           (user_id, product_group_id, product_id, start_ts, end_ts, clinic_id)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [patient_id, group_id, licca_product_id, now_ts, end_ts, clinic_id]
+        )
+
+        await paymentConnection.query(
+          `DELETE FROM ${LICCA_DB_PREFIX}\`user_product_expiry\`
+           WHERE user_id = ? AND product_group_id = ?`,
+          [patient_id, group_id]
+        )
+
+        await paymentConnection.query(
+          `INSERT INTO ${LICCA_DB_PREFIX}\`user_product_expiry\`
+           (user_id, product_group_id, product_id, expiry_ts,
+            is_active, clinic_id)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [patient_id, group_id, licca_product_id, end_ts, 1, clinic_id]
+        )
+
+        await paymentConnection.commit()
+        liccaProvisioned = true
+      } catch (err) {
+        if (paymentConnection) await paymentConnection.rollback()
+        // Do not fail a successful PayPal capture just because LICCA provisioning failed.
+        // Log and continue; admins can investigate env mismatch / legacy encrypted_password values.
+        console.error('LICCA PROVISIONING ERROR:', err)
+        liccaProvisioned = false
+      } finally {
+        if (paymentConnection) paymentConnection.release()
+      }
+    }
+
+
+    // Select email content based on product code
+    let emailContent;
+    if (hasSDMAC(targetProduct.subscription_list, productCode)) {
+      emailContent = getSDMACEmailContent({ userName, link: '' });
+    } else if (hasSDMACExpertAdvice(targetProduct.subscription_list, productCode)) {
+      emailContent = getSDMACExpertAdviceEmailContent({ userName, link: '' });
+    } else if (hasSDMACLicca(targetProduct.subscription_list, productCode)) {
+      emailContent = getSDMACLiccaEmailContent({ userName, link: '' });
+    } else if (hasRM360Pack(targetProduct.subscription_list, productCode)) {
+      emailContent = getRM360PackEmailContent({ userName, link: '' });
+    } else if (hasRM360Pack6SupervisedTraining(targetProduct.subscription_list, productCode)) {
+      emailContent = getRM360Pack6SupervisedTrainingEmailContent({ userName, link: '' });
+    } else {
+      emailContent = {
+        subject: 'Payment Receipt — Payment Approved',
+        html: `
+          <p>Dear ${userName},</p>
+          <h3>Payment Successful</h3>
+          <p>Amount: $${charge.amountToCharge}</p>
+          <p>Product: ${productName}</p>
+          <p>Date: ${transactionDate} ${transactionTime}</p>
+          <p>Regards,<br/>Admin<br/>DMAC.COM</p>
+        `
+      };
+    }
+    await sendEmail(
+      userEmail,
+      emailContent.subject,
+      emailContent.html,
+      emailContent.html,
+      emailContent.attachments
+    );
+
+    return res.json({
+      message: 'Payment captured successfully',
+      patient_id,
+      licca_enabled: Boolean(isLiccaIncluded && liccaProvisioned)
+    })
+  } catch (error) {
+    console.error('PAYPAL ERROR:', error)
+
+    const failureReason = error?.message ?? String(error)
+    const safeAmount = Number.isFinite(Number(amountForLog))
+      ? Number(amountForLog)
+      : 0
+
+    try {
+      await db.promise().query(
+        `INSERT INTO dmac_webapp_users_transaction
+         (payment_id, payer_id, amount, currency, status,
+          product_id, user_id, payment_type, failure_reason)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          orderId,
+          payerId || null,
+          safeAmount,
+          currencyCode,
+          'FAILED',
+          productId,
+          userId,
+          'paypal',
+          failureReason
+        ]
+      )
+    } catch (logErr) {
+      console.error('FAILED TO LOG PAYMENT FAILURE:', logErr)
+    }
+
+    return res.status(400).json({
+      message: 'Payment failed',
+      reason: failureReason
+    })
+  }
+}
+
 
 export const emailVerification = (req, res) => {
   const { token } = req.body
@@ -67,25 +426,6 @@ export const register = async (req, res) => {
       'USER',
       req.body.timeZone
     ]
-
-    // Entry for LICCA login, later will enable it for the licca login,
-
-    // const liccaPassword = createHash('md5').update(password).digest('hex');
-    // const insertQueryLicca = `
-    //   INSERT INTO users (user_role, firstName, username, mobileNo, password, country, state, zipCode, active, dmac_user_verification_token)
-    //   VALUES (?)`
-    // const liccaValues = [
-    //   'dmac_user',
-    //   req.body.name,
-    //   req.body.email,
-    //   req.body.mobile,
-    //   liccaPassword,
-    //   country,
-    //   state,
-    //   zipcode,
-    //   0,
-    //   verificationToken
-    // ]
 
     const insertResult = await new Promise((resolve, reject) => {
       db.query(insertQuery, [values], (err, data) => {
@@ -189,7 +529,11 @@ export const login = (req, res) => {
       role: user.role,
       google_access_token: user.google_access_token,
       google_refresh_token: user.google_refresh_token,
-      time_zone: user.time_zone
+      time_zone: user.time_zone,
+      country: user.country,
+      province_title: user.province_title,
+      province_id: user.province_id,
+      state: user.state
     }
 
     res.status(200).json({
@@ -247,22 +591,75 @@ export const forgetPasswordVerifyEmail = (req, res) => {
   }
 }
 
-export const resetPassword = (req, res) => {
+export const resetPassword = async (req, res) => {
   const { token, password } = req.body
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(400).json({ msg: 'Invalid or expired token' })
+
+  try {
+    // Verify reset token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
     const userId = decoded.id
+
+    // Update password in primary webapp database
     const salt = bcrypt.genSaltSync(10)
     const hashedPassword = bcrypt.hashSync(password, salt)
-    db.query(
-      'UPDATE dmac_webapp_users SET password = ? WHERE id = ?',
-      [hashedPassword, userId],
-      (err) => {
-        if (err) return res.status(500).json({ error: err.msg })
-        res.json({ msg: 'Password reset successful!' })
+    const encryptedPasswordString = encryptString(password)
+
+    await new Promise((resolve, reject) => {
+      db.query(
+        'UPDATE dmac_webapp_users SET password = ?, encrypted_password = ? WHERE id = ?',
+        [hashedPassword, encryptedPasswordString, userId],
+        err => {
+          if (err) return reject(err)
+          resolve()
+        }
+      )
+    })
+
+    // Also update password in LICCA (users & share_users_list) if mapping exists
+    let paymentConnection
+    try {
+      paymentConnection = await paymentPoolConnection.promise().getConnection()
+
+      const [[mapping]] = await paymentConnection.query(
+        `SELECT licca_user_id FROM dmac_webapp_licca_user_mapping
+         WHERE webapp_user_id = ?
+         LIMIT 1`,
+        [userId]
+      )
+
+      if (mapping && mapping.licca_user_id) {
+        const liccaUserId = mapping.licca_user_id
+        const md5Password = crypto
+          .createHash('md5')
+          .update(password)
+          .digest('hex')
+
+        await paymentConnection.query(
+          `UPDATE ${LICCA_DB_PREFIX}\`users\` SET password = ? WHERE id = ?`,
+          [md5Password, liccaUserId]
+        )
+
+        await paymentConnection.query(
+          `UPDATE ${LICCA_DB_PREFIX}\`share_users_list\` SET password = ? WHERE patient_id = ?`,
+          [md5Password, liccaUserId]
+        )
       }
-    )
-  })
+    } catch (liccaErr) {
+      console.error('LICCA PASSWORD SYNC ERROR:', liccaErr)
+      // Do not fail password reset if LICCA sync fails; log for investigation.
+    } finally {
+      if (paymentConnection) paymentConnection.release()
+    }
+
+    return res.json({ msg: 'Password reset successful!' })
+  } catch (err) {
+    if (err?.name === 'JsonWebTokenError' || err?.name === 'TokenExpiredError') {
+      return res.status(400).json({ msg: 'Invalid or expired token' })
+    }
+
+    console.error('RESET PASSWORD ERROR:', err)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
 }
 
 export const logout = (req, res) => {
@@ -271,7 +668,7 @@ export const logout = (req, res) => {
 }
 
 // Customers registration and login journey
-export const patinetRegistration = async (req, res) => {
+export const patientRegistration = async (req, res) => {
   try {
     // 🔍 Check if product is selected
     if (
@@ -310,16 +707,18 @@ export const patinetRegistration = async (req, res) => {
     const hashedPassword = bcrypt.hashSync(req.body.password, salt)
     const verificationToken = uuidv4()
     const otherInfoJson = JSON.stringify(req.body.otherInfo ?? {})
+    const encryptedPasswordString = encryptString(req.body.password)
     // Insert new user into the database
     const insertQuery = `
       INSERT INTO dmac_webapp_users 
-      (name, email, mobile, password, country, state, zip_code, language, verified, verification_token, role, time_zone, province_title, province_id, patient_meta) 
+      (name, email, mobile, password, encrypted_password, country, state, zip_code, language, verified, verification_token, role, time_zone, province_title, province_id, patient_meta, weight, weight_unit, height, height_unit) 
       VALUES (?)`
     const values = [
       req.body.name,
       req.body.email,
       req.body.mobile,
       hashedPassword,
+      encryptedPasswordString,
       req.body.country,
       req.body.state,
       req.body.zipcode,
@@ -330,7 +729,11 @@ export const patinetRegistration = async (req, res) => {
       req.body.timeZone,
       req.body.provinceTitle,
       req.body.provinceValue,
-      otherInfoJson
+      otherInfoJson,
+      req.body.weight,
+      req.body.weight_unit,
+      req.body.height,
+      req.body.height_unit
     ]
 
     const insertResult = await new Promise((resolve, reject) => {
@@ -414,7 +817,7 @@ export const patientEmailVerification = (req, res) => {
 
       // Step 2: Fetch user details using token (include mobile & role since you return them)
       const userQuery = `
-        SELECT id, name, email, mobile, role
+        SELECT id, name, email, mobile, role, partner_id
         FROM dmac_webapp_users
         WHERE verification_token = ?
       `
@@ -429,14 +832,88 @@ export const patientEmailVerification = (req, res) => {
         const user = userRows[0]
         const userId = user.id
 
+        const ensurePartnerUserHasDefaultProduct = (done) => {
+          const defaultProductId = 1
+
+          if (!user.partner_id) {
+            return done(null)
+          }
+
+          const checkProductSql =
+            'SELECT id FROM dmac_webapp_registered_users_product WHERE user_id = ? AND product_id = ? LIMIT 1'
+          db.query(
+            checkProductSql,
+            [userId, defaultProductId],
+            (checkErr, checkRows) => {
+              if (checkErr) return done(checkErr)
+
+              const ensureTxnRow = () => {
+                // Add a dummy transaction row for admin/audit views.
+                const checkTxnSql =
+                  'SELECT id FROM dmac_webapp_users_transaction WHERE user_id = ? AND product_id = ? AND payment_type = ? LIMIT 1'
+                db.query(
+                  checkTxnSql,
+                  [userId, defaultProductId, 'partner'],
+                  (txnCheckErr, txnRows) => {
+                    if (txnCheckErr) return done(txnCheckErr)
+
+                    if (Array.isArray(txnRows) && txnRows.length > 0) {
+                      return done(null)
+                    }
+
+                    const insertTxnSql = `
+                      INSERT INTO dmac_webapp_users_transaction
+                        (payment_id, payer_id, amount, currency, status, product_id, user_id, payment_type, failure_reason)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    `
+
+                    db.query(
+                      insertTxnSql,
+                      [
+                        `PARTNER_ADDED_USER_${userId}`,
+                        `PARTNER_ADDED_USER_${userId}`,
+                        0,
+                        'USD',
+                        'COMPLETED',
+                        defaultProductId,
+                        userId,
+                        'partner',
+                        'Added by partner'
+                      ],
+                      (txnInsertErr) => {
+                        if (txnInsertErr) return done(txnInsertErr)
+                        return done(null)
+                      }
+                    )
+                  }
+                )
+              }
+
+              if (Array.isArray(checkRows) && checkRows.length > 0) {
+                return ensureTxnRow()
+              }
+
+              const insertProductSql =
+                'INSERT INTO dmac_webapp_registered_users_product (user_id, product_id) VALUES (?)'
+              db.query(
+                insertProductSql,
+                [[userId, defaultProductId]],
+                (insertErr) => {
+                  if (insertErr) return done(insertErr)
+
+                  return ensureTxnRow()
+                }
+              )
+            }
+          )
+        }
+
         // Step 3: JOIN to get the latest product (if any)
         // NOTE: removed stray comma after p.product_amount which caused SQL syntax error
         const productJoinQuery = `
           SELECT 
             rup.product_id,
-            p.product_name,
-            p.product_description AS product_description,
-            p.product_amount
+            p.*
           FROM dmac_webapp_registered_users_product rup
           LEFT JOIN dmac_webapp_products p 
             ON rup.product_id = p.id
@@ -445,23 +922,29 @@ export const patientEmailVerification = (req, res) => {
           LIMIT 1
         `
 
-        db.query(productJoinQuery, [userId], (prodErr, prodRows) => {
-          if (prodErr) return res.status(500).json({ error: prodErr.message })
+        ensurePartnerUserHasDefaultProduct((ensureErr) => {
+          if (ensureErr)
+            return res.status(500).json({ error: ensureErr.message })
 
-          // Format product response (null if no product assigned)
-          const product = prodRows && prodRows.length > 0 ? prodRows[0] : null
+          db.query(productJoinQuery, [userId], (prodErr, prodRows) => {
+            if (prodErr) return res.status(500).json({ error: prodErr.message })
 
-          return res.json({
-            isSuccess: true,
-            message: 'Email verified successfully',
-            user: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              mobile: user.mobile,
-              role: user.role
-            },
-            product // null allowed
+            // Format product response (null if no product assigned)
+            const product = prodRows && prodRows.length > 0 ? prodRows[0] : null
+
+            return res.json({
+              isSuccess: true,
+              message: 'Email verified successfully',
+              is_partner_user: Boolean(user.partner_id),
+              user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                mobile: user.mobile,
+                role: user.role
+              },
+              product // null allowed
+            })
           })
         })
       })
@@ -525,7 +1008,11 @@ export const patientLogin = (req, res) => {
       patient_payment: user.patient_payment,
       google_access_token: user.google_access_token,
       google_refresh_token: user.google_refresh_token,
-      time_zone: user.time_zone
+      time_zone: user.time_zone,
+      country: user.country,
+      province_title: user.province_title,
+      province_id: user.province_id,
+      state: user.state
     }
 
     res.status(200).json({
@@ -536,6 +1023,41 @@ export const patientLogin = (req, res) => {
 }
 
 export const createPatientPayment = async (req, res) => {
+  const { userId, productId } = req.body
+
+  if (!userId || !productId) {
+    return res
+      .status(400)
+      .json({ message: 'userId and productId are required' })
+  }
+
+  const targetProduct = await getProductById(productId, db)
+  if (!targetProduct) {
+    return res.status(404).json({ message: 'Product not found' })
+  }
+
+  const current = await getUserLatestCompletedProduct(userId, db)
+
+  const charge = current
+    ? computeUpgradeCharge({ currentProduct: current, targetProduct })
+    : {
+        allowed: true,
+        reason: null,
+        amountToCharge: Number(Number(targetProduct.product_amount).toFixed(2)),
+        isUpgrade: false,
+        upgradeFromProductId: null,
+        fullProductAmount: Number(targetProduct.product_amount),
+        currentProductAmount: null
+      }
+
+  if (!charge.allowed) {
+    return res.status(400).json({ message: charge.reason })
+  }
+
+  if (!Number.isFinite(charge.amountToCharge) || charge.amountToCharge <= 0) {
+    return res.status(400).json({ message: 'INVALID_AMOUNT' })
+  }
+
   const createOrderRequest = new paypal.orders.OrdersCreateRequest()
   createOrderRequest.requestBody({
     intent: 'CAPTURE',
@@ -543,7 +1065,7 @@ export const createPatientPayment = async (req, res) => {
       {
         amount: {
           currency_code: 'USD',
-          value: req.body.amount // Amount to charge the customer
+          value: String(charge.amountToCharge) // Amount to charge the customer (server-computed)
         }
       }
     ],
@@ -560,181 +1082,15 @@ export const createPatientPayment = async (req, res) => {
     ).href
     res.json({
       orderId,
-      approvalUrl
+      approvalUrl,
+      amountToPay: charge.amountToCharge,
+      isUpgrade: charge.isUpgrade,
+      upgradeFromProductId: charge.upgradeFromProductId,
+      fullProductAmount: charge.fullProductAmount
     })
   } catch (error) {
     console.error(error)
     res.status(500).send('Error creating PayPal order')
-  }
-}
-
-export const capturePatientPayment = async (req, res) => {
-  const {
-    orderId,
-    payerId,
-    amount,
-    currencyCode,
-    productId,
-    userId,
-    userName,
-    userEmail,
-    productName
-  } = req.body
-
-  const datetime = new Date()
-  const transactionDate = new Date().toLocaleDateString()
-  const transactionTime = new Date().toLocaleTimeString()
-
-  const captureOrderRequest = new paypal.orders.OrdersCaptureRequest(orderId)
-  captureOrderRequest.requestBody({
-    payer_id: payerId
-  })
-
-  try {
-    /** 🔹 Attempt to capture payment */
-    const captureResult = await client().execute(captureOrderRequest)
-    const paymentStatus = captureResult.result.status
-
-    /** 🔹 Save transaction in DB */
-    const paymentData = {
-      payment_id: captureResult.result.id,
-      payer_id: payerId,
-      amount,
-      currency: currencyCode,
-      status: paymentStatus,
-      product_id: productId,
-      user_id: userId,
-      payment_type: 'paypal'
-    }
-
-    await new Promise((resolve, reject) => {
-      db.query(
-        'INSERT INTO dmac_webapp_users_transaction SET ?',
-        paymentData,
-        (err, result) => {
-          if (err) return reject(err)
-          resolve(result)
-        }
-      )
-    })
-
-    /** 🔹 If success — update user & send success email */
-    if (paymentStatus === 'COMPLETED') {
-      await new Promise((resolve, reject) => {
-        const updateQuery = `
-          UPDATE dmac_webapp_users 
-          SET patient_payment = ?, patient_payment_date = ? 
-          WHERE id = ?
-        `
-        db.query(
-          updateQuery,
-          [1, datetime.toISOString().slice(0, 10), userId],
-          (err, result) => {
-            if (err) return reject(err)
-            resolve(result)
-          }
-        )
-      })
-
-      // Generate JWT token for game access
-      const gameAccessToken = jwt.sign(
-        { userId: userId, userType: 'USER' },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-      )
-
-      // Build game URL with token
-      const gameUrl = `${process.env.DOMAIN}questioners?token=${gameAccessToken}`
-
-      const subject = 'Payment Receipt — Payment Approved'
-      const html = `
-      <p>Dear ${userName},</p>
-      <h3>Receipt of Successful Payment</h3>
-      <table>
-        <tr><td><strong>Status:</strong></td><td>SUCCESS</td></tr>
-        <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
-        <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
-        <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
-        <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
-      </table>
-      <p>No service tax due to Tax Exempt Status.</p>
-      <p>Please note: The above payment is non-refundable.</p>
-      
-      <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
-      
-      <h3>Ready to Start Playing?</h3>
-      <p>Click the button below to access your game:</p>
-      <div style="text-align: center; margin: 20px 0;">
-        <a href="${gameUrl}" style="display: inline-block; padding: 12px 30px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">Start Playing Now</a>
-      </div>
-      <p style="font-size: 12px; color: #666;">Or copy and paste this link into your browser:<br/><a href="${gameUrl}">${gameUrl}</a></p>
-      
-      <p>Regards,<br/>Admin<br/>DMAC.COM</p>
-      `
-      await sendEmail(userEmail, subject, html, html)
-
-      return res.json({
-        message: 'Payment captured successfully',
-        captureResult
-      })
-    }
-
-    /** 🔹 If PayPal capture doesn't return COMPLETED */
-    throw new Error('PAYMENT_NOT_COMPLETED')
-  } catch (error) {
-    console.error('PayPal CAPTURE ERROR:', error)
-
-    // Extract safe message from PayPal error if available
-    const failReason =
-      error?.result?.message || error?.message || 'Payment failed'
-
-    /** 🔹 Insert failed transaction record */
-    const failedPaymentData = {
-      payment_id: orderId,
-      payer_id: payerId || null,
-      amount,
-      currency: currencyCode,
-      status: 'FAILED',
-      product_id: productId,
-      user_id: userId,
-      payment_type: 'paypal',
-      failure_reason: failReason
-    }
-
-    await new Promise((resolve) => {
-      db.query(
-        'INSERT INTO dmac_webapp_users_transaction SET ?',
-        failedPaymentData,
-        () => {
-          resolve()
-        }
-      )
-    })
-
-    /** 🔹 Send failure email to the user */
-    if (userEmail) {
-      const subject = 'Payment Receipt — Payment Failed'
-      const html = `
-      <p>Dear ${userName},</p>
-      <h3>Payment Failed</h3>
-      <table>
-        <tr><td><strong>Status:</strong></td><td>FAILED</td></tr>
-        <tr><td><strong>Failure Reason:</strong></td><td>${failReason}</td></tr>
-        <tr><td><strong>Amount:</strong></td><td>$${amount}</td></tr>
-        <tr><td><strong>Product:</strong></td><td>${productName}</td></tr>
-        <tr><td><strong>Date:</strong></td><td>${transactionDate}</td></tr>
-        <tr><td><strong>Time:</strong></td><td>${transactionTime}</td></tr>
-      </table>
-      <p>Please retry the payment. If you need assistance, reply to this email.</p>
-      <p>Regards,<br/>Admin<br/>DMAC.COM</p>
-      `
-      await sendEmail(userEmail, subject, html, html)
-    }
-
-    return res.status(400).json({
-      message: 'Payment failed',
-      reason: failReason
-    })
   }
 }
 
@@ -763,7 +1119,7 @@ export const getPatientProductByUserId = async (req, res) => {
 
   const query = `
     SELECT
-      t.id,
+      t.id AS transaction_id,
       t.product_id,
       t.payment_id,
       t.amount,
@@ -775,7 +1131,9 @@ export const getPatientProductByUserId = async (req, res) => {
       p.product_name,
       p.product_description,
       p.product_amount,
-      p.subscription_list
+      p.subscription_list,
+      p.upgrade_priority,
+      p.feature
     FROM dmac_webapp_users_transaction t
     INNER JOIN dmac_webapp_products p
       ON t.product_id = p.id
@@ -894,3 +1252,45 @@ export const validateTokenAndGetUser = (req, res) => {
     })
   })
 }
+
+function encryptString(original) {
+  const key = Buffer.from(process.env.CRYPTO_SECRET_KEY, 'hex')
+
+  const cipher = crypto.createCipheriv(
+    process.env.CRYPTO_ALGORITHM,
+    key,
+    Buffer.alloc(16, 0)
+  )
+
+  cipher.setAutoPadding(true)
+
+  let encrypted = cipher.update(original, 'utf8', 'base64')
+  encrypted += cipher.final('base64')
+
+  return encrypted
+}
+
+function decryptString(encoded) {
+  if (!encoded) {
+    throw new Error('MISSING_ENCRYPTED_PASSWORD')
+  }
+  if (!process.env.CRYPTO_SECRET_KEY || !process.env.CRYPTO_ALGORITHM) {
+    throw new Error('CRYPTO_ENV_MISSING')
+  }
+
+  const key = Buffer.from(process.env.CRYPTO_SECRET_KEY, 'hex')
+
+  const decipher = crypto.createDecipheriv(
+    process.env.CRYPTO_ALGORITHM,
+    key,
+    Buffer.alloc(16, 0)
+  )
+
+  decipher.setAutoPadding(true)
+
+  let decrypted = decipher.update(encoded, 'base64', 'utf8')
+  decrypted += decipher.final('utf8')
+
+  return decrypted
+}
+

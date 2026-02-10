@@ -25,7 +25,7 @@ const PatientEmailVerification = () => {
         </Typography>
         <MorenButton
           variant="contained"
-          onClick={() => navigate(ROUTES.PATIENT_PAYMENT)}
+          onClick={() => navigate(ROUTES.PATIENT_LOGIN)}
         >
           Go to Sign In
         </MorenButton>

@@ -8,7 +8,7 @@ const ProductHeroLayoutRoot = styled('section')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   [theme.breakpoints.up('sm')]: {
-    height: '80vh',
+    height: '100vh',
     minHeight: 500,
     maxHeight: 1300,
   },
@@ -24,6 +24,7 @@ const Background = styled('div')(({ theme }) => ({
   backgroundRepeat: 'no-repeat',
   zIndex: -2,
   backgroundColor: theme.landingPage.secondary,
+  objectFit: 'contain',
 }));
 
 interface ProductHeroLayoutProps {
@@ -46,12 +47,12 @@ export default function ProductHeroLayout(
           alignItems: 'center',
         }}
       >
-        <img
+        {/* <img
           src="/onepirate/productHeroWonder.png"
           alt="wonder"
           width="147"
           height="80"
-        />
+        /> */}
         {children}
         <Box
           sx={{
@@ -66,12 +67,12 @@ export default function ProductHeroLayout(
           }}
         />
         <Background sx={sxBackground} />
-        <Box
+        {/* <Box
           component="img"
           src="/onepirate/productHeroArrowDown.png"
           alt="arrow down"
           sx={{ height: '16', width: '12', position: 'absolute', bottom: 32 }}
-        />
+        /> */}
       </Container>
     </ProductHeroLayoutRoot>
   );

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { type MouseEvent, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -11,8 +12,12 @@ import {
   Autocomplete,
   TextField,
   Button,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -22,12 +27,12 @@ import { GenericTable } from '../../../components/table';
 import { useToast } from '../../../providers/toast-provider';
 import UpdateStatusModal from './UpdateStatusModal';
 import ReviewModal from './ReviewModal';
-import DocumentsModal from './DocumentsModal';
 import { useUpdateConsultationStatus } from '../hooks/useUpdateConsultationStatus';
 import { useGetConsultations } from '../hooks/useGetConsultations';
 import { useGetTherapistPatients } from '../hooks/useGetTherapistPatients';
 import type { GridColDef } from '@mui/x-data-grid';
 import { TabHeaderLayout } from '../../../components/tab-header';
+import { ROUTES } from '../../../router/router';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -46,6 +51,7 @@ interface IConsultation {
 }
 
 const TherapistConsultationList = () => {
+  const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const { showToast } = useToast();
   const [selectedPatient, setSelectedPatient] = useState<{
@@ -81,12 +87,6 @@ const TherapistConsultationList = () => {
   const [selectedReviewConsultationId, setSelectedReviewConsultationId] =
     useState<number | null>(null);
 
-  const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
-  const [selectedPatientForDocs, setSelectedPatientForDocs] = useState<{
-    id: number;
-    name: string;
-  } | null>(null);
-
   const handleOpenModal = (consultation: IConsultation) => {
     setSelectedConsultation(consultation);
     setIsModalOpen(true);
@@ -98,7 +98,7 @@ const TherapistConsultationList = () => {
   };
 
   const handleMenuClick = (
-    event: React.MouseEvent<HTMLButtonElement>,
+    event: MouseEvent<HTMLButtonElement>,
     consultation: IConsultation
   ) => {
     setMenuAnchor(event.currentTarget);
@@ -117,21 +117,19 @@ const TherapistConsultationList = () => {
     handleMenuClose();
   };
 
-  const handleViewReviewClick = () => {
-    if (menuConsultation) {
-      setSelectedReviewConsultationId(menuConsultation.id);
-      setReviewModalOpen(true);
-    }
-    handleMenuClose();
+  const handleOpenReviewModal = (consultationId: number) => {
+    setSelectedReviewConsultationId(consultationId);
+    setReviewModalOpen(true);
   };
 
   const handleViewDocumentsClick = () => {
     if (menuConsultation) {
-      setSelectedPatientForDocs({
-        id: menuConsultation.patient_id,
-        name: menuConsultation.patient_name,
-      });
-      setDocumentsModalOpen(true);
+      navigate(
+        ROUTES.THERAPIST_PATIENT_ASSESSMENT.replace(
+          ':patientId',
+          String(menuConsultation.patient_id)
+        )
+      );
     }
     handleMenuClose();
   };
@@ -139,11 +137,6 @@ const TherapistConsultationList = () => {
   const handleCloseReviewModal = () => {
     setReviewModalOpen(false);
     setSelectedReviewConsultationId(null);
-  };
-
-  const handleCloseDocumentsModal = () => {
-    setDocumentsModalOpen(false);
-    setSelectedPatientForDocs(null);
   };
 
   const handleSubmitStatus = (status: number, notes: string) => {
@@ -269,12 +262,34 @@ const TherapistConsultationList = () => {
       },
     },
     {
+      field: 'review',
+      headerName: 'Review',
+      width: 140,
+      sortable: false,
+      filterable: false,
+      renderCell: params => (
+        <Chip
+          label="View Review"
+          size="small"
+          variant="filled"
+          clickable
+          color="primary"
+          onClick={() => handleOpenReviewModal(params.row.id)}
+        />
+      ),
+    },
+    {
       field: 'actions',
       headerName: 'Actions',
       width: 100,
       sortable: false,
+      headerClassName: 'sticky-right--header',
+      cellClassName: 'sticky-right--cell',
       renderCell: params => (
-        <IconButton onClick={e => handleMenuClick(e, params.row)}>
+        <IconButton
+          onClick={e => handleMenuClick(e, params.row)}
+          size="small"
+        >
           <MoreVertIcon />
         </IconButton>
       ),
@@ -336,25 +351,39 @@ const TherapistConsultationList = () => {
         onClose={handleCloseReviewModal}
         consultationId={selectedReviewConsultationId}
       />
-      <DocumentsModal
-        open={documentsModalOpen}
-        onClose={handleCloseDocumentsModal}
-        patientId={selectedPatientForDocs?.id || null}
-        patientName={selectedPatientForDocs?.name || ''}
-      />
       <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
         onClose={handleMenuClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{ elevation: 6, sx: { minWidth: 260, borderRadius: 2 } }}
       >
         <MenuItem
           onClick={handleEditStatusClick}
           disabled={menuConsultation?.consultation_status === 4}
+          sx={{ py: 1, px: 1.5 }}
         >
-          Edit Status
+          <ListItemIcon>
+            <EditOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="Edit Status"
+            primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+          />
         </MenuItem>
-        <MenuItem onClick={handleViewReviewClick}>View Review</MenuItem>
-        <MenuItem onClick={handleViewDocumentsClick}>View Documents</MenuItem>
+        <MenuItem
+          onClick={handleViewDocumentsClick}
+          sx={{ py: 1, px: 1.5 }}
+        >
+          <ListItemIcon>
+            <DescriptionOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="View Documents"
+            primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }}
+          />
+        </MenuItem>
       </Menu>
     </Box>
   );

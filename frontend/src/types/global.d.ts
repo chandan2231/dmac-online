@@ -3,6 +3,9 @@ interface Window<T = any> {
   paypal: T;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type UniversalType = any;
+
 interface NetworkInformation {
   effectiveType?: string;
   rtt?: number;

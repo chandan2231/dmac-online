@@ -31,9 +31,9 @@ const SCORING = {
 const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinhibitionProps) => {
     const { languageConstants } = useLanguageConstantContext();
     const [gameState, setGameState] = useState<'INSTRUCTION' | 'PLAYING' | 'FINISHED'>('INSTRUCTION');
-    const [currentTrialIndex, setCurrentTrialIndex] = useState(0);
+    const [, setCurrentTrialIndex] = useState(0);
     const [currentLetter, setCurrentLetter] = useState<string | null>(null);
-    const [score, setScore] = useState(0);
+    const [, setScore] = useState(0);
     const [trials, setTrials] = useState<string[]>([]);
     const [hasTapped, setHasTapped] = useState(false); // Track if user tapped in current trial
 

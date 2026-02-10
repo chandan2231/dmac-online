@@ -2,6 +2,7 @@ import type { IUser } from '../auth/auth.interface';
 
 export const QUERY_KEYS_FOR_ADMIN = {
   GET_PRODUCT_LISTING: 'getProductListing',
+  GET_PRODUCT_FEATURE_KEYS: 'getProductFeatureKeys',
   GET_USER_LISTING: 'getUserListing',
   GET_TRANSACTION_LISTING: 'getTransactionListing',
   GET_CONSULTANT_LISTING: 'getConsultantListing',
@@ -9,15 +10,50 @@ export const QUERY_KEYS_FOR_ADMIN = {
   GET_CONSULTATION_LISTING: 'getConsultationListing',
 } as const;
 
+export interface IProductFeature {
+  title: string;
+  value: string;
+}
+
+export interface IProductCountryAmount {
+  country_code: string;
+  country_name: string;
+  currency_code: string;
+  currency_symbol: string;
+  amount: number;
+}
+
+export type ProductFeatureKeyType = 'radio' | 'text';
+
+export interface IProductFeatureKey {
+  id: number;
+  title: string;
+  key_type: ProductFeatureKeyType;
+  value: string;
+}
+
+export interface ICreateProductFeatureKeyPayload {
+  title: string;
+  key_type: ProductFeatureKeyType;
+  value: string;
+}
+
+export interface IDeleteProductFeatureKeyPayload {
+  id: number | string;
+}
+
 export interface IProduct {
   id: number;
   product_name: string;
   product_description: string;
   product_amount: number; // cast from string → number
+  upgrade_priority?: number | null;
   status: number;
   created_date: string; // could be Date if you want to parse
   updated_date: string;
   subscription_list: string; // comma-separated values
+  feature: IProductFeature[];
+  country_amounts?: IProductCountryAmount[];
 }
 
 export interface IUpdateProductPayload {
@@ -25,6 +61,19 @@ export interface IUpdateProductPayload {
   product_name: string;
   product_description: string;
   product_amount: number;
+  feature?: IProductFeature[];
+}
+
+export interface ICreateProductPayload {
+  product_name: string;
+  product_description: string;
+  product_amount: number;
+  feature?: IProductFeature[];
+}
+
+export interface IUpdateProductCountryAmountsPayload {
+  id: number | string;
+  country_amounts: IProductCountryAmount[];
 }
 
 export interface IUserDetails extends Omit<IUser, 'id'> {

@@ -1,17 +1,19 @@
 import * as React from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/GridLegacy';
 import Link from '@mui/material/Link';
 import Container from '@mui/material/Container';
 import { Typography } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
+import { ROUTES } from '../../../router/router';
 
 function Copyright() {
   return (
     <React.Fragment>
       {'© '}
-      <Link color="inherit" href="https://mui.com/">
-        DMAC Online
+      <Link component={RouterLink} to="/" color="inherit">
+        RM360
       </Link>{' '}
       {new Date().getFullYear()}
     </React.Fragment>
@@ -51,10 +53,10 @@ export default function AppFooter() {
               sx={{ justifyContent: 'flex-end', height: 120 }}
             >
               <Grid item sx={{ display: 'flex' }}>
-                <Box component="a" href="https://mui.com/" sx={iconStyle}>
+                <Box component="a" href="#" sx={iconStyle}>
                   <img src="/onepirate/appFooterFacebook.png" alt="Facebook" />
                 </Box>
-                <Box component="a" href="https://x.com/MUI_hq" sx={iconStyle}>
+                <Box component="a" href="#" sx={iconStyle}>
                   <img src="/onepirate/appFooterTwitter.png" alt="X" />
                 </Box>
               </Grid>
@@ -69,10 +71,14 @@ export default function AppFooter() {
             </Typography>
             <Box component="ul" sx={{ m: 0, listStyle: 'none', p: 0 }}>
               <Box component="li" sx={{ py: 0.5 }}>
-                <Link href="/premium-themes/onepirate/terms/">Terms</Link>
+                <Link component={RouterLink} to={ROUTES.TERMS_OF_SERVICE}>
+                  Terms
+                </Link>
               </Box>
               <Box component="li" sx={{ py: 0.5 }}>
-                <Link href="/premium-themes/onepirate/privacy/">Privacy</Link>
+                <Link component={RouterLink} to={ROUTES.PRIVACY_POLICY}>
+                  Privacy
+                </Link>
               </Box>
             </Box>
           </Grid>

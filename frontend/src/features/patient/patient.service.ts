@@ -344,6 +344,79 @@ const getGoogleAuthUrl = async (): Promise<{
   }
 };
 
+const getAssessmentStatus = async () => {
+  try {
+    const response = await HttpService.getAxiosClient().get(
+      `patient/assessment-status`
+    );
+    return response;
+  } catch (error: unknown) {
+    console.error('Error fetching assessment status:', error);
+    throw error;
+  }
+};
+
+const submitAssessmentTab = async (tab: string, data: UniversalType) => {
+  try {
+    const response = await HttpService.getAxiosClient().post(
+      `patient/assessment-submit`,
+      { tab, data }
+    );
+    return response;
+  } catch (error: unknown) {
+    console.error('Error submitting assessment:', error);
+    throw error;
+  }
+};
+
+const getLatestMedicalHistory = async () => {
+  try {
+    const response = await HttpService.getAxiosClient().get(
+      `patient/medical-history/latest`
+    );
+    return response;
+  } catch (error: unknown) {
+    console.error('Error fetching medical history:', error);
+    throw error;
+  }
+};
+
+const submitMedicalHistory = async (data: unknown) => {
+  try {
+    const response = await HttpService.getAxiosClient().post(
+      `patient/medical-history`,
+      { data }
+    );
+    return response;
+  } catch (error: unknown) {
+    console.error('Error submitting medical history:', error);
+    throw error;
+  }
+};
+
+const fetchConsentSignatures = async (userId: number) => {
+  try {
+    const response = await HttpService.post('consent/status', { userId });
+    return get(response, ['data', 'signatures'], ['', '', '']);
+  } catch (error: unknown) {
+    console.error('Error fetching consent signatures:', error);
+    return ['', '', ''];
+  }
+};
+
+const saveConsentSignatures = async (userId: number, signatures: string[]) => {
+  try {
+    const response = await HttpService.post('consent/sign', {
+      userId,
+      signatures,
+    });
+    return get(response, ['data'], { success: true });
+  } catch (error: unknown) {
+    console.error('Error saving consent signatures:', error);
+    return { success: false };
+  }
+};
+
 const PatientService = {
   getSubscribedProduct,
   getExpertList,
@@ -366,6 +439,12 @@ const PatientService = {
   getUserDocuments,
   deleteDocument,
   getGoogleAuthUrl,
+  getAssessmentStatus,
+  submitAssessmentTab,
+  getLatestMedicalHistory,
+  submitMedicalHistory,
+  fetchConsentSignatures,
+  saveConsentSignatures,
 };
 
 export default PatientService;

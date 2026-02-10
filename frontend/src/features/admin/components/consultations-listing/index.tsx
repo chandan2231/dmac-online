@@ -1,5 +1,6 @@
 import type { GridColDef } from '@mui/x-data-grid';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -7,6 +8,8 @@ import {
   Menu,
   MenuItem,
   Chip,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import { GenericTable } from '../../../../components/table';
 import CustomLoader from '../../../../components/loader';
@@ -14,6 +17,8 @@ import { useGetConsultationsListing } from '../../hooks/useGetConsultationsListi
 import { useGetConsultantsListing } from '../../hooks/useGetConsultantsListing';
 import type { IConsultation } from '../../admin.interface';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import GenericModal from '../../../../components/modal';
 import ModernSelect, { type IOption } from '../../../../components/select';
 import { TabHeaderLayout } from '../../../../components/tab-header';
@@ -23,11 +28,13 @@ import timezone from 'dayjs/plugin/timezone';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../store';
 import { get } from 'lodash';
+import { ROUTES } from '../../../../router/router';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 function ConsultationsTable() {
+  const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
   const userTimezone = get(user, 'time_zone') || 'UTC';
 
@@ -74,6 +81,18 @@ function ConsultationsTable() {
   const handleCloseViewModal = () => {
     setSelectedConsultation(null);
     setIsViewModalOpen(false);
+  };
+
+  const handleViewDocuments = () => {
+    if (menuConsultation) {
+      navigate(
+        ROUTES.ADMIN_PATIENT_ASSESSMENT.replace(
+          ':patientId',
+          String(menuConsultation.user_id)
+        )
+      );
+    }
+    handleMenuClose();
   };
 
   // Prepare consultant options for filter
@@ -217,7 +236,9 @@ function ConsultationsTable() {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 100,
+      width: 120,
+      headerClassName: 'sticky-right--header',
+      cellClassName: 'sticky-right--cell',
       sortable: false,
       filterable: false,
       renderCell: params => (
@@ -281,6 +302,7 @@ function ConsultationsTable() {
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}
         loading={isLoading}
+        disableVirtualization
       />
 
       {/* View Details Modal */}
@@ -549,6 +571,7 @@ function ConsultationsTable() {
           vertical: 'top',
           horizontal: 'right',
         }}
+        PaperProps={{ elevation: 6, sx: { minWidth: 220, borderRadius: 2 } }}
       >
         <MenuItem
           onClick={() => {
@@ -557,8 +580,18 @@ function ConsultationsTable() {
               handleOpenViewModal(menuConsultation);
             }
           }}
+          sx={{ py: 1, px: 1.5 }}
         >
-          View Details
+          <ListItemIcon>
+            <VisibilityOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }} />
+        </MenuItem>
+        <MenuItem onClick={handleViewDocuments} sx={{ py: 1, px: 1.5 }}>
+          <ListItemIcon>
+            <DescriptionOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText primary="View Documents" primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }} />
         </MenuItem>
       </Menu>
     </Box>

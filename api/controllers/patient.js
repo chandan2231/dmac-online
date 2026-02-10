@@ -14,6 +14,52 @@ function queryDB(query, params = []) {
   })
 }
 
+
+export const getConsentSignatures = async (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: 'Missing userId' });
+
+  try {
+    const rows = await queryDB(
+      'SELECT form1_signature, form2_signature, form3_signature FROM dmac_webapp_user_consents WHERE user_id = ?',
+      [userId]
+    );
+    const row = rows[0];
+    if (!row) {
+      return res.json({ signatures: ['', '', ''] });
+    }
+    res.json({
+      signatures: [row.form1_signature || '', row.form2_signature || '', row.form3_signature || '']
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const saveConsentSignatures = async (req, res) => {
+  const { userId, signatures } = req.body;
+  if (!userId || !Array.isArray(signatures) || signatures.length !== 3) {
+    return res.status(400).json({ error: 'Invalid input' });
+  }
+  try {
+    await queryDB(
+      `INSERT INTO dmac_webapp_user_consents (user_id, form1_signature, form2_signature, form3_signature)
+       VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         form1_signature = VALUES(form1_signature),
+         form2_signature = VALUES(form2_signature),
+         form3_signature = VALUES(form3_signature),
+         updated_at = CURRENT_TIMESTAMP`,
+      [userId, signatures[0], signatures[1], signatures[2]]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// ...existing code...
+
 const generateConsultationId = async (country, type) => {
   const countryCode = country ? country.substring(0, 2).toUpperCase() : 'XX'
   const prefix = `CON${countryCode}${type}`
@@ -294,7 +340,7 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
   }
 
   try {
-    /* 🔹 Fetch consultant email + tokens + timezone */
+    /* Fetch consultant email + tokens + timezone */
     const consultantQuery = `SELECT id, email, google_access_token, google_refresh_token, name, time_zone FROM dmac_webapp_users WHERE id = ?`
     const consultant = await new Promise((resolve, reject) => {
       db.query(consultantQuery, [consultant_id], (err, result) =>
@@ -346,7 +392,7 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
     const eventStartISO = consultantStart.toISOString()
     const eventEndISO = consultantEnd.toISOString()
 
-    /* 🔥 SECURE SLOT FIRST (Optimistic Locking) */
+    /* SECURE SLOT FIRST (Optimistic Locking) */
     const utcDate = moment.utc(eventStartISO).format('YYYY-MM-DD')
     const utcStartTime = moment.utc(eventStartISO).format('YYYY-MM-DD HH:mm:ss')
     const utcEndTime = moment.utc(eventEndISO).format('YYYY-MM-DD HH:mm:ss')
@@ -2167,3 +2213,137 @@ export const deleteUserDocument = async (req, res) => {
     res.status(500).json({ message: 'Error deleting document' })
   }
 }
+
+export const getAssessmentStatus = async (req, res) => {
+  const userId = req.user.userId
+  try {
+    const tables = [
+      'dmac_webapp_assessment_cat',
+      'dmac_webapp_assessment_sat',
+      'dmac_webapp_assessment_dat',
+      'dmac_webapp_assessment_adt',
+      'dmac_webapp_assessment_disclaimer',
+      'dmac_webapp_assessment_research_consent'
+    ]
+    const results = {}
+    const keyMap = {
+      dmac_webapp_assessment_cat: 'cat',
+      dmac_webapp_assessment_sat: 'sat',
+      dmac_webapp_assessment_dat: 'dat',
+      dmac_webapp_assessment_adt: 'adt',
+      dmac_webapp_assessment_disclaimer: 'disclaimer',
+      dmac_webapp_assessment_research_consent: 'consent'
+    }
+
+    for (const table of tables) {
+      const query = `SELECT data FROM ${table} WHERE user_id = ? ORDER BY id DESC LIMIT 1`
+      const result = await queryDB(query, [userId])
+      results[keyMap[table]] = result.length > 0 ? result[0].data : null
+    }
+
+    res.status(200).json(results)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error fetching assessment status' })
+  }
+}
+
+export const submitAssessmentTab = async (req, res) => {
+  const userId = req.user.userId
+  const { tab, data } = req.body
+
+  const tableMap = {
+    cat: 'dmac_webapp_assessment_cat',
+    sat: 'dmac_webapp_assessment_sat',
+    dat: 'dmac_webapp_assessment_dat',
+    adt: 'dmac_webapp_assessment_adt',
+    disclaimer: 'dmac_webapp_assessment_disclaimer',
+    consent: 'dmac_webapp_assessment_research_consent'
+  }
+
+  if (!tableMap[tab]) {
+    return res.status(400).json({ message: 'Invalid tab' })
+  }
+
+  const tableName = tableMap[tab]
+  const jsonData = JSON.stringify(data)
+
+  try {
+    const query = `
+      INSERT INTO ${tableName} (user_id, data)
+      VALUES (?, ?)
+      ON DUPLICATE KEY UPDATE
+        data = VALUES(data),
+        updated_at = CURRENT_TIMESTAMP
+    `
+
+    await queryDB(query, [userId, jsonData])
+
+    res.status(200).json({ message: 'Assessment saved successfully' })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error submitting assessment' })
+  }
+}
+
+
+export const getLatestMedicalHistory = async (req, res) => {
+  const userId = req.user.userId
+
+  try {
+    const query = `
+      SELECT id, data, created_at
+      FROM dmac_webapp_medical_history
+      WHERE user_id = ?
+      ORDER BY id DESC
+      LIMIT 1
+    `
+    const rows = await queryDB(query, [userId])
+    res.status(200).json(rows.length ? rows[0] : null)
+  } catch (error) {
+    console.error('Error fetching medical history:', error)
+    if (error?.code === 'ER_NO_SUCH_TABLE') {
+      return res.status(500).json({
+        message:
+          'Medical history table is missing. Run create_medical_history_table.js (or your DB migration) to create dmac_webapp_medical_history.'
+      })
+    }
+    res.status(500).json({ message: 'Error fetching medical history' })
+  }
+}
+
+export const submitMedicalHistory = async (req, res) => {
+  const userId = req.user.userId
+  const { data } = req.body
+
+  if (!data) {
+    return res.status(400).json({ message: 'data is required' })
+  }
+
+  const jsonData = typeof data === 'string' ? data : JSON.stringify(data)
+
+  try {
+    const query = `
+      INSERT INTO dmac_webapp_medical_history (user_id, data)
+      VALUES (?, ?)
+      ON DUPLICATE KEY UPDATE
+        data = VALUES(data),
+        updated_at = CURRENT_TIMESTAMP
+    `
+
+    await queryDB(query, [userId, jsonData])
+
+    res.status(200).json({ message: 'Medical history saved successfully' })
+  } catch (error) {
+    console.error('Error submitting medical history:', error)
+    if (error?.code === 'ER_NO_SUCH_TABLE') {
+      return res.status(500).json({
+        message:
+          'Medical history table is missing. Run create_medical_history_table.js (or your DB migration) to create dmac_webapp_medical_history.'
+      })
+    }
+
+    res.status(500).json({ message: 'Error submitting medical history' })
+  }
+}
+

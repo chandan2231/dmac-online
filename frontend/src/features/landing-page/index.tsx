@@ -1,13 +1,16 @@
 import React from 'react';
 import AppAppBar from './components/AppBar';
 import ProductHero from './components/ProductHero';
-import ProductValues from './components/ProductValues';
-import ProductCategories from './components/ProductCategories';
-import ProductHowItWorks from './components/ProductHowItWorks';
-import ProductCTA from './components/ProductCTA';
-import ProductSmokingHero from './components/ProductSmokingHero';
 import AppFooter from './components/AppFooter';
 import { Box } from '@mui/material';
+import CognitiveJourney from './components/CognitiveJourney';
+import RM360Details from './components/RM360Details';
+// import ProductValues from './components/ProductValues';
+// import RM360Offerings from './components/RM360Offerings';
+// import ProductCategories from './components/ProductCategories';
+// import ProductHowItWorks from './components/ProductHowItWorks';
+// import ProductCTA from './components/ProductCTA';
+// import ProductSmokingHero from './components/ProductSmokingHero';
 
 const LandingPage = () => {
   return (
@@ -15,11 +18,14 @@ const LandingPage = () => {
       <AppAppBar />
       <ProductHero />
       <Box sx={{ bgcolor: 'background.default' }}>
-        <ProductValues />
-        <ProductCategories />
-        <ProductHowItWorks />
-        <ProductCTA />
-        <ProductSmokingHero />
+        <RM360Details />
+        <CognitiveJourney />
+        {/* <RM360Offerings /> */}
+        {/* <ProductValues /> */}
+        {/* <ProductCategories /> */}
+        {/* <ProductHowItWorks /> */}
+        {/* <ProductCTA /> */}
+        {/* <ProductSmokingHero /> */}
         <AppFooter />
       </Box>
     </React.Fragment>

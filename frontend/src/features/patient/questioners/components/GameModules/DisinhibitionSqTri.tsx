@@ -27,8 +27,7 @@ const DisinhibitionSqTri = ({ session, onComplete, languageCode }: Disinhibition
     const [gameState, setGameState] = useState<'INSTRUCTION' | 'PLAYING' | 'FINISHED'>('INSTRUCTION');
     const [currentTrialIndex, setCurrentTrialIndex] = useState(0);
     const [currentShape, setCurrentShape] = useState<string | null>(null);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [score, setScore] = useState(0);
+    const [, setScore] = useState(0);
     const [trials, setTrials] = useState<string[]>([]);
     const [isExiting, setIsExiting] = useState(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);

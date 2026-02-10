@@ -1,7 +1,13 @@
 import { get } from 'lodash';
 import type {
+  ICreateProductPayload,
+  ICreateProductFeatureKeyPayload,
+  IDeleteProductFeatureKeyPayload,
   IProduct,
+  IProductCountryAmount,
+  IProductFeatureKey,
   IUpdateProductPayload,
+  IUpdateProductCountryAmountsPayload,
   IUserDetails,
   IChangeUserPasswordPayload,
   ITransaction,
@@ -15,6 +21,66 @@ import type {
 } from './admin.interface';
 import moment from 'moment';
 import HttpService from '../../services/HttpService';
+
+const parseProductFeature = (raw: unknown) => {
+  if (Array.isArray(raw)) {
+    return raw
+      .filter(Boolean)
+      .map(item => {
+        const title = String(get(item, 'title', '')).trim();
+        const value = String(get(item, 'value', '')).trim();
+        return { title, value };
+      })
+      .filter(item => item.title.length > 0);
+  }
+
+  if (typeof raw === 'string') {
+    const text = raw.trim();
+    if (!text) return [];
+    try {
+      const parsed = JSON.parse(text) as unknown;
+      return parseProductFeature(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
+
+const parseProductCountryAmounts = (raw: unknown): IProductCountryAmount[] => {
+  if (Array.isArray(raw)) {
+    return raw
+      .filter(Boolean)
+      .map(item => ({
+        country_code: String(get(item, 'country_code', '')).trim(),
+        country_name: String(get(item, 'country_name', '')).trim(),
+        currency_code: String(get(item, 'currency_code', '')).trim(),
+        currency_symbol: String(get(item, 'currency_symbol', '')).trim(),
+        amount: Number(get(item, 'amount', 0)),
+      }))
+      .filter(
+        item =>
+          item.country_code.length > 0 &&
+          item.country_name.length > 0 &&
+          item.currency_code.length > 0 &&
+          item.currency_symbol.length > 0
+      );
+  }
+
+  if (typeof raw === 'string') {
+    const text = raw.trim();
+    if (!text) return [];
+    try {
+      const parsed = JSON.parse(text) as unknown;
+      return parseProductCountryAmounts(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
 
 const getProductsListing = async (): Promise<{
   success: boolean;
@@ -30,6 +96,49 @@ const getProductsListing = async (): Promise<{
       product_amount: Number(item.product_amount),
       created_date: moment(get(item, 'created_date')).format('YYYY-MM-DD'),
       updated_date: moment(get(item, 'updated_date')).format('YYYY-MM-DD'),
+      feature: parseProductFeature(get(item, 'feature', [])),
+      country_amounts: parseProductCountryAmounts(
+        get(item, 'country_amounts', [])
+      ),
+    }));
+
+    return {
+      success: true,
+      data: products,
+      message: 'Products fetched successfully',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while fetching products';
+
+    return {
+      success: false,
+      data: null,
+      message,
+    };
+  }
+};
+
+const getLandingPageProductsListing = async (): Promise<{
+  success: boolean;
+  data: IProduct[] | null;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.get('/admin/products');
+
+    // ensure product_amount is casted to number
+    const products = (get(response, 'data', []) as IProduct[]).map(item => ({
+      ...item,
+      product_amount: Number(item.product_amount),
+      created_date: moment(get(item, 'created_date')).format('YYYY-MM-DD'),
+      updated_date: moment(get(item, 'updated_date')).format('YYYY-MM-DD'),
+      feature: parseProductFeature(get(item, 'feature', [])),
+      country_amounts: parseProductCountryAmounts(
+        get(item, 'country_amounts', [])
+      ),
     }));
 
     return {
@@ -63,11 +172,9 @@ const updateProduct = async (
 
     return {
       success: true,
-      message: get(
-        response,
-        ['data', 'message'],
-        'Product updated successfully'
-      ),
+      message:
+        get(response, ['data', 'msg']) ||
+        get(response, ['data', 'message'], 'Product updated successfully'),
     };
   } catch (error: unknown) {
     const message =
@@ -97,11 +204,13 @@ const updateProductStatus = async (
 
     return {
       success: true,
-      message: get(
-        response,
-        ['data', 'message'],
-        'Product status updated successfully'
-      ),
+      message:
+        get(response, ['data', 'msg']) ||
+        get(
+          response,
+          ['data', 'message'],
+          'Product status updated successfully'
+        ),
     };
   } catch (error: unknown) {
     const message =
@@ -113,6 +222,134 @@ const updateProductStatus = async (
       success: false,
       message,
     };
+  }
+};
+
+// ✅ Create product
+const createProduct = async (
+  payload: ICreateProductPayload
+): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.post('/admin/products/create', payload);
+
+    return {
+      success: true,
+      message:
+        get(response, ['data', 'msg']) ||
+        get(response, ['data', 'message'], 'Product created successfully'),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while creating product';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
+const updateProductCountryAmounts = async (
+  payload: IUpdateProductCountryAmountsPayload
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await HttpService.post(
+      '/admin/products/country-amounts/update',
+      payload
+    );
+
+    return {
+      success: true,
+      message:
+        get(response, ['data', 'msg']) ||
+        get(
+          response,
+          ['data', 'message'],
+          'Product country amounts updated successfully'
+        ),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while updating product country amounts';
+
+    return {
+      success: false,
+      message,
+    };
+  }
+};
+
+const getProductFeatureKeys = async (): Promise<{
+  success: boolean;
+  data: IProductFeatureKey[] | null;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.get('/admin/product-feature-keys/list');
+    return {
+      success: true,
+      data: get(response, 'data', []) as IProductFeatureKey[],
+      message: 'Feature keys fetched successfully',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while fetching feature keys';
+    return { success: false, data: null, message };
+  }
+};
+
+const createProductFeatureKey = async (
+  payload: ICreateProductFeatureKeyPayload
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await HttpService.post(
+      '/admin/product-feature-keys/create',
+      payload
+    );
+    return {
+      success: true,
+      message:
+        get(response, ['data', 'msg']) ||
+        get(response, ['data', 'message'], 'Feature key created successfully'),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while creating feature key';
+    return { success: false, message };
+  }
+};
+
+const deleteProductFeatureKey = async (
+  payload: IDeleteProductFeatureKeyPayload
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await HttpService.post(
+      '/admin/product-feature-keys/delete',
+      payload
+    );
+    return {
+      success: true,
+      message:
+        get(response, ['data', 'msg']) ||
+        get(response, ['data', 'message'], 'Feature key deleted successfully'),
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while deleting feature key';
+    return { success: false, message };
   }
 };
 
@@ -679,10 +916,161 @@ const getTherapistReviews = async (therapistId: number) => {
   }
 };
 
+const createCountryAdmin = async (payload: unknown) => {
+  try {
+    const response = await HttpService.post('/country-admin/create', payload);
+    return {
+      success: true,
+      data: response.data,
+      message: 'Country Admin created successfully',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: get(
+        error,
+        'response.data.msg',
+        'Failed to create Country Admin'
+      ),
+    };
+  }
+};
+
+const getCountryAdminListing = async () => {
+  try {
+    const response = await HttpService.post('/country-admin/list', {});
+    return {
+      success: true,
+      data: response.data,
+      message: 'Country Admins fetched successfully',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: get(
+        error,
+        'response.data.msg',
+        'Failed to fetch Country Admins'
+      ),
+    };
+  }
+};
+
+const updateCountryAdmin = async (payload: unknown) => {
+  try {
+    const response = await HttpService.post('/country-admin/update', payload);
+    return {
+      success: true,
+      data: response.data,
+      message: 'Country Admin updated successfully',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: get(
+        error,
+        'response.data.msg',
+        'Failed to update Country Admin'
+      ),
+    };
+  }
+};
+
+const updateCountryAdminStatus = async (id: number, status: number) => {
+  try {
+    const response = await HttpService.post('/country-admin/status/change', {
+      id,
+      status,
+    });
+    return {
+      success: true,
+      data: response.data,
+      message: 'Status updated successfully',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: get(error, 'response.data.msg', 'Failed to update status'),
+    };
+  }
+};
+
+const updateCountryAdminPassword = async (payload: unknown) => {
+  try {
+    const response = await HttpService.post(
+      '/country-admin/reset/password',
+      payload
+    );
+    return {
+      success: true,
+      data: response.data,
+      message: 'Password updated successfully',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: get(error, 'response.data.msg', 'Failed to update password'),
+    };
+  }
+};
+
+const getPatientDocuments = async (patientId: number) => {
+  try {
+    const response = await HttpService.post('/admin/patient-documents', {
+      patient_id: patientId,
+    });
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching patient documents:', error);
+    return {
+      status: 500,
+      data: [],
+      message: 'Failed to fetch documents',
+    };
+  }
+};
+
+const getPatientAssessmentStatus = async (patientId: number) => {
+  try {
+    const response = await HttpService.post(
+      '/admin/patient-assessment-status',
+      {
+        patient_id: patientId,
+      }
+    );
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching patient assessment status:', error);
+    return null;
+  }
+};
+
+const getPatientMedicalHistory = async (patientId: number) => {
+  try {
+    const response = await HttpService.post('/admin/patient-medical-history', {
+      patient_id: patientId,
+    });
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching patient medical history:', error);
+    return {
+      status: 500,
+      data: null,
+      message: 'Failed to fetch medical history',
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
+  getLandingPageProductsListing,
+  createProduct,
   updateProduct, // ✅ export update service
   updateProductStatus,
+  updateProductCountryAmounts,
+  getProductFeatureKeys,
+  createProductFeatureKey,
+  deleteProductFeatureKey,
   getUsersListing,
   updateUserStatus,
   getTransactionsListing,
@@ -700,6 +1088,14 @@ const AdminService = {
   getConsultationsListing,
   getExpertReviews,
   getTherapistReviews,
+  createCountryAdmin,
+  getCountryAdminListing,
+  updateCountryAdmin,
+  updateCountryAdminStatus,
+  updateCountryAdminPassword,
+  getPatientDocuments,
+  getPatientAssessmentStatus,
+  getPatientMedicalHistory,
 };
 
 export default AdminService;
