@@ -1,0 +1,404 @@
+import { useState, useEffect } from 'react';
+import { Box, Typography, Button } from '@mui/material';
+import type { Module, SessionData } from '../../../../../services/gameApi';
+import ScreeningGameApi from '../../../../../services/screeningGameApi';
+import CustomLoader from '../../../../../components/loader';
+
+// Reuse existing game module components
+import ImageFlash from '../../../questioners/components/GameModules/ImageFlash';
+import VisualSpatial from '../../../questioners/components/GameModules/VisualSpatial';
+import AudioStoryRecall from '../../../questioners/components/GameModules/AudioStoryRecall';
+import AudioWordsRecall from '../../../questioners/components/GameModules/AudioWordsRecall';
+import ConnectTheDots from '../../../questioners/components/GameModules/ConnectTheDots';
+import ExecutiveQuestions from '../../../questioners/components/GameModules/ExecutiveQuestions';
+import NumberRecall from '../../../questioners/components/GameModules/NumberRecall';
+import DrawingRecall from '../../../questioners/components/GameModules/DrawingRecall';
+import ColorRecall from '../../../questioners/components/GameModules/ColorRecall';
+import GroupMatching from '../../../questioners/components/GameModules/GroupMatching';
+import DisinhibitionSqTri from '../../../questioners/components/GameModules/DisinhibitionSqTri';
+import VisualNumberRecall from '../../../questioners/components/GameModules/VisualNumberRecall';
+import LetterDisinhibition from '../../../questioners/components/GameModules/LetterDisinhibition';
+
+import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
+import { getLanguageText } from '../../../../../utils/functions';
+import GenericModal from '../../../../../components/modal';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../../../router/router';
+
+interface ModuleRunnerProps {
+  userId: number;
+  languageCode: string;
+  onAllModulesComplete: () => void;
+  lastCompletedModuleId?: number | null;
+}
+
+const PROGRESS_KEY = 'dmac_screening_current_module_id';
+
+const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastCompletedModuleId }: ModuleRunnerProps) => {
+  const { languageConstants } = useLanguageConstantContext();
+  const navigate = useNavigate();
+
+  const t = {
+    noModulesFound: getLanguageText(languageConstants, 'game_no_modules_found'),
+    fetchError: getLanguageText(languageConstants, 'game_fetch_error'),
+    sessionError: getLanguageText(languageConstants, 'game_session_error'),
+    completionTitle: getLanguageText(languageConstants, 'game_completion_title'),
+    completionMessage: getLanguageText(languageConstants, 'game_completion_message'),
+    homeButton: getLanguageText(languageConstants, 'game_home_button')
+  };
+
+  const [modules, setModules] = useState<Module[]>([]);
+  const [, setCurrentModuleIndex] = useState(0);
+  const [session, setSession] = useState<SessionData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showCompletion, setShowCompletion] = useState(false);
+
+  useEffect(() => {
+    const fetchModules = async () => {
+      try {
+        const res = await ScreeningGameApi.getModules();
+        const sorted = (res.modules || []).sort((a, b) => a.order_index - b.order_index);
+        setModules(sorted);
+
+        const savedId = localStorage.getItem(PROGRESS_KEY);
+        let startId = sorted.length > 0 ? sorted[0].id : 0;
+        let startIndex = 0;
+
+        if (lastCompletedModuleId) {
+          const lastIndex = sorted.findIndex(m => m.id === lastCompletedModuleId);
+          if (lastIndex !== -1) {
+            if (lastIndex < sorted.length - 1) {
+              startIndex = lastIndex + 1;
+              startId = sorted[startIndex].id;
+            } else {
+              onAllModulesComplete();
+              return;
+            }
+          }
+        } else if (savedId) {
+          const foundIndex = sorted.findIndex(m => m.id === Number(savedId));
+          if (foundIndex !== -1) {
+            startId = Number(savedId);
+            startIndex = foundIndex;
+          }
+        }
+
+        setCurrentModuleIndex(startIndex);
+
+        if (sorted.length > 0) {
+          startModuleSession(startId);
+        } else {
+          setError(t.noModulesFound);
+          onAllModulesComplete();
+        }
+      } catch (e) {
+        setError(t.fetchError);
+      }
+    };
+
+    fetchModules();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastCompletedModuleId]);
+
+  const startModuleSession = async (moduleId: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const sess = await ScreeningGameApi.startSession(moduleId, userId, languageCode, true);
+      setSession(sess);
+    } catch (e) {
+      setError(t.sessionError);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleModuleSubmit = async (payload: any) => {
+    if (!session) return;
+    setLoading(true);
+    try {
+      const res = await ScreeningGameApi.submitSession(session.module.id, session.session_id, payload);
+
+      if (res.next_module_id) {
+        localStorage.setItem(PROGRESS_KEY, String(res.next_module_id));
+        await startModuleSession(res.next_module_id);
+        const nextIdx = modules.findIndex(m => m.id === res.next_module_id);
+        if (nextIdx !== -1) setCurrentModuleIndex(nextIdx);
+      } else {
+        setShowCompletion(true);
+        localStorage.removeItem(PROGRESS_KEY);
+        onAllModulesComplete();
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImageFlashComplete = (answerText: string) => {
+    if (!session?.questions?.[0]) return;
+    const payload = {
+      question_id: session.questions[0].question_id,
+      language_code: languageCode,
+      answer_text: answerText
+    };
+    handleModuleSubmit(payload);
+  };
+
+  const handleVisualSpatialComplete = (answers: { question_id: number, selected_option_key: string }[]) => {
+    handleModuleSubmit({ answers });
+  };
+
+  const handleAudioStoryComplete = (answers: any[]) => {
+    handleModuleSubmit({ answers });
+  };
+
+  const handleAudioWordsComplete = (answers: any[]) => {
+    handleModuleSubmit({ answers });
+  };
+
+  const handleConnectDotsComplete = (payload: any) => {
+    handleModuleSubmit(payload);
+  };
+
+  const handleExecutiveComplete = (answers: any[]) => {
+    handleModuleSubmit({ answers });
+  };
+
+  const handleNumberRecallComplete = (answers: any[]) => {
+    handleModuleSubmit({ answers });
+  };
+
+  const handleDrawingRecallComplete = (payload: any) => {
+    handleModuleSubmit(payload);
+  };
+
+  const handleColorRecallComplete = (answers: any[]) => {
+    handleModuleSubmit({ answers });
+  };
+
+  const handleGroupMatchingComplete = (answers: any[]) => {
+    const total = answers.reduce((acc, curr) => {
+      const match = (curr.answer_text || '').match(/Score:\s*(\d+)/);
+      return acc + (match ? parseInt(match[1], 10) : 0);
+    }, 0);
+
+    handleModuleSubmit({ answers, score: total });
+  };
+
+  const handleDisinhibitionSqTriComplete = (answers: any[]) => {
+    handleModuleSubmit({
+      answers,
+      score: answers[0]?.score
+    });
+  };
+
+  const handleLetterDisinhibitionComplete = (answers: any[]) => {
+    handleModuleSubmit({ answers });
+  };
+
+  const handleGoHome = () => {
+    navigate(ROUTES.HOME);
+  };
+
+  if (error) {
+    return (
+      <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Typography color="error" variant="h6">
+          {error}
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (loading || !session) {
+    return <CustomLoader />;
+  }
+
+  const moduleCode = session.module.code;
+
+  const handleDevSkip = () => {
+    if (!session) return;
+    const code = session.module.code;
+
+    if (code === 'IMAGE_FLASH' || code === 'VISUAL_PICTURE_RECALL') {
+      handleImageFlashComplete('skipped');
+    } else if (code === 'VISUAL_SPATIAL') {
+      const rounds = session.questions || [];
+      const dummyAnswers = rounds.map(round => ({
+        question_id: round.question_id,
+        selected_option_key: round.options?.[0]?.option_key || 'skipped_option'
+      }));
+      handleVisualSpatialComplete(dummyAnswers);
+    } else if (code === 'AUDIO_STORY' || code === 'AUDIO_STORY_2' || code === 'AUDIO_STORY_1_RECALL' || code === 'AUDIO_STORY_2_RECALL') {
+      const stories = session.questions || [];
+      const dummyAnswers = stories.map(story => ({
+        question_id: story.question_id,
+        answer_text: 'skipped via dev button'
+      }));
+      handleAudioStoryComplete(dummyAnswers);
+    } else if (code === 'AUDIO_WORDS' || code === 'AUDIO_WORDS_RECALL') {
+      const questions = session.questions || [];
+      const dummyAnswers = questions.map(q => ({
+        question_id: q.question_id,
+        answer_text: 'skipped via dev button',
+        language_code: languageCode
+      }));
+      handleAudioWordsComplete(dummyAnswers);
+    } else if (code === 'CONNECT_DOTS') {
+      handleConnectDotsComplete({
+        question_id: session.questions?.[0]?.question_id,
+        answer_text: 'L,5,M,6,N,7,O,8,P,9,Q,10,R,11',
+        time_taken: 10
+      });
+    } else if (code === 'EXECUTIVE' || code === 'SEMANTIC') {
+      const questions = session.questions || [];
+      const dummyAnswers = questions.map(q => ({
+        question_id: q.question_id,
+        answer_text: 'skipped via dev button',
+        language_code: languageCode
+      }));
+      handleExecutiveComplete(dummyAnswers);
+    } else if (code === 'NUMBER_RECALL' || code === 'VISUAL_NUMBER_RECALL') {
+      const questions = session.questions || [];
+      const dummyAnswers = questions.map(q => ({
+        question_id: q.question_id,
+        answer_text: '123'
+      }));
+      handleNumberRecallComplete(dummyAnswers);
+    } else if (code === 'REVERSE_NUMBER_RECALL') {
+      const questions = session.questions || [];
+      const dummyAnswers = questions.map(q => ({
+        question_id: q.question_id,
+        answer_text: '321'
+      }));
+      handleNumberRecallComplete(dummyAnswers);
+    } else if (code === 'COLOR_RECALL') {
+      const dummyAnswers = [{
+        question_id: session.questions?.[0]?.question_id,
+        answer_text: 'red, blue, green',
+        language_code: languageCode
+      }];
+      handleNumberRecallComplete(dummyAnswers);
+    } else if (code === 'DRAWING_RECALL') {
+      handleDrawingRecallComplete({
+        question_id: session.questions?.[0]?.question_id,
+        answer_text: JSON.stringify([]),
+        canvas_data: 'skipped',
+        language_code: languageCode
+      });
+    } else if (code === 'GROUP_MATCHING') {
+      const dummyAnswers = (session.questions || []).map(q => ({
+        question_id: q.question_id,
+        answer_text: 'Skipped - Score 0'
+      }));
+      handleGroupMatchingComplete(dummyAnswers);
+    } else if (code === 'DISINHIBITION_SQ_TRI') {
+      handleDisinhibitionSqTriComplete([{
+        question_id: session.questions?.[0]?.question_id,
+        answer_text: 'Skipped - Score 0',
+        score: 0
+      }]);
+    } else if (code === 'LETTER_DISINHIBITION') {
+      handleLetterDisinhibitionComplete([{
+        question_id: session.questions?.[0]?.question_id,
+        answer_text: 'Skipped - Score 0',
+        score: 0
+      }]);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    try {
+      const blob = await ScreeningGameApi.getReportPdf(userId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `DMAC_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      console.error('Failed to download PDF', e);
+    }
+  };
+
+  return (
+    <Box sx={{ width: '100%', height: '100%' }}>
+      <Box sx={{ position: 'fixed', top: 16, right: 16, zIndex: 99999 }}>
+        <Button variant="contained" color="error" size="small" onClick={handleDevSkip}>
+          Skip (Dev)
+        </Button>
+      </Box>
+
+      <GenericModal
+        isOpen={showCompletion}
+        onClose={() => { }}
+        title={t.completionTitle}
+        hideCancelButton={true}
+        submitButtonText={t.homeButton}
+        onSubmit={handleGoHome}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <Typography sx={{ fontSize: '1.2rem', textAlign: 'center', color: '#4caf50', fontWeight: 500 }}>
+            {t.completionMessage}
+          </Typography>
+          <Button variant="contained" color="primary" onClick={handleDownloadPdf}>
+            Download PDF Report
+          </Button>
+        </Box>
+      </GenericModal>
+
+      {!showCompletion && moduleCode === 'IMAGE_FLASH' && (
+        <ImageFlash session={session} onComplete={handleImageFlashComplete} languageCode={languageCode} />
+      )}
+      {!showCompletion && moduleCode === 'VISUAL_SPATIAL' && (
+        <VisualSpatial session={session} onComplete={handleVisualSpatialComplete} languageCode={languageCode} />
+      )}
+      {!showCompletion && (moduleCode === 'AUDIO_STORY' || moduleCode === 'AUDIO_STORY_2') && (
+        <AudioStoryRecall session={session} onComplete={handleAudioStoryComplete} languageCode={languageCode} />
+      )}
+      {!showCompletion && (moduleCode === 'AUDIO_STORY_1_RECALL' || moduleCode === 'AUDIO_STORY_2_RECALL') && (
+        <AudioStoryRecall session={session} onComplete={handleAudioStoryComplete} languageCode={languageCode} isRecallOnly={true} />
+      )}
+      {!showCompletion && moduleCode === 'AUDIO_WORDS' && (
+        <AudioWordsRecall session={session} onComplete={handleAudioWordsComplete} languageCode={languageCode} />
+      )}
+      {!showCompletion && moduleCode === 'CONNECT_DOTS' && (
+        <ConnectTheDots session={session} onComplete={handleConnectDotsComplete} />
+      )}
+      {!showCompletion && (moduleCode === 'EXECUTIVE' || moduleCode === 'SEMANTIC') && (
+        <ExecutiveQuestions session={session} onComplete={handleExecutiveComplete} languageCode={languageCode} />
+      )}
+      {!showCompletion && (moduleCode === 'NUMBER_RECALL' || moduleCode === 'REVERSE_NUMBER_RECALL') && (
+        <NumberRecall session={session} onComplete={handleNumberRecallComplete} languageCode={languageCode} />
+      )}
+      {!showCompletion && moduleCode === 'DRAWING_RECALL' && (
+        <DrawingRecall session={session} onComplete={handleDrawingRecallComplete} languageCode={languageCode} />
+      )}
+      {!showCompletion && moduleCode === 'COLOR_RECALL' && (
+        <ColorRecall session={session} onComplete={handleColorRecallComplete} languageCode={languageCode} />
+      )}
+      {!showCompletion && moduleCode === 'VISUAL_PICTURE_RECALL' && (
+        <ImageFlash session={session} onComplete={handleImageFlashComplete} languageCode={languageCode} isRecallOnly={true} />
+      )}
+      {!showCompletion && moduleCode === 'GROUP_MATCHING' && (
+        <GroupMatching session={session} onComplete={handleGroupMatchingComplete} languageCode={languageCode} />
+      )}
+      {!showCompletion && moduleCode === 'AUDIO_WORDS_RECALL' && (
+        <AudioWordsRecall session={session} onComplete={handleAudioWordsComplete} languageCode={languageCode} isRecallOnly={true} />
+      )}
+      {!showCompletion && moduleCode === 'DISINHIBITION_SQ_TRI' && (
+        <DisinhibitionSqTri session={session} onComplete={handleDisinhibitionSqTriComplete} languageCode={languageCode} />
+      )}
+      {!showCompletion && moduleCode === 'VISUAL_NUMBER_RECALL' && (
+        <VisualNumberRecall session={session} onComplete={handleNumberRecallComplete} languageCode={languageCode} />
+      )}
+      {!showCompletion && moduleCode === 'LETTER_DISINHIBITION' && (
+        <LetterDisinhibition session={session} onComplete={handleLetterDisinhibitionComplete} languageCode={languageCode} />
+      )}
+    </Box>
+  );
+};
+
+export default ModuleRunner;
