@@ -6,6 +6,7 @@ import PreTest from './components/PreTest';
 import Questions from './components/Questioners';
 
 import ModuleRunner from './components/GameModules/ModuleRunner';
+import GameApi from '../../../services/gameApi';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import { get } from 'lodash';
@@ -128,7 +129,7 @@ const Questioners = () => {
         }}>
           {attemptStatus.completionMessage || "The Digital Memory and Cognitive Assessment has been successfully completed. Your cognitive assessment report, including recommendations, will be emailed to you within 48 hours."}
         </Box>
-        <Box sx={{ mt: 4 }}>
+        <Box sx={{ mt: 4, display: 'flex', gap: 2 justifyContent: 'center' }}>
           <button
             onClick={() => navigate(ROUTES.HOME)}
             style={{
@@ -142,6 +143,33 @@ const Questioners = () => {
             }}
           >
             Home
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                const blob = await GameApi.getReportPdf();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = DMAC_Report_${new Date().toISOString().split('T')[0]}.pdf;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+              } catch (error) {
+                console.error("Failed to download PDF", error);
+              }
+            }}
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              cursor: 'pointer',
+              backgroundColor: '#1976d2',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px'
+            }}
+          >
+            Download PDF Report
           </button>
         </Box>
       </Box>
