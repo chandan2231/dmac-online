@@ -258,155 +258,155 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
     const moduleCode = session.module.code;
 
-    const handleDevSkip = () => {
-        console.log('[ModuleRunner] Skip button clicked');
-        if (!session) return;
-        const code = session.module.code;
-        console.log(`[ModuleRunner] Skipping module: ${code}`);
+    // const handleDevSkip = () => {
+    //     console.log('[ModuleRunner] Skip button clicked');
+    //     if (!session) return;
+    //     const code = session.module.code;
+    //     console.log(`[ModuleRunner] Skipping module: ${code}`);
 
-        if (code === 'IMAGE_FLASH') {
-            handleImageFlashComplete('skipped');
-        } else if (code === 'VISUAL_PICTURE_RECALL') {
-            handleImageFlashComplete('skipped');
-        } else if (code === 'VISUAL_SPATIAL') {
-            // Construct dummy answers for all rounds
-            const rounds = session.questions || [];
-            const dummyAnswers = rounds.map(round => ({
-                question_id: round.question_id,
-                // Pick the first option key, or a fallback string if options missing
-                selected_option_key: round.options?.[0]?.option_key || 'skipped_option'
-            }));
-            console.log('[ModuleRunner] Skipping VisualSpatial with payload:', dummyAnswers);
-            handleVisualSpatialComplete(dummyAnswers);
-        } else if (code === 'AUDIO_STORY') {
-            // Construct dummy answers for stories
-            const stories = session.questions || [];
-            const dummyAnswers = stories.map(story => ({
-                question_id: story.question_id,
-                answer_text: 'skipped via dev button'
-            }));
-            console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
-            handleAudioStoryComplete(dummyAnswers);
-        }
-        else if (code === 'AUDIO_STORY_2') {
-            // Construct dummy answers for stories
-            const stories = session.questions || [];
-            const dummyAnswers = stories.map(story => ({
-                question_id: story.question_id,
-                answer_text: 'skipped via dev button'
-            }));
-            console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
-            handleAudioStoryComplete(dummyAnswers);
-        }
-        else if (code === 'AUDIO_STORY_1_RECALL' || code === 'AUDIO_STORY_2_RECALL') {
-            // Construct dummy answers for stories - same as audio story
-            const stories = session.questions || [];
-            const dummyAnswers = stories.map(story => ({
-                question_id: story.question_id,
-                answer_text: 'skipped via dev button'
-            }));
-            console.log('[ModuleRunner] Skipping AudioStoryRecall with payload:', dummyAnswers);
-            handleAudioStoryComplete(dummyAnswers);
-        }
-        else if (code === 'AUDIO_WORDS') {
-            // Construct dummy answers
-            const questions = session.questions || [];
-            const dummyAnswers = questions.map(q => ({
-                question_id: q.question_id,
-                answer_text: 'skipped via dev button',
-                language_code: languageCode
-            }));
-            console.log('[ModuleRunner] Skipping AudioWords with payload:', dummyAnswers);
-            handleAudioWordsComplete(dummyAnswers);
-        } else if (code === 'AUDIO_WORDS_RECALL') {
-            const questions = session.questions || [];
-            const dummyAnswers = questions.map(q => ({
-                question_id: q.question_id,
-                answer_text: 'skipped via dev button',
-                language_code: languageCode
-            }));
-            handleAudioWordsComplete(dummyAnswers);
-        } else if (code === 'CONNECT_DOTS') {
-            // Fake completions
-            const payload = {
-                question_id: session.questions?.[0]?.question_id,
-                answer_text: "L,5,M,6,N,7,O,8,P,9,Q,10,R,11", // Valid sequence
-                time_taken: 10
-            }
-            handleConnectDotsComplete(payload);
-        } else if (code === 'EXECUTIVE' || code === 'SEMANTIC') {
-            const questions = session.questions || [];
-            const dummyAnswers = questions.map(q => ({
-                question_id: q.question_id,
-                answer_text: 'skipped via dev button',
-                language_code: languageCode
-            }));
-            console.log('[ModuleRunner] Skipping Executive/Semantic with payload:', dummyAnswers);
-            handleExecutiveComplete(dummyAnswers);
-        } else if (code === 'NUMBER_RECALL') {
-            const questions = session.questions || [];
-            const dummyAnswers = questions.map(q => ({
-                question_id: q.question_id,
-                answer_text: '123'
-            }));
-            console.log('[ModuleRunner] Skipping NumberRecall with payload:', dummyAnswers);
-            handleNumberRecallComplete(dummyAnswers);
-        } else if (code === 'REVERSE_NUMBER_RECALL') {
-            const questions = session.questions || [];
-            const dummyAnswers = questions.map(q => ({
-                question_id: q.question_id,
-                answer_text: '321'
-            }));
-            console.log('[ModuleRunner] Skipping ReverseNumberRecall with payload:', dummyAnswers);
-            handleNumberRecallComplete(dummyAnswers);
-        } else if (code === 'COLOR_RECALL') {
-            const dummyAnswers = [{
-                question_id: session.questions?.[0]?.question_id,
-                answer_text: 'red, blue, green',
-                language_code: languageCode
-            }];
-            handleNumberRecallComplete(dummyAnswers);
-        } else if (code === 'DRAWING_RECALL') {
-            const payload = {
-                question_id: session.questions?.[0]?.question_id,
-                answer_text: JSON.stringify([]),
-                canvas_data: 'skipped',
-                language_code: languageCode
-            };
-            console.log('[ModuleRunner] Skipping DrawingRecall with payload:', payload);
-            handleDrawingRecallComplete(payload);
-        } else if (code === 'GROUP_MATCHING') {
-            console.log('[ModuleRunner] Skipping GroupMatching');
-            const dummyAnswers = (session.questions || []).map(q => ({
-                question_id: q.question_id,
-                answer_text: 'Skipped - Score 0'
-            }));
-            handleGroupMatchingComplete(dummyAnswers);
-        } else if (code === 'DISINHIBITION_SQ_TRI') {
-            const dummyAnswers = [{
-                question_id: session.questions?.[0]?.question_id,
-                answer_text: 'Skipped - Score 0',
-                score: 0
-            }];
-            handleDisinhibitionSqTriComplete(dummyAnswers);
-        } else if (code === 'VISUAL_NUMBER_RECALL') {
-            const questions = session.questions || [];
-            const dummyAnswers = questions.map(q => ({
-                question_id: q.question_id,
-                answer_text: '123'
-            }));
-            console.log('[ModuleRunner] Skipping VisualNumberRecall with payload:', dummyAnswers);
-            handleNumberRecallComplete(dummyAnswers);
-        } else if (code === 'LETTER_DISINHIBITION') {
-            const dummyAnswers = [{
-                question_id: session.questions?.[0]?.question_id,
-                answer_text: 'Skipped - Score 0',
-                score: 0
-            }];
-            console.log('[ModuleRunner] Skipping LetterDisinhibition');
-            handleLetterDisinhibitionComplete(dummyAnswers);
-        }
-    };
+    //     if (code === 'IMAGE_FLASH') {
+    //         handleImageFlashComplete('skipped');
+    //     } else if (code === 'VISUAL_PICTURE_RECALL') {
+    //         handleImageFlashComplete('skipped');
+    //     } else if (code === 'VISUAL_SPATIAL') {
+    //         // Construct dummy answers for all rounds
+    //         const rounds = session.questions || [];
+    //         const dummyAnswers = rounds.map(round => ({
+    //             question_id: round.question_id,
+    //             // Pick the first option key, or a fallback string if options missing
+    //             selected_option_key: round.options?.[0]?.option_key || 'skipped_option'
+    //         }));
+    //         console.log('[ModuleRunner] Skipping VisualSpatial with payload:', dummyAnswers);
+    //         handleVisualSpatialComplete(dummyAnswers);
+    //     } else if (code === 'AUDIO_STORY') {
+    //         // Construct dummy answers for stories
+    //         const stories = session.questions || [];
+    //         const dummyAnswers = stories.map(story => ({
+    //             question_id: story.question_id,
+    //             answer_text: 'skipped via dev button'
+    //         }));
+    //         console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
+    //         handleAudioStoryComplete(dummyAnswers);
+    //     }
+    //     else if (code === 'AUDIO_STORY_2') {
+    //         // Construct dummy answers for stories
+    //         const stories = session.questions || [];
+    //         const dummyAnswers = stories.map(story => ({
+    //             question_id: story.question_id,
+    //             answer_text: 'skipped via dev button'
+    //         }));
+    //         console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
+    //         handleAudioStoryComplete(dummyAnswers);
+    //     }
+    //     else if (code === 'AUDIO_STORY_1_RECALL' || code === 'AUDIO_STORY_2_RECALL') {
+    //         // Construct dummy answers for stories - same as audio story
+    //         const stories = session.questions || [];
+    //         const dummyAnswers = stories.map(story => ({
+    //             question_id: story.question_id,
+    //             answer_text: 'skipped via dev button'
+    //         }));
+    //         console.log('[ModuleRunner] Skipping AudioStoryRecall with payload:', dummyAnswers);
+    //         handleAudioStoryComplete(dummyAnswers);
+    //     }
+    //     else if (code === 'AUDIO_WORDS') {
+    //         // Construct dummy answers
+    //         const questions = session.questions || [];
+    //         const dummyAnswers = questions.map(q => ({
+    //             question_id: q.question_id,
+    //             answer_text: 'skipped via dev button',
+    //             language_code: languageCode
+    //         }));
+    //         console.log('[ModuleRunner] Skipping AudioWords with payload:', dummyAnswers);
+    //         handleAudioWordsComplete(dummyAnswers);
+    //     } else if (code === 'AUDIO_WORDS_RECALL') {
+    //         const questions = session.questions || [];
+    //         const dummyAnswers = questions.map(q => ({
+    //             question_id: q.question_id,
+    //             answer_text: 'skipped via dev button',
+    //             language_code: languageCode
+    //         }));
+    //         handleAudioWordsComplete(dummyAnswers);
+    //     } else if (code === 'CONNECT_DOTS') {
+    //         // Fake completions
+    //         const payload = {
+    //             question_id: session.questions?.[0]?.question_id,
+    //             answer_text: "L,5,M,6,N,7,O,8,P,9,Q,10,R,11", // Valid sequence
+    //             time_taken: 10
+    //         }
+    //         handleConnectDotsComplete(payload);
+    //     } else if (code === 'EXECUTIVE' || code === 'SEMANTIC') {
+    //         const questions = session.questions || [];
+    //         const dummyAnswers = questions.map(q => ({
+    //             question_id: q.question_id,
+    //             answer_text: 'skipped via dev button',
+    //             language_code: languageCode
+    //         }));
+    //         console.log('[ModuleRunner] Skipping Executive/Semantic with payload:', dummyAnswers);
+    //         handleExecutiveComplete(dummyAnswers);
+    //     } else if (code === 'NUMBER_RECALL') {
+    //         const questions = session.questions || [];
+    //         const dummyAnswers = questions.map(q => ({
+    //             question_id: q.question_id,
+    //             answer_text: '123'
+    //         }));
+    //         console.log('[ModuleRunner] Skipping NumberRecall with payload:', dummyAnswers);
+    //         handleNumberRecallComplete(dummyAnswers);
+    //     } else if (code === 'REVERSE_NUMBER_RECALL') {
+    //         const questions = session.questions || [];
+    //         const dummyAnswers = questions.map(q => ({
+    //             question_id: q.question_id,
+    //             answer_text: '321'
+    //         }));
+    //         console.log('[ModuleRunner] Skipping ReverseNumberRecall with payload:', dummyAnswers);
+    //         handleNumberRecallComplete(dummyAnswers);
+    //     } else if (code === 'COLOR_RECALL') {
+    //         const dummyAnswers = [{
+    //             question_id: session.questions?.[0]?.question_id,
+    //             answer_text: 'red, blue, green',
+    //             language_code: languageCode
+    //         }];
+    //         handleNumberRecallComplete(dummyAnswers);
+    //     } else if (code === 'DRAWING_RECALL') {
+    //         const payload = {
+    //             question_id: session.questions?.[0]?.question_id,
+    //             answer_text: JSON.stringify([]),
+    //             canvas_data: 'skipped',
+    //             language_code: languageCode
+    //         };
+    //         console.log('[ModuleRunner] Skipping DrawingRecall with payload:', payload);
+    //         handleDrawingRecallComplete(payload);
+    //     } else if (code === 'GROUP_MATCHING') {
+    //         console.log('[ModuleRunner] Skipping GroupMatching');
+    //         const dummyAnswers = (session.questions || []).map(q => ({
+    //             question_id: q.question_id,
+    //             answer_text: 'Skipped - Score 0'
+    //         }));
+    //         handleGroupMatchingComplete(dummyAnswers);
+    //     } else if (code === 'DISINHIBITION_SQ_TRI') {
+    //         const dummyAnswers = [{
+    //             question_id: session.questions?.[0]?.question_id,
+    //             answer_text: 'Skipped - Score 0',
+    //             score: 0
+    //         }];
+    //         handleDisinhibitionSqTriComplete(dummyAnswers);
+    //     } else if (code === 'VISUAL_NUMBER_RECALL') {
+    //         const questions = session.questions || [];
+    //         const dummyAnswers = questions.map(q => ({
+    //             question_id: q.question_id,
+    //             answer_text: '123'
+    //         }));
+    //         console.log('[ModuleRunner] Skipping VisualNumberRecall with payload:', dummyAnswers);
+    //         handleNumberRecallComplete(dummyAnswers);
+    //     } else if (code === 'LETTER_DISINHIBITION') {
+    //         const dummyAnswers = [{
+    //             question_id: session.questions?.[0]?.question_id,
+    //             answer_text: 'Skipped - Score 0',
+    //             score: 0
+    //         }];
+    //         console.log('[ModuleRunner] Skipping LetterDisinhibition');
+    //         handleLetterDisinhibitionComplete(dummyAnswers);
+    //     }
+    // };
 
     const handleDownloadPdf = async () => {
         try {
@@ -427,7 +427,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     return (
         <Box sx={{ width: '100%', height: '100%' }}>
             {/* Remove this block when deploying to production */}
-            <Box sx={{ position: 'fixed', top: 16, right: 16, zIndex: 99999 }}>
+            {/* <Box sx={{ position: 'fixed', top: 16, right: 16, zIndex: 99999 }}>
                 <Button
                     variant="contained"
                     color="error"
@@ -436,7 +436,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                 >
                     Skip (Dev)
                 </Button>
-            </Box>
+            </Box> */}
 
             {/* Completion Modal */}
             <GenericModal

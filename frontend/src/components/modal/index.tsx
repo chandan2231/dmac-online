@@ -213,10 +213,6 @@ const GenericModal: React.FC<GenericModalProps> = ({
               variant="contained"
               disabled={submitDisabled}
               sx={{
-                minWidth: '160px',
-                // width: 'auto',
-                // fontSize: '1.2rem',
-                py: 1.5,
                 maxWidth: '150px',
                 width: isCompact ? 'auto' : undefined,
                 px: isCompact ? 2 : undefined,
