@@ -17,6 +17,8 @@ import ResetPassword from '../pages/auth/reset-password';
 import VerifyEmail from '../pages/auth/verify-email';
 import ProfilePage from '../pages/patient/profile';
 import QuestionersPage from '../pages/patient/questioners';
+import ScreeningQuestionersPage from '../pages/patient/screening-questioners';
+import ScreeningVerifyEmailPage from '../pages/patient/screening-questioners/verify';
 
 // Admin Pages
 import DashboardPageComponent from '../pages/admin/dashboard';
@@ -110,6 +112,8 @@ export const COMPONENT_MAP = {
   VerifyEmail,
   ProfilePage,
   QuestionersPage,
+  ScreeningQuestionersPage,
+  ScreeningVerifyEmailPage,
   LiccaPage,
 
   // Admin Components
@@ -188,6 +192,8 @@ export const ROUTES = {
   // USER Protected routes
   PROFILE: '/profile',
   QUESTIONERS: '/questioners',
+  SCREENING_QUESTIONERS: '/screening-questioners',
+  SCREENING_QUESTIONERS_VERIFY: '/screening-questioners/verify/:token',
   CONSENT: '/consent',
   PATIENT_PRODUCTS: '/patient/products',
   BOOK_THERAPIST: '/patient/book-therapist',
@@ -274,6 +280,16 @@ export const PUBLIC_ROUTES = [
     path: ROUTES.HOME,
     layout: LAYOUT_MAP['BaseLayout'],
     component: COMPONENT_MAP['LandingPageComponent'],
+  },
+  {
+    path: ROUTES.SCREENING_QUESTIONERS,
+    layout: LAYOUT_MAP['BaseLayout'],
+    component: COMPONENT_MAP['ScreeningQuestionersPage'],
+  },
+  {
+    path: ROUTES.SCREENING_QUESTIONERS_VERIFY,
+    layout: LAYOUT_MAP['BaseLayout'],
+    component: COMPONENT_MAP['ScreeningVerifyEmailPage'],
   },
   {
     path: ROUTES.PRODUCTS_LISTING,

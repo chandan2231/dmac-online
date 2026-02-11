@@ -35,6 +35,8 @@ interface GenericModalProps {
   submitButtonText?: string;
   cancelButtonText?: string;
   hideCancelButton?: boolean;
+  hideCloseIcon?: boolean;
+  disableClose?: boolean;
   children: React.ReactNode;
   enableAudio?: boolean;
   instructionText?: string;
@@ -61,6 +63,8 @@ const GenericModal: React.FC<GenericModalProps> = ({
   onSubmit,
   hideSubmitButton = false,
   hideCancelButton = false,
+  hideCloseIcon = false,
+  disableClose = false,
   submitButtonText = 'Submit',
   cancelButtonText = 'Cancel',
   maxWidth = 'lg',
@@ -80,13 +84,22 @@ const GenericModal: React.FC<GenericModalProps> = ({
     return <CustomLoader />;
   }
   const isCompact = size === 'compact';
+
+  const handleDialogClose: DialogProps['onClose'] = (_event, reason) => {
+    if (disableClose && (reason === 'backdropClick' || reason === 'escapeKeyDown')) {
+      return;
+    }
+    onClose();
+  };
+
   return (
     <StyledDialog
-      onClose={onClose}
+      onClose={handleDialogClose}
       open={isOpen}
       aria-labelledby="generic-modal-title"
       fullWidth={fullWidth}
       maxWidth={maxWidth}
+      disableEscapeKeyDown={disableClose}
       sx={
         isCompact
           ? {
@@ -110,22 +123,24 @@ const GenericModal: React.FC<GenericModalProps> = ({
         {title}
       </DialogTitle>
 
-      <IconButton
-        aria-label="close"
-        onClick={onClose}
-        sx={{
-          position: 'absolute',
-          right: isCompact ? 6 : 8,
-          top: isCompact ? 6 : 8,
-          color: theme => theme.palette.common.white,
-          backgroundColor: theme => theme.palette.grey[700],
-          '&:hover': {
-            backgroundColor: theme => theme.palette.grey[900],
-          },
-        }}
-      >
-        <CloseIcon fontSize={isCompact ? 'small' : 'medium'} />
-      </IconButton>
+      {!hideCloseIcon && (
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: isCompact ? 6 : 8,
+            top: isCompact ? 6 : 8,
+            color: theme => theme.palette.common.white,
+            backgroundColor: theme => theme.palette.grey[700],
+            '&:hover': {
+              backgroundColor: theme => theme.palette.grey[900],
+            },
+          }}
+        >
+          <CloseIcon fontSize={isCompact ? 'small' : 'medium'} />
+        </IconButton>
+      )}
 
       {renderHtmlContent && (
         <DialogContent dividers sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
