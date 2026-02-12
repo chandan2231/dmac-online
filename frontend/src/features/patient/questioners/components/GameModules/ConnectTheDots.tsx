@@ -194,8 +194,26 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
         return '#512da8'; // Deep Purple
     };
 
+    const dotSizeSx = {
+        width: { xs: 52, sm: 60, md: 65 },
+        height: { xs: 52, sm: 60, md: 65 },
+        fontSize: { xs: '1.25rem', sm: '1.4rem', md: '1.5rem' },
+    } as const;
+
     return (
-        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+            sx={{
+                width: '100%',
+                height: '100%',
+                minHeight: { xs: 'calc(100vh - 140px)', sm: '80vh' },
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 2, sm: 3 },
+            }}
+        >
             <GenericModal
                 isOpen={showInstruction}
                 onClose={() => { }}
@@ -212,24 +230,41 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
                 <Typography>{session.instructions}</Typography>
             </GenericModal>
 
-            <Typography variant="h5" sx={{ mt: 6, mb: 2, color: '#274765', fontWeight: 'bold' }}>
+            <Typography
+                variant="h5"
+                sx={{
+                    mt: { xs: 2.5, sm: 6 },
+                    mb: { xs: 2, sm: 2 },
+                    color: '#274765',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    fontSize: { xs: '1.35rem', sm: '1.6rem', md: '1.75rem' },
+                    px: { xs: 1, sm: 0 },
+                }}
+            >
                 {session?.questions?.[0]?.prompt_text || 'DRAW PATTERN'}
             </Typography>
 
             <Box
                 sx={{
-                    width: '95%',
-                    height: '75vh',
+                    width: '100%',
+                    maxWidth: { xs: 420, sm: 520, md: 620 },
+                    height: {
+                        xs: 'min(62vh, 420px)',
+                        sm: 'min(62vh, 520px)',
+                        md: 'min(68vh, 620px)',
+                    },
                     position: 'relative',
                     // border: '1px solid #ccc', // Screenshot doesn't show border
                     // borderRadius: 2,
                     touchAction: 'none',
-                    bgcolor: 'transparent' // Screenshot shows white/transparent bg
+                    bgcolor: 'transparent', // Screenshot shows white/transparent bg
+                    mx: 'auto',
                 }}
             >
                 <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
                     <defs>
-                        <marker id="arrowhead" markerWidth="20" markerHeight="7" refX="36" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
+                        <marker id="arrowhead" markerWidth="14" markerHeight="6" refX="22" refY="3" orient="auto" markerUnits="userSpaceOnUse">
                             <polygon points="0 0, 10 3.5, 0 7" fill="black" />
                         </marker>
                     </defs>
@@ -251,8 +286,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
                                 left: `${dot.x}%`,
                                 top: `${dot.y}%`,
                                 transform: 'translate(-50%, -50%)',
-                                width: 65,
-                                height: 65,
+                                ...dotSizeSx,
                                 borderRadius: '50%',
                                 bgcolor: getDotColor(dot.id, isConnected),
                                 color: 'white',
@@ -260,12 +294,14 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 fontWeight: 'bold',
-                                fontSize: '1.5rem',
                                 cursor: 'pointer',
                                 userSelect: 'none',
                                 boxShadow: 3,
                                 zIndex: 2,
-                                transition: 'background-color 0.3s ease'
+                                transition: 'background-color 0.3s ease',
+                                '&:active': {
+                                    transform: 'translate(-50%, -50%) scale(0.98)',
+                                },
                             }}
                         >
                             {dot.label}

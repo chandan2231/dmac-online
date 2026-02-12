@@ -46,6 +46,9 @@ const PreTest = ({ setPreTestCompleted }: IPreTestProps) => {
             // Clear any previous game progress
             localStorage.removeItem('dmac_current_module_id');
 
+            // Make sure we don't resume stale in-progress sessions from prior attempts.
+            await GameApi.abandonInProgressSessions();
+
             await GameApi.startSession(1, userId, languageCode, false); // resume = false
             setPreTestCompleted(true);
         } catch (error) {

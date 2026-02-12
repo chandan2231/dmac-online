@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import GameApi, { type Module, type SessionData } from '../../../../../services/gameApi';
 import CustomLoader from '../../../../../components/loader';
@@ -20,6 +20,9 @@ import { getLanguageText } from '../../../../../utils/functions';
 import GenericModal from '../../../../../components/modal';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../../../router/router';
+import { useIdleTimeout } from '../../../../../hooks/useIdleTimeout';
+import { useTestAttempts } from '../../hooks/useTestAttempts';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ModuleRunnerProps {
     userId: number; // Actually userId might come from auth context inside here or passed down
@@ -31,6 +34,9 @@ interface ModuleRunnerProps {
 const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastCompletedModuleId }: ModuleRunnerProps) => {
     const { languageConstants } = useLanguageConstantContext();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
+
+    const { data: attemptStatus } = useTestAttempts(languageCode);
 
     // Get error message translations
     const t = {
@@ -54,6 +60,16 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showCompletion, setShowCompletion] = useState(false);
+
+    const [idleModalOpen, setIdleModalOpen] = useState(false);
+    const [idleMinutes, setIdleMinutes] = useState(0);
+
+    const attemptsBanner = useMemo(() => {
+        if (!attemptStatus) return null;
+        const remaining = Math.max(0, (attemptStatus.max_attempts ?? 3) - (attemptStatus.count ?? 0));
+        const isFinal = remaining === 0;
+        return { remaining, isFinal };
+    }, [attemptStatus]);
 
     useEffect(() => {
         const fetchModules = async () => {
@@ -109,6 +125,16 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         fetchModules();
     }, [lastCompletedModuleId]);
 
+    useIdleTimeout({
+        enabled: Boolean(session) && !loading && !showCompletion && !idleModalOpen,
+        timeoutMs: 10 * 60 * 1000,
+        onIdle: (idleMs) => {
+            const minutes = Math.max(0, Math.ceil(idleMs / 60000));
+            setIdleMinutes(minutes);
+            setIdleModalOpen(true);
+        },
+    });
+
     const startModuleSession = async (moduleId: number) => {
         setLoading(true);
         setError(null);
@@ -121,6 +147,42 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
             setSession(sess);
         } catch (error) {
             console.error("Failed to start session", error);
+            setError(t.sessionError);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const restartFromBeginningDueToIdle = async () => {
+        const canRestart =
+            attemptStatus ? attemptStatus.count < attemptStatus.max_attempts : true;
+
+        setIdleModalOpen(false);
+
+        if (!canRestart) {
+            try {
+                await GameApi.abandonInProgressSessions();
+            } catch (e) {
+                console.error('[ModuleRunner] Failed to abandon sessions after idle (final attempt)', e);
+            } finally {
+                localStorage.removeItem('dmac_current_module_id');
+                navigate(ROUTES.HOME);
+            }
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+        try {
+            await GameApi.abandonInProgressSessions();
+            localStorage.removeItem('dmac_current_module_id');
+
+            const firstModuleId = modules[0]?.id ?? 1;
+            const newSession = await GameApi.startSession(firstModuleId, userId, languageCode, false);
+            setSession(newSession);
+            await queryClient.invalidateQueries({ queryKey: ['test-attempts', languageCode] });
+        } catch (e) {
+            console.error('[ModuleRunner] Failed to restart after idle', e);
             setError(t.sessionError);
         } finally {
             setLoading(false);
@@ -426,6 +488,32 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
     return (
         <Box sx={{ width: '100%', height: '100%' }}>
+            <GenericModal
+                isOpen={idleModalOpen}
+                onClose={() => { }}
+                disableClose={true}
+                hideCloseIcon={true}
+                hideCancelButton={true}
+                title="Idle Timeout"
+                submitButtonText={
+                    attemptStatus && attemptStatus.count >= attemptStatus.max_attempts
+                        ? 'Go Home'
+                        : 'Restart'
+                }
+                onSubmit={restartFromBeginningDueToIdle}
+            >
+                <Typography sx={{ fontSize: '1.1rem', textAlign: 'center' }}>
+                    You were idle for <strong>{idleMinutes}</strong> minutes.
+                    <br />
+                    You will be redirected to the beginning of the game and your attempt will be increased by 1.
+                </Typography>
+                {attemptsBanner?.isFinal ? (
+                    <Typography sx={{ mt: 2, fontSize: '1rem', textAlign: 'center', color: '#c62828', fontWeight: 600 }}>
+                        This is your final attempt. If you are idle again, you won’t be able to retake the test.
+                    </Typography>
+                ) : null}
+            </GenericModal>
+
             {/* Remove this block when deploying to production */}
             {/* <Box sx={{ position: 'fixed', top: 16, right: 16, zIndex: 99999 }}>
                 <Button
@@ -456,6 +544,24 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                     </Button>
                 </Box>
             </GenericModal>
+
+            {attemptsBanner ? (
+                <Box
+                    sx={{
+                        width: '100%',
+                        mb: 1,
+                        px: { xs: 1.5, sm: 2 },
+                        py: 1,
+                        borderRadius: 1,
+                        bgcolor: attemptsBanner.isFinal ? '#ffebee' : '#fff8e1',
+                        color: attemptsBanner.isFinal ? '#c62828' : '#8a6d3b',
+                        textAlign: 'center',
+                        fontWeight: 700,
+                    }}
+                >
+                    Attempts remaining: {attemptsBanner.remaining} / {attemptStatus?.max_attempts}
+                </Box>
+            ) : null}
 
             {!showCompletion && moduleCode === 'IMAGE_FLASH' && (
                 <ImageFlash session={session} onComplete={handleImageFlashComplete} languageCode={languageCode} />
