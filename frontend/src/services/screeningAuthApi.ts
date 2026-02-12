@@ -3,7 +3,7 @@ import HttpService from './HttpService';
 export type ScreeningRegisterPayload = {
   name: string;
   email: string;
-  dob: string;
+  age: number;
 };
 
 export type ScreeningRegisterResponse = {

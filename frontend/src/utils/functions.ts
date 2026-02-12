@@ -42,6 +42,18 @@ const setLocalStorageItem = (
   value: string
 ): void => {
   localStorage.setItem(key, value);
+
+  // Notify listeners in the same tab (the native `storage` event does not
+  // fire in the same document that performed the write).
+  try {
+    window.dispatchEvent(
+      new CustomEvent('localStorageUpdated', {
+        detail: { key, value },
+      })
+    );
+  } catch {
+    // no-op
+  }
 };
 
 const getNestedRoutes = (

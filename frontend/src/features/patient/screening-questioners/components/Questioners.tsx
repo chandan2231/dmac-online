@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useGetQuestions } from '../../questioners/hooks/useGetQuestions';
 import ScreeningQuestionersService from '../questioners.service';
 import { useState } from 'react';
@@ -150,41 +150,163 @@ const Questions = ({ setIsQuestionerClosed, userId, languageCode = 'en' }: IQues
   }
 
   return (
-    <Box>
-      <Box display="flex" flexDirection={'column'} gap={1}>
-        <Box width={'400px'}>{questionText}</Box>
+    <Box
+      sx={{
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        px: { xs: 2, sm: 3 },
+      }}
+    >
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: 720,
+          bgcolor: 'background.paper',
+          borderRadius: 2,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          border: theme => `1px solid ${theme.palette.divider}`,
+          p: { xs: 2.5, sm: 4 },
+        }}
+      >
+        <Box display="flex" flexDirection="column" gap={3}>
+          <Typography
+            sx={{
+              fontSize: 20,
+              lineHeight: 1.6,
+              fontWeight: 700,
+              color: 'text.primary',
+              textAlign: 'center',
+            }}
+          >
+            {questionText}
+          </Typography>
 
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          {options.map((option, index) => (
-            <Box
-              key={index}
-              sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-              onClick={() => handleOptionSelect(get(option, ['code'], ''))}
-            >
-              <MorenRadio checked={get(option, ['code'], '') === selectedMainOption} />
-              {get(option, ['text'], '')}
-            </Box>
-          ))}
-        </Box>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+              gap: 2,
+              justifyItems: 'stretch',
+            }}
+          >
+            {options.map((option, index) => {
+              const code = String(get(option, ['code'], ''));
+              const text = String(get(option, ['text'], ''));
+              const isSelected = code === selectedMainOption;
 
-        {showFollowUp && (
-          <Box display="flex" flexDirection={'column'} gap={1}>
-            <Box width={'400px'}>{followUpText}</Box>
-
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              {followUpOption.map((option, index) => (
+              return (
                 <Box
                   key={index}
-                  sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-                  onClick={() => handleFollowUpOptionSelect(get(option, ['code'], ''))}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleOptionSelect(code)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleOptionSelect(code);
+                    }
+                  }}
+                  sx={theme => ({
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.25,
+                    p: 1.75,
+                    borderRadius: 2,
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    border: `2px solid ${isSelected ? theme.palette.primary.main : theme.palette.divider}`,
+                    backgroundColor: isSelected ? 'rgba(25, 118, 210, 0.08)' : theme.palette.background.paper,
+                    outline: 'none',
+                    transition: 'transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease',
+                    '&:hover': {
+                      boxShadow: '0 6px 18px rgba(0,0,0,0.12)',
+                      transform: 'translateY(-1px)',
+                    },
+                    '&:focus-visible': {
+                      boxShadow: `0 0 0 4px rgba(25, 118, 210, 0.25)`,
+                    },
+                  })}
                 >
-                  <MorenRadio checked={get(option, ['code'], '') === selectedFollowUpOption} />
-                  {get(option, ['text'], '')}
+                  <MorenRadio checked={isSelected} />
+                  <Typography sx={{ fontSize: 20, lineHeight: 1.4, color: 'text.primary' }}>
+                    {text}
+                  </Typography>
                 </Box>
-              ))}
-            </Box>
+              );
+            })}
           </Box>
-        )}
+
+          {showFollowUp && (
+            <Box display="flex" flexDirection="column" gap={3}>
+              <Typography
+                sx={{
+                  fontSize: 20,
+                  lineHeight: 1.6,
+                  fontWeight: 700,
+                  color: 'text.primary',
+                  textAlign: 'center',
+                }}
+              >
+                {followUpText}
+              </Typography>
+
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+                  gap: 2,
+                }}
+              >
+                {followUpOption.map((option, index) => {
+                  const code = String(get(option, ['code'], ''));
+                  const text = String(get(option, ['text'], ''));
+                  const isSelected = code === selectedFollowUpOption;
+
+                  return (
+                    <Box
+                      key={index}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleFollowUpOptionSelect(code)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleFollowUpOptionSelect(code);
+                        }
+                      }}
+                      sx={theme => ({
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.25,
+                        p: 1.75,
+                        borderRadius: 2,
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        border: `2px solid ${isSelected ? theme.palette.primary.main : theme.palette.divider}`,
+                        backgroundColor: isSelected ? 'rgba(25, 118, 210, 0.08)' : theme.palette.background.paper,
+                        outline: 'none',
+                        transition: 'transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease',
+                        '&:hover': {
+                          boxShadow: '0 6px 18px rgba(0,0,0,0.12)',
+                          transform: 'translateY(-1px)',
+                        },
+                        '&:focus-visible': {
+                          boxShadow: `0 0 0 4px rgba(25, 118, 210, 0.25)`,
+                        },
+                      })}
+                    >
+                      <MorenRadio checked={isSelected} />
+                      <Typography sx={{ fontSize: 20, lineHeight: 1.4, color: 'text.primary' }}>
+                        {text}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Box>
+          )}
+        </Box>
       </Box>
 
       <GenericModal
