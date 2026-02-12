@@ -1,5 +1,6 @@
 import React from 'react';
 import { TextField, InputAdornment, IconButton, type TextFieldProps } from '@mui/material';
+import {useSnackbar} from 'notistack';
 import MicIcon from '@mui/icons-material/Mic';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { keyframes } from '@mui/system';
@@ -39,8 +40,12 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
     enableModeSelection = false,
     ...textFieldProps
 }) => {
+    const { enqueueSnackbar } = useSnackbar();
     const { isListening, transcript, startListening, stopListening } = useSpeechRecognition({
         languageCode,
+        onError(msg) {
+            enqueueSnackbar(`Speech recognition error: ${msg}`, { variant: 'error' });
+        },
         onResult: (result) => {
             if (onSpeechResult) {
                 onSpeechResult(result);
