@@ -50,8 +50,10 @@ export const useSpeechRecognition = (
         recognition.onend = () => setIsListening(false);
         recognition.onerror = (event: any) => {
             console.log('Speech recognition error', event);
-            savedCallbacks.current.onError?.('Speech recognition error: ' + event.error | | 'Unknown error');
-        }
+            savedCallbacks.current.onError?.(
+                'Speech recognition error: ' + (event?.error || 'Unknown error')
+            );
+        };
 
         recognition.onresult = (event: any) => {
             let interimText = '';

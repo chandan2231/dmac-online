@@ -129,7 +129,7 @@ const Questioners = () => {
         }}>
           {attemptStatus.completionMessage || "The Digital Memory and Cognitive Assessment has been successfully completed. Your cognitive assessment report, including recommendations, will be emailed to you within 48 hours."}
         </Box>
-        <Box sx={{ mt: 4, display: 'flex', gap: 2 justifyContent: 'center' }}>
+        <Box sx={{ mt: 4, display: 'flex', gap: 2, justifyContent: 'center' }}>
           <button
             onClick={() => navigate(ROUTES.HOME)}
             style={{
@@ -151,7 +151,7 @@ const Questioners = () => {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = DMAC_Report_${new Date().toISOString().split('T')[0]}.pdf;
+                a.download = `DMAC_Report_${new Date().toISOString().split('T')[0]}.pdf`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
