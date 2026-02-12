@@ -21,6 +21,23 @@ export const useLanguageConstants = () => {
 
   useEffect(() => {
     const fetchAndStoreLanguage = async () => {
+      // Always try to hydrate from localStorage first (supports screening flow
+      // where the user isn't authenticated but we still want UI texts).
+      try {
+        const storedConstants = getLocalStorageItem(
+          LOCAL_STORAGE_KEYS.LANGUAGE_CONSTANTS
+        );
+        const parsedConstants = storedConstants
+          ? JSON.parse(storedConstants)
+          : null;
+        if (parsedConstants) {
+          setLanguageConstants(parsedConstants);
+          return;
+        }
+      } catch {
+        // ignore parse errors and fall back to fetching (when eligible)
+      }
+
       if (
         !isAuthenticated ||
         !user?.languageCode ||
@@ -31,18 +48,6 @@ export const useLanguageConstants = () => {
       }
 
       try {
-        const storedConstants = getLocalStorageItem(
-          LOCAL_STORAGE_KEYS.LANGUAGE_CONSTANTS
-        );
-        const parsedConstants = storedConstants
-          ? JSON.parse(storedConstants)
-          : null;
-
-        if (parsedConstants) {
-          setLanguageConstants(parsedConstants);
-          return;
-        }
-
         const langCode = user.languageCode ?? 'en';
         const { data } = await LanguageService.fetchLanguageContants(langCode);
 
