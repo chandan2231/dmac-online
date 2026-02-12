@@ -20,6 +20,43 @@ export const useLanguageConstants = () => {
   >({});
 
   useEffect(() => {
+    const hydrateFromStorage = () => {
+      try {
+        const storedConstants = getLocalStorageItem(
+          LOCAL_STORAGE_KEYS.LANGUAGE_CONSTANTS
+        );
+        const parsedConstants = storedConstants ? JSON.parse(storedConstants) : null;
+        if (parsedConstants) {
+          setLanguageConstants(parsedConstants);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    const handleSameTabUpdate = (event: Event) => {
+      const custom = event as CustomEvent<{ key?: string; value?: string }>;
+      if (custom?.detail?.key === LOCAL_STORAGE_KEYS.LANGUAGE_CONSTANTS) {
+        hydrateFromStorage();
+      }
+    };
+
+    const handleCrossTabUpdate = (event: StorageEvent) => {
+      if (event.key === LOCAL_STORAGE_KEYS.LANGUAGE_CONSTANTS) {
+        hydrateFromStorage();
+      }
+    };
+
+    window.addEventListener('localStorageUpdated', handleSameTabUpdate);
+    window.addEventListener('storage', handleCrossTabUpdate);
+
+    return () => {
+      window.removeEventListener('localStorageUpdated', handleSameTabUpdate);
+      window.removeEventListener('storage', handleCrossTabUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
     const fetchAndStoreLanguage = async () => {
       // Always try to hydrate from localStorage first (supports screening flow
       // where the user isn't authenticated but we still want UI texts).

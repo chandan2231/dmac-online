@@ -8,22 +8,32 @@ type Props = {
 };
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isWholeNumber = (value: string) => /^\d+$/.test(value);
 
 const ScreeningRegistrationModal = ({ isOpen }: Props) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [dob, setDob] = useState('');
+  const [age, setAge] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [isRegistered, setIsRegistered] = useState(false);
+
+  const ageNumber = useMemo(() => {
+    if (!age.trim() || !isWholeNumber(age.trim())) return null;
+    return Number(age.trim());
+  }, [age]);
+
+  const isAgeValid = useMemo(() => {
+    return ageNumber !== null && Number.isInteger(ageNumber) && ageNumber >= 14 && ageNumber <= 100;
+  }, [ageNumber]);
 
   const isValid = useMemo(() => {
     return (
       name.trim().length > 1 &&
       emailRegex.test(email.trim()) &&
-      Boolean(dob)
+      isAgeValid
     );
-  }, [name, email, dob]);
+  }, [name, email, isAgeValid]);
 
   const handleSubmit = async () => {
     if (!isValid || isSubmitting || isRegistered) return;
@@ -34,7 +44,7 @@ const ScreeningRegistrationModal = ({ isOpen }: Props) => {
       const res = await ScreeningAuthApi.register({
         name: name.trim(),
         email: email.trim(),
-        dob,
+        age: ageNumber as number,
       });
 
       if (res.isSuccess) {
@@ -45,7 +55,7 @@ const ScreeningRegistrationModal = ({ isOpen }: Props) => {
       } else {
         setServerMessage(res.message || 'Registration failed. Please try again.');
       }
-    } catch (e) {
+    } catch {
       setServerMessage('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -57,16 +67,22 @@ const ScreeningRegistrationModal = ({ isOpen }: Props) => {
       isOpen={isOpen}
       onClose={() => {}}
       title="Enter Your Details"
+      titleSx={{
+        fontSize: 24,
+        fontWeight: 800,
+        textAlign: 'center',
+      }}
       submitButtonText={isSubmitting ? 'Submitting...' : 'Submit'}
-      onSubmit={handleSubmit}
+      onSubmit={isRegistered ? undefined : handleSubmit}
       hideCancelButton
       hideCloseIcon
       disableClose
+      hideSubmitButton={isRegistered}
       submitDisabled={!isValid || isSubmitting || isRegistered}
       maxWidth="sm"
       fullWidth
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 4 }}>
         {!isRegistered && (
           <>
             <TextField
@@ -86,20 +102,42 @@ const ScreeningRegistrationModal = ({ isOpen }: Props) => {
               disabled={isSubmitting}
             />
             <TextField
-              label="Date of Birth"
-              type="date"
-              value={dob}
-              onChange={e => setDob(e.target.value)}
+              label="Age"
+              type="number"
+              value={age}
+              onChange={e => {
+                const next = e.target.value;
+                if (next === '') {
+                  setAge('');
+                  return;
+                }
+                if (!/^\d+$/.test(next)) return;
+                setAge(next);
+              }}
               fullWidth
               required
               disabled={isSubmitting}
-              InputLabelProps={{ shrink: true }}
+              inputProps={{ min: 14, max: 100, step: 1 }}
+              error={Boolean(age) && !isAgeValid}
+              helperText={
+                Boolean(age) && !isAgeValid
+                  ? 'Age must be a whole number between 14 and 100.'
+                  : 'Enter your age (14–100).'
+              }
             />
           </>
         )}
 
         {serverMessage && (
-          <Alert severity={isRegistered ? 'success' : 'info'}>
+          <Alert
+            severity={isRegistered ? 'success' : 'info'}
+            sx={{
+              '& .MuiAlert-message': {
+                fontSize: 18,
+                color: 'black',
+              },
+            }}
+          >
             {serverMessage}
           </Alert>
         )}

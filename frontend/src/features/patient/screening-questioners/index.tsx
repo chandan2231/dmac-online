@@ -38,6 +38,10 @@ const ScreeningQuestioners = () => {
     languageCode
   );
 
+  // Once the screening assessment flow is entered, disable header/footer interactions
+  // to prevent navigation away mid-test.
+  const isAssessmentInProgress = Boolean(isVerified && !attemptStatus?.isCompleted);
+
   const handleAllModulesComplete = () => {
     // no-op for now
   };
@@ -181,7 +185,17 @@ const ScreeningQuestioners = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <AppAppBar />
+      <Box
+        aria-hidden={isAssessmentInProgress ? 'true' : undefined}
+        sx={{
+          pointerEvents: isAssessmentInProgress ? 'none' : 'auto',
+          opacity: isAssessmentInProgress ? 0.55 : 1,
+          filter: isAssessmentInProgress ? 'grayscale(1)' : 'none',
+          userSelect: isAssessmentInProgress ? 'none' : 'auto',
+        }}
+      >
+        <AppAppBar />
+      </Box>
       <Box
         sx={{
           flex: 1,
@@ -246,7 +260,16 @@ const ScreeningQuestioners = () => {
         </Typography>
       </GenericModal>
       </Box>
-      <Box sx={{ mt: 'auto' }}>
+      <Box
+        aria-hidden={isAssessmentInProgress ? 'true' : undefined}
+        sx={{
+          mt: 'auto',
+          pointerEvents: isAssessmentInProgress ? 'none' : 'auto',
+          opacity: isAssessmentInProgress ? 0.55 : 1,
+          filter: isAssessmentInProgress ? 'grayscale(1)' : 'none',
+          userSelect: isAssessmentInProgress ? 'none' : 'auto',
+        }}
+      >
         <AppFooter />
       </Box>
     </Box>

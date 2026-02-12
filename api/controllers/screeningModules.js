@@ -64,9 +64,12 @@ export const generateReportPdf = (req, res) => {
 
 export const registerScreeningUser = async (req, res) => {
   try {
-    const { name, email, dob } = req.body || {}
+    const { name, email, age, dob } = req.body || {}
 
-    if (!name || !email || !dob) {
+    // Age is required for screening. `dob` is accepted for backward compatibility.
+    const ageNumber = Number(age)
+    const hasValidAge = Number.isFinite(ageNumber) && ageNumber >= 14 && ageNumber <= 100
+    if (!name || !email || (!hasValidAge && !dob)) {
       return res.status(400).json({ isSuccess: false, message: 'Missing required fields' })
     }
 
@@ -84,7 +87,9 @@ export const registerScreeningUser = async (req, res) => {
 
     const encryptedPassword = encryptString(randomPassword)
 
-    const patientMeta = JSON.stringify({ dob })
+    const patientMeta = hasValidAge
+      ? JSON.stringify({ age: ageNumber })
+      : JSON.stringify({ dob })
 
     const insertQuery = `
       INSERT INTO dmac_webapp_users (
@@ -128,7 +133,7 @@ export const registerScreeningUser = async (req, res) => {
 
     const subject = 'Verify Your Email for DMAC'
     const greetingHtml = `<p>Dear ${name},</p>`
-    const bodyHtml = `<h2>You have successfully registered for screening.</h2>
+    const bodyHtml = `<h2>You have successfully registered for the Self-Administered Digital Memory and Cognitive Assessment.</h2>
                       <br>
                       <h4>Click the link below to verify your email</h4>
                       <a href="${verifyLink}">Verify Email</a>`
