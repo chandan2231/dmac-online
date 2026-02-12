@@ -21,8 +21,8 @@ function Copyright() {
 }
 
 const iconStyle = (theme: Theme) => ({
-  width: 48,
-  height: 48,
+  width: 36,
+  height: 36,
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
@@ -41,16 +41,26 @@ export default function AppFooter() {
         display: 'flex',
         bgcolor: theme => theme.landingPage.background,
         width: '100%',
+        height: 120,
+        maxHeight: 120,
+        overflow: 'hidden',
       }}
     >
-      <Container sx={{ my: 8, display: 'flex' }}>
-        <Grid container spacing={5}>
+      <Container
+        sx={{
+          py: 2,
+          display: 'flex',
+          alignItems: 'center',
+          height: '100%',
+        }}
+      >
+        <Grid container spacing={2} alignItems="center">
           <Grid item xs={6} sm={4} md={3}>
             <Grid
               container
               direction="column"
-              spacing={2}
-              sx={{ justifyContent: 'flex-end', height: 120 }}
+              spacing={1}
+              sx={{ justifyContent: 'center', height: '100%' }}
             >
               <Grid item sx={{ display: 'flex' }}>
                 <Box component="a" href="#" sx={iconStyle}>
@@ -61,21 +71,23 @@ export default function AppFooter() {
                 </Box>
               </Grid>
               <Grid item>
-                <Copyright />
+                <Typography variant="body2" color="text.secondary">
+                  <Copyright />
+                </Typography>
               </Grid>
             </Grid>
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
               Legal
             </Typography>
             <Box component="ul" sx={{ m: 0, listStyle: 'none', p: 0 }}>
-              <Box component="li" sx={{ py: 0.5 }}>
+              <Box component="li" sx={{ py: 0.25, lineHeight: 1.2 }}>
                 <Link component={RouterLink} to={ROUTES.TERMS_OF_SERVICE}>
                   Terms
                 </Link>
               </Box>
-              <Box component="li" sx={{ py: 0.5 }}>
+              <Box component="li" sx={{ py: 0.25, lineHeight: 1.2 }}>
                 <Link component={RouterLink} to={ROUTES.PRIVACY_POLICY}>
                   Privacy
                 </Link>

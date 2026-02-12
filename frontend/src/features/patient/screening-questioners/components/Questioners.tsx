@@ -1,9 +1,7 @@
 import { Box, Typography } from '@mui/material';
-import { useGetQuestions } from '../hooks/useGetQuestions';
-import QuestionersService from '../questioners.service';
+import { useGetQuestions } from '../../questioners/hooks/useGetQuestions';
+import ScreeningQuestionersService from '../questioners.service';
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../../../../store';
 import { get } from 'lodash';
 import { useNavigate } from 'react-router-dom';
 import { getLanguageText } from '../../../../utils/functions';
@@ -12,36 +10,30 @@ import CustomLoader from '../../../../components/loader';
 import GenericModal from '../../../../components/modal';
 import MorenRadio from '../../../../components/radio-input';
 import { ROUTES } from '../../../../router/router';
-// import ModuleRunner from './GameModules/ModuleRunner'; 
-// Reverted to original behavior (or simply remove import)
 
 type IQuestionsProps = {
   setIsQuestionerClosed: (value: boolean) => void;
+  userId: number;
+  languageCode?: string;
 };
 
-const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
+const Questions = ({ setIsQuestionerClosed, userId, languageCode = 'en' }: IQuestionsProps) => {
   const navigate = useNavigate();
   const { languageConstants } = useLanguageConstantContext();
-  const { user } = useSelector((state: RootState) => state.auth);
   const [currentSequenceNumber, setCurrentSequenceNumber] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
-  const [selectedMainOption, setSelectedMainOption] = useState<string | null>(
-    null
-  );
-  const [selectedFollowUpOption, setSelectedFollowUpOption] = useState<
-    string | null
-  >(null);
+  const [selectedMainOption, setSelectedMainOption] = useState<string | null>(null);
+  const [selectedFollowUpOption, setSelectedFollowUpOption] = useState<string | null>(null);
   const cancelButtonText = getLanguageText(languageConstants, 'cancel');
   const continueButtonText = getLanguageText(languageConstants, 'start');
-  const userLang = get(user, 'languageCode');
-  const safeLanguageCode = typeof userLang === 'string' ? userLang : 'en';
 
-  const { data: questionsDetails, isPending: isLoadingQuestionsDetails } =
-    useGetQuestions(currentSequenceNumber, safeLanguageCode);
+  const { data: questionsDetails, isPending: isLoadingQuestionsDetails } = useGetQuestions(
+    currentSequenceNumber,
+    languageCode
+  );
 
-  // Extract Main Question values for clarity
   const mainQuestion = get(questionsDetails, 'main_question', {});
   const questionText = get(mainQuestion, 'text', '');
   const options = get(mainQuestion, 'options', []);
@@ -50,9 +42,8 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
   const hasAlert = alertMessage !== null;
   const isLastQuestion = get(questionsDetails, 'next_sequence', null) === null;
 
-  // Extract Follow-up Question values
   const followUps = get(questionsDetails, 'follow_ups', []);
-  const firstFollowUp = get(followUps, [0], {}); // safer than conditional checks
+  const firstFollowUp = get(followUps, [0], {});
   const hasFollowUps = followUps.length > 0;
   const followUpText = get(firstFollowUp, 'text', '');
   const followUpOption = get(firstFollowUp, 'options', []);
@@ -69,7 +60,6 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
     setSelectedFollowUpOption(null);
   };
 
-  // Logic helpers
   const handleOptionSelect = (optionCode: string) => {
     if (isLastQuestion && optionCode !== triggerOption) {
       setIsQuestionerClosed(true);
@@ -88,26 +78,24 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
         setSelectedMainOption(optionCode);
       }
     } else {
-      // Save answer immediately for non-trigger options if not last question or if it is last question
       const data = {
-        userId: Number(get(user, 'id', 0)),
+        userId,
         questionId: Number(get(mainQuestion, 'id', 0)),
         mainAnswer: optionCode,
-        followUpAnswer: null
-      }
-      QuestionersService.saveAnswer(data);
+        followUpAnswer: null,
+      };
+      ScreeningQuestionersService.saveAnswer(data);
     }
   };
 
   const handleOnSubmit = () => {
-    // This is called when the modal (alert) is confirmed
     const data = {
-      userId: Number(get(user, 'id', 0)),
+      userId,
       questionId: Number(get(mainQuestion, 'id', 0)),
-      mainAnswer: String(selectedMainOption || triggerOption), // Use selected or trigger if that's what we have
-      followUpAnswer: null
-    }
-    QuestionersService.saveAnswer(data);
+      mainAnswer: String(selectedMainOption || triggerOption),
+      followUpAnswer: null,
+    };
+    ScreeningQuestionersService.saveAnswer(data);
 
     if (isLastQuestion) {
       setIsQuestionerClosed(true);
@@ -126,15 +114,13 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
       handleResetState();
     }
 
-    // Save follow up answer
     const data = {
-      userId: Number(get(user, 'id', 0)),
+      userId,
       questionId: Number(get(mainQuestion, 'id', 0)),
       mainAnswer: String(selectedMainOption),
-      followUpAnswer: optionCode
-    }
-    QuestionersService.saveAnswer(data);
-
+      followUpAnswer: optionCode,
+    };
+    ScreeningQuestionersService.saveAnswer(data);
 
     if (optionCode === triggerOptionForFollowUp) {
       if (hasFollowUpAlert) {
@@ -147,12 +133,6 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
   };
 
   const handleOnSubmitFollowUp = () => {
-    // This is called when the *follow-up* alert is confirmed
-    // The answer is likely already saved in handleFollowUpOptionSelect if we want to save on selection
-    // But if we want to confirm, we might assume it is saved. 
-    // However, if the logic is to save ON selection, we did that. 
-    // Re-saving or ensuring it is saved is fine.
-
     if (isLastQuestion) {
       setIsQuestionerClosed(true);
     }
@@ -164,12 +144,10 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
   const handleNavigateToHome = () => {
     navigate(ROUTES.HOME);
   };
+
   if (isLoadingQuestionsDetails) {
     return <CustomLoader />;
   }
-
-  // Removed ModuleRunner hijack to allow survey to flow naturally
-  // if (showGame) { ... }
 
   return (
     <Box
@@ -331,7 +309,6 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
         </Box>
       </Box>
 
-      {/* Modal Alert For Main Question */}
       <GenericModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -344,7 +321,6 @@ const Questions = ({ setIsQuestionerClosed }: IQuestionsProps) => {
         <></>
       </GenericModal>
 
-      {/* Alert Modal */}
       <GenericModal
         isOpen={isAlertModalOpen}
         onClose={() => setIsAlertModalOpen(false)}

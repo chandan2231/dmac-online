@@ -13,6 +13,8 @@ import theraistRoutes from './routes/therapist.js'
 import patientRoutes from './routes/patient.js'
 import payment from './routes/payment.js'
 import reviewRoutes from './routes/reviews.js'
+import screeningModulesRoutes from './routes/screeningModules.js'
+import screeningQuestionarRoutes from './routes/screeningQuestionar.js'
 import gameRoutes from './routes/game.js'
 import moduleRoutes from './routes/modules.js'
 import consentRoutes from './routes/consent.js'
@@ -62,6 +64,10 @@ app.use('/api/therapist', theraistRoutes)
 app.use('/api/patient', patientRoutes)
 app.use('/api/reviews', reviewRoutes)
 app.use('/api/game', gameRoutes)
+
+// Public screening flow
+app.use('/api/screeningModules', screeningModulesRoutes)
+app.use('/api/screening-questionar', screeningQuestionarRoutes)
 app.use('/api/modules', moduleRoutes)
 
 app.use('/api/payment', payment)

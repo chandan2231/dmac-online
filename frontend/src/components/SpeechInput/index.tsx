@@ -1,5 +1,6 @@
 import React from 'react';
 import { TextField, InputAdornment, IconButton, type TextFieldProps } from '@mui/material';
+import {useSnackbar} from 'notistack';
 import MicIcon from '@mui/icons-material/Mic';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { keyframes } from '@mui/system';
@@ -39,8 +40,12 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
     enableModeSelection = false,
     ...textFieldProps
 }) => {
+    const { enqueueSnackbar } = useSnackbar();
     const { isListening, transcript, startListening, stopListening } = useSpeechRecognition({
         languageCode,
+        onError(msg) {
+            enqueueSnackbar(`Speech recognition error: ${msg}`, { variant: 'error' });
+        },
         onResult: (result) => {
             if (onSpeechResult) {
                 onSpeechResult(result);
@@ -51,7 +56,28 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
     });
 
     // State for split mode removed. we want buttons always visible with TextField.
-    const inputRef = React.useRef<HTMLInputElement>(null);
+    const inputRef = React.useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+
+    const shouldAutoFocus = Boolean(textFieldProps.autoFocus ?? enableModeSelection);
+
+    React.useEffect(() => {
+        if (!shouldAutoFocus) return;
+
+        const timer = window.setTimeout(() => {
+            const el = inputRef.current;
+            if (!el) return;
+            el.focus();
+            try {
+                const length = el.value?.length ?? 0;
+                // Place cursor at end for convenience
+                (el as HTMLInputElement).setSelectionRange?.(length, length);
+            } catch {
+                // ignore
+            }
+        }, 0);
+
+        return () => window.clearTimeout(timer);
+    }, [shouldAutoFocus]);
 
     // Auto-stop timer logic (same as before)
     const silenceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -103,6 +129,7 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
 
             <TextField
                 {...textFieldProps}
+                autoFocus={shouldAutoFocus}
                 inputRef={inputRef}
                 value={displayValue}
                 onChange={handleTextChange}

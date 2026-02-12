@@ -179,8 +179,13 @@ const TextToSpeech = ({ text, languageCode, iconSize = 'medium', color = 'primar
                     borderColor: color === 'primary' ? '#1976d2' : 'inherit',
                     transition: 'all 0.2s',
                     textTransform: 'none',
-                    width: 'auto', // Override default 100% width
+                    width: { xs: '100%', sm: 'auto' },
+                    justifyContent: 'center',
                     padding: '6px 16px', // Slightly smaller padding
+                    '& .MuiButton-startIcon': {
+                        marginLeft: 0,
+                        marginRight: 8,
+                    },
                     '&:hover': {
                         transform: 'scale(1.02)',
                         backgroundColor: color === 'primary' ? 'rgba(25, 118, 210, 0.08)' : 'rgba(255, 255, 255, 0.08)'

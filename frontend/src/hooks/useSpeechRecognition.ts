@@ -30,6 +30,11 @@ export const useSpeechRecognition = (
 
     const browserSupportsSpeechRecognition = Boolean(RecognitionCtor);
 
+    const savedCallbacks = useRef({ onResult, onError });
+    useEffect(() => {
+        savedCallbacks.current = { onResult, onError };
+    }, [onResult, onError]);
+
     useEffect(() => {
         if (!browserSupportsSpeechRecognition) {
             onError?.('Speech Recognition not supported in this browser');
@@ -43,8 +48,11 @@ export const useSpeechRecognition = (
 
         recognition.onstart = () => setIsListening(true);
         recognition.onend = () => setIsListening(false);
-        recognition.onerror = () => {
-            onError?.('Speech Recognition error');
+        recognition.onerror = (event: any) => {
+            console.log('Speech recognition error', event);
+            savedCallbacks.current.onError?.(
+                'Speech recognition error: ' + (event?.error || 'Unknown error')
+            );
         };
 
         recognition.onresult = (event: any) => {
@@ -66,7 +74,7 @@ export const useSpeechRecognition = (
 
             const trimmedFinal = finalText.trim();
             if (trimmedFinal) {
-                onResult?.(trimmedFinal);
+                savedCallbacks.current.onResult?.(trimmedFinal);
                 setTranscript('');
             }
         };
