@@ -57,11 +57,12 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
         audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
 
-    // Phases: 
+    // Phases:
     // 'instruction' -> Initial instructions
     // 'playing' -> Audio is playing
     // 'input' -> User types answer
-    const [phase, setPhase] = useState<'instruction' | 'playing' | 'playing_complete' | 'input'>('instruction');
+    // Note: Per requirement, audio is played only once; after audio ends we go directly to input.
+    const [phase, setPhase] = useState<'instruction' | 'playing' | 'input'>('instruction');
     const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState<any[]>([]);
 
@@ -117,14 +118,6 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
     };
 
     const handleAudioEnded = () => {
-        setPhase('playing_complete');
-    };
-
-    const handleRepeat = () => {
-        setPhase('playing');
-    };
-
-    const handleNextFromComplete = () => {
         setPhase('input');
     };
 
@@ -239,65 +232,6 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                             />
                         );
                     })()}
-                </Box>
-            )}
-
-            {/* Playing Complete State */}
-            {phase === 'playing_complete' && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <Box sx={{
-                        border: '2px solid #274765',
-                        px: 8,
-                        py: 2,
-                        minWidth: '300px',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        backgroundColor: '#f0f4f8'
-                    }}>
-                        <Typography variant="h6" sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
-                            {t.completed || 'Completed'}
-                        </Typography>
-                    </Box>
-
-                    <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
-                        <MorenButton
-                            variant="outlined"
-                            onClick={handleRepeat}
-                            sx={{
-                                borderColor: '#274765',
-                                color: '#274765',
-                                minWidth: '180px',
-                                fontWeight: 'bold',
-                                borderWidth: 2,
-                                borderRadius: '12px',
-                                px: 4,
-                                py: 2,
-                                '&:hover': {
-                                    borderWidth: 2,
-                                    borderColor: '#1e3650',
-                                    backgroundColor: 'rgba(39, 71, 101, 0.04)'
-                                }
-                            }}
-                        >
-                            {t.next === 'SIGUIENTE' ? 'REPETIR' : 'REPEAT'}
-                        </MorenButton>
-
-                        <MorenButton
-                            variant="contained"
-                            onClick={handleNextFromComplete}
-                            sx={{
-                                minWidth: '180px',
-                                backgroundColor: '#274765',
-                                color: 'white',
-                                fontWeight: 'bold',
-                                borderRadius: '12px',
-                                px: 4,
-                                py: 2,
-                                fontSize: '1.1rem'
-                            }}>
-                            {t.answerNow}
-                        </MorenButton>
-                    </Box>
                 </Box>
             )}
 

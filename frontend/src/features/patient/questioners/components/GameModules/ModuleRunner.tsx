@@ -31,6 +31,10 @@ interface ModuleRunnerProps {
     lastCompletedModuleId?: number | null;
 }
 
+type GenericAnswer = Record<string, unknown>;
+type AnswerWithText = GenericAnswer & { answer_text?: string };
+type AnswerWithScore = GenericAnswer & { score?: number };
+
 const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastCompletedModuleId }: ModuleRunnerProps) => {
     const { languageConstants } = useLanguageConstantContext();
     const navigate = useNavigate();
@@ -64,6 +68,9 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     const [idleModalOpen, setIdleModalOpen] = useState(false);
     const [idleMinutes, setIdleMinutes] = useState(0);
 
+    const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
+    const IDLE_STORAGE_KEY = 'dmac_last_activity_ts';
+
     const attemptsBanner = useMemo(() => {
         if (!attemptStatus) return null;
         const remaining = Math.max(0, (attemptStatus.max_attempts ?? 3) - (attemptStatus.count ?? 0));
@@ -78,13 +85,31 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                 const sorted = (res.modules || []).sort((a, b) => a.order_index - b.order_index);
                 setModules(sorted);
 
+                const lastActiveRaw = localStorage.getItem(IDLE_STORAGE_KEY);
+                const lastActiveTs = lastActiveRaw ? Number(lastActiveRaw) : 0;
+                const idleMs = lastActiveTs ? Date.now() - lastActiveTs : 0;
+                const isIdleExpired = Boolean(lastActiveTs) && idleMs > IDLE_TIMEOUT_MS;
+
+                if (isIdleExpired) {
+                    const minutes = Math.max(0, Math.ceil(idleMs / 60000));
+                    setIdleMinutes(minutes);
+                    setIdleModalOpen(true);
+                    localStorage.removeItem('dmac_current_module_id');
+                }
+
                 // Determine start module
                 const savedId = localStorage.getItem('dmac_current_module_id');
                 let startId = sorted.length > 0 ? sorted[0].id : 0;
                 let startIndex = 0;
 
+                // If idle expired, always restart from the beginning (ignore resume/local storage/last completed).
+                if (isIdleExpired) {
+                    startId = sorted.length > 0 ? sorted[0].id : 0;
+                    startIndex = 0;
+                }
+
                 // Priority 1: Check backend last completed module
-                if (lastCompletedModuleId) {
+                if (!isIdleExpired && lastCompletedModuleId) {
                     const lastIndex = sorted.findIndex(m => m.id === lastCompletedModuleId);
                     if (lastIndex !== -1) {
                         // Ensure we don't go out of bounds
@@ -100,7 +125,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                     }
                 }
                 // Priority 2: localStorage (only if backend info not available or start from beginning)
-                else if (savedId) {
+                else if (!isIdleExpired && savedId) {
                     const foundIndex = sorted.findIndex(m => m.id === Number(savedId));
                     if (foundIndex !== -1) {
                         startId = Number(savedId);
@@ -111,7 +136,12 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                 setCurrentModuleIndex(startIndex);
 
                 if (sorted.length > 0) {
-                    startModuleSession(startId);
+                    // If idle expired (including refresh after 10+ min), create a fresh Module 1 session
+                    // so attempts increment and the flow restarts from the beginning.
+                    await startModuleSession(startId, !isIdleExpired);
+                    if (isIdleExpired) {
+                        await queryClient.invalidateQueries({ queryKey: ['test-attempts', languageCode] });
+                    }
                 } else {
                     console.warn("No active game modules found.");
                     setError(t.noModulesFound);
@@ -123,11 +153,13 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
             }
         };
         fetchModules();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lastCompletedModuleId]);
 
     useIdleTimeout({
-        enabled: Boolean(session) && !loading && !showCompletion && !idleModalOpen,
-        timeoutMs: 10 * 60 * 1000,
+        storageKey: IDLE_STORAGE_KEY,
+        enabled: !showCompletion && !idleModalOpen,
+        timeoutMs: IDLE_TIMEOUT_MS,
         onIdle: (idleMs) => {
             const minutes = Math.max(0, Math.ceil(idleMs / 60000));
             setIdleMinutes(minutes);
@@ -135,14 +167,14 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         },
     });
 
-    const startModuleSession = async (moduleId: number) => {
+    const startModuleSession = async (moduleId: number, resume: boolean = true) => {
         setLoading(true);
         setError(null);
         try {
             console.log(`[ModuleRunner] Starting session for module ${moduleId}`);
             // Resume exiting session (created in PreTest) for Module 1, or generally allow resume
             // To support attempt tracking via PreTest, we MUST resume if a session exists.
-            const sess = await GameApi.startSession(moduleId, userId, languageCode, true); // resume = true
+            const sess = await GameApi.startSession(moduleId, userId, languageCode, resume);
             console.log(`[ModuleRunner] Session started:`, sess);
             setSession(sess);
         } catch (error) {
@@ -177,6 +209,8 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
             await GameApi.abandonInProgressSessions();
             localStorage.removeItem('dmac_current_module_id');
 
+            localStorage.setItem(IDLE_STORAGE_KEY, String(Date.now()));
+
             const firstModuleId = modules[0]?.id ?? 1;
             const newSession = await GameApi.startSession(firstModuleId, userId, languageCode, false);
             setSession(newSession);
@@ -189,7 +223,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         }
     };
 
-    const handleModuleSubmit = async (payload: any) => {
+    const handleModuleSubmit = async (payload: GenericAnswer) => {
         if (!session) return;
         setLoading(true);
         try {
@@ -233,45 +267,45 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         });
     };
 
-    const handleAudioStoryComplete = (answers: any[]) => {
+    const handleAudioStoryComplete = (answers: GenericAnswer[]) => {
         handleModuleSubmit({
             answers
         });
     };
 
-    const handleAudioWordsComplete = (answers: any[]) => {
+    const handleAudioWordsComplete = (answers: GenericAnswer[]) => {
         handleModuleSubmit({
             answers
         });
     };
 
-    const handleConnectDotsComplete = (payload: any) => {
+    const handleConnectDotsComplete = (payload: GenericAnswer) => {
         handleModuleSubmit(payload);
     };
 
-    const handleExecutiveComplete = (answers: any[]) => {
+    const handleExecutiveComplete = (answers: GenericAnswer[]) => {
         handleModuleSubmit({
             answers
         });
     };
 
-    const handleNumberRecallComplete = (answers: any[]) => {
+    const handleNumberRecallComplete = (answers: GenericAnswer[]) => {
         handleModuleSubmit({
             answers
         });
     };
 
-    const handleDrawingRecallComplete = (payload: any) => {
+    const handleDrawingRecallComplete = (payload: GenericAnswer) => {
         handleModuleSubmit(payload);
     };
 
-    const handleColorRecallComplete = (answers: any[]) => {
+    const handleColorRecallComplete = (answers: GenericAnswer[]) => {
         handleModuleSubmit({
             answers
         });
     };
 
-    const handleGroupMatchingComplete = (answers: any[]) => {
+    const handleGroupMatchingComplete = (answers: AnswerWithText[]) => {
         // Parse scores from text "Score: 1" and sum them up
         const total = answers.reduce((acc, curr) => {
             const match = (curr.answer_text || '').match(/Score:\s*(\d+)/);
@@ -284,7 +318,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         });
     };
 
-    const handleDisinhibitionSqTriComplete = (answers: any[]) => {
+    const handleDisinhibitionSqTriComplete = (answers: AnswerWithScore[]) => {
         handleModuleSubmit({
             answers,
             // Pass score explicitly if it's in the answers array object or let backend handle it 
@@ -293,7 +327,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         });
     };
 
-    const handleLetterDisinhibitionComplete = (answers: any[]) => {
+    const handleLetterDisinhibitionComplete = (answers: GenericAnswer[]) => {
         handleModuleSubmit({
             answers
             // score removed, calculated in backend
@@ -502,11 +536,19 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                 }
                 onSubmit={restartFromBeginningDueToIdle}
             >
-                <Typography sx={{ fontSize: '1.1rem', textAlign: 'center' }}>
-                    You were idle for <strong>{idleMinutes}</strong> minutes.
-                    <br />
-                    You will be redirected to the beginning of the game and your attempt will be increased by 1.
-                </Typography>
+                {attemptStatus && attemptStatus.count >= attemptStatus.max_attempts ? (
+                    <Typography sx={{ fontSize: '1.1rem', textAlign: 'center' }}>
+                        You were idle for <strong>{idleMinutes}</strong> minutes.
+                        <br />
+                        You have reached the maximum number of attempts and cannot restart the test.
+                    </Typography>
+                ) : (
+                    <Typography sx={{ fontSize: '1.1rem', textAlign: 'center' }}>
+                        You were idle for <strong>{idleMinutes}</strong> minutes.
+                        <br />
+                        You will be redirected to the beginning of the game and your attempt will be increased by 1.
+                    </Typography>
+                )}
                 {attemptsBanner?.isFinal ? (
                     <Typography sx={{ mt: 2, fontSize: '1rem', textAlign: 'center', color: '#c62828', fontWeight: 600 }}>
                         This is your final attempt. If you are idle again, you won’t be able to retake the test.

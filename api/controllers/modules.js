@@ -440,13 +440,14 @@ export const abandonInProgressSessions = async (req, res) => {
       [user_id]
     )
 
-    res.json({
+    // mysql driver returns OkPacket with affectedRows
+    return res.status(200).json({
       isSuccess: true,
       abandoned: result?.affectedRows ?? 0
     })
   } catch (err) {
     console.error('[AbandonInProgressSessions] Error:', err)
-    res.status(500).json({ error: err.message })
+    return res.status(500).json({ isSuccess: false, error: err.message })
   }
 }
 
