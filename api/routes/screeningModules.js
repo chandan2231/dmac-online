@@ -4,6 +4,7 @@ import {
   startSession,
   submitSession,
   getAttemptStatus,
+  abandonInProgressSessions,
   getUserReport,
   generateReportPdf,
   registerScreeningUser,
@@ -15,6 +16,7 @@ const router = express.Router()
 // No auth middleware for screening.
 router.get('/', getModules)
 router.get('/attempts', getAttemptStatus)
+router.post('/attempts/abandon', abandonInProgressSessions)
 router.post('/report', getUserReport)
 router.post('/report/pdf', generateReportPdf)
 

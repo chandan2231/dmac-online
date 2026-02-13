@@ -430,6 +430,27 @@ export const getAttemptStatus = async (req, res) => {
   }
 };
 
+export const abandonInProgressSessions = async (req, res) => {
+  const user_id = req.user?.userId
+  if (!user_id) return res.status(401).json({ error: 'Unauthorized' })
+
+  try {
+    const result = await query(
+      'UPDATE dmac_webapp_sessions SET status = "abandoned" WHERE user_id = ? AND status = "in_progress"',
+      [user_id]
+    )
+
+    // mysql driver returns OkPacket with affectedRows
+    return res.status(200).json({
+      isSuccess: true,
+      abandoned: result?.affectedRows ?? 0
+    })
+  } catch (err) {
+    console.error('[AbandonInProgressSessions] Error:', err)
+    return res.status(500).json({ isSuccess: false, error: err.message })
+  }
+}
+
 export const submitSession = async (req, res) => {
   const { moduleId, sessionId } = req.params
   // Standardize input: "answers" array is preferred, but handle legacy single-answer structure

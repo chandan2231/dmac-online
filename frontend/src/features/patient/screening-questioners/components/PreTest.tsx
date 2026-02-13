@@ -45,6 +45,9 @@ const PreTest = ({
 
       localStorage.removeItem(PROGRESS_KEY);
 
+      // Make sure we don't resume stale in-progress sessions from prior attempts.
+      await ScreeningGameApi.abandonInProgressSessions(userId);
+
       await ScreeningGameApi.startSession(1, userId, languageCode, false);
       setPreTestCompleted(true);
     } catch (error) {
