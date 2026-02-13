@@ -70,6 +70,12 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
     const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
     const IDLE_STORAGE_KEY = 'dmac_last_activity_ts';
+    const PROGRESS_KEY = 'dmac_current_module_id';
+    // When set: ignore backend lastCompletedModuleId and start from PROGRESS_KEY/first module.
+    // Cleared once Module 1 is completed in the new attempt.
+    const FORCE_RESTART_KEY = 'dmac_force_restart_from_beginning';
+    // When set: create a fresh Module 1 session exactly once (resume=false) to count a new attempt.
+    const FORCE_NEW_SESSION_KEY = 'dmac_force_restart_needs_new_session';
 
     const attemptsBanner = useMemo(() => {
         if (!attemptStatus) return null;
@@ -88,28 +94,30 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                 const lastActiveRaw = localStorage.getItem(IDLE_STORAGE_KEY);
                 const lastActiveTs = lastActiveRaw ? Number(lastActiveRaw) : 0;
                 const idleMs = lastActiveTs ? Date.now() - lastActiveTs : 0;
-                const isIdleExpired = Boolean(lastActiveTs) && idleMs > IDLE_TIMEOUT_MS;
+                const isTimeExpired = Boolean(lastActiveTs) && idleMs > IDLE_TIMEOUT_MS;
+                const forceRestart = Boolean(localStorage.getItem(FORCE_RESTART_KEY));
+                const needsNewSession = Boolean(localStorage.getItem(FORCE_NEW_SESSION_KEY));
+                const shouldIgnoreBackendResume = Boolean(forceRestart);
 
-                if (isIdleExpired) {
+                // Only show the idle modal when the user was truly idle > 10 min.
+                if (isTimeExpired) {
                     const minutes = Math.max(0, Math.ceil(idleMs / 60000));
                     setIdleMinutes(minutes);
                     setIdleModalOpen(true);
-                    localStorage.removeItem('dmac_current_module_id');
+                    localStorage.removeItem(PROGRESS_KEY);
+                    // Require a full restart from module 1, and create a fresh module-1 session once user clicks Restart.
+                    localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+                    localStorage.setItem(FORCE_NEW_SESSION_KEY, String(Date.now()));
+                    return;
                 }
 
                 // Determine start module
-                const savedId = localStorage.getItem('dmac_current_module_id');
+                const savedId = localStorage.getItem(PROGRESS_KEY);
                 let startId = sorted.length > 0 ? sorted[0].id : 0;
                 let startIndex = 0;
 
-                // If idle expired, always restart from the beginning (ignore resume/local storage/last completed).
-                if (isIdleExpired) {
-                    startId = sorted.length > 0 ? sorted[0].id : 0;
-                    startIndex = 0;
-                }
-
-                // Priority 1: Check backend last completed module
-                if (!isIdleExpired && lastCompletedModuleId) {
+                // Priority 1: backend last completed module (only when not in a forced restart attempt)
+                if (!shouldIgnoreBackendResume && lastCompletedModuleId) {
                     const lastIndex = sorted.findIndex(m => m.id === lastCompletedModuleId);
                     if (lastIndex !== -1) {
                         // Ensure we don't go out of bounds
@@ -125,7 +133,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                     }
                 }
                 // Priority 2: localStorage (only if backend info not available or start from beginning)
-                else if (!isIdleExpired && savedId) {
+                else if (savedId) {
                     const foundIndex = sorted.findIndex(m => m.id === Number(savedId));
                     if (foundIndex !== -1) {
                         startId = Number(savedId);
@@ -136,11 +144,17 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                 setCurrentModuleIndex(startIndex);
 
                 if (sorted.length > 0) {
-                    // If idle expired (including refresh after 10+ min), create a fresh Module 1 session
-                    // so attempts increment and the flow restarts from the beginning.
-                    await startModuleSession(startId, !isIdleExpired);
-                    if (isIdleExpired) {
-                        await queryClient.invalidateQueries({ queryKey: ['test-attempts', languageCode] });
+                    // Avoid double-counting attempts: only create a fresh session when explicitly requested.
+                    await startModuleSession(startId, !needsNewSession);
+
+                    // Persist current module to support refresh-resume even before first submit.
+                    if (!savedId && startId) {
+                        localStorage.setItem(PROGRESS_KEY, String(startId));
+                    }
+
+                    // One-shot: after creating the new session, stop forcing resume=false.
+                    if (needsNewSession) {
+                        localStorage.removeItem(FORCE_NEW_SESSION_KEY);
                     }
                 } else {
                     console.warn("No active game modules found.");
@@ -156,7 +170,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lastCompletedModuleId]);
 
-    useIdleTimeout({
+    const { setActiveNow } = useIdleTimeout({
         storageKey: IDLE_STORAGE_KEY,
         enabled: !showCompletion && !idleModalOpen,
         timeoutMs: IDLE_TIMEOUT_MS,
@@ -164,6 +178,9 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
             const minutes = Math.max(0, Math.ceil(idleMs / 60000));
             setIdleMinutes(minutes);
             setIdleModalOpen(true);
+            localStorage.removeItem(PROGRESS_KEY);
+            localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+            localStorage.setItem(FORCE_NEW_SESSION_KEY, String(Date.now()));
         },
     });
 
@@ -197,7 +214,9 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
             } catch (e) {
                 console.error('[ModuleRunner] Failed to abandon sessions after idle (final attempt)', e);
             } finally {
-                localStorage.removeItem('dmac_current_module_id');
+                localStorage.removeItem(PROGRESS_KEY);
+                localStorage.removeItem(FORCE_RESTART_KEY);
+                localStorage.removeItem(FORCE_NEW_SESSION_KEY);
                 navigate(ROUTES.HOME);
             }
             return;
@@ -207,13 +226,20 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         setError(null);
         try {
             await GameApi.abandonInProgressSessions();
-            localStorage.removeItem('dmac_current_module_id');
+            localStorage.removeItem(PROGRESS_KEY);
 
-            localStorage.setItem(IDLE_STORAGE_KEY, String(Date.now()));
+            // Reset idle timer immediately on Restart
+            setActiveNow();
+            // Keep forcing "start from beginning" until Module 1 is completed.
+            localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+            // We are explicitly creating a new Module 1 session here.
+            localStorage.removeItem(FORCE_NEW_SESSION_KEY);
 
             const firstModuleId = modules[0]?.id ?? 1;
+            localStorage.setItem(PROGRESS_KEY, String(firstModuleId));
             const newSession = await GameApi.startSession(firstModuleId, userId, languageCode, false);
             setSession(newSession);
+            setCurrentModuleIndex(0);
             await queryClient.invalidateQueries({ queryKey: ['test-attempts', languageCode] });
         } catch (e) {
             console.error('[ModuleRunner] Failed to restart after idle', e);
@@ -230,8 +256,13 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
             const res = await GameApi.submitSession(session.module.id, session.session_id, payload);
 
             if (res.next_module_id) {
+                const firstModuleId = modules[0]?.id;
+                if (firstModuleId && session.module.id === firstModuleId) {
+                    // Now that Module 1 is completed in this attempt, backend resume becomes safe again.
+                    localStorage.removeItem(FORCE_RESTART_KEY);
+                }
                 // Save progress
-                localStorage.setItem('dmac_current_module_id', String(res.next_module_id));
+                localStorage.setItem(PROGRESS_KEY, String(res.next_module_id));
 
                 await startModuleSession(res.next_module_id);
                 const nextIdx = modules.findIndex(m => m.id === res.next_module_id);
@@ -240,7 +271,8 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                 // All modules completed - show completion screen
                 setShowCompletion(true);
                 // Re-enable language selector
-                localStorage.removeItem('dmac_current_module_id'); // Clear progress on complete
+                localStorage.removeItem(PROGRESS_KEY); // Clear progress on complete
+                localStorage.removeItem(FORCE_RESTART_KEY);
                 onAllModulesComplete();
             }
         } catch (error) {
@@ -344,6 +376,47 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         return (
             <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Typography color="error" variant="h6">{error}</Typography>
+            </Box>
+        );
+    }
+
+    if (idleModalOpen && !session) {
+        return (
+            <Box sx={{ width: '100%', height: '100%' }}>
+                <GenericModal
+                    isOpen={idleModalOpen}
+                    onClose={() => { }}
+                    disableClose={true}
+                    hideCloseIcon={true}
+                    hideCancelButton={true}
+                    title="Idle Timeout"
+                    submitButtonText={
+                        attemptStatus && attemptStatus.count >= attemptStatus.max_attempts
+                            ? 'Go Home'
+                            : 'Restart'
+                    }
+                    onSubmit={restartFromBeginningDueToIdle}
+                >
+                    {attemptStatus && attemptStatus.count >= attemptStatus.max_attempts ? (
+                        <Typography sx={{ fontSize: '1.1rem', textAlign: 'center' }}>
+                            You were idle for <strong>{idleMinutes}</strong> minutes.
+                            <br />
+                            You have reached the maximum number of attempts and cannot restart the test.
+                        </Typography>
+                    ) : (
+                        <Typography sx={{ fontSize: '1.1rem', textAlign: 'center' }}>
+                            You were idle for <strong>{idleMinutes}</strong> minutes.
+                            <br />
+                            You will be redirected to the beginning of the game and your attempt will be increased by 1.
+                        </Typography>
+                    )}
+                    {attemptsBanner?.isFinal ? (
+                        <Typography sx={{ mt: 2, fontSize: '1rem', textAlign: 'center', color: '#c62828', fontWeight: 600 }}>
+                            This is your final attempt. If you are idle again, you won’t be able to retake the test.
+                        </Typography>
+                    ) : null}
+                </GenericModal>
+                <CustomLoader />
             </Box>
         );
     }

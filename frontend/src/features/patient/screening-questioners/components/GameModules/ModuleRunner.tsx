@@ -69,6 +69,8 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
   const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
   const IDLE_STORAGE_KEY = 'dmac_screening_last_activity_ts';
+  const FORCE_RESTART_KEY = 'dmac_screening_force_restart_from_beginning';
+  const FORCE_NEW_SESSION_KEY = 'dmac_screening_force_restart_needs_new_session';
 
   const attemptsBanner = useMemo(() => {
     if (!attemptStatus) return null;
@@ -87,26 +89,26 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         const lastActiveRaw = localStorage.getItem(IDLE_STORAGE_KEY);
         const lastActiveTs = lastActiveRaw ? Number(lastActiveRaw) : 0;
         const idleMs = lastActiveTs ? Date.now() - lastActiveTs : 0;
-        const isIdleExpired = Boolean(lastActiveTs) && idleMs > IDLE_TIMEOUT_MS;
+        const forceRestart = Boolean(localStorage.getItem(FORCE_RESTART_KEY));
+        const needsNewSession = Boolean(localStorage.getItem(FORCE_NEW_SESSION_KEY));
+        const isTimeExpired = Boolean(lastActiveTs) && idleMs > IDLE_TIMEOUT_MS;
+        const shouldIgnoreBackendResume = Boolean(forceRestart);
 
-        if (isIdleExpired) {
+        if (isTimeExpired) {
           const minutes = Math.max(0, Math.ceil(idleMs / 60000));
           setIdleMinutes(minutes);
           setIdleModalOpen(true);
           localStorage.removeItem(PROGRESS_KEY);
+          localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+          localStorage.setItem(FORCE_NEW_SESSION_KEY, String(Date.now()));
+          return;
         }
 
         const savedId = localStorage.getItem(PROGRESS_KEY);
         let startId = sorted.length > 0 ? sorted[0].id : 0;
         let startIndex = 0;
 
-        // If idle expired, always restart from the beginning (ignore resume/local storage/last completed).
-        if (isIdleExpired) {
-          startId = sorted.length > 0 ? sorted[0].id : 0;
-          startIndex = 0;
-        }
-
-        if (!isIdleExpired && lastCompletedModuleId) {
+        if (!shouldIgnoreBackendResume && lastCompletedModuleId) {
           const lastIndex = sorted.findIndex(m => m.id === lastCompletedModuleId);
           if (lastIndex !== -1) {
             if (lastIndex < sorted.length - 1) {
@@ -117,7 +119,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
               return;
             }
           }
-        } else if (!isIdleExpired && savedId) {
+        } else if (savedId) {
           const foundIndex = sorted.findIndex(m => m.id === Number(savedId));
           if (foundIndex !== -1) {
             startId = Number(savedId);
@@ -128,9 +130,12 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         setCurrentModuleIndex(startIndex);
 
         if (sorted.length > 0) {
-          await startModuleSession(startId, !isIdleExpired);
-          if (isIdleExpired) {
-            await queryClient.invalidateQueries({ queryKey: ['screening-test-attempts', userId, languageCode] });
+          await startModuleSession(startId, !needsNewSession);
+          if (!savedId && startId) {
+            localStorage.setItem(PROGRESS_KEY, String(startId));
+          }
+          if (needsNewSession) {
+            localStorage.removeItem(FORCE_NEW_SESSION_KEY);
           }
         } else {
           setError(t.noModulesFound);
@@ -145,7 +150,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastCompletedModuleId]);
 
-  useIdleTimeout({
+  const { setActiveNow } = useIdleTimeout({
     storageKey: IDLE_STORAGE_KEY,
     enabled: !showCompletion && !idleModalOpen,
     timeoutMs: IDLE_TIMEOUT_MS,
@@ -153,6 +158,9 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
       const minutes = Math.max(0, Math.ceil(idleMs / 60000));
       setIdleMinutes(minutes);
       setIdleModalOpen(true);
+      localStorage.removeItem(PROGRESS_KEY);
+      localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+      localStorage.setItem(FORCE_NEW_SESSION_KEY, String(Date.now()));
     },
   });
 
@@ -193,11 +201,18 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
       await ScreeningGameApi.abandonInProgressSessions(userId);
       localStorage.removeItem(PROGRESS_KEY);
 
-      localStorage.setItem(IDLE_STORAGE_KEY, String(Date.now()));
+      // Reset idle timer immediately on Restart
+      setActiveNow();
+      // Keep forcing "start from beginning" until Module 1 is completed.
+      localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+      // We are explicitly creating a new Module 1 session here.
+      localStorage.removeItem(FORCE_NEW_SESSION_KEY);
 
       const firstModuleId = modules[0]?.id ?? 1;
+      localStorage.setItem(PROGRESS_KEY, String(firstModuleId));
       const newSession = await ScreeningGameApi.startSession(firstModuleId, userId, languageCode, false);
       setSession(newSession);
+      setCurrentModuleIndex(0);
       await queryClient.invalidateQueries({ queryKey: ['screening-test-attempts', userId, languageCode] });
     } catch (e) {
       console.error('[Screening ModuleRunner] Failed to restart after idle', e);
@@ -214,6 +229,10 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
       const res = await ScreeningGameApi.submitSession(session.module.id, session.session_id, payload);
 
       if (res.next_module_id) {
+        const firstModuleId = modules[0]?.id;
+        if (firstModuleId && session.module.id === firstModuleId) {
+          localStorage.removeItem(FORCE_RESTART_KEY);
+        }
         localStorage.setItem(PROGRESS_KEY, String(res.next_module_id));
         await startModuleSession(res.next_module_id);
         const nextIdx = modules.findIndex(m => m.id === res.next_module_id);
@@ -221,6 +240,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
       } else {
         setShowCompletion(true);
         localStorage.removeItem(PROGRESS_KEY);
+        localStorage.removeItem(FORCE_RESTART_KEY);
         onAllModulesComplete();
       }
     } finally {
@@ -300,6 +320,47 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         <Typography color="error" variant="h6">
           {error}
         </Typography>
+      </Box>
+    );
+  }
+
+  if (idleModalOpen && !session) {
+    return (
+      <Box sx={{ width: '100%', height: '100%' }}>
+        <GenericModal
+          isOpen={idleModalOpen}
+          onClose={() => { }}
+          disableClose={true}
+          hideCloseIcon={true}
+          hideCancelButton={true}
+          title="Idle Timeout"
+          submitButtonText={
+            attemptStatus && attemptStatus.count >= attemptStatus.max_attempts
+              ? 'Go Home'
+              : 'Restart'
+          }
+          onSubmit={restartFromBeginningDueToIdle}
+        >
+          {attemptStatus && attemptStatus.count >= attemptStatus.max_attempts ? (
+            <Typography sx={{ fontSize: '1.1rem', textAlign: 'center' }}>
+              You were idle for <strong>{idleMinutes}</strong> minutes.
+              <br />
+              You have reached the maximum number of attempts and cannot restart the test.
+            </Typography>
+          ) : (
+            <Typography sx={{ fontSize: '1.1rem', textAlign: 'center' }}>
+              You were idle for <strong>{idleMinutes}</strong> minutes.
+              <br />
+              You will be redirected to the beginning of the game and your attempt will be increased by 1.
+            </Typography>
+          )}
+          {attemptsBanner?.isFinal ? (
+            <Typography sx={{ mt: 2, fontSize: '1rem', textAlign: 'center', color: '#c62828', fontWeight: 600 }}>
+              This is your final attempt. If you are idle again, you won’t be able to retake the test.
+            </Typography>
+          ) : null}
+        </GenericModal>
+        <CustomLoader />
       </Box>
     );
   }

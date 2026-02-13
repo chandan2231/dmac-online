@@ -29,6 +29,16 @@ const ScreeningVerifyEmailPage = () => {
 
         setScreeningUser(res.user);
 
+        // Fresh start after email approval
+        try {
+          localStorage.setItem('dmac_screening_last_activity_ts', String(Date.now()));
+          localStorage.removeItem('dmac_screening_current_module_id');
+          localStorage.removeItem('dmac_screening_force_restart_from_beginning');
+          localStorage.removeItem('dmac_screening_force_restart_needs_new_session');
+        } catch {
+          // ignore
+        }
+
         try {
           const langCode = 'en';
           const langRes = await LanguageService.fetchLanguageContants(langCode);

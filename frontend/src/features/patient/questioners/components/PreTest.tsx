@@ -23,16 +23,28 @@ const PreTest = ({ setPreTestCompleted }: IPreTestProps) => {
 
     const { data: attemptStatus, isLoading: isLoadingAttempts } = useTestAttempts(languageCode);
 
+    const FORCE_RESTART_KEY = 'dmac_force_restart_from_beginning';
+    const PROGRESS_KEY = 'dmac_current_module_id';
+    const FORCE_NEW_SESSION_KEY = 'dmac_force_restart_needs_new_session';
+
     const handleStart = async () => {
         if (!attemptStatus?.allowed || attemptStatus?.isCompleted) return;
 
         try {
+            const forceRestart = Boolean(localStorage.getItem(FORCE_RESTART_KEY));
+            const savedProgress = localStorage.getItem(PROGRESS_KEY);
             const userId = Number(get(user, 'id', 0));
+
+            // If a forced-restart attempt is already in progress, do not create another Module 1 session.
+            if (forceRestart && savedProgress) {
+                setPreTestCompleted(true);
+                return;
+            }
 
             // CHECK FOR RESUME capability
             // If the user has completed at least one module (and not finished all), 
             // we should resume, not restart.
-            if (attemptStatus?.lastModuleCompleted && !attemptStatus.isCompleted) {
+            if (!forceRestart && attemptStatus?.lastModuleCompleted && !attemptStatus.isCompleted) {
                 // Resume flow: Just allow the ModuleRunner to mount.
                 // ModuleRunner will detect lastCompletedModuleId via props and resume.
                 setPreTestCompleted(true);
@@ -44,7 +56,17 @@ const PreTest = ({ setPreTestCompleted }: IPreTestProps) => {
             // The module ID for Image Flash is 1 (based on previous queries)
 
             // Clear any previous game progress
-            localStorage.removeItem('dmac_current_module_id');
+            localStorage.removeItem(PROGRESS_KEY);
+
+            // Reset idle timer for the new run
+            localStorage.setItem('dmac_last_activity_ts', String(Date.now()));
+
+            // One-shot override: ensure ModuleRunner starts from module 1 (ignore DB lastModuleCompleted).
+            localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+            // PreTest creates the Module 1 session itself; ModuleRunner should resume it (not create another).
+            localStorage.removeItem(FORCE_NEW_SESSION_KEY);
+            // Persist module 1 so refresh can resume even before first submit.
+            localStorage.setItem(PROGRESS_KEY, '1');
 
             // Make sure we don't resume stale in-progress sessions from prior attempts.
             await GameApi.abandonInProgressSessions();

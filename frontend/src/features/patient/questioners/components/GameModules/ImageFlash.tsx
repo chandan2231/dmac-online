@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import MorenButton from '../../../../../components/button';
 import GenericModal from '../../../../../components/modal';
 import ConfirmationModal from '../../../../../components/modal/ConfirmationModal';
-import type { SessionData } from '../../../../../services/gameApi';
+import type { SessionData, QuestionItem } from '../../../../../services/gameApi';
 import SpeechInput from '../../../../../components/SpeechInput';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
@@ -54,7 +54,6 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
         instructions: getLanguageText(languageConstants, 'game_instructions'),
         instruction: getLanguageText(languageConstants, 'game_instruction'),
         start: getLanguageText(languageConstants, 'game_start'),
-        repeat: getLanguageText(languageConstants, 'game_repeat'),
         next: getLanguageText(languageConstants, 'game_next'),
         enterAnswers: getLanguageText(languageConstants, 'game_answer_now') || 'Answer Now', // Changed from game_enter_answers
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder'),
@@ -67,7 +66,12 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
         })()
     };
 
-    const [phase, setPhase] = useState<'instruction' | 'playing' | 'lastImageWithButtons' | 'beforeInput' | 'input'>('instruction');
+    // Phases:
+    // - instruction: initial instructions
+    // - playing: images are flashing
+    // - input: user enters recalled items
+    // Requirement: after flashing ends, go directly to input (no intermediate screen).
+    const [phase, setPhase] = useState<'instruction' | 'playing' | 'input'>('instruction');
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
 
     // Input state - single text field for all answers
@@ -77,31 +81,44 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
     // Confirmation Modal State
     const [showConfirmation, setShowConfirmation] = useState(false);
 
+    type ImageFlashItem = {
+        question_item_id: number;
+        image_url: string;
+        image_key?: string;
+        audio_url?: string;
+        accepted_answers?: string;
+        display_text?: string;
+        order?: number;
+    };
+
     // Construct items list from API using static images only
-    const items = (session.questions?.[0]?.items || []).map((item, index) => {
-        const key = (item.image_key || '').toLowerCase();
-        console.log(`[ImageFlash] Processing item: key="${key}"`);
+    const items: ImageFlashItem[] = useMemo(() => {
+        const apiItems = session.questions?.[0]?.items || [];
+        return apiItems.map((item, index) => {
+            const key = (item.image_key || '').toLowerCase();
+            console.log(`[ImageFlash] Processing item: key="${key}"`);
 
-        // Direct lookup in IMAGE_MAP
-        const mappedImage = IMAGE_MAP[key];
+            // Direct lookup in IMAGE_MAP
+            const mappedImage = IMAGE_MAP[key];
 
-        if (mappedImage) {
-            console.log(`[ImageFlash] Found mapping for "${key}": image=${mappedImage.substring(mappedImage.lastIndexOf('/') + 1)}`);
-            return {
-                ...item,
-                image_url: mappedImage
-            };
-        } else {
+            if (mappedImage) {
+                console.log(`[ImageFlash] Found mapping for "${key}": image=${mappedImage.substring(mappedImage.lastIndexOf('/') + 1)}`);
+                return {
+                    ...(item as QuestionItem),
+                    image_url: mappedImage
+                };
+            }
+
             // No mapping found - use defaults from arrays by index
             console.warn(`[ImageFlash] No mapping found for "${key}", using fallback at index ${index}`);
             return {
-                ...item,
+                ...(item as QuestionItem),
                 image_url: ALL_IMAGES[index % ALL_IMAGES.length]
             };
-        }
-    });
+        });
+    }, [session.questions]);
 
-    const [gameItems, setGameItems] = useState<any[]>([]);
+    const [gameItems, setGameItems] = useState<ImageFlashItem[]>([]);
 
     useEffect(() => {
         if (items.length > 0) {
@@ -122,7 +139,7 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
             console.log('[ImageFlash] Using fallback dummy items:', dummyItems);
             setGameItems(dummyItems);
         }
-    }, [session]);
+    }, [items, session.questions]);
 
     // Clear input when language changes
     useEffect(() => {
@@ -142,7 +159,7 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
     };
 
     useEffect(() => {
-        let timer: any;
+        let timer: ReturnType<typeof setTimeout> | undefined;
         if (phase === 'playing') {
             if (currentItemIndex < gameItems.length - 1) {
                 timer = setTimeout(() => {
@@ -150,18 +167,14 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
                 }, 5000);
             } else if (currentItemIndex === gameItems.length - 1) {
                 timer = setTimeout(() => {
-                    setPhase('lastImageWithButtons');
+                    setPhase('input');
                 }, 5000);
             }
         }
-        return () => clearTimeout(timer);
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
     }, [phase, currentItemIndex, gameItems.length]);
-
-    const handleRepeat = () => {
-        setInputText('');
-        setValidationError('');
-        handleStart();
-    };
 
     const handleSubmit = () => {
         const trimmedInput = inputText.trim().toLowerCase();
@@ -214,82 +227,6 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
                     />
                 </Box>
             )}
-
-            {/* Last image with REPEAT and NEXT buttons */}
-            {phase === 'lastImageWithButtons' && gameItems[gameItems.length - 1] && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
-                    <Box
-                        component="img"
-                        src={gameItems[gameItems.length - 1].image_url}
-                        alt="Recall Item"
-                        sx={{ maxWidth: '80%', maxHeight: '60vh', objectFit: 'contain', mb: 4 }}
-                    />
-
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <MorenButton
-                            variant="outlined"
-                            onClick={handleRepeat}
-                            sx={{
-                                borderColor: '#274765',
-                                color: '#274765',
-                                minWidth: '180px',
-                                fontWeight: 'bold',
-                                borderWidth: 2,
-                                borderRadius: '12px',
-                                px: 4,
-                                py: 2,
-                                '&:hover': {
-                                    borderWidth: 2,
-                                    borderColor: '#1e3650',
-                                    backgroundColor: 'rgba(39, 71, 101, 0.04)'
-                                }
-                            }}
-                        >
-                            {t.repeat}
-                        </MorenButton>
-
-                        <MorenButton
-                            variant="contained"
-                            onClick={() => setPhase('beforeInput')}
-                            sx={{
-                                minWidth: '180px',
-                                backgroundColor: '#274765',
-                                color: 'white',
-                                fontWeight: 'bold',
-                                borderRadius: '12px',
-                                px: 4,
-                                py: 2,
-                                fontSize: '1.1rem'
-                            }}
-                        >
-                            {t.nextEllipsis}
-                        </MorenButton>
-                    </Box>
-                </Box>
-            )
-            }
-
-            {/* Instruction before input - from backend */}
-            <GenericModal
-                isOpen={phase === 'beforeInput'}
-                onClose={() => { }}
-                title={(() => {
-                    const val = getLanguageText(languageConstants, 'game_instructions_for_answer');
-                    return (val && val !== 'game_instructions_for_answer') ? val : 'Instructions For Answer';
-                })()}
-                hideCancelButton={true}
-                submitButtonText={t.answerNow}
-                onSubmit={() => setPhase('input')}
-                enableAudio={true}
-                audioButtonLabel={t.audioInstruction}
-                audioButtonAlignment="center"
-                instructionText={session.questions?.[0]?.prompt_text || ''}
-                languageCode={languageCode}
-            >
-                <Typography sx={{ color: '#d32f2f', fontSize: '1.1rem' }}>
-                    {session.questions?.[0]?.prompt_text}
-                </Typography>
-            </GenericModal>
 
             {
                 phase === 'input' && (
