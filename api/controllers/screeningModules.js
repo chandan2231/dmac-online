@@ -10,6 +10,7 @@ import {
   startSession as startSessionBase,
   submitSession as submitSessionBase,
   getAttemptStatus as getAttemptStatusBase,
+  abandonInProgressSessions as abandonInProgressSessionsBase,
   getUserReport as getUserReportBase,
   generateReportPdf as generateReportPdfBase
 } from './modules.js'
@@ -38,6 +39,18 @@ export const getAttemptStatus = (req, res) => {
   const userId = Number(userIdRaw)
   req.user = { userId: Number.isFinite(userId) ? userId : userIdRaw }
   return getAttemptStatusBase(req, res)
+}
+
+export const abandonInProgressSessions = (req, res) => {
+  const userIdRaw =
+    req.query?.user_id ??
+    req.query?.userId ??
+    req.body?.user_id ??
+    req.body?.userId
+
+  const userId = Number(userIdRaw)
+  req.user = { userId: Number.isFinite(userId) ? userId : userIdRaw }
+  return abandonInProgressSessionsBase(req, res)
 }
 
 export const getUserReport = (req, res) => {

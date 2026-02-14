@@ -181,10 +181,11 @@ const TextToSpeech = ({ text, languageCode, iconSize = 'medium', color = 'primar
                     textTransform: 'none',
                     width: { xs: '100%', sm: 'auto' },
                     justifyContent: 'center',
+                    whiteSpace: 'nowrap',
                     padding: '6px 16px', // Slightly smaller padding
                     '& .MuiButton-startIcon': {
                         marginLeft: 0,
-                        marginRight: 8,
+                        marginRight: '10px',
                     },
                     '&:hover': {
                         transform: 'scale(1.02)',

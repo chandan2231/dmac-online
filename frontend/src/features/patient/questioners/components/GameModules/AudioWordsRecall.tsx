@@ -45,6 +45,9 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
     const [playlist, setPlaylist] = useState<string[]>([]);
     const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
+    // Allow only a single manual repeat after the initial auto-play
+    const [repeatUsed, setRepeatUsed] = useState(false);
+
     // Confirmation Modal State
     const [showConfirmation, setShowConfirmation] = useState(false);
 
@@ -103,6 +106,7 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
             setPhase('recall');
         } else {
             // Reset playlist position if restarting
+            setRepeatUsed(false);
             setCurrentTrackIndex(0);
             setPhase('playing_audio');
         }
@@ -110,6 +114,8 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
 
     const handleRepeat = () => {
         window.speechSynthesis.cancel();
+        if (repeatUsed) return;
+        setRepeatUsed(true);
         setCurrentTrackIndex(0); // Restart playlist
         setPhase('playing_audio');
     };
@@ -259,6 +265,7 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
                         <MorenButton
                             variant="outlined"
                             onClick={handleRepeat}
+                            disabled={repeatUsed}
                             sx={{
                                 borderColor: '#274765',
                                 color: '#274765',
