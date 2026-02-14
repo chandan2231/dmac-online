@@ -1,4 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { screen } from '@testing-library/dom';
+import userEvent from '@testing-library/user-event';
 import MorenButton from '../components/button';
 
 describe('MorenButton', () => {
@@ -12,7 +14,7 @@ describe('MorenButton', () => {
     const handleClick = jest.fn();
     render(<MorenButton onClick={handleClick}>Click Me</MorenButton>);
     const buttonElement = screen.getByText(/Click Me/i);
-    fireEvent.click(buttonElement);
+    userEvent.click(buttonElement);
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
 

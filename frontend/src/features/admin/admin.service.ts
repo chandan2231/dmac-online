@@ -1116,6 +1116,7 @@ const AdminService = {
   getTherapistListing,
   updateTherapistStatus,
   createTherapist,
+  updateTherapist,
   updateTherapistPassword,
   getLandingPageProductsListing,
   getConsultationsListing,

@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Divider, CircularProgress, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { Box, Typography, CircularProgress, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GenericModal from '../../../../components/modal';
 import AdminService from '../../admin.service';
-import { get } from 'lodash';
 
 interface AssessmentReportModalProps {
     isOpen: boolean;
