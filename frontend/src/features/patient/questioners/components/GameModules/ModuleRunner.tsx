@@ -225,9 +225,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     const handleDisinhibitionSqTriComplete = (answers: any[]) => {
         handleModuleSubmit({
             answers,
-            // Pass score explicitly if it's in the answers array object or let backend handle it 
-            // The component sends [{ question_id, answer_text, score }]
-            score: answers[0]?.score
+            // score removed, calculated in backend
         });
     };
 

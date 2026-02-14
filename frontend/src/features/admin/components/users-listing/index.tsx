@@ -20,7 +20,9 @@ import { IconButton, Menu, MenuItem } from '@mui/material';
 import { ListItemIcon, ListItemText } from '@mui/material';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import LockResetOutlinedIcon from '@mui/icons-material/LockResetOutlined';
+import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 import { TabHeaderLayout } from '../../../../components/tab-header';
+import AssessmentReportModal from './AssessmentReportModal';
 
 type ChangePasswordFormValues = {
   password: string;
@@ -40,6 +42,8 @@ function UsersTable() {
   const [menuUser, setMenuUser] = useState<IUserDetails | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [selectedReportUser, setSelectedReportUser] = useState<IUserDetails | null>(null);
   const { showToast } = useToast();
 
   const handleUpdateStatus = async (id: number, status: number) => {
@@ -118,6 +122,16 @@ function UsersTable() {
   const handleCloseViewModal = () => {
     setIsViewModalOpen(false);
     setSelectedUser(null);
+  };
+
+  const handleOpenReportModal = (user: IUserDetails) => {
+    setSelectedReportUser(user);
+    setIsReportModalOpen(true);
+  };
+
+  const handleCloseReportModal = () => {
+    setIsReportModalOpen(false);
+    setSelectedReportUser(null);
   };
 
   const columns: GridColDef<IUserDetails>[] = [
@@ -205,6 +219,20 @@ function UsersTable() {
             <VisibilityOutlinedIcon sx={{ fontSize: 21 }} />
           </ListItemIcon>
           <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }} />
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (menuUser) {
+              handleMenuClose();
+              handleOpenReportModal(menuUser);
+            }
+          }}
+          sx={{ py: 1, px: 1.5 }}
+        >
+          <ListItemIcon>
+            <AssessmentOutlinedIcon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText primary="View Assessment Report" primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }} />
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -562,6 +590,14 @@ function UsersTable() {
           </Box>
         )}
       </GenericModal>
+
+      {/* Assessment Report Modal */}
+      <AssessmentReportModal
+        isOpen={isReportModalOpen}
+        onClose={handleCloseReportModal}
+        userId={selectedReportUser?.id || null}
+        userName={selectedReportUser?.name || ''}
+      />
     </>
   );
 }

@@ -1061,21 +1061,55 @@ const getPatientMedicalHistory = async (patientId: number) => {
   }
 };
 
+
+const getUserAssessmentReport = async (
+  userId: number
+): Promise<{
+  success: boolean;
+  data: any | null;
+  message: string;
+}> => {
+  try {
+    const response = await HttpService.get('/modules/report', {
+      headers: {
+        userid: userId,
+      },
+    });
+
+    return {
+      success: true,
+      data: get(response, 'data', null),
+      message: 'Report fetched successfully',
+    };
+  } catch (error: unknown) {
+    const message =
+      get(error, 'response.data.message') ||
+      get(error, 'response.data.error') ||
+      'An unexpected error occurred while fetching report';
+
+    return {
+      success: false,
+      data: null,
+      message,
+    };
+  }
+};
+
 const AdminService = {
   getProductsListing,
-  getLandingPageProductsListing,
-  createProduct,
-  updateProduct, // ✅ export update service
+  updateProduct,
   updateProductStatus,
+  createProduct,
   updateProductCountryAmounts,
   getProductFeatureKeys,
   createProductFeatureKey,
   deleteProductFeatureKey,
   getUsersListing,
   updateUserStatus,
-  getTransactionsListing,
   changeUserPassword,
+  getTransactionsListing,
   getConsultantsListing,
+  updateConsultant,
   updateConsultantStatus,
   createConsultant,
   updateConsultantPassword,
@@ -1083,8 +1117,7 @@ const AdminService = {
   updateTherapistStatus,
   createTherapist,
   updateTherapistPassword,
-  updateConsultant,
-  updateTherapist,
+  getLandingPageProductsListing,
   getConsultationsListing,
   getExpertReviews,
   getTherapistReviews,
@@ -1096,6 +1129,7 @@ const AdminService = {
   getPatientDocuments,
   getPatientAssessmentStatus,
   getPatientMedicalHistory,
+  getUserAssessmentReport,
 };
 
 export default AdminService;
