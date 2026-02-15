@@ -184,42 +184,51 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     setIdleModalOpen(false);
 
     if (!canRestart) {
-      try {
-        await ScreeningGameApi.abandonInProgressSessions(userId);
-      } catch (e) {
-        console.error('[Screening ModuleRunner] Failed to abandon sessions after idle (final attempt)', e);
-      } finally {
-        localStorage.removeItem(PROGRESS_KEY);
-        navigate(ROUTES.HOME);
-      }
+      // Do not block navigation on network/API calls.
+      void ScreeningGameApi.abandonInProgressSessions(userId).catch(e => {
+        console.error(
+          '[Screening ModuleRunner] Failed to abandon sessions after idle (final attempt)',
+          e
+        );
+      });
+
+      localStorage.removeItem(PROGRESS_KEY);
+      setLoading(false);
+      navigate(ROUTES.HOME);
       return;
     }
 
-    setLoading(true);
+    // Reset local state immediately so UI doesn't get stuck.
+    setLoading(false);
     setError(null);
-    try {
-      await ScreeningGameApi.abandonInProgressSessions(userId);
-      localStorage.removeItem(PROGRESS_KEY);
 
-      // Reset idle timer immediately on Restart
-      setActiveNow();
-      // Keep forcing "start from beginning" until Module 1 is completed.
-      localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
-      // We are explicitly creating a new Module 1 session here.
-      localStorage.removeItem(FORCE_NEW_SESSION_KEY);
+    // Reset idle timer immediately on Restart
+    setActiveNow();
 
-      const firstModuleId = modules[0]?.id ?? 1;
-      localStorage.setItem(PROGRESS_KEY, String(firstModuleId));
-      const newSession = await ScreeningGameApi.startSession(firstModuleId, userId, languageCode, false);
-      setSession(newSession);
-      setCurrentModuleIndex(0);
-      await queryClient.invalidateQueries({ queryKey: ['screening-test-attempts', userId, languageCode] });
-    } catch (e) {
+    // Restart should take the user back to the beginning of the screening assessment flow
+    // (same link as after email verification).
+    localStorage.removeItem(PROGRESS_KEY);
+    localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+    localStorage.removeItem(FORCE_NEW_SESSION_KEY);
+
+    // Reset screening flow state (Disclaimer -> FalsePositive -> PreTest -> Questions -> Modules)
+    localStorage.removeItem('dmac_screening_flow_isQuestionerClosed');
+    localStorage.removeItem('dmac_screening_flow_isDisclaimerAccepted');
+    localStorage.removeItem('dmac_screening_flow_falsePositive');
+    localStorage.removeItem('dmac_screening_flow_isPreTestCompleted');
+
+    // Best-effort cleanup: do not block redirect.
+    void ScreeningGameApi.abandonInProgressSessions(userId).catch(e => {
       console.error('[Screening ModuleRunner] Failed to restart after idle', e);
-      setError(t.sessionError);
-    } finally {
-      setLoading(false);
-    }
+    });
+    void queryClient.invalidateQueries({
+      queryKey: ['screening-test-attempts', userId, languageCode],
+    });
+
+    navigate(ROUTES.SCREENING_QUESTIONERS, {
+      replace: true,
+      state: { restartFromIdle: Date.now() },
+    });
   };
 
   const handleModuleSubmit = async (payload: GenericAnswer) => {

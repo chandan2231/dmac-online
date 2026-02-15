@@ -1,5 +1,6 @@
 import * as Yup from 'yup';
 import { get } from 'lodash';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -14,7 +15,15 @@ import {
   TableCell,
   TableContainer,
   TableRow,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
 } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import CloseIcon from '@mui/icons-material/Close';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '../../../../providers/toast-provider/index.tsx';
 import { useForm, Controller } from 'react-hook-form';
@@ -40,6 +49,7 @@ import Grid from '@mui/material/GridLegacy';
 
 type FormValues = {
   name: string;
+  age: number;
   email: string;
   password: string;
   confirmPassword: string;
@@ -62,6 +72,12 @@ const optionShape = Yup.object({
 
 const schema = Yup.object({
   name: Yup.string().required('Name is required'),
+  age: Yup.number()
+    .typeError('Age must be a number')
+    .integer('Age must be a whole number')
+    .min(10, 'Age must be between 10 and 110')
+    .max(110, 'Age must be between 10 and 110')
+    .required('Age is required'),
   email: Yup.string().email('Invalid email').required('Email is required'),
   password: Yup.string()
     .min(6, 'Password must be at least 6 characters')
@@ -72,7 +88,7 @@ const schema = Yup.object({
   mobile: Yup.string()
     .matches(/^\d{10}$/, 'Mobile number must be 10 digits')
     .required('Mobile number is required'),
-  area: Yup.string().required('Area is required'),
+  area: Yup.string().required('Address is required'),
   zipCode: Yup.string()
     .matches(/^\d{5,6}$/, 'Zip Code must be 5 or 6 digits')
     .required('Zip Code is required'),
@@ -98,7 +114,21 @@ const PatientRegister = () => {
   const { showToast } = useToast();
   const { loading } = useSelector((state: RootState) => state.auth);
 
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [successModalMessage, setSuccessModalMessage] = useState('');
+
   console.log('Selected Product:', state);
+
+  const renderYesNoValue = (rawValue: unknown) => {
+    const v = String(rawValue ?? '').trim().toLowerCase();
+    if (v === 'yes' || v === 'true' || v === '1') {
+      return <CheckCircleIcon aria-label="Yes" sx={{ color: '#2e7d32' }} />;
+    }
+    if (v === 'no' || v === 'false' || v === '0') {
+      return <CancelIcon aria-label="No" sx={{ color: '#d32f2f' }} />;
+    }
+    return String(rawValue ?? '');
+  };
 
   const {
     register,
@@ -110,6 +140,7 @@ const PatientRegister = () => {
   } = useForm<FormValues>({
     resolver: yupResolver(schema),
     defaultValues: {
+      age: undefined as unknown as number,
       language: { label: '', value: '' },
       country: { label: '', value: '' },
       state: { label: '', value: '' },
@@ -122,9 +153,18 @@ const PatientRegister = () => {
   const selectedCountry = watch('country');
   const selectedState = watch('state');
 
-  const handleNavigation = (path: string) => {
-    navigate(path);
-  };
+  const closeSuccessModal = useCallback(() => {
+    setSuccessModalOpen(false);
+    navigate(ROUTES.HOME);
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!successModalOpen) return;
+    const t = window.setTimeout(() => {
+      closeSuccessModal();
+    }, 10_000);
+    return () => window.clearTimeout(t);
+  }, [successModalOpen, closeSuccessModal]);
 
   const onSubmit = async (data: FormValues) => {
     const { language, country, state: stateDetails } = data;
@@ -167,8 +207,8 @@ const PatientRegister = () => {
       return showToast(message, 'error');
     }
 
-    showToast(message, 'success');
-    handleNavigation(ROUTES.HOME);
+    setSuccessModalMessage(message || 'Registration completed successfully.');
+    setSuccessModalOpen(true);
   };
 
   if (loading) {
@@ -177,6 +217,48 @@ const PatientRegister = () => {
 
   return (
     <Box>
+      <Dialog
+        open={successModalOpen}
+        onClose={closeSuccessModal}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            fontSize: '18px',
+            fontWeight: 700,
+          }}
+        >
+          Verify Your Email
+          <IconButton aria-label="Close" onClick={closeSuccessModal}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+            <Typography
+              sx={{
+                whiteSpace: 'pre-line',
+                fontSize: '18px',
+                fontWeight: 700,
+              }}
+            >
+            {successModalMessage}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            This message will close automatically in 10 seconds.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <MorenButton variant="contained" onClick={closeSuccessModal}>
+            Close
+          </MorenButton>
+        </DialogActions>
+      </Dialog>
+
       {/* Heading */}
       <Box textAlign="center" mb={4} mt={4}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
@@ -199,7 +281,7 @@ const PatientRegister = () => {
             minHeight={'100%'}
           >
             <Box display="flex" flexDirection="column" gap={2}>
-              <Typography variant="h5" fontWeight="bold">
+              <Typography variant="h6" fontWeight="bold">
                 {state ? get(state, ['product_name'], '') : ''}
               </Typography>
 
@@ -244,7 +326,7 @@ const PatientRegister = () => {
                             <TableCell sx={{ fontWeight: 700 }}>
                               {feature.title}
                             </TableCell>
-                            <TableCell>{feature.value}</TableCell>
+                            <TableCell>{renderYesNoValue(feature.value)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -417,6 +499,16 @@ const PatientRegister = () => {
               </Grid>
 
               <ModernInput
+                label="Age"
+                placeholder="Enter your age"
+                type="number"
+                inputProps={{ min: 10, max: 110, step: 1 }}
+                {...register('age', { valueAsNumber: true })}
+                error={!!errors.age}
+                helperText={errors.age?.message}
+              />
+
+              <ModernInput
                 label="Email"
                 placeholder="Enter your email"
                 type="email"
@@ -484,8 +576,8 @@ const PatientRegister = () => {
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                   <ModernInput
-                    label="Area"
-                    placeholder="Enter your area"
+                    label="Address"
+                    placeholder="Enter your address"
                     {...register('area')}
                     error={!!errors.area}
                     helperText={errors.area?.message}
