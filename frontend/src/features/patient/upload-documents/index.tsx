@@ -99,11 +99,10 @@ const UploadDocuments = () => {
     assessmentStatus.sat &&
     assessmentStatus.dat &&
     assessmentStatus.adt &&
-    assessmentStatus.disclaimer &&
     assessmentStatus.consent;
 
   return (
-    <Box sx={{ p: 3, width: '100%', height: '100%', overflowY: 'auto' }}>
+    <Box sx={{ p: 3, width: '100%' }}>
       <TabHeaderLayout
         leftNode={
           <Box sx={{ display: 'flex', flex: 1, gap: 2, alignItems: 'center' }}>
