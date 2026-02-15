@@ -50,9 +50,9 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
     const [roundScores, setRoundScores] = useState<number[]>([]);
 
     // Refs for drop zones to support mobile touch detection
-    const poolRef = useRef<HTMLDivElement>(null);
-    const group1Ref = useRef<HTMLDivElement>(null);
-    const group2Ref = useRef<HTMLDivElement>(null);
+    const poolRef = useRef<HTMLDivElement | null>(null);
+    const group1Ref = useRef<HTMLDivElement | null>(null);
+    const group2Ref = useRef<HTMLDivElement | null>(null);
     const touchDraggedItemRef = useRef<DraggableItem | null>(null);
 
     const questions = session.questions || [];
@@ -132,7 +132,7 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
         const x = touch.clientX;
         const y = touch.clientY;
 
-        const isInside = (ref: React.RefObject<HTMLDivElement>) => {
+        const isInside = (ref: React.RefObject<HTMLDivElement | null>) => {
             if (!ref.current) return false;
             const rect = ref.current.getBoundingClientRect();
             return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
