@@ -8,7 +8,7 @@ import PreTest from './components/PreTest';
 import Questions from './components/Questioners';
 import ModuleRunner from './components/GameModules/ModuleRunner';
 import GenericModal from '../../../components/modal';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../router/router';
 import { getScreeningUserId, isScreeningUserVerified } from './storage';
 import { useScreeningTestAttempts } from './hooks/useScreeningTestAttempts';
@@ -21,6 +21,7 @@ const loadState = (key: string) => {
 
 const ScreeningQuestioners = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const userId = getScreeningUserId();
   const isVerified = isScreeningUserVerified();
@@ -32,6 +33,22 @@ const ScreeningQuestioners = () => {
   const [isPreTestCompleted, setIsPreTestCompleted] = useState(() => loadState('isPreTestCompleted'));
 
   const [showExitWarning, setShowExitWarning] = useState(false);
+
+  const [lastHandledRestartFromIdle, setLastHandledRestartFromIdle] = useState<number | null>(null);
+
+  useEffect(() => {
+    const state = location.state as { restartFromIdle?: number } | null;
+    const restartTs = state?.restartFromIdle;
+    if (!restartTs) return;
+    if (lastHandledRestartFromIdle === restartTs) return;
+
+    setLastHandledRestartFromIdle(restartTs);
+    setShowExitWarning(false);
+    setIsQuestionerClosed(false);
+    setIsDisclaimerAccepted(false);
+    setFalsePositive(false);
+    setIsPreTestCompleted(false);
+  }, [location.state, lastHandledRestartFromIdle]);
 
   const { data: attemptStatus, isLoading: isLoadingAttempts } = useScreeningTestAttempts(
     isVerified ? userId : 0,

@@ -225,7 +225,10 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
       queryKey: ['screening-test-attempts', userId, languageCode],
     });
 
-    navigate(ROUTES.SCREENING_QUESTIONERS, { replace: true });
+    navigate(ROUTES.SCREENING_QUESTIONERS, {
+      replace: true,
+      state: { restartFromIdle: Date.now() },
+    });
   };
 
   const handleModuleSubmit = async (payload: GenericAnswer) => {

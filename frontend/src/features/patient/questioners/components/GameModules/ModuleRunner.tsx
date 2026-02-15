@@ -247,7 +247,10 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         });
         void queryClient.invalidateQueries({ queryKey: ['test-attempts', languageCode] });
 
-        navigate(ROUTES.QUESTIONERS, { replace: true });
+        navigate(ROUTES.QUESTIONERS, {
+            replace: true,
+            state: { restartFromIdle: Date.now() },
+        });
     };
 
     const handleModuleSubmit = async (payload: GenericAnswer) => {
