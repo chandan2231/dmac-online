@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom';
 import { get } from 'lodash';
 import Grid from '@mui/material/GridLegacy';
 import { ROUTES } from '../../../../router/router';
+import { store } from '../../../../store';
 
 const PatientPaymentSuccess = () => {
   const location = useLocation();
@@ -94,25 +95,43 @@ const PatientPaymentSuccess = () => {
     if (!didAutoReload) return;
     if (!paymentState) return;
 
-    const timeoutId = window.setTimeout(() => {
+    // If payment happened after login -> Consent.
+    // If payment happened before login -> Patient Login.
+    // We poll briefly to allow redux-persist rehydration after the reload.
+    const startedAt = Date.now();
+    const MAX_WAIT_MS = 3000;
+
+    const readIsLoggedIn = () => {
+      try {
+        const state = store.getState() as any;
+        return Boolean(get(state, ['auth', 'token'])) || Boolean(get(state, ['auth', 'isAuthenticated']));
+      } catch {
+        return false;
+      }
+    };
+
+    const id = window.setInterval(() => {
+      const isLoggedIn = readIsLoggedIn();
+      const timedOut = Date.now() - startedAt > MAX_WAIT_MS;
+      if (!isLoggedIn && !timedOut) return;
+
+      window.clearInterval(id);
       try {
         sessionStorage.removeItem(PAYMENT_SUCCESS_RELOADED_KEY);
       } catch {
         // ignore
       }
-      window.location.assign(ROUTES.CONSENT);
-    }, 800);
 
-    return () => window.clearTimeout(timeoutId);
+      window.location.assign(isLoggedIn ? ROUTES.CONSENT : ROUTES.PATIENT_LOGIN);
+    }, 200);
+
+    return () => window.clearInterval(id);
   }, [didAutoReload, paymentState]);
 
-  const handleGoToConsent = () => {
-    try {
-      sessionStorage.setItem(PAYMENT_SUCCESS_RELOADED_KEY, 'true');
-    } catch {
-      // ignore
-    }
-    window.location.assign(ROUTES.CONSENT);
+  const handleContinue = () => {
+    const state = store.getState() as any;
+    const isLoggedIn = Boolean(get(state, ['auth', 'token'])) || Boolean(get(state, ['auth', 'isAuthenticated']));
+    window.location.assign(isLoggedIn ? ROUTES.CONSENT : ROUTES.PATIENT_LOGIN);
   };
 
   return (
@@ -205,15 +224,15 @@ const PatientPaymentSuccess = () => {
             >
               {!didAutoReload
                 ? 'This page will reload after '
-                : 'Redirecting to Consent page in '}
+                : 'Redirecting in '}
               <Box component="span" sx={{ fontWeight: 800, color: 'primary.main' }}>
                 {secondsLeft}s
               </Box>
               {' '}or click the button to reload manually.
             </Typography>
 
-            <Button size="small" variant="text" onClick={handleGoToConsent}>
-              Go to Consent
+            <Button size="small" variant="text" onClick={handleContinue}>
+              Continue
             </Button>
           </Stack>
         </Box>

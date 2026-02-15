@@ -4,7 +4,7 @@ import { SnackbarProvider, useSnackbar, type VariantType } from 'notistack';
 import { ThemedSnackbar } from './components/ThemedSnackbar';
 
 type ToastContextType = {
-  showToast: (message: string, variant?: VariantType) => void;
+  showToast: (message: string, variant?: VariantType, autoHideDurationMs?: number) => void;
 };
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -22,8 +22,17 @@ const InnerToastProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const { enqueueSnackbar } = useSnackbar();
 
-  const showToast = (message: string, variant: VariantType = 'default') => {
-    const autoHideDuration = variant === 'error' ? 8000 : 4000;
+  const showToast = (
+    message: string,
+    variant: VariantType = 'default',
+    autoHideDurationMs?: number
+  ) => {
+    const autoHideDuration =
+      typeof autoHideDurationMs === 'number'
+        ? autoHideDurationMs
+        : variant === 'error'
+          ? 8000
+          : 4000;
     enqueueSnackbar(message, { variant, autoHideDuration });
   };
 

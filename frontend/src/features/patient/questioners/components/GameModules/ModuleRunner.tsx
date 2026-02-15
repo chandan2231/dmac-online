@@ -230,17 +230,20 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
             // Reset idle timer immediately on Restart
             setActiveNow();
-            // Keep forcing "start from beginning" until Module 1 is completed.
+
+            // Restart should take the user back to the beginning of the assessment flow.
+            // We force a new attempt on the PreTest screen (ignore backend resume).
             localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
-            // We are explicitly creating a new Module 1 session here.
             localStorage.removeItem(FORCE_NEW_SESSION_KEY);
 
-            const firstModuleId = modules[0]?.id ?? 1;
-            localStorage.setItem(PROGRESS_KEY, String(firstModuleId));
-            const newSession = await GameApi.startSession(firstModuleId, userId, languageCode, false);
-            setSession(newSession);
-            setCurrentModuleIndex(0);
+            // Reset the "Questioners" flow state so it starts from Disclaimer (same entry path).
+            localStorage.removeItem('dmac_flow_isQuestionerClosed');
+            localStorage.removeItem('dmac_flow_isDisclaimerAccepted');
+            localStorage.removeItem('dmac_flow_falsePositive');
+            localStorage.removeItem('dmac_flow_isPreTestCompleted');
+
             await queryClient.invalidateQueries({ queryKey: ['test-attempts', languageCode] });
+            navigate(ROUTES.QUESTIONERS, { replace: true });
         } catch (e) {
             console.error('[ModuleRunner] Failed to restart after idle', e);
             setError(t.sessionError);

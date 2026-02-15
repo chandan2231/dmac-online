@@ -1,8 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import PatientService from '../../../features/patient/patient.service';
-import { Box, Accordion, AccordionSummary, AccordionDetails, Typography, TextField, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Button, List, ListItem, ListItemText, Stack, Divider } from '@mui/material';
+import {
+  Box,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography,
+  TextField,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  Stack,
+  Divider,
+  Checkbox,
+  FormControlLabel,
+} from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FORM_1_TITLE, RM_DISCLAIMER_BLOCKS } from './rmDisclaimerPrivacy';
@@ -10,6 +30,7 @@ import {
   FORM_2_TITLE,
   RM_RESEARCH_CONSENT_BLOCKS,
 } from './rmResearchConsentAuthorization';
+import { useToast } from '../../../providers/toast-provider';
 const VISIBLE_FORMS_COUNT = 2;
 
 const forms = [
@@ -23,9 +44,12 @@ export default function ConsentPage() {
   const [submitting, setSubmitting] = useState<boolean[]>([false, false, false]);
   const [expandedIndex, setExpandedIndex] = useState<number>(0);
   const [showModal, setShowModal] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState<boolean[]>([false, false, false]);
   const location = useLocation();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const user = useSelector((state: RootState) => state.auth.user);
+  const showTermsAck = user?.role === 'USER';
 
   // Fetch signatures on mount
   useEffect(() => {
@@ -87,6 +111,17 @@ export default function ConsentPage() {
       return;
     }
 
+    if (showTermsAck && !termsAccepted[idx]) {
+      // Block DB submission until checkbox is checked.
+      // Show a toast message for at least 10 seconds.
+      showToast(
+        'Please read the terms and conditions carefully and acknowledge them by ticking the checkbox before submitting your electronic signature.',
+        'warning',
+        10_000
+      );
+      return;
+    }
+
     setSubmitting(prev => {
       const next = [...prev];
       next[idx] = true;
@@ -114,6 +149,16 @@ export default function ConsentPage() {
       setSavedSignatures(nextSaved);
       // keep draft in sync after successful save
       setDraftSignatures(nextSaved);
+
+      const filledAfterSave = nextSaved
+        .slice(0, VISIBLE_FORMS_COUNT)
+        .every(sig => !!(sig ?? '').trim());
+
+      // After the final consent is submitted, redirect to SDMAC.
+      if (idx === VISIBLE_FORMS_COUNT - 1 && filledAfterSave) {
+        navigate('/questioners', { replace: true });
+        return;
+      }
 
       // Auto-open the next form in sequence
       if (idx < forms.length - 1) {
@@ -254,6 +299,31 @@ export default function ConsentPage() {
             ) : idx === 1 ? (
               renderConsentDocument(FORM_2_TITLE, RM_RESEARCH_CONSENT_BLOCKS)
             ) : null}
+
+            {showTermsAck ? (
+              <>
+                <FormControlLabel
+                  sx={{ mt: 1, mb: 1 }}
+                  control={
+                    <Checkbox
+                      checked={!!termsAccepted[idx]}
+                      onChange={e => {
+                        const checked = e.target.checked;
+                        setTermsAccepted(prev => {
+                          const next = [...prev];
+                          next[idx] = checked;
+                          return next;
+                        });
+                      }}
+                    />
+                  }
+                  label={
+                    'I confirm that I have read the terms and conditions carefully before providing my electronic signature.'
+                  }
+                />
+              </>
+            ) : null}
+
             <TextField
               label="Electronic Signature"
               value={draftSignatures[idx]}
