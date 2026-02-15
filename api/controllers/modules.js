@@ -496,7 +496,7 @@ export const submitSession = async (req, res) => {
           const items = await fetchItems(ans.question_id, 'en')
 
           // Filter items to match frontend (exclude L, R, 11)
-          const validItems = items.filter(i => !['L', 'R', '11','5'].includes(i.image_key))
+          const validItems = items.filter(i => !['L', 'R', '11', '5'].includes(i.image_key))
 
           // Explicitly sort by order (DB should order by item_order, but ensure safety)
           validItems.sort((a, b) => (a.item_order || 0) - (b.item_order || 0))
@@ -579,29 +579,33 @@ export const submitSession = async (req, res) => {
               itemScore = 0.5
             }
           }
-        } else if (module.code === 'LETTER_DISINHIBITION') {
+        } else if (module.code === 'DISINHIBITION_SQ_TRI' || module.code === 'LETTER_DISINHIBITION') {
           try {
-            // Parse comma-separated "CORRECT,WRONG,..."
-            const results = (ans.answer_text || '').split(',')
-            let calculatedScore = 0
+            // Parse JSON array from answer_text
+            // Format: [{ trial: 1, result: 'CORRECT'/'WRONG', ... }]
+            const trials = JSON.parse(ans.answer_text || '[]');
+            let calculatedScore = 0;
 
-            results.forEach(status => {
-              const s = status.trim()
-              if (s === 'CORRECT') {
-                calculatedScore += 0.25
-              } else if (s === 'WRONG') {
-                calculatedScore -= 0.25
-              }
-            })
+            if (Array.isArray(trials)) {
+              trials.forEach(t => {
+                if (t.result === 'CORRECT') {
+                  calculatedScore += 0.25;
+                } else if (t.result === 'WRONG') {
+                  calculatedScore -= 0.25;
+                }
+              });
+            }
 
-            if (calculatedScore < 0) calculatedScore = 0
-            if (calculatedScore > 5) calculatedScore = 5
+            // Clamp score between 0 and 5
+            if (calculatedScore < 0) calculatedScore = 0;
+            if (calculatedScore > 5) calculatedScore = 5;
 
-            itemScore = calculatedScore
+            itemScore = calculatedScore;
+            maxScore = 5;
 
           } catch (e) {
-            console.error('Error parsing letter disinhibition logs:', e)
-            itemScore = 0
+            console.error(`Error parsing ${module.code} logs:`, e);
+            itemScore = 0;
           }
         } else {
 
@@ -645,7 +649,7 @@ export const submitSession = async (req, res) => {
             const correctCount = calculateKeywordScore(ans.answer_text, items, { uniqueWords: true })
             itemScore = Math.min(correctCount * 0.5, 5.0)
             maxScore = 5
-          } else if (module.code === 'AUDIO_WORDS' ) {
+          } else if (module.code === 'AUDIO_WORDS') {
             const language_code = ans.language_code || body.language_code || 'en' // fallback
             const items = await fetchItems(ans.question_id, language_code)
             // Use uniqueWords mode to count multiple different words from the list
@@ -835,50 +839,51 @@ const calculateGameScores = async (user_id) => {
   }
 
   // Define Categories
+  // Define Categories
   const categoriesDefinition = [
     {
-      name: 'Immediate Visual Recall',
-      ids: [1, 2, 10]
-    },
-    {
-      name: 'Immediate Auditory Recall', // (General)
-      ids: [9, 5, 3, 11]
-    },
-    {
-      name: 'Delayed Recall',
-      ids: [6, 17, 18, 14]
-    },
-    {
-      name: 'Disinhibition',
-      ids: [20, 16]
-    },
-    {
-      name: 'Attention',
+      name: 'Attention & Concentration', // Cog. Test-1
       ids: [12, 20, 4]
     },
     {
-      name: 'Executive Function',
-      ids: [4, 7, 16]
-    },
-    {
-      name: 'Semantic / Language',
-      ids: [13, 14, 8]
-    },
-    {
-      name: 'Number Recall',
-      ids: [21, 9, 12]
-    },
-    {
-      name: 'Working Memory',
-      ids: [4, 10, 12]
-    },
-    {
-      name: 'Processing Speed / Reaction Time',
+      name: 'Processing Speed / Reaction Time', // Cog. Test-2
       ids: [4, 13, 7]
     },
     {
-      name: 'Motor Planning & Coordination',
-      ids: [14, 4, 16]
+      name: 'Executive Function', // Cog. Test-3
+      ids: [4, 7, 16]
+    },
+    {
+      name: 'Working Memory', // Cog. Test-4
+      ids: [4, 12, 10]
+    },
+    {
+      name: 'Delayed Recall Memory', // Cog. Test-5
+      ids: [17, 18, 19, 14]
+    },
+    {
+      name: 'Visual Memory', // Cog. Test-6
+      ids: [1, 2]
+    },
+    {
+      name: 'Language & Naming', // Cog. Test-7
+      ids: [13, 15, 8]
+    },
+    {
+      name: 'Immediate Visuospatial & Visual Attention', // Cog. Test-8
+      ids: [21, 2, 10]
+    },
+    {
+      name: 'Motor Planning & Coordination', // Cog. Test-9
+      ids: [15, 4, 16]
+    },
+    {
+      name: 'Disinhibition Behavioral / Emotional Regulation', // Cog. Test-10
+      ids: [16, 20]
+    },
+    {
+      name: 'Immediate Auditory Memory', // Cog. Test-11
+      ids: [5, 9, 3, 11]
     }
   ]
 
@@ -933,7 +938,10 @@ const calculateGameScores = async (user_id) => {
 }
 
 export const getUserReport = async (req, res) => {
-  const user_id = req.user?.userId;
+  // Check header for admin override, else use authenticated user
+  const headerUserId = req.headers['userid']
+  const user_id = headerUserId ? parseInt(headerUserId) : req.user?.userId
+
   if (!user_id) return res.status(401).json({ error: 'Unauthorized' });
 
   try {

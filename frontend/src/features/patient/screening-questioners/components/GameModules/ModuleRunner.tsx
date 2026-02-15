@@ -301,8 +301,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
   const handleDisinhibitionSqTriComplete = (answers: AnswerWithScore[]) => {
     handleModuleSubmit({
-      answers,
-      score: answers[0]?.score
+      answers
     });
   };
 
@@ -371,96 +370,96 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
   const moduleCode = session.module.code;
 
-//   const handleDevSkip = () => {
-//     if (!session) return;
-//     const code = session.module.code;
+  //   const handleDevSkip = () => {
+  //     if (!session) return;
+  //     const code = session.module.code;
 
-//     if (code === 'IMAGE_FLASH' || code === 'VISUAL_PICTURE_RECALL') {
-//       handleImageFlashComplete('skipped');
-//     } else if (code === 'VISUAL_SPATIAL') {
-//       const rounds = session.questions || [];
-//       const dummyAnswers = rounds.map(round => ({
-//         question_id: round.question_id,
-//         selected_option_key: round.options?.[0]?.option_key || 'skipped_option'
-//       }));
-//       handleVisualSpatialComplete(dummyAnswers);
-//     } else if (code === 'AUDIO_STORY' || code === 'AUDIO_STORY_2' || code === 'AUDIO_STORY_1_RECALL' || code === 'AUDIO_STORY_2_RECALL') {
-//       const stories = session.questions || [];
-//       const dummyAnswers = stories.map(story => ({
-//         question_id: story.question_id,
-//         answer_text: 'skipped via dev button'
-//       }));
-//       handleAudioStoryComplete(dummyAnswers);
-//     } else if (code === 'AUDIO_WORDS' || code === 'AUDIO_WORDS_RECALL') {
-//       const questions = session.questions || [];
-//       const dummyAnswers = questions.map(q => ({
-//         question_id: q.question_id,
-//         answer_text: 'skipped via dev button',
-//         language_code: languageCode
-//       }));
-//       handleAudioWordsComplete(dummyAnswers);
-//     } else if (code === 'CONNECT_DOTS') {
-//       handleConnectDotsComplete({
-//         question_id: session.questions?.[0]?.question_id,
-//         answer_text: 'L,5,M,6,N,7,O,8,P,9,Q,10,R,11',
-//         time_taken: 10
-//       });
-//     } else if (code === 'EXECUTIVE' || code === 'SEMANTIC') {
-//       const questions = session.questions || [];
-//       const dummyAnswers = questions.map(q => ({
-//         question_id: q.question_id,
-//         answer_text: 'skipped via dev button',
-//         language_code: languageCode
-//       }));
-//       handleExecutiveComplete(dummyAnswers);
-//     } else if (code === 'NUMBER_RECALL' || code === 'VISUAL_NUMBER_RECALL') {
-//       const questions = session.questions || [];
-//       const dummyAnswers = questions.map(q => ({
-//         question_id: q.question_id,
-//         answer_text: '123'
-//       }));
-//       handleNumberRecallComplete(dummyAnswers);
-//     } else if (code === 'REVERSE_NUMBER_RECALL') {
-//       const questions = session.questions || [];
-//       const dummyAnswers = questions.map(q => ({
-//         question_id: q.question_id,
-//         answer_text: '321'
-//       }));
-//       handleNumberRecallComplete(dummyAnswers);
-//     } else if (code === 'COLOR_RECALL') {
-//       const dummyAnswers = [{
-//         question_id: session.questions?.[0]?.question_id,
-//         answer_text: 'red, blue, green',
-//         language_code: languageCode
-//       }];
-//       handleNumberRecallComplete(dummyAnswers);
-//     } else if (code === 'DRAWING_RECALL') {
-//       handleDrawingRecallComplete({
-//         question_id: session.questions?.[0]?.question_id,
-//         answer_text: JSON.stringify([]),
-//         canvas_data: 'skipped',
-//         language_code: languageCode
-//       });
-//     } else if (code === 'GROUP_MATCHING') {
-//       const dummyAnswers = (session.questions || []).map(q => ({
-//         question_id: q.question_id,
-//         answer_text: 'Skipped - Score 0'
-//       }));
-//       handleGroupMatchingComplete(dummyAnswers);
-//     } else if (code === 'DISINHIBITION_SQ_TRI') {
-//       handleDisinhibitionSqTriComplete([{
-//         question_id: session.questions?.[0]?.question_id,
-//         answer_text: 'Skipped - Score 0',
-//         score: 0
-//       }]);
-//     } else if (code === 'LETTER_DISINHIBITION') {
-//       handleLetterDisinhibitionComplete([{
-//         question_id: session.questions?.[0]?.question_id,
-//         answer_text: 'Skipped - Score 0',
-//         score: 0
-//       }]);
-//     }
-//   };
+  //     if (code === 'IMAGE_FLASH' || code === 'VISUAL_PICTURE_RECALL') {
+  //       handleImageFlashComplete('skipped');
+  //     } else if (code === 'VISUAL_SPATIAL') {
+  //       const rounds = session.questions || [];
+  //       const dummyAnswers = rounds.map(round => ({
+  //         question_id: round.question_id,
+  //         selected_option_key: round.options?.[0]?.option_key || 'skipped_option'
+  //       }));
+  //       handleVisualSpatialComplete(dummyAnswers);
+  //     } else if (code === 'AUDIO_STORY' || code === 'AUDIO_STORY_2' || code === 'AUDIO_STORY_1_RECALL' || code === 'AUDIO_STORY_2_RECALL') {
+  //       const stories = session.questions || [];
+  //       const dummyAnswers = stories.map(story => ({
+  //         question_id: story.question_id,
+  //         answer_text: 'skipped via dev button'
+  //       }));
+  //       handleAudioStoryComplete(dummyAnswers);
+  //     } else if (code === 'AUDIO_WORDS' || code === 'AUDIO_WORDS_RECALL') {
+  //       const questions = session.questions || [];
+  //       const dummyAnswers = questions.map(q => ({
+  //         question_id: q.question_id,
+  //         answer_text: 'skipped via dev button',
+  //         language_code: languageCode
+  //       }));
+  //       handleAudioWordsComplete(dummyAnswers);
+  //     } else if (code === 'CONNECT_DOTS') {
+  //       handleConnectDotsComplete({
+  //         question_id: session.questions?.[0]?.question_id,
+  //         answer_text: 'L,5,M,6,N,7,O,8,P,9,Q,10,R,11',
+  //         time_taken: 10
+  //       });
+  //     } else if (code === 'EXECUTIVE' || code === 'SEMANTIC') {
+  //       const questions = session.questions || [];
+  //       const dummyAnswers = questions.map(q => ({
+  //         question_id: q.question_id,
+  //         answer_text: 'skipped via dev button',
+  //         language_code: languageCode
+  //       }));
+  //       handleExecutiveComplete(dummyAnswers);
+  //     } else if (code === 'NUMBER_RECALL' || code === 'VISUAL_NUMBER_RECALL') {
+  //       const questions = session.questions || [];
+  //       const dummyAnswers = questions.map(q => ({
+  //         question_id: q.question_id,
+  //         answer_text: '123'
+  //       }));
+  //       handleNumberRecallComplete(dummyAnswers);
+  //     } else if (code === 'REVERSE_NUMBER_RECALL') {
+  //       const questions = session.questions || [];
+  //       const dummyAnswers = questions.map(q => ({
+  //         question_id: q.question_id,
+  //         answer_text: '321'
+  //       }));
+  //       handleNumberRecallComplete(dummyAnswers);
+  //     } else if (code === 'COLOR_RECALL') {
+  //       const dummyAnswers = [{
+  //         question_id: session.questions?.[0]?.question_id,
+  //         answer_text: 'red, blue, green',
+  //         language_code: languageCode
+  //       }];
+  //       handleNumberRecallComplete(dummyAnswers);
+  //     } else if (code === 'DRAWING_RECALL') {
+  //       handleDrawingRecallComplete({
+  //         question_id: session.questions?.[0]?.question_id,
+  //         answer_text: JSON.stringify([]),
+  //         canvas_data: 'skipped',
+  //         language_code: languageCode
+  //       });
+  //     } else if (code === 'GROUP_MATCHING') {
+  //       const dummyAnswers = (session.questions || []).map(q => ({
+  //         question_id: q.question_id,
+  //         answer_text: 'Skipped - Score 0'
+  //       }));
+  //       handleGroupMatchingComplete(dummyAnswers);
+  //     } else if (code === 'DISINHIBITION_SQ_TRI') {
+  //       handleDisinhibitionSqTriComplete([{
+  //         question_id: session.questions?.[0]?.question_id,
+  //         answer_text: 'Skipped - Score 0',
+  //         score: 0
+  //       }]);
+  //     } else if (code === 'LETTER_DISINHIBITION') {
+  //       handleLetterDisinhibitionComplete([{
+  //         question_id: session.questions?.[0]?.question_id,
+  //         answer_text: 'Skipped - Score 0',
+  //         score: 0
+  //       }]);
+  //     }
+  //   };
 
   const handleDownloadPdf = async () => {
     try {
