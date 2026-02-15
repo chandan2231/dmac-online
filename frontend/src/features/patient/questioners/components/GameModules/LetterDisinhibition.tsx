@@ -15,31 +15,20 @@ const TRIAL_DURATION_MS = 2000;
 const TARGET_LETTER = 'V';
 const DISTRACTORS = ['>', '<', '^', 'A', 'U', 'W', 'Y'];
 
-const SCORING = {
-    CORRECT: 0.25,
-    WRONG: -0.25, // Or just 0 if we don't want strict penalty, but user said -0.25
-    MISS: 0 // If missed V? Or is it incorrect? 
-    // User: "-0.25 for wrong answer". Missed V is a wrong answer.
-    // I will apply -0.25 for missed V as well to be consistent, or arguably just 0?
-    // "Total 20 times flashed 0.25 per correct answer".
-    // 20 * 0.25 = 5.
-    // If I answer wrong, I get -0.25. 
-    // This implies 0 is neutral? No, usually it's binary.
-    // Let's implement: Score += 0.25 if correct, Score -= 0.25 if wrong.
-};
+
 
 const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinhibitionProps) => {
     const { languageConstants } = useLanguageConstantContext();
     const [gameState, setGameState] = useState<'INSTRUCTION' | 'PLAYING' | 'FINISHED'>('INSTRUCTION');
     const [, setCurrentTrialIndex] = useState(0);
     const [currentLetter, setCurrentLetter] = useState<string | null>(null);
-    const [, setScore] = useState(0);
     const [trials, setTrials] = useState<string[]>([]);
     const [hasTapped, setHasTapped] = useState(false); // Track if user tapped in current trial
+    // Use ref to track history without re-render dependencies or stale closures
+    const trialHistoryRef = useRef<any[]>([]);
 
     // Refs for timer and score
     const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const scoreRef = useRef(0);
     const hasTappedRef = useRef(false);
 
     // Get translations
@@ -108,13 +97,17 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
             isCorrect = !tapped;
         }
 
-        if (isCorrect) {
-            scoreRef.current += SCORING.CORRECT;
-        } else {
-            scoreRef.current += SCORING.WRONG;
-        }
+        // Record trial result
+        const trialResult = {
+            trial: index + 1,
+            target: letter,
+            action: tapped ? 'TAPPED' : 'NO_ACTION',
+            result: isCorrect ? 'CORRECT' : 'WRONG',
+            timestamp: new Date().toISOString()
+        };
 
-        setScore(scoreRef.current);
+        // Use ref to ensure immediate availability
+        trialHistoryRef.current.push(trialResult);
 
         // Move to next
         const nextIndex = index + 1;
@@ -142,13 +135,11 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
     const finishGame = () => {
         setGameState('FINISHED');
 
-        // Ensure score is not negative for submission?
-        const finalScore = Math.max(0, scoreRef.current);
+        console.log('[LetterDisinhibition] Finishing game with history:', trialHistoryRef.current);
 
         onComplete([{
             question_id: session.questions?.[0]?.question_id || 0,
-            answer_text: `Completed Letter Disinhibition. Score: ${finalScore}`,
-            score: finalScore,
+            answer_text: JSON.stringify(trialHistoryRef.current),
         }]);
     };
 

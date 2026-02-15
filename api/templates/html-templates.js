@@ -19,30 +19,16 @@ const dmacGameReportHTMLTemplate = (data) => {
 
     // --- Graph Generation Logic ---
     const generateGraph = () => {
-        // Data mapping in order of the report
-        const targetOrder = [
-            { key: 'Immediate Visual Recall', label: 'Visual Memory' }, // Test 6
-            { key: 'Immediate Auditory Recall', label: 'Auditory Memory' }, // Test 11
-            { key: 'Delayed Recall', label: 'Delayed Recall' }, // Test 5
-            { key: 'Disinhibition', label: 'Disinhibition' }, // Test 10
-            { key: 'Attention', label: 'Processing Speed' }, // Test 2
-            { key: 'Executive Function', label: 'Executive' }, // Test 3
-            { key: 'Semantic / Language', label: 'Language' }, // Test 7
-            { key: 'Number Recall', label: 'Attention' }, // Test 1
-            { key: 'Working Memory', label: 'Working Memory' } // Test 4
-        ];
-
-        const graphData = targetOrder.map(item => {
-            const cat = categories.find(c => c.name === item.key);
-            return {
-                name: item.label,
-                value: cat ? cat.percentage : 0
-            };
-        });
+        // Use categories directly from data
+        // Filter out any potential empty categories if needed, but we expect 11.
+        const graphData = categories.map(cat => ({
+            name: cat.name,
+            value: cat.percentage
+        }));
 
         const width = 700;
         const height = 400;
-        const margin = { top: 20, right: 20, bottom: 120, left: 50 };
+        const margin = { top: 20, right: 20, bottom: 150, left: 50 }; // Increased bottom margin for rotated labels
         const contentWidth = width - margin.left - margin.right;
         const contentHeight = height - margin.top - margin.bottom;
 
@@ -72,12 +58,13 @@ const dmacGameReportHTMLTemplate = (data) => {
             else if (d.value >= 40) color = '#f1c40f';
             else if (d.value >= 20) color = '#e74c3c';
 
+            // Truncate name if too long for display? Rotated handled below.
             bars += `
             <rect x="${x - margin.left}" y="${y - margin.top}" width="${barWidth}" height="${barHeight}" fill="${color}" />
             <text x="${x - margin.left + barWidth / 2}" y="${y - margin.top - 5}" text-anchor="middle" font-size="10" font-weight="bold" fill="#333">${Math.round(d.value)}%</text>
             
             <g transform="translate(${x - margin.left + barWidth / 2}, ${contentHeight + 15})">
-                <text transform="rotate(45)" text-anchor="start" font-size="10" fill="#333">${d.name}</text>
+                <text transform="rotate(45)" text-anchor="start" font-size="9" fill="#333">${d.name}</text>
             </g>
           `;
         });
@@ -97,11 +84,15 @@ const dmacGameReportHTMLTemplate = (data) => {
     }
 
     const generateTBIGraph = () => {
+        // Placeholder for TBI if needed, or update to use relevant subsets
+        // For now, keeping logic but updating keys if they exist in new definition
+        // Existing keys: 'Semantic / Language', 'Immediate Auditory Recall', 'Immediate Visual Recall', 'Delayed Recall'
+        // New keys: 'Language & Naming', 'Immediate Auditory Memory', 'Visual Memory', 'Delayed Recall Memory'
         const targetOrder = [
-            { key: 'Semantic / Language', label: 'Language' },
-            { key: 'Immediate Auditory Recall', label: 'Auditory' },
-            { key: 'Immediate Visual Recall', label: 'Visual' },
-            { key: 'Delayed Recall', label: 'Delayed Recall' }
+            { key: 'Language & Naming', label: 'Language' },
+            { key: 'Immediate Auditory Memory', label: 'Auditory' },
+            { key: 'Visual Memory', label: 'Visual' },
+            { key: 'Delayed Recall Memory', label: 'Delayed Recall' }
         ];
 
         const graphData = targetOrder.map(item => {
@@ -113,19 +104,17 @@ const dmacGameReportHTMLTemplate = (data) => {
         });
 
         const width = 600;
-        const height = 300; // Slightly shorter for this section
+        const height = 300;
         const margin = { top: 30, right: 20, bottom: 50, left: 50 };
         const contentWidth = width - margin.left - margin.right;
         const contentHeight = height - margin.top - margin.bottom;
 
-        // Bar Logic
-        const barWidth = 60; // Wider bars since fewer items
+        const barWidth = 60;
         const gap = (contentWidth - (graphData.length * barWidth)) / (graphData.length + 1);
 
-        // Y-Axis Grid
         let gridLines = '';
         let yLabels = '';
-        for (let i = 0; i <= 10; i += 2) { // 20% increments for cleaner look on smaller graph? or 10%
+        for (let i = 0; i <= 10; i += 2) {
             const p = i * 10;
             const y = contentHeight - (contentHeight * (p / 100));
             gridLines += `<line x1="0" y1="${y}" x2="${contentWidth}" y2="${y}" stroke="#e0e0e0" stroke-width="1" />`;
@@ -138,12 +127,6 @@ const dmacGameReportHTMLTemplate = (data) => {
             const barHeight = contentHeight * (d.value / 100);
             const y = margin.top + contentHeight - barHeight;
 
-            // Using a standard blue color as per reference image, or dynamic? 
-            // Reference image shows uniform blue (#4285F4 approx).
-            // User said "dynamic", usually implies scores. Let's use the score colors for consistency with the rest of the report.
-            // But if they want it to look EXACTLY like the image, maybe uniform blue?
-            // "We need this graph there ..lets make sure this is dynamic.... as well"
-            // I'll stick to the report's color coding scheme (Red/Yellow/Green) because that adds value.
             let color = '#6f4e37';
             if (d.value >= 80) color = '#2ecc71';
             else if (d.value >= 60) color = '#3498db';
@@ -158,10 +141,9 @@ const dmacGameReportHTMLTemplate = (data) => {
         });
 
         return `
-        <div class="graph-container" style="height: 350px;"> <!-- Override height -->
+        <div class="graph-container" style="height: 350px;"> 
             <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
                 <g transform="translate(${margin.left}, ${margin.top})">
-                    <!-- Title inside SVG or handled by HTML header? HTML header exists. -->
                     ${gridLines}
                     ${yLabels}
                     <line x1="0" y1="0" x2="0" y2="${contentHeight}" stroke="#333" stroke-width="1" />
@@ -191,8 +173,8 @@ const dmacGameReportHTMLTemplate = (data) => {
             return c ? c.percentage : 0;
         };
 
-        const d = getCatVal('Delayed Recall');
-        const a = getCatVal('Attention');
+        const d = getCatVal('Delayed Recall Memory');
+        const a = getCatVal('Attention & Concentration');
         const w = getCatVal('Working Memory');
         const e = getCatVal('Executive Function');
 
@@ -561,72 +543,32 @@ const dmacGameReportHTMLTemplate = (data) => {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>Cog. Test-1</td>
-                            <td>Attention & Concentration</td>
-                            <td>Frontal–Parietal Network, Brainstem arousal</td>
-                            <td class="score-cell">${getScore('Number Recall')}</td>
-                        </tr>
-                        <tr>
-                            <td>Cog. Test-2</td>
-                            <td>Processing Speed / Reaction Time</td>
-                            <td>Frontal–Cerebellar–Brainstem</td>
-                            <td class="score-cell">${getScore('Attention')}</td>
-                        </tr>
-                        <tr>
-                            <td>Cog. Test-3</td>
-                            <td>Executive Function</td>
-                            <td>Dorsolateral Prefrontal Cortex</td>
-                            <td class="score-cell">${getScore('Executive Function')}</td>
-                        </tr>
-                        <tr>
-                            <td>Cog. Test-4</td>
-                            <td>Working Memory</td>
-                            <td>Frontal–Temporal Network</td>
-                            <td class="score-cell">${getScore('Working Memory')}</td>
-                        </tr>
-                        <tr>
-                            <td>Cog. Test-5</td>
-                            <td>Delayed Recall Memory</td>
-                            <td>Medial Temporal (Hippocampus) network</td>
-                            <td class="score-cell">${getScore('Delayed Recall')}</td>
-                        </tr>
-                        <tr>
-                            <td>Cog. Test-6</td>
-                            <td>Visual Memory</td>
-                            <td>Occipital–Temporal Network</td>
-                            <td class="score-cell">${getScore('Immediate Visual Recall')}</td>
-                        </tr>
-                        <tr>
-                            <td>Cog. Test-7</td>
-                            <td>Language & Naming</td>
-                            <td>Temporal–Parietal Language Network</td>
-                            <td class="score-cell">${getScore('Semantic / Language')}</td>
-                        </tr>
-                        <tr>
-                            <td>Cog. Test-8</td>
-                            <td>Immediate Visuospatial & Visual Attention</td>
-                            <td>Parietal–Occipital Network</td>
-                            <td class="score-cell">${getScore('Immediate Visual Recall')}</td>
-                        </tr>
-                        <tr>
-                            <td>Cog. Test-9</td>
-                            <td>Motor Planning & Coordination</td>
-                            <td>Cerebellar–Parietal–Frontal</td>
-                            <td class="score-cell">${getScore('Executive Function')}</td>
-                        </tr>
-                        <tr>
-                            <td>Cog. Test-10</td>
-                            <td>Disinhibition Behavioral / Emotional Regulation</td>
-                            <td>Orbitofrontal–Limbic Network</td>
-                            <td class="score-cell">${getScore('Disinhibition')}</td>
-                        </tr>
-                        <tr>
-                            <td>Cog. Test-11</td>
-                            <td>Immediate Auditory Memory</td>
-                            <td>Temporal–frontal–limbic network</td>
-                            <td class="score-cell">${getScore('Immediate Auditory Recall')}</td>
-                        </tr>
+                        ${categories.map((cat, index) => {
+        const networks = [
+            'Frontal–Parietal Network, Brainstem arousal',
+            'Frontal–Cerebellar–Brainstem',
+            'Dorsolateral Prefrontal Cortex',
+            'Frontal–Temporal Network',
+            'Medial Temporal (Hippocampus) network',
+            'Occipital–Temporal Network',
+            'Temporal–Parietal Language Network',
+            'Parietal–Occipital Network',
+            'Cerebellar–Parietal–Frontal',
+            'Orbitofrontal–Limbic Network',
+            'Temporal–frontal–limbic network'
+        ];
+        // Use index to pick network, fallback if categories > 11
+        const network = networks[index] || 'General Neural Network';
+
+        return `
+                            <tr>
+                                <td>Cog. Test-${index + 1}</td>
+                                <td>${cat.name}</td>
+                                <td>${network}</td>
+                                <td class="score-cell">${cat.percentage.toFixed(2)}%</td>
+                            </tr>
+                            `;
+    }).join('')}
                     </tbody>
                 </table>
             </div>
@@ -634,7 +576,7 @@ const dmacGameReportHTMLTemplate = (data) => {
 
         <!-- Graph Placeholders -->
         <div class="section">
-            <div class="section-subtitle"><span class="emoji">📌</span> Graph on y axis 10% increment X axis Cognitive functioning</div>
+            <div class="section-subtitle"><span class="emoji">📌</span> Cognitive Domain Profile</div>
             <div class="graph-container">
                  ${generateGraph()}
             </div>

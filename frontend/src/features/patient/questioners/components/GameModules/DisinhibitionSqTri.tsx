@@ -12,10 +12,7 @@ interface DisinhibitionSqTriProps {
 
 const TOTAL_TRIALS = 20;
 const TRIAL_DURATION_MS = 3000;
-const SCORING = {
-    CORRECT: 0.25,
-    WRONG: -0.25
-};
+
 
 const SHAPES = {
     SQUARE: 'SQUARE',
@@ -27,9 +24,10 @@ const DisinhibitionSqTri = ({ session, onComplete, languageCode }: Disinhibition
     const [gameState, setGameState] = useState<'INSTRUCTION' | 'PLAYING' | 'FINISHED'>('INSTRUCTION');
     const [currentTrialIndex, setCurrentTrialIndex] = useState(0);
     const [currentShape, setCurrentShape] = useState<string | null>(null);
-    const [, setScore] = useState(0);
     const [trials, setTrials] = useState<string[]>([]);
     const [isExiting, setIsExiting] = useState(false);
+    // Use ref for history to avoid stale closures
+    const trialHistoryRef = useRef<any[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Get translations
@@ -69,8 +67,7 @@ const DisinhibitionSqTri = ({ session, onComplete, languageCode }: Disinhibition
         }, TRIAL_DURATION_MS);
     };
 
-    // Track score in a Ref for sync access during rapid state changes
-    const scoreRef = useRef(0);
+
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const handleAnswerSafe = (selectedShape: string) => {
@@ -96,9 +93,18 @@ const DisinhibitionSqTri = ({ session, onComplete, languageCode }: Disinhibition
             }
         }
 
-        const change = isCorrect ? SCORING.CORRECT : SCORING.WRONG;
-        scoreRef.current += change;
-        setScore(scoreRef.current);
+        // Record trial result
+        const trialResult = {
+            trial: currentTrialIndex + 1,
+            target: target,
+            selected: selectedShape,
+            result: isCorrect ? 'CORRECT' : 'WRONG',
+            timestamp: new Date().toISOString()
+        };
+
+        // Use ref to ensure immediate availability
+        trialHistoryRef.current.push(trialResult);
+        // setTrialHistory(prev => [...prev, trialResult]);
 
         const nextIndex = currentTrialIndex + 1;
 
@@ -118,8 +124,8 @@ const DisinhibitionSqTri = ({ session, onComplete, languageCode }: Disinhibition
 
         onComplete([{
             question_id: session.questions?.[0]?.question_id || 0,
-            answer_text: `Completed Disinhibition. Score: ${scoreRef.current}`,
-            score: scoreRef.current,
+            answer_text: JSON.stringify(trialHistoryRef.current),
+            // score: scoreRef.current, // Removed: Backend calculates score
         }]);
     };
 

@@ -102,6 +102,11 @@ const getAttemptStatus = async (languageCode: string = 'en'): Promise<AttemptSta
     return res.data;
 };
 
+const abandonInProgressSessions = async (): Promise<{ isSuccess: boolean; abandoned: number }> => {
+    const res = await HttpService.post('/modules/attempts/abandon', {});
+    return res.data;
+};
+
 const submitSession = async (moduleId: number, sessionId: number, payload: SubmitPayload): Promise<SubmitResponse> => {
     const res = await HttpService.post(`/modules/${moduleId}/session/${sessionId}/submit`, payload);
     return res.data;
@@ -112,6 +117,7 @@ const GameApi = {
     startSession,
     submitSession,
     getAttemptStatus,
+    abandonInProgressSessions,
     getReportPdf: async () => {
         const res = await HttpService.get('/modules/report/pdf', { responseType: 'blob' });
         return res.data;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import MorenButton from '../../../../../components/button';
 import GenericModal from '../../../../../components/modal';
@@ -55,8 +55,15 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
     // Confirmation Modal State
     const [showConfirmation, setShowConfirmation] = useState(false);
 
+    // Allow only a single manual repeat after the initial auto-play (per story)
+    const [repeatUsed, setRepeatUsed] = useState(false);
+
     const stories = session.questions || [];
     const currentStory = stories[currentStoryIndex];
+
+    useEffect(() => {
+        setRepeatUsed(false);
+    }, [currentStoryIndex]);
 
     const getLanguageSuffix = (code: string) => {
         if (!code) return 'english';
@@ -118,6 +125,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
         if (isRecallOnly) {
             setPhase('recall');
         } else {
+            setRepeatUsed(false);
             setPhase('playing_audio');
         }
     };
@@ -127,6 +135,8 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
     };
 
     const handleRepeat = () => {
+        if (repeatUsed) return;
+        setRepeatUsed(true);
         setPhase('playing_audio');
     };
 
@@ -277,6 +287,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
                             <MorenButton
                                 variant="outlined"
                                 onClick={handleRepeat}
+                                disabled={repeatUsed}
                                 sx={{
                                     borderColor: '#274765',
                                     color: '#274765',

@@ -4,6 +4,7 @@ import {
   startSession,
   submitSession,
   getAttemptStatus,
+  abandonInProgressSessions,
   getUserReport,
   generateReportPdf
 } from '../controllers/modules.js'
@@ -16,6 +17,7 @@ router.get('/', authenticateUserWithBearer, getModules)
 router.get('/report', authenticateUserWithBearer, getUserReport)
 router.get('/report/pdf', authenticateUserWithBearer, generateReportPdf)
 router.get('/attempts', authenticateUserWithBearer, getAttemptStatus)
+router.post('/attempts/abandon', authenticateUserWithBearer, abandonInProgressSessions)
 router.post('/:moduleId/session/start', authenticateUserWithBearer, startSession)
 router.post('/:moduleId/session/:sessionId/submit', authenticateUserWithBearer, submitSession)
 

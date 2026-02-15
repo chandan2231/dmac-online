@@ -279,7 +279,7 @@ const GenericModal: React.FC<GenericModalProps> = ({
                 '& .MuiButton-root': {
                   width: isInstructionModal ? '100%' : undefined,
                   maxWidth: isInstructionModal ? '100%' : undefined,
-                  whiteSpace: 'normal',
+                  whiteSpace: 'nowrap',
                   height: isInstructionModal ? 'auto' : undefined,
                   minHeight: isInstructionModal ? 48 : undefined,
                   textAlign: 'center',
