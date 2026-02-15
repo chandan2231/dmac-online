@@ -184,45 +184,48 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     setIdleModalOpen(false);
 
     if (!canRestart) {
-      try {
-        await ScreeningGameApi.abandonInProgressSessions(userId);
-      } catch (e) {
-        console.error('[Screening ModuleRunner] Failed to abandon sessions after idle (final attempt)', e);
-      } finally {
-        localStorage.removeItem(PROGRESS_KEY);
-        navigate(ROUTES.HOME);
-      }
+      // Do not block navigation on network/API calls.
+      void ScreeningGameApi.abandonInProgressSessions(userId).catch(e => {
+        console.error(
+          '[Screening ModuleRunner] Failed to abandon sessions after idle (final attempt)',
+          e
+        );
+      });
+
+      localStorage.removeItem(PROGRESS_KEY);
+      setLoading(false);
+      navigate(ROUTES.HOME);
       return;
     }
 
-    setLoading(true);
+    // Reset local state immediately so UI doesn't get stuck.
+    setLoading(false);
     setError(null);
-    try {
-      await ScreeningGameApi.abandonInProgressSessions(userId);
-      localStorage.removeItem(PROGRESS_KEY);
 
-      // Reset idle timer immediately on Restart
-      setActiveNow();
+    // Reset idle timer immediately on Restart
+    setActiveNow();
 
-      // Restart should take the user back to the beginning of the screening assessment flow
-      // (same link as after email verification).
-      localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
-      localStorage.removeItem(FORCE_NEW_SESSION_KEY);
+    // Restart should take the user back to the beginning of the screening assessment flow
+    // (same link as after email verification).
+    localStorage.removeItem(PROGRESS_KEY);
+    localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+    localStorage.removeItem(FORCE_NEW_SESSION_KEY);
 
-      // Reset screening flow state (Disclaimer -> FalsePositive -> PreTest -> Questions -> Modules)
-      localStorage.removeItem('dmac_screening_flow_isQuestionerClosed');
-      localStorage.removeItem('dmac_screening_flow_isDisclaimerAccepted');
-      localStorage.removeItem('dmac_screening_flow_falsePositive');
-      localStorage.removeItem('dmac_screening_flow_isPreTestCompleted');
+    // Reset screening flow state (Disclaimer -> FalsePositive -> PreTest -> Questions -> Modules)
+    localStorage.removeItem('dmac_screening_flow_isQuestionerClosed');
+    localStorage.removeItem('dmac_screening_flow_isDisclaimerAccepted');
+    localStorage.removeItem('dmac_screening_flow_falsePositive');
+    localStorage.removeItem('dmac_screening_flow_isPreTestCompleted');
 
-      await queryClient.invalidateQueries({ queryKey: ['screening-test-attempts', userId, languageCode] });
-      navigate(ROUTES.SCREENING_QUESTIONERS, { replace: true });
-    } catch (e) {
+    // Best-effort cleanup: do not block redirect.
+    void ScreeningGameApi.abandonInProgressSessions(userId).catch(e => {
       console.error('[Screening ModuleRunner] Failed to restart after idle', e);
-      setError(t.sessionError);
-    } finally {
-      setLoading(false);
-    }
+    });
+    void queryClient.invalidateQueries({
+      queryKey: ['screening-test-attempts', userId, languageCode],
+    });
+
+    navigate(ROUTES.SCREENING_QUESTIONERS, { replace: true });
   };
 
   const handleModuleSubmit = async (payload: GenericAnswer) => {
