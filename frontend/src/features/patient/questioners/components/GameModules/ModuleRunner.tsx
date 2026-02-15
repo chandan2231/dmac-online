@@ -209,47 +209,45 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         setIdleModalOpen(false);
 
         if (!canRestart) {
-            try {
-                await GameApi.abandonInProgressSessions();
-            } catch (e) {
+            // Do not block navigation on network/API calls.
+            void GameApi.abandonInProgressSessions().catch(e => {
                 console.error('[ModuleRunner] Failed to abandon sessions after idle (final attempt)', e);
-            } finally {
-                localStorage.removeItem(PROGRESS_KEY);
-                localStorage.removeItem(FORCE_RESTART_KEY);
-                localStorage.removeItem(FORCE_NEW_SESSION_KEY);
-                navigate(ROUTES.HOME);
-            }
+            });
+
+            localStorage.removeItem(PROGRESS_KEY);
+            localStorage.removeItem(FORCE_RESTART_KEY);
+            localStorage.removeItem(FORCE_NEW_SESSION_KEY);
+            setLoading(false);
+            navigate(ROUTES.HOME);
             return;
         }
 
-        setLoading(true);
+        // Reset local state immediately so UI doesn't get stuck.
+        setLoading(false);
         setError(null);
-        try {
-            await GameApi.abandonInProgressSessions();
-            localStorage.removeItem(PROGRESS_KEY);
 
-            // Reset idle timer immediately on Restart
-            setActiveNow();
+        // Reset idle timer immediately on Restart
+        setActiveNow();
 
-            // Restart should take the user back to the beginning of the assessment flow.
-            // We force a new attempt on the PreTest screen (ignore backend resume).
-            localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
-            localStorage.removeItem(FORCE_NEW_SESSION_KEY);
+        // Restart should take the user back to the beginning of the assessment flow.
+        // We force a new attempt on the PreTest screen (ignore backend resume).
+        localStorage.removeItem(PROGRESS_KEY);
+        localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+        localStorage.removeItem(FORCE_NEW_SESSION_KEY);
 
-            // Reset the "Questioners" flow state so it starts from Disclaimer (same entry path).
-            localStorage.removeItem('dmac_flow_isQuestionerClosed');
-            localStorage.removeItem('dmac_flow_isDisclaimerAccepted');
-            localStorage.removeItem('dmac_flow_falsePositive');
-            localStorage.removeItem('dmac_flow_isPreTestCompleted');
+        // Reset the "Questioners" flow state so it starts from Disclaimer (same entry path).
+        localStorage.removeItem('dmac_flow_isQuestionerClosed');
+        localStorage.removeItem('dmac_flow_isDisclaimerAccepted');
+        localStorage.removeItem('dmac_flow_falsePositive');
+        localStorage.removeItem('dmac_flow_isPreTestCompleted');
 
-            await queryClient.invalidateQueries({ queryKey: ['test-attempts', languageCode] });
-            navigate(ROUTES.QUESTIONERS, { replace: true });
-        } catch (e) {
-            console.error('[ModuleRunner] Failed to restart after idle', e);
-            setError(t.sessionError);
-        } finally {
-            setLoading(false);
-        }
+        // Best-effort cleanup: do not block redirect.
+        void GameApi.abandonInProgressSessions().catch(e => {
+            console.error('[ModuleRunner] Failed to abandon sessions after idle', e);
+        });
+        void queryClient.invalidateQueries({ queryKey: ['test-attempts', languageCode] });
+
+        navigate(ROUTES.QUESTIONERS, { replace: true });
     };
 
     const handleModuleSubmit = async (payload: GenericAnswer) => {
