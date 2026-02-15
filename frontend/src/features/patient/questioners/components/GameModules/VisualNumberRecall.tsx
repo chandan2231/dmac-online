@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Box, Typography } from '@mui/material';
 import MorenButton from '../../../../../components/button';
 import GenericModal from '../../../../../components/modal';
+import ConfirmationModal from '../../../../../components/modal/ConfirmationModal';
 import type { SessionData } from '../../../../../services/gameApi';
 import SpeechInput from '../../../../../components/SpeechInput';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
@@ -37,6 +38,7 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
     const [answers, setAnswers] = useState<any[]>([]);
 
     const [inputText, setInputText] = useState('');
+    const [showConfirmation, setShowConfirmation] = useState(false);
     const liveTranscriptRef = useRef('');
 
     const questions = session.questions || [];
@@ -62,6 +64,21 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
         const rawText = inputText + ' ' + pendingText;
         const finalAnswerText = rawText.replace(/\s/g, '');
 
+        if (!finalAnswerText) {
+            setShowConfirmation(true);
+            return;
+        }
+
+        processSubmit(finalAnswerText);
+    };
+
+    const handleConfirmSubmit = () => {
+        setShowConfirmation(false);
+        const finalAnswerText = (inputText + ' ' + liveTranscriptRef.current).replace(/\s/g, '');
+        processSubmit(finalAnswerText);
+    };
+
+    const processSubmit = (finalAnswerText: string) => {
         const answer = {
             question_id: currentQuestion.question_id,
             answer_text: finalAnswerText
@@ -135,7 +152,11 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
                         <Typography variant="h2" sx={{
                             fontWeight: '500',
                             color: 'black',
-                            letterSpacing: '2px'
+                            letterSpacing: '2px',
+                            userSelect: 'none',
+                            WebkitUserSelect: 'none',
+                            msUserSelect: 'none',
+                            mozUserSelect: 'none'
                         }}>
                             {numberToRecall}
                         </Typography>
@@ -183,6 +204,12 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
                     </MorenButton>
                 </Box>
             )}
+
+            <ConfirmationModal
+                open={showConfirmation}
+                onClose={() => setShowConfirmation(false)}
+                onConfirm={handleConfirmSubmit}
+            />
         </Box>
     );
 };

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useImperativeHandle, forwardRef } from 'react';
 import { TextField, InputAdornment, IconButton, type TextFieldProps } from '@mui/material';
-import {useSnackbar} from 'notistack';
+import { useSnackbar } from 'notistack';
 import MicIcon from '@mui/icons-material/Mic';
+import KeyboardIcon from '@mui/icons-material/Keyboard';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { keyframes } from '@mui/system';
 
@@ -21,6 +22,12 @@ const pulseRed = keyframes`
   }
 `;
 
+export interface SpeechInputHandle {
+    startListening: () => void;
+    stopListening: () => void;
+    isListening: boolean;
+}
+
 interface SpeechInputProps extends Omit<TextFieldProps, 'onChange'> {
     value: string;
     onChange: (value: string) => void;
@@ -30,7 +37,7 @@ interface SpeechInputProps extends Omit<TextFieldProps, 'onChange'> {
     enableModeSelection?: boolean;
 }
 
-const SpeechInput: React.FC<SpeechInputProps> = ({
+const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
     value,
     onChange,
     onSpeechResult,
@@ -39,7 +46,7 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
     placeholder = 'Type or click mic to speak',
     enableModeSelection = false,
     ...textFieldProps
-}) => {
+}, ref) => {
     const { enqueueSnackbar } = useSnackbar();
     const { isListening, transcript, startListening, stopListening } = useSpeechRecognition({
         languageCode,
@@ -54,6 +61,12 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
             }
         }
     });
+
+    useImperativeHandle(ref, () => ({
+        startListening,
+        stopListening,
+        isListening
+    }));
 
     // State for split mode removed. we want buttons always visible with TextField.
     const inputRef = React.useRef<HTMLInputElement | HTMLTextAreaElement>(null);
@@ -104,8 +117,16 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
     }, [stopListening]);
 
     const handleMicClick = () => {
-        if (isListening) stopListening();
-        else startListening();
+        if (isListening) {
+            // Clear the auto-stop timer if user manually stops
+            if (silenceTimerRef.current) {
+                clearTimeout(silenceTimerRef.current);
+                silenceTimerRef.current = null;
+            }
+            stopListening();
+        } else {
+            startListening();
+        }
     };
 
     const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -194,7 +215,7 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
                             '&:hover': { background: isListening ? '#d32f2f' : '#1c3550' }
                         }}
                     >
-                        <MicIcon sx={{ fontSize: 32 }} />
+                        <MicIcon sx={{ fontSize: 36 }} />
                         <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{isListening ? 'STOP' : 'SPEAK'}</span>
                     </IconButton>
 
@@ -212,14 +233,14 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
                             '&:hover': { background: '#f5f5f5' }
                         }}
                     >
-                        <span style={{ fontSize: '1.8rem', lineHeight: '1' }}>⌨</span>
+                        <KeyboardIcon sx={{ fontSize: 36 }} />
                         <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>TYPE</span>
                     </IconButton>
                 </div>
             )}
         </div>
     );
-};
+});
 
 
 export default SpeechInput;

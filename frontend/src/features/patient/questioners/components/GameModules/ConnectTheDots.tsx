@@ -26,7 +26,7 @@ interface Connection {
 // Fixed positions based on the user's screenshot
 // 5 is Top Center, M is Right of 5, O (0) is Bottom Center...
 const FIXED_POSITIONS: Record<string, { x: number, y: number }> = {
-    '5': { x: 50, y: 20 },
+    '5': { x: 55, y: 15 },
     'M': { x: 65, y: 30 },
     '6': { x: 80, y: 50 },
     'N': { x: 60, y: 50 },
@@ -35,8 +35,8 @@ const FIXED_POSITIONS: Record<string, { x: number, y: number }> = {
     '10': { x: 30, y: 70 },
     '8': { x: 40, y: 50 },
     'Q': { x: 20, y: 50 },
-    '9': { x: 20, y: 30 },
-    'P': { x: 35, y: 30 }
+    '9': { x: 15, y: 29 },
+    'P': { x: 35, y: 27 }
 };
 
 const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
@@ -214,6 +214,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
                 py: { xs: 2, sm: 3 },
             }}
         >
+            {/* ... Modal ... */}
             <GenericModal
                 isOpen={showInstruction}
                 onClose={() => { }}
@@ -248,11 +249,11 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
             <Box
                 sx={{
                     width: '100%',
-                    maxWidth: { xs: 420, sm: 520, md: 620 },
+                    maxWidth: { xs: '100%', sm: 600, md: 750 },
                     height: {
-                        xs: 'min(62vh, 420px)',
-                        sm: 'min(62vh, 520px)',
-                        md: 'min(68vh, 620px)',
+                        xs: 'min(60vh, 450px)',
+                        sm: 'min(60vh, 500px)',
+                        md: 'min(65vh, 600px)',
                     },
                     position: 'relative',
                     // border: '1px solid #ccc', // Screenshot doesn't show border

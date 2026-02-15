@@ -8,12 +8,18 @@ interface AudioPlayerProps {
 
 const AudioPlayer = ({ src, play, onEnded }: AudioPlayerProps) => {
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const onEndedRef = useRef(onEnded);
+
+    // Keep onEnded ref in sync
+    useEffect(() => {
+        onEndedRef.current = onEnded;
+    }, [onEnded]);
 
     useEffect(() => {
         audioRef.current = new Audio(src);
 
         const handleEnded = () => {
-            if (onEnded) onEnded();
+            if (onEndedRef.current) onEndedRef.current();
         };
 
         audioRef.current.addEventListener('ended', handleEnded);
@@ -25,7 +31,7 @@ const AudioPlayer = ({ src, play, onEnded }: AudioPlayerProps) => {
                 audioRef.current = null;
             }
         };
-    }, [src, onEnded]);
+    }, [src]); // Only recreate audio if src changes
 
     useEffect(() => {
         let playTimer: NodeJS.Timeout;
@@ -46,7 +52,7 @@ const AudioPlayer = ({ src, play, onEnded }: AudioPlayerProps) => {
         return () => {
             if (playTimer) clearTimeout(playTimer);
         };
-    }, [play]);
+    }, [play, src]); // Re-run if play OR src changes
 
     return null; // Logic only component
 };

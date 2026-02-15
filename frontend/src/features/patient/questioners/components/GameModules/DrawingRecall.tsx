@@ -41,6 +41,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentStart, setCurrentStart] = useState<Point | null>(null);
     const [shapes, setShapes] = useState<DrawnShape[]>([]);
+    const lastPointRef = useRef<Point | null>(null);
 
     // Video State
     const [isPlaying, setIsPlaying] = useState(true);
@@ -171,12 +172,12 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     };
 
     const handleCanvasTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
-        e.preventDefault();
         if (!drawMode) return;
         const point = getCanvasCoordinates(e);
         if (point) {
             setIsDrawing(true);
             setCurrentStart(point);
+            lastPointRef.current = point;
         }
     };
 
@@ -184,15 +185,16 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
         if (!isDrawing || !currentStart || !drawMode) return;
         const point = getCanvasCoordinates(e);
         if (point) {
+            lastPointRef.current = point;
             redrawCanvas(point);
         }
     };
 
     const handleCanvasTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
-        e.preventDefault();
         if (!isDrawing || !currentStart || !drawMode) return;
         const point = getCanvasCoordinates(e);
         if (point) {
+            lastPointRef.current = point;
             redrawCanvas(point);
         }
     };
@@ -206,35 +208,35 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                 start: currentStart,
                 end: point
             };
-            setShapes([...shapes, newShape]);
+            setShapes(prev => {
+                const updated = [...prev, newShape];
+                redrawCanvas(null, updated);
+                return updated;
+            });
             setIsDrawing(false);
             setCurrentStart(null);
-            redrawCanvas(null, [...shapes, newShape]);
+            lastPointRef.current = null;
         }
     };
 
-    const handleCanvasTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
-        e.preventDefault();
-        if (!isDrawing || !currentStart || !drawMode) return;
-        // Use the last known position as end point
+    const handleCanvasTouchEnd = () => {
+        if (!isDrawing || !currentStart || !drawMode || !lastPointRef.current) return;
+
         const newShape: DrawnShape = {
             type: drawMode,
             start: currentStart,
-            end: currentStart // Will use last move position in practice
+            end: lastPointRef.current
         };
 
-        // Get the last touch point from touchmove
-        const canvas = canvasRef.current;
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                // Since we can't get the exact end point on touchend, we'll use the current canvas state
-                // This is a simplified approach - in production you'd track the last move position
-                setShapes([...shapes, newShape]);
-                setIsDrawing(false);
-                setCurrentStart(null);
-            }
-        }
+        setShapes(prev => {
+            const updated = [...prev, newShape];
+            redrawCanvas(null, updated);
+            return updated;
+        });
+
+        setIsDrawing(false);
+        setCurrentStart(null);
+        lastPointRef.current = null;
     };
 
     const redrawCanvas = (currentPoint: Point | null, shapesToDraw: DrawnShape[] = shapes) => {
@@ -282,11 +284,12 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     };
 
     const handleUndo = () => {
-        if (shapes.length === 0) return;
-        const newShapes = shapes.slice(0, -1);
-        setShapes(newShapes);
-        // We need to redraw immediately
-        redrawCanvas(null, newShapes);
+        setShapes(prev => {
+            if (prev.length === 0) return prev;
+            const newShapes = prev.slice(0, -1);
+            redrawCanvas(null, newShapes);
+            return newShapes;
+        });
     };
 
     const handleClear = () => {
@@ -444,7 +447,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', py: 2, pt: { xs: 1, md: 2 } }}>
             {/* Instruction Modal - Shows initially and before memorize phase */}
             <GenericModal
                 isOpen={phase === 'instruction' || phase === 'memorize_instruction'}
@@ -473,18 +476,20 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
 
             {/* Video Instruction Phase */}
             {phase === 'video_instruction' && (
-                <Box sx={{ width: '100%', maxWidth: 800, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                <Box sx={{ width: '100%', maxWidth: 800, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                     <Typography variant="h5" sx={{ textAlign: 'center', fontWeight: 'bold' }}>
                         Instructions
                     </Typography>
 
                     <Box sx={{
-                        width: '320px',
-                        height: '600px',
+                        // Container matches the aspect ratio of the rotated video (320w / 600h = 0.533)
+                        height: { xs: 'min(65vh, 550px)', sm: 'min(65vh, 550px)' },
+                        aspectRatio: '320 / 600',
+                        width: 'auto', // Width is driven by height and aspect ratio
                         bgcolor: '#000',
-                        borderRadius: '30px',
+                        borderRadius: '20px', // Sleeker radius
                         overflow: 'hidden',
-                        border: '12px solid #222',
+                        border: '8px solid #222', // Thinner border
                         boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
                         position: 'relative',
                         display: 'flex',
@@ -500,10 +505,18 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                             onPause={() => setIsPlaying(false)}
                             autoPlay
                             style={{
-                                width: '600px', // Matches container height
-                                height: '320px', // Matches container width
+                                width: 'min(65vh, 550px)', // Matches container height
+                                height: 'calc(min(65vh, 550px) * 320 / 600)', // Matches container width
                                 transform: 'rotate(90deg)',
-                                objectFit: 'contain'
+                                objectFit: 'contain',
+                                maxWidth: 'none',
+                                maxHeight: 'none',
+                                position: 'absolute',
+                                left: '50%',
+                                top: '50%',
+                                transformOrigin: 'center center',
+                                margin: 0,
+                                translate: '-50% -50%'
                             }}
                             // Placeholder source - user to add logic for video file
                             src={instructionVideo}
@@ -551,18 +564,19 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                         </Box>
                     </Box>
 
-                    <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                    <Box sx={{ display: 'flex', gap: 2, mt: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
                         <Button
                             variant="outlined"
                             onClick={handleVideoRepeat}
                             sx={{
                                 borderColor: '#274765',
                                 color: '#274765',
-                                minWidth: '180px',
+                                minWidth: { xs: '140px', sm: '180px' },
+                                width: { xs: '100%', sm: 'auto' },
                                 fontWeight: 'bold',
                                 borderWidth: 2,
                                 borderRadius: '12px',
-                                px: 4,
+                                px: { xs: 2, sm: 4 },
                                 py: 2,
                                 textTransform: 'uppercase',
                                 '&:hover': {
@@ -580,10 +594,11 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                             sx={{
                                 backgroundColor: '#274765',
                                 color: 'white',
-                                minWidth: '180px',
+                                minWidth: { xs: '140px', sm: '180px' },
+                                width: { xs: '100%', sm: 'auto' },
                                 fontWeight: 'bold',
                                 borderRadius: '12px',
-                                px: 4,
+                                px: { xs: 2, sm: 4 },
                                 py: 2,
                                 textTransform: 'uppercase'
                             }}
@@ -605,15 +620,17 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
             {phase === 'draw' && (
                 <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                     {/* Toolbar */}
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
                         <Button
                             variant="contained"
                             onClick={() => setDrawMode('rectangle')}
                             sx={{
                                 bgcolor: drawMode === 'rectangle' ? '#1976d2' : '#274765',
                                 '&:hover': { bgcolor: '#1565c0' },
-                                px: 3,
-                                py: 1
+                                px: { xs: 1, sm: 3 },
+                                py: 1,
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                minWidth: { xs: 'auto', sm: '64px' }
                             }}
                         >
                             DRAW SQUARE
@@ -624,8 +641,10 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                             sx={{
                                 bgcolor: drawMode === 'line' ? '#1976d2' : '#274765',
                                 '&:hover': { bgcolor: '#1565c0' },
-                                px: 3,
-                                py: 1
+                                px: { xs: 1, sm: 3 },
+                                py: 1,
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                minWidth: { xs: 'auto', sm: '64px' }
                             }}
                         >
                             DRAW LINE
@@ -637,8 +656,10 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                             sx={{
                                 bgcolor: '#274765',
                                 '&:hover': { bgcolor: '#1565c0' },
-                                px: 3,
+                                px: { xs: 1, sm: 3 },
                                 py: 1,
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                minWidth: { xs: 'auto', sm: '64px' },
                                 '&.Mui-disabled': {
                                     bgcolor: '#e0e0e0',
                                     color: '#9e9e9e'
@@ -653,8 +674,10 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                             sx={{
                                 bgcolor: '#274765',
                                 '&:hover': { bgcolor: '#1565c0' },
-                                px: 3,
-                                py: 1
+                                px: { xs: 1, sm: 3 },
+                                py: 1,
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                minWidth: { xs: 'auto', sm: '64px' }
                             }}
                         >
                             CLEAR
@@ -666,7 +689,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                         sx={{
                             width: '95%',
                             maxWidth: 800,
-                            height: '60vh',
+                            height: { xs: '50vh', sm: '60vh' },
                             border: '2px solid #274765',
                             borderRadius: 2,
                             bgcolor: 'white',
@@ -704,7 +727,8 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                             fontSize: '1.2rem',
                             fontWeight: 'bold',
                             '&:hover': { bgcolor: '#1565c0' },
-                            mt: 2
+                            mt: 2,
+                            width: { xs: '90%', sm: 'auto' }
                         }}
                     >
                         {nextText}

@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Box, Typography } from '@mui/material';
 import MorenButton from '../../../../../components/button';
 import GenericModal from '../../../../../components/modal';
+import ConfirmationModal from '../../../../../components/modal/ConfirmationModal';
 import type { SessionData } from '../../../../../services/gameApi';
-import SpeechInput from '../../../../../components/SpeechInput';
+import SpeechInput, { type SpeechInputHandle } from '../../../../../components/SpeechInput';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 import AudioPlayer from './Shared/AudioPlayer';
@@ -42,6 +43,7 @@ interface NumberRecallProps {
 
 const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) => {
     const { languageConstants } = useLanguageConstantContext();
+    const speechInputRef = useRef<SpeechInputHandle>(null);
 
     // Translations
     const t = {
@@ -68,6 +70,7 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
 
     const [inputText, setInputText] = useState('');
     const [error, setError] = useState('');
+    const [showConfirmation, setShowConfirmation] = useState(false);
 
     // Ref to hold live transcript for real-time capture
     const liveTranscriptRef = useRef('');
@@ -117,25 +120,35 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
         setPhase('playing');
     };
 
-    const handleAudioEnded = () => {
+    const handleAudioEnded = useCallback(() => {
         setPhase('input');
-    };
+    }, []);
 
     const handleSubmit = () => {
+        if (speechInputRef.current) {
+            speechInputRef.current.stopListening();
+        }
         // Combine committed text with any pending live transcript
         const pendingText = liveTranscriptRef.current;
         const rawText = inputText + ' ' + pendingText;
         // Remove all spaces for backend submission as per user request and scoring logic
         const finalAnswerText = rawText.replace(/\s/g, '');
 
-        // Removed validation check as per user request
-        /*
         if (!finalAnswerText) {
-            setError(t.validationError);
+            setShowConfirmation(true);
             return;
         }
-        */
 
+        processSubmit(finalAnswerText);
+    };
+
+    const handleConfirmSubmit = () => {
+        setShowConfirmation(false);
+        const finalAnswerText = (inputText + ' ' + liveTranscriptRef.current).replace(/\s/g, '');
+        processSubmit(finalAnswerText);
+    };
+
+    const processSubmit = (finalAnswerText: string) => {
         const answer = {
             question_id: currentQuestion.question_id,
             answer_text: finalAnswerText
@@ -149,10 +162,6 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
 
         if (currentIndex < questions.length - 1) {
             setCurrentIndex(prev => prev + 1);
-            // Check if we need instructions again? 
-            // Usually just "You will hear number sequences..." at start is enough.
-            // But if each question has a prompt like "Sequence 1", maybe we show a brief "Get Ready" or just play?
-            // Let's just play next.
             setPhase('playing');
         } else {
             onComplete(newAnswers);
@@ -243,6 +252,7 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                     </Typography>
 
                     <SpeechInput
+                        ref={speechInputRef}
                         fullWidth
                         value={inputText}
                         onChange={setInputText}
@@ -280,6 +290,11 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                 </Box>
             )}
 
+            <ConfirmationModal
+                open={showConfirmation}
+                onClose={() => setShowConfirmation(false)}
+                onConfirm={handleConfirmSubmit}
+            />
         </Box>
     );
 };
