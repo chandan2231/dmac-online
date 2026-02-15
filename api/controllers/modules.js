@@ -800,11 +800,12 @@ const calculateGameScores = async (user_id) => {
     JOIN dmac_webapp_modules m ON s.module_id = m.id
     WHERE s.user_id = ? 
       AND s.status = 'completed'
-      AND s.id IN (
-        SELECT MAX(id) 
-        FROM dmac_webapp_sessions 
-        WHERE user_id = ? AND status = 'completed' 
-        GROUP BY module_id
+      AND s.created_at = (
+        SELECT MAX(s2.created_at) 
+        FROM dmac_webapp_sessions s2
+        WHERE s2.module_id = s.module_id 
+          AND s2.user_id = ? 
+          AND s2.status = 'completed'
       )
     ORDER BY m.order_index ASC
   `
