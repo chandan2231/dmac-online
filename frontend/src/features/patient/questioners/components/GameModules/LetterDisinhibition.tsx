@@ -30,6 +30,7 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
     // Refs for timer and score
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const hasTappedRef = useRef(false);
+    const currentIndexRef = useRef(0);
 
     // Get translations
     const t = {
@@ -41,18 +42,53 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
 
     // Initialize trials
     useEffect(() => {
-        // Generate Sequence: 10 'V's and 10 Distractors
-        const targets = Array(10).fill(TARGET_LETTER);
-        const others = Array(10).fill(null).map(() => DISTRACTORS[Math.floor(Math.random() * DISTRACTORS.length)]);
+        const generateSequence = (): string[] => {
+            let targetsLeft = 10;
+            let othersLeft = 10;
+            const result: string[] = [];
+            let lastType: 'target' | 'other' | null = null;
+            let streak = 0;
 
-        // Combine and Shuffle
-        const combined = [...targets, ...others];
-        for (let i = combined.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [combined[i], combined[j]] = [combined[j], combined[i]];
-        }
+            for (let i = 0; i < TOTAL_TRIALS; i++) {
+                const canPickTarget = targetsLeft > 0 && !(lastType === 'target' && streak >= 2);
+                const canPickOther = othersLeft > 0 && !(lastType === 'other' && streak >= 2);
 
-        setTrials(combined);
+                let pick: 'target' | 'other';
+                if (canPickTarget && canPickOther) {
+                    pick = Math.random() < 0.5 ? 'target' : 'other';
+                } else if (canPickTarget) {
+                    pick = 'target';
+                } else if (canPickOther) {
+                    pick = 'other';
+                } else {
+                    // Fallback: If we reach a state where we can't satisfy the condition (rare with 1:1 ratio)
+                    // Restart generation
+                    return generateSequence();
+                }
+
+                if (pick === 'target') {
+                    result.push(TARGET_LETTER);
+                    targetsLeft--;
+                    if (lastType === 'target') streak++;
+                    else {
+                        lastType = 'target';
+                        streak = 1;
+                    }
+                } else {
+                    const randomDistractor = DISTRACTORS[Math.floor(Math.random() * DISTRACTORS.length)];
+                    result.push(randomDistractor);
+                    othersLeft--;
+                    if (lastType === 'other') streak++;
+                    else {
+                        lastType = 'other';
+                        streak = 1;
+                    }
+                }
+            }
+            return result;
+        };
+
+        setTrials(generateSequence());
     }, []);
 
     const startGame = () => {
@@ -67,6 +103,7 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
         }
 
         setCurrentTrialIndex(index);
+        currentIndexRef.current = index;
         setCurrentLetter(trials[index]);
         setHasTapped(false);
         hasTappedRef.current = false;
@@ -125,11 +162,12 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
         setHasTapped(true);
         hasTappedRef.current = true;
 
-        // Visual feedback is immediate (button turns blue via active/focus or custom style)
-        // Logic evaluation happens at end of trial OR immediate?
-        // Prompt: "Random letters flash on screen (1 second each)"
-        // Usually in these tests, the trial continues for the full duration even if you tap.
-        // So we just mark "Tapped" and wait for timer to expire.
+        // Advance to next letter immediately on tap
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+        handleTrialEnd(currentIndexRef.current);
     };
 
     const finishGame = () => {

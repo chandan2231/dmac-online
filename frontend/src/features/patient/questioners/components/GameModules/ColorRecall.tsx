@@ -4,6 +4,7 @@ import type { SessionData } from '../../../../../services/gameApi';
 import MorenButton from '../../../../../components/button';
 import SpeechInput from '../../../../../components/SpeechInput';
 import GenericModal from '../../../../../components/modal';
+import ConfirmationModal from '../../../../../components/modal/ConfirmationModal';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 
@@ -19,6 +20,7 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
     const [showInstruction, setShowInstruction] = useState(true);
     const [timeLeft, setTimeLeft] = useState(120);
     const [isActive, setIsActive] = useState(false);
+    const [showConfirmation, setShowConfirmation] = useState(false);
     const liveTranscriptRef = useRef('');
 
     // Translations
@@ -52,8 +54,24 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
     };
 
     const handleSubmit = () => {
-        setIsActive(false);
         const finalText = inputText.trim() || liveTranscriptRef.current.trim();
+
+        if (!finalText) {
+            setShowConfirmation(true);
+            return;
+        }
+
+        processSubmit(finalText);
+    };
+
+    const handleConfirmSubmit = () => {
+        setShowConfirmation(false);
+        const finalText = inputText.trim() || liveTranscriptRef.current.trim();
+        processSubmit(finalText);
+    };
+
+    const processSubmit = (finalText: string) => {
+        setIsActive(false);
 
         const answer = {
             question_id: question?.question_id,
@@ -126,6 +144,12 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
                     </MorenButton>
                 </Box>
             )}
+
+            <ConfirmationModal
+                open={showConfirmation}
+                onClose={() => setShowConfirmation(false)}
+                onConfirm={handleConfirmSubmit}
+            />
         </Box>
     );
 };

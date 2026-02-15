@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Box, Typography, Paper } from '@mui/material';
 import { type SessionData } from '../../../../../services/gameApi';
 import GenericModal from '../../../../../components/modal';
+import ConfirmationModal from '../../../../../components/modal/ConfirmationModal';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 import MorenButton from '../../../../../components/button';
@@ -42,8 +43,17 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
     // Track dragged item
     const [draggedItem, setDraggedItem] = useState<DraggableItem | null>(null);
 
+    // Confirmation Modal State
+    const [showConfirmation, setShowConfirmation] = useState(false);
+
     // Score accumulating across rounds
     const [roundScores, setRoundScores] = useState<number[]>([]);
+
+    // Refs for drop zones to support mobile touch detection
+    const poolRef = useRef<HTMLDivElement>(null);
+    const group1Ref = useRef<HTMLDivElement>(null);
+    const group2Ref = useRef<HTMLDivElement>(null);
+    const touchDraggedItemRef = useRef<DraggableItem | null>(null);
 
     const questions = session.questions || [];
     const currentQuestion = questions[roundIndex];
@@ -110,7 +120,63 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
         setDraggedItem(null);
     };
 
+    // --- Mobile Touch Logic ---
+    const handleTouchStart = (_e: React.TouchEvent, item: DraggableItem) => {
+        touchDraggedItemRef.current = item;
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent, _item: DraggableItem) => {
+        const touch = e.changedTouches[0];
+        if (!touch) return;
+
+        const x = touch.clientX;
+        const y = touch.clientY;
+
+        const isInside = (ref: React.RefObject<HTMLDivElement>) => {
+            if (!ref.current) return false;
+            const rect = ref.current.getBoundingClientRect();
+            return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+        };
+
+        let target: 'pool' | 'group1' | 'group2' | null = null;
+        if (isInside(poolRef)) target = 'pool';
+        else if (isInside(group1Ref)) target = 'group1';
+        else if (isInside(group2Ref)) target = 'group2';
+
+        if (target && touchDraggedItemRef.current) {
+            const dragged = touchDraggedItemRef.current;
+            // Helper to remove item from its source array
+            const removeFromSource = (i: DraggableItem) => {
+                setPool(prev => prev.filter(p => p.id !== i.id));
+                setGroup1(prev => prev.filter(p => p.id !== i.id));
+                setGroup2(prev => prev.filter(p => p.id !== i.id));
+            };
+
+            removeFromSource(dragged);
+
+            if (target === 'pool') setPool(prev => [...prev, dragged]);
+            else if (target === 'group1') setGroup1(prev => [...prev, dragged]);
+            else if (target === 'group2') setGroup2(prev => [...prev, dragged]);
+        }
+
+        touchDraggedItemRef.current = null;
+    };
+
+
     const handleNextRound = () => {
+        if (group1.length === 0 && group2.length === 0) {
+            setShowConfirmation(true);
+            return;
+        }
+        processNextRound();
+    };
+
+    const handleConfirmSubmit = () => {
+        setShowConfirmation(false);
+        processNextRound();
+    };
+
+    const processNextRound = () => {
         // Scoring Logic
         let score = 0;
 
@@ -188,6 +254,7 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
 
                     {/* Pool Area */}
                     <Paper
+                        ref={poolRef}
                         elevation={3}
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, 'pool')}
@@ -199,7 +266,8 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
                             gap: 2,
                             justifyContent: 'center',
                             bgcolor: '#f5f5f5',
-                            border: '2px dashed #999'
+                            border: '2px dashed #999',
+                            touchAction: 'none' // Prevent scrolling while dragging
                         }}
                     >
                         {pool.length === 0 && (
@@ -208,40 +276,70 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
                             </Typography>
                         )}
                         {pool.map(item => (
-                            <DraggableCard key={item.id} item={item} onDragStart={handleDragStart} />
+                            <DraggableCard
+                                key={item.id}
+                                item={item}
+                                onDragStart={handleDragStart}
+                                onTouchStart={handleTouchStart}
+                                onTouchEnd={handleTouchEnd}
+                            />
                         ))}
                     </Paper>
 
                     {/* Groups Area */}
-                    <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
+                    <Box sx={{
+                        display: 'flex',
+                        gap: { xs: 1, sm: 2 },
+                        flexDirection: 'row', // Always horizontal
+                        width: '100%'
+                    }}>
                         {/* Group 1 Drop Zone */}
                         <Paper
+                            ref={group1Ref}
                             elevation={3}
                             onDragOver={handleDragOver}
                             onDrop={(e) => handleDrop(e, 'group1')}
                             sx={{
                                 flex: 1,
-                                minHeight: '200px',
-                                p: 2,
+                                minHeight: { xs: '150px', sm: '200px' },
+                                p: { xs: 1, sm: 2 },
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
-                                gap: 2,
+                                gap: 1,
                                 bgcolor: '#e3f2fd', // Light Blue
                                 border: '2px solid #2196f3',
-                                position: 'relative'
+                                position: 'relative',
+                                borderRadius: '12px',
+                                touchAction: 'none'
                             }}
                         >
-                            <Typography variant="subtitle1" fontWeight="bold" color="primary">
+                            <Typography variant="subtitle2" fontWeight="bold" color="primary" sx={{ fontSize: { xs: '0.8rem', sm: '1rem' } }}>
                                 Group 1
                             </Typography>
                             <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
                                 {group1.map(item => (
-                                    <DraggableCard key={item.id} item={item} onDragStart={handleDragStart} fullWidth />
+                                    <DraggableCard
+                                        key={item.id}
+                                        item={item}
+                                        onDragStart={handleDragStart}
+                                        onTouchStart={handleTouchStart}
+                                        onTouchEnd={handleTouchEnd}
+                                        fullWidth
+                                    />
                                 ))}
                             </Box>
                             {group1.length === 0 && (
-                                <Typography variant="body2" color="textSecondary" sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                                <Typography variant="caption" color="textSecondary" sx={{
+                                    position: 'absolute',
+                                    top: '50%',
+                                    left: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    textAlign: 'center',
+                                    width: '100%',
+                                    px: 1,
+                                    fontSize: { xs: '0.65rem', sm: '0.8rem' }
+                                }}>
                                     Drag Group 1 Here
                                 </Typography>
                             )}
@@ -249,32 +347,51 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
 
                         {/* Group 2 Drop Zone */}
                         <Paper
+                            ref={group2Ref}
                             elevation={3}
                             onDragOver={handleDragOver}
                             onDrop={(e) => handleDrop(e, 'group2')}
                             sx={{
                                 flex: 1,
-                                minHeight: '200px',
-                                p: 2,
+                                minHeight: { xs: '150px', sm: '200px' },
+                                p: { xs: 1, sm: 2 },
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
-                                gap: 2,
+                                gap: 1,
                                 bgcolor: '#e8f5e9', // Light Green
                                 border: '2px solid #4caf50',
-                                position: 'relative'
+                                position: 'relative',
+                                borderRadius: '12px',
+                                touchAction: 'none'
                             }}
                         >
-                            <Typography variant="subtitle1" fontWeight="bold" color="success.main">
+                            <Typography variant="subtitle2" fontWeight="bold" color="success.main" sx={{ fontSize: { xs: '0.8rem', sm: '1rem' } }}>
                                 Group 2
                             </Typography>
                             <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
                                 {group2.map(item => (
-                                    <DraggableCard key={item.id} item={item} onDragStart={handleDragStart} fullWidth />
+                                    <DraggableCard
+                                        key={item.id}
+                                        item={item}
+                                        onDragStart={handleDragStart}
+                                        onTouchStart={handleTouchStart}
+                                        onTouchEnd={handleTouchEnd}
+                                        fullWidth
+                                    />
                                 ))}
                             </Box>
                             {group2.length === 0 && (
-                                <Typography variant="body2" color="textSecondary" sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                                <Typography variant="caption" color="textSecondary" sx={{
+                                    position: 'absolute',
+                                    top: '50%',
+                                    left: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    textAlign: 'center',
+                                    width: '100%',
+                                    px: 1,
+                                    fontSize: { xs: '0.65rem', sm: '0.8rem' }
+                                }}>
                                     Drag Group 2 Here
                                 </Typography>
                             )}
@@ -301,16 +418,36 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
                     </Box>
                 </Box>
             )}
+
+            <ConfirmationModal
+                open={showConfirmation}
+                onClose={() => setShowConfirmation(false)}
+                onConfirm={handleConfirmSubmit}
+            />
         </Box>
     );
 };
 
 // Helper Item Component
-const DraggableCard = ({ item, onDragStart, fullWidth }: { item: DraggableItem, onDragStart: (e: React.DragEvent, i: DraggableItem) => void, fullWidth?: boolean }) => {
+const DraggableCard = ({
+    item,
+    onDragStart,
+    onTouchStart,
+    onTouchEnd,
+    fullWidth
+}: {
+    item: DraggableItem,
+    onDragStart: (e: React.DragEvent, i: DraggableItem) => void,
+    onTouchStart: (e: React.TouchEvent, i: DraggableItem) => void,
+    onTouchEnd: (e: React.TouchEvent, i: DraggableItem) => void,
+    fullWidth?: boolean
+}) => {
     return (
         <Paper
             draggable
             onDragStart={(e) => onDragStart(e, item)}
+            onTouchStart={(e) => onTouchStart(e, item)}
+            onTouchEnd={(e) => onTouchEnd(e, item)}
             elevation={2}
             sx={{
                 p: 1.5,
@@ -318,10 +455,14 @@ const DraggableCard = ({ item, onDragStart, fullWidth }: { item: DraggableItem, 
                 bgcolor: 'white',
                 border: '1px solid #ddd',
                 borderRadius: '8px',
-                minWidth: '100px',
+                minWidth: '80px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 textAlign: 'center',
                 width: fullWidth ? '100%' : 'auto',
-                fontWeight: 500,
+                fontWeight: 600,
+                fontSize: { xs: '0.75rem', sm: '0.9rem' },
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 '&:hover': {
                     transform: 'translateY(-2px)',
@@ -332,7 +473,9 @@ const DraggableCard = ({ item, onDragStart, fullWidth }: { item: DraggableItem, 
                 }
             }}
         >
-            {item.text}
+            <Typography variant="inherit" sx={{ lineHeight: 1.2, width: '100%' }}>
+                {item.text}
+            </Typography>
         </Paper>
     );
 };
