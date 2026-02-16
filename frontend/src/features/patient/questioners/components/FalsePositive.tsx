@@ -33,35 +33,27 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
         maxWidth: '1000px', // Limit maximum width for large screens
         margin: '0 auto', // Center the container
         pt: { xs: 2, md: 4 },
-        height: '100dvh',
-        maxHeight: '100dvh',
+        height: '100svh',
+        maxHeight: '100svh',
+        // Single scroll bar for the whole page (fixes iOS nested-scroll issues)
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehaviorY: 'contain',
         pb: 0,
       }}
       gap={2}
     >
-      {/* Scrollable content */}
+      {/* Content (scrolls with the page) */}
       <Box
         sx={{
           flex: '1 1 auto',
-          minHeight: 0,
-          overflowY: 'auto',
           px: { xs: 1, sm: 2 },
           pt: { xs: 1, md: 2 },
-          pb: 2,
-          '&::-webkit-scrollbar': {
-            width: '6px',
-          },
-          '&::-webkit-scrollbar-track': {
-            background: '#f1f1f1',
-            borderRadius: '4px',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: '#888',
-            borderRadius: '4px',
-          },
-          '&::-webkit-scrollbar-thumb:hover': {
-            background: '#555',
-          },
+          // Space so the last line isn't hidden behind sticky footer
+          pb: 'calc(16px + env(safe-area-inset-bottom, 0px) + 140px)',
+          maxWidth: '100%',
+          overflowX: 'hidden',
           '& ol': {
             pl: 2,
             listStyleType: 'decimal',
@@ -75,6 +67,7 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
           '& li': {
             mb: 1,
             lineHeight: 1.6,
+            overflowWrap: 'anywhere',
           },
           '& h3': {
             mt: 0,
@@ -82,14 +75,31 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
             mb: 2,
             fontSize: '18px',
             fontWeight: 'bold',
+            overflowWrap: 'anywhere',
           },
           '& p': {
             mb: 2,
+            overflowWrap: 'anywhere',
           },
           '& hr': {
             my: 3,
             border: '0',
             borderTop: '1px solid #ccc',
+          },
+          '& img': {
+            maxWidth: '100%',
+            height: 'auto',
+          },
+          // If backend HTML includes tables, allow them to scroll horizontally
+          // without creating a page-level horizontal scroll.
+          '& table': {
+            maxWidth: '100%',
+            display: 'block',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+          },
+          '& *': {
+            maxWidth: '100%',
           },
         }}
       >
@@ -125,6 +135,10 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
           borderTop: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.paper',
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 2,
+          boxShadow: '0 -6px 12px rgba(0,0,0,0.06)',
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'center',
