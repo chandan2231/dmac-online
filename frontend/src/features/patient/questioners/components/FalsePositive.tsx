@@ -32,7 +32,8 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
         width: { xs: '95%', sm: '90%', md: '80%' },
         maxWidth: '1000px', // Limit maximum width for large screens
         margin: '0 auto', // Center the container
-        py: { xs: 3, md: 5 }, // Adjust padding top and bottom based on screen size
+        pt: { xs: 3, md: 5 },
+        pb: 'calc(24px + env(safe-area-inset-bottom, 0px))',
       }}
       gap={2}
     >
