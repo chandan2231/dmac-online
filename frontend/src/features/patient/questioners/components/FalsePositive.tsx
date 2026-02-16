@@ -32,24 +32,22 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
         width: { xs: '95%', sm: '90%', md: '80%' },
         maxWidth: '1000px', // Limit maximum width for large screens
         margin: '0 auto', // Center the container
-        pt: { xs: 3, md: 5 },
-        pb: 'calc(24px + env(safe-area-inset-bottom, 0px))',
+        pt: { xs: 2, md: 4 },
+        height: '100dvh',
+        maxHeight: '100dvh',
+        pb: 0,
       }}
       gap={2}
     >
-      {/* Title */}
-      <Box sx={{ fontWeight: 'bold', fontSize: '20px', textAlign: 'center', mb: 4 }}>
-        {get(falsePositiveDetails, ['title'], '')}
-      </Box>
-
-      {/* Content */}
+      {/* Scrollable content */}
       <Box
-        dangerouslySetInnerHTML={{ __html: get(falsePositiveDetails, ['content'], '') }}
         sx={{
-          pl: { xs: 2, md: 2 },
-          maxHeight: '60vh',
+          flex: '1 1 auto',
+          minHeight: 0,
           overflowY: 'auto',
-          pr: 1, // Add padding right to avoid text overlap with scrollbar
+          px: { xs: 1, sm: 2 },
+          pt: { xs: 1, md: 2 },
+          pb: 2,
           '&::-webkit-scrollbar': {
             width: '6px',
           },
@@ -79,8 +77,8 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
             lineHeight: 1.6,
           },
           '& h3': {
-            mt: 0, // Remove top margin for the first element if it's a header
-            pt: 3, // Add padding top instead to respect scrolling
+            mt: 0,
+            pt: 3,
             mb: 2,
             fontSize: '18px',
             fontWeight: 'bold',
@@ -94,18 +92,39 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
             borderTop: '1px solid #ccc',
           },
         }}
-      />
+      >
+        {/* Title */}
+        <Box sx={{ fontWeight: 'bold', fontSize: '20px', textAlign: 'center', mb: 3 }}>
+          {get(falsePositiveDetails, ['title'], '')}
+        </Box>
 
-      {/* Doctor Info */}
-      <Box sx={{ textAlign: 'center' }}>{get(falsePositiveDetails, ['doctor_info'], '')}</Box>
+        {/* Content */}
+        <Box
+          dangerouslySetInnerHTML={{ __html: get(falsePositiveDetails, ['content'], '') }}
+          sx={{ px: { xs: 1, md: 1 } }}
+        />
 
-      {/* Link Text */}
-      <Box sx={{ textAlign: 'center' }}>{get(falsePositiveDetails, ['link_text'], '')}</Box>
+        {/* Doctor Info */}
+        <Box sx={{ textAlign: 'center', mt: 3 }}>
+          {get(falsePositiveDetails, ['doctor_info'], '')}
+        </Box>
 
+        {/* Link Text */}
+        <Box sx={{ textAlign: 'center', mt: 1 }}>
+          {get(falsePositiveDetails, ['link_text'], '')}
+        </Box>
+      </Box>
+
+      {/* Bottom actions (always visible) */}
       <Box
         sx={{
           width: '100%',
-          mt: 4,
+          px: { xs: 1, sm: 2 },
+          py: 2,
+          pb: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'center',
