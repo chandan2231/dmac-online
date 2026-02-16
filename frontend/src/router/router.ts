@@ -192,8 +192,8 @@ export const ROUTES = {
   // USER Protected routes
   PROFILE: '/profile',
   QUESTIONERS: '/questioners',
-  SCREENING_QUESTIONERS: '/sdmac-test',
-  SCREENING_QUESTIONERS_VERIFY: '/sdmac-test/verify/:token',
+  SCREENING_QUESTIONERS: '/screening-questioners',
+  SCREENING_QUESTIONERS_VERIFY: '/screening-questioners/verify/:token',
   CONSENT: '/consent',
   PATIENT_PRODUCTS: '/patient/products',
   BOOK_THERAPIST: '/patient/book-therapist',

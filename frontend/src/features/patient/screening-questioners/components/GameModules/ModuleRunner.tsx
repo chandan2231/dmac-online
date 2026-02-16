@@ -170,12 +170,8 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     try {
       const sess = await ScreeningGameApi.startSession(moduleId, userId, languageCode, resume);
       setSession(sess);
-    } catch (e) {
-      const msg =
-        (e as any)?.response?.data?.message ||
-        (e as any)?.response?.data?.error ||
-        t.sessionError;
-      setError(String(msg));
+    } catch {
+      setError(t.sessionError);
     } finally {
       setLoading(false);
     }

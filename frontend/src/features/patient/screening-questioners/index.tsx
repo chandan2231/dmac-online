@@ -10,11 +10,9 @@ import ModuleRunner from './components/GameModules/ModuleRunner';
 import GenericModal from '../../../components/modal';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../router/router';
-import { getScreeningUser, getScreeningUserId, isScreeningUserVerified, setScreeningUser } from './storage';
+import { getScreeningUserId, isScreeningUserVerified } from './storage';
 import { useScreeningTestAttempts } from './hooks/useScreeningTestAttempts';
 import ScreeningRegistrationModal from './components/ScreeningRegistrationModal';
-import ScreeningAuthApi from '../../../services/screeningAuthApi';
-import { get } from 'lodash';
 
 const loadState = (key: string) => {
   const saved = localStorage.getItem(`dmac_screening_flow_${key}`);
@@ -27,61 +25,7 @@ const ScreeningQuestioners = () => {
 
   const userId = getScreeningUserId();
   const isVerified = isScreeningUserVerified();
-  const screeningUser = getScreeningUser();
   const languageCode = 'en';
-
-  const [screeningUserVersion, setScreeningUserVersion] = useState(0);
-  const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
-
-  // Re-render when screening user localStorage changes in this tab.
-  useEffect(() => {
-    const bump = () => setScreeningUserVersion(v => v + 1);
-    window.addEventListener('screeningUserChanged', bump);
-    // storage fires only across tabs/windows, but keep it for completeness.
-    window.addEventListener('storage', bump);
-    return () => {
-      window.removeEventListener('screeningUserChanged', bump);
-      window.removeEventListener('storage', bump);
-    };
-  }, []);
-
-  // If the user registered on this device but verified elsewhere, refresh should unlock.
-  useEffect(() => {
-    const canCheck = Boolean(userId && !isVerified);
-    if (!canCheck) return;
-
-    let cancelled = false;
-    const check = async () => {
-      try {
-        const res = await ScreeningAuthApi.getUserStatus(userId);
-        if (cancelled) return;
-        if (res?.isSuccess && res.user?.verified) {
-          setScreeningUser({
-            id: res.user.id,
-            name: res.user.name,
-            email: res.user.email,
-            patient_meta: res.user.patient_meta ?? null,
-            verified: true,
-          });
-          setVerificationMessage('Email verified. Starting assessment...');
-        } else {
-          setVerificationMessage('Please verify your email to access the assessment.');
-        }
-      } catch {
-        if (cancelled) return;
-        setVerificationMessage('Unable to check verification status. Please refresh and try again.');
-      }
-    };
-
-    check();
-    const onFocus = () => check();
-    window.addEventListener('focus', onFocus);
-    return () => {
-      cancelled = true;
-      window.removeEventListener('focus', onFocus);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, isVerified, screeningUserVersion]);
 
   const [isQuestionerClosed, setIsQuestionerClosed] = useState(() => loadState('isQuestionerClosed'));
   const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(() => loadState('isDisclaimerAccepted'));
@@ -106,11 +50,7 @@ const ScreeningQuestioners = () => {
     setIsPreTestCompleted(false);
   }, [location.state, lastHandledRestartFromIdle]);
 
-  const {
-    data: attemptStatus,
-    isLoading: isLoadingAttempts,
-    error: attemptsError,
-  } = useScreeningTestAttempts(
+  const { data: attemptStatus, isLoading: isLoadingAttempts } = useScreeningTestAttempts(
     isVerified ? userId : 0,
     languageCode
   );
@@ -179,7 +119,7 @@ const ScreeningQuestioners = () => {
     return (
       <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <AppAppBar />
-        {!screeningUser ? <ScreeningRegistrationModal isOpen /> : null}
+        <ScreeningRegistrationModal isOpen />
 
         <Box
           sx={{
@@ -191,30 +131,13 @@ const ScreeningQuestioners = () => {
           }}
         >
           <Typography variant="body1" color="text.secondary" textAlign="center">
-            {verificationMessage ||
-              (screeningUser
-                ? `We’ve sent a verification link to ${screeningUser.email}. Verify your email to continue, then refresh this page.`
-                : 'Please verify your email to access the assessment.')}
+            Please verify your email to access the assessment.
           </Typography>
         </Box>
 
         <Box sx={{ mt: 'auto' }}>
           <AppFooter />
         </Box>
-      </Box>
-    );
-  }
-
-  if (attemptsError) {
-    const msg =
-      get(attemptsError as any, ['response', 'data', 'message']) ||
-      'Unable to start the assessment right now.';
-
-    return (
-      <Box sx={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
-        <Typography variant="body1" color="error" textAlign="center">
-          {msg}
-        </Typography>
       </Box>
     );
   }
