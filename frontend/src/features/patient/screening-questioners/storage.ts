@@ -20,6 +20,21 @@ export const getScreeningUser = (): ScreeningUser | null => {
 
 export const setScreeningUser = (user: ScreeningUser) => {
   localStorage.setItem(SCREENING_USER_STORAGE_KEY, JSON.stringify(user));
+  // Force in-app listeners to re-check verification state.
+  try {
+    window.dispatchEvent(new Event('screeningUserChanged'));
+  } catch {
+    // ignore
+  }
+};
+
+export const clearScreeningUser = () => {
+  localStorage.removeItem(SCREENING_USER_STORAGE_KEY);
+  try {
+    window.dispatchEvent(new Event('screeningUserChanged'));
+  } catch {
+    // ignore
+  }
 };
 
 export const getScreeningUserId = (): number => {
