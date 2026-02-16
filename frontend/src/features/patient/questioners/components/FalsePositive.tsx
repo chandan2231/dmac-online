@@ -33,13 +33,11 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
         maxWidth: '1000px', // Limit maximum width for large screens
         margin: '0 auto', // Center the container
         pt: { xs: 2, md: 4 },
-        height: '100svh',
-        maxHeight: '100svh',
-        // Single scroll bar for the whole page (fixes iOS nested-scroll issues)
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        WebkitOverflowScrolling: 'touch',
-        overscrollBehaviorY: 'contain',
+        // Fill the available height of the parent layout (which may include a header).
+        // Avoid using 100vh/100svh here because it can break scrolling on iOS when nested.
+        flex: 1,
+        minHeight: 0,
+        overflow: 'hidden',
         pb: 0,
       }}
       gap={2}
@@ -48,10 +46,12 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
       <Box
         sx={{
           flex: '1 1 auto',
+          minHeight: 0,
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
           px: { xs: 1, sm: 2 },
           pt: { xs: 1, md: 2 },
-          // Space so the last line isn't hidden behind sticky footer
-          pb: 'calc(16px + env(safe-area-inset-bottom, 0px) + 140px)',
+          pb: 2,
           maxWidth: '100%',
           overflowX: 'hidden',
           '& ol': {
@@ -135,9 +135,6 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
           borderTop: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.paper',
-          position: 'sticky',
-          bottom: 0,
-          zIndex: 2,
           boxShadow: '0 -6px 12px rgba(0,0,0,0.06)',
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
