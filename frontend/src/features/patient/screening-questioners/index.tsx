@@ -201,7 +201,15 @@ const ScreeningQuestioners = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      sx={{
+        height: '100dvh',
+        maxHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
       <Box
         aria-hidden={isAssessmentInProgress ? 'true' : undefined}
         sx={{
@@ -221,6 +229,9 @@ const ScreeningQuestioners = () => {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
+          minHeight: 0,
+          overflow: 'hidden',
+          px: { xs: 1, sm: 2 },
         }}
       >
       {!isDisclaimerAccepted ? <Disclaimer setIsDisclaimerAccepted={setIsDisclaimerAccepted} /> : null}
@@ -285,6 +296,8 @@ const ScreeningQuestioners = () => {
           opacity: isAssessmentInProgress ? 0.55 : 1,
           filter: isAssessmentInProgress ? 'grayscale(1)' : 'none',
           userSelect: isAssessmentInProgress ? 'none' : 'auto',
+          flexShrink: 0,
+          pb: 'calc(env(safe-area-inset-bottom, 0px))',
         }}
       >
         <AppFooter />

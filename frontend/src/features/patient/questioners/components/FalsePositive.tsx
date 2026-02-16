@@ -30,39 +30,24 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
       sx={{
         flexDirection: 'column',
         width: { xs: '95%', sm: '90%', md: '80%' },
-        maxWidth: '1000px', // Limit maximum width for large screens
-        margin: '0 auto', // Center the container
-        py: { xs: 3, md: 5 }, // Adjust padding top and bottom based on screen size
+        maxWidth: '1000px',
+        margin: '0 auto',
+        pt: { xs: 2, md: 4 },
+        flex: 1,
+        minHeight: 0,
       }}
       gap={2}
     >
-      {/* Title */}
-      <Box sx={{ fontWeight: 'bold', fontSize: '20px', textAlign: 'center', mb: 4 }}>
-        {get(falsePositiveDetails, ['title'], '')}
-      </Box>
-
-      {/* Content */}
       <Box
-        dangerouslySetInnerHTML={{ __html: get(falsePositiveDetails, ['content'], '') }}
         sx={{
-          pl: { xs: 2, md: 2 },
-          maxHeight: '60vh',
+          flex: '1 1 auto',
+          minHeight: 0,
           overflowY: 'auto',
-          pr: 1, // Add padding right to avoid text overlap with scrollbar
-          '&::-webkit-scrollbar': {
-            width: '6px',
-          },
-          '&::-webkit-scrollbar-track': {
-            background: '#f1f1f1',
-            borderRadius: '4px',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: '#888',
-            borderRadius: '4px',
-          },
-          '&::-webkit-scrollbar-thumb:hover': {
-            background: '#555',
-          },
+          WebkitOverflowScrolling: 'touch',
+          px: { xs: 1, sm: 2 },
+          pt: { xs: 1, md: 2 },
+          maxWidth: '100%',
+          overflowX: 'hidden',
           '& ol': {
             pl: 2,
             listStyleType: 'decimal',
@@ -76,35 +61,68 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
           '& li': {
             mb: 1,
             lineHeight: 1.6,
+            overflowWrap: 'anywhere',
           },
           '& h3': {
-            mt: 0, // Remove top margin for the first element if it's a header
-            pt: 3, // Add padding top instead to respect scrolling
+            mt: 0,
+            pt: 3,
             mb: 2,
             fontSize: '18px',
             fontWeight: 'bold',
+            overflowWrap: 'anywhere',
           },
           '& p': {
             mb: 2,
+            overflowWrap: 'anywhere',
           },
           '& hr': {
             my: 3,
             border: '0',
             borderTop: '1px solid #ccc',
           },
+          '& img': {
+            maxWidth: '100%',
+            height: 'auto',
+          },
+          '& table': {
+            maxWidth: '100%',
+            display: 'block',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+          },
+          '& *': {
+            maxWidth: '100%',
+          },
         }}
-      />
+      >
+        <Box sx={{ fontWeight: 'bold', fontSize: '20px', textAlign: 'center', mb: 3 }}>
+          {get(falsePositiveDetails, ['title'], '')}
+        </Box>
 
-      {/* Doctor Info */}
-      <Box sx={{ textAlign: 'center' }}>{get(falsePositiveDetails, ['doctor_info'], '')}</Box>
+        <Box
+          dangerouslySetInnerHTML={{ __html: get(falsePositiveDetails, ['content'], '') }}
+          sx={{ px: { xs: 1, md: 1 } }}
+        />
 
-      {/* Link Text */}
-      <Box sx={{ textAlign: 'center' }}>{get(falsePositiveDetails, ['link_text'], '')}</Box>
+        <Box sx={{ textAlign: 'center', mt: 3 }}>
+          {get(falsePositiveDetails, ['doctor_info'], '')}
+        </Box>
+
+        <Box sx={{ textAlign: 'center', mt: 1 }}>
+          {get(falsePositiveDetails, ['link_text'], '')}
+        </Box>
+      </Box>
 
       <Box
         sx={{
-          width: '100%',
-          mt: 4,
+          flex: '0 0 auto',
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          boxShadow: '0 -6px 12px rgba(0,0,0,0.06)',
+          pt: 2,
+          pb: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+          px: { xs: 1, sm: 2 },
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'center',
