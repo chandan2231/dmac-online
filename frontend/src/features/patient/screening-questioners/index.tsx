@@ -278,7 +278,15 @@ const ScreeningQuestioners = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      sx={{
+        height: '100dvh',
+        maxHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
       <Box
         aria-hidden={isAssessmentInProgress ? 'true' : undefined}
         sx={{
@@ -297,7 +305,9 @@ const ScreeningQuestioners = () => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'flex-start',
+          minHeight: 0,
+          overflow: 'hidden',
         }}
       >
       {!isDisclaimerAccepted ? <Disclaimer setIsDisclaimerAccepted={setIsDisclaimerAccepted} /> : null}

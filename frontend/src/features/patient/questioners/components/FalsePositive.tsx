@@ -30,19 +30,14 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
       sx={{
         flexDirection: 'column',
         width: { xs: '95%', sm: '90%', md: '80%' },
-        maxWidth: '1000px', // Limit maximum width for large screens
-        margin: '0 auto', // Center the container
+        maxWidth: '1000px',
+        margin: '0 auto',
         pt: { xs: 2, md: 4 },
-        // Fill the available height of the parent layout (which may include a header).
-        // Avoid using 100vh/100svh here because it can break scrolling on iOS when nested.
         flex: 1,
         minHeight: 0,
-        overflow: 'hidden',
-        pb: 0,
       }}
       gap={2}
     >
-      {/* Content (scrolls with the page) */}
       <Box
         sx={{
           flex: '1 1 auto',
@@ -51,7 +46,6 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
           WebkitOverflowScrolling: 'touch',
           px: { xs: 1, sm: 2 },
           pt: { xs: 1, md: 2 },
-          pb: 2,
           maxWidth: '100%',
           overflowX: 'hidden',
           '& ol': {
@@ -90,8 +84,6 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
             maxWidth: '100%',
             height: 'auto',
           },
-          // If backend HTML includes tables, allow them to scroll horizontally
-          // without creating a page-level horizontal scroll.
           '& table': {
             maxWidth: '100%',
             display: 'block',
@@ -103,39 +95,34 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
           },
         }}
       >
-        {/* Title */}
         <Box sx={{ fontWeight: 'bold', fontSize: '20px', textAlign: 'center', mb: 3 }}>
           {get(falsePositiveDetails, ['title'], '')}
         </Box>
 
-        {/* Content */}
         <Box
           dangerouslySetInnerHTML={{ __html: get(falsePositiveDetails, ['content'], '') }}
           sx={{ px: { xs: 1, md: 1 } }}
         />
 
-        {/* Doctor Info */}
         <Box sx={{ textAlign: 'center', mt: 3 }}>
           {get(falsePositiveDetails, ['doctor_info'], '')}
         </Box>
 
-        {/* Link Text */}
         <Box sx={{ textAlign: 'center', mt: 1 }}>
           {get(falsePositiveDetails, ['link_text'], '')}
         </Box>
       </Box>
 
-      {/* Bottom actions (always visible) */}
       <Box
         sx={{
-          width: '100%',
-          px: { xs: 1, sm: 2 },
-          py: 2,
-          pb: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+          flex: '0 0 auto',
           borderTop: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.paper',
           boxShadow: '0 -6px 12px rgba(0,0,0,0.06)',
+          pt: 2,
+          pb: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+          px: { xs: 1, sm: 2 },
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'center',
