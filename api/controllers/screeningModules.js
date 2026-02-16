@@ -142,7 +142,7 @@ export const registerScreeningUser = async (req, res) => {
       })
     })
 
-    const verifyLink = `${process.env.DOMAIN}sdmac-test/verify/${verificationToken}`
+    const verifyLink = `${process.env.DOMAIN}screening-questioners/verify/${verificationToken}`
 
     const subject = 'Verify Your Email for DMAC'
     const greetingHtml = `<p>Dear ${name},</p>`
@@ -161,40 +161,6 @@ export const registerScreeningUser = async (req, res) => {
     })
   } catch (err) {
     console.error('SCREENING REGISTER ERROR:', err)
-    return res.status(500).json({ isSuccess: false, message: 'Internal server error.' })
-  }
-}
-
-export const getScreeningUserStatus = async (req, res) => {
-  try {
-    const userIdRaw = req.query?.user_id ?? req.query?.userId ?? req.body?.user_id ?? req.body?.userId
-    const userId = Number(userIdRaw)
-    if (!Number.isFinite(userId) || userId <= 0) {
-      return res.status(400).json({ isSuccess: false, message: 'Invalid user_id' })
-    }
-
-    const rows = await query(
-      'SELECT id, name, email, verified, patient_meta FROM dmac_webapp_users WHERE id = ? LIMIT 1',
-      [userId]
-    )
-
-    if (!Array.isArray(rows) || rows.length === 0) {
-      return res.status(404).json({ isSuccess: false, message: 'User not found' })
-    }
-
-    const u = rows[0]
-    return res.status(200).json({
-      isSuccess: true,
-      user: {
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        patient_meta: u.patient_meta ?? null,
-        verified: Boolean(u.verified),
-      },
-    })
-  } catch (err) {
-    console.error('SCREENING USER STATUS ERROR:', err)
     return res.status(500).json({ isSuccess: false, message: 'Internal server error.' })
   }
 }
