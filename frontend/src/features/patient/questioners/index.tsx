@@ -196,11 +196,12 @@ const Questioners = () => {
     <Box
       sx={{
         width: '100%',
-        height: '100%',
+        flex: 1,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
+        py: { xs: 2, sm: 3 },
       }}
     >
       {/* 1. Intro Screen (Disclaimer) */}
