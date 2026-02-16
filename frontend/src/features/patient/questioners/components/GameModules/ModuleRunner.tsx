@@ -429,7 +429,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
     const moduleCode = session.module.code;
 
-    const handleDevSkip = () => {
+    /* const handleDevSkip = () => {
         console.log('[ModuleRunner] Skip button clicked');
         if (!session) return;
         const code = session.module.code;
@@ -577,7 +577,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
             console.log('[ModuleRunner] Skipping LetterDisinhibition');
             handleLetterDisinhibitionComplete(dummyAnswers);
         }
-    };
+    }; */
 
     const handleDownloadPdf = async () => {
         try {
@@ -632,12 +632,12 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
             </GenericModal>
 
             {/* Remove this block when deploying to production */}
-            <Box sx={{
-                position: 'fixed',
+            {/* <Box sx={{ 
+                position: 'fixed', 
                 top: { xs: 'auto', sm: 16 },
                 bottom: { xs: 16, sm: 'auto' },
-                right: 16,
-                zIndex: 99999
+                right: 16, 
+                zIndex: 99999 
             }}>
                 <Button
                     variant="contained"
@@ -648,7 +648,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                 >
                     Skip (Dev)
                 </Button>
-            </Box>
+            </Box> */}
 
             {/* Completion Modal */}
             <GenericModal
