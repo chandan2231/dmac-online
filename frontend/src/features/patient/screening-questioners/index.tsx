@@ -305,9 +305,10 @@ const ScreeningQuestioners = () => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'flex-start',
+          justifyContent: 'center',
           minHeight: 0,
           overflow: 'hidden',
+          px: { xs: 1, sm: 2 },
         }}
       >
       {!isDisclaimerAccepted ? <Disclaimer setIsDisclaimerAccepted={setIsDisclaimerAccepted} /> : null}
@@ -372,6 +373,8 @@ const ScreeningQuestioners = () => {
           opacity: isAssessmentInProgress ? 0.55 : 1,
           filter: isAssessmentInProgress ? 'grayscale(1)' : 'none',
           userSelect: isAssessmentInProgress ? 'none' : 'auto',
+          flexShrink: 0,
+          pb: 'calc(env(safe-area-inset-bottom, 0px))',
         }}
       >
         <AppFooter />
