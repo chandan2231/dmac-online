@@ -142,7 +142,7 @@ export const registerScreeningUser = async (req, res) => {
       })
     })
 
-    const verifyLink = `${process.env.DOMAIN}screening-questioners/verify/${verificationToken}`
+    const verifyLink = `${process.env.DOMAIN}sdmac-test/verify/${verificationToken}`
 
     const subject = 'Verify Your Email for DMAC'
     const greetingHtml = `<p>Dear ${name},</p>`
