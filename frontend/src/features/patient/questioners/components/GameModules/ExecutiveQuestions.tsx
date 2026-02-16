@@ -22,6 +22,7 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
         instructions: getLanguageText(languageConstants, 'game_instruction') || 'Instructions',
         start: getLanguageText(languageConstants, 'game_start') || 'START',
         next: getLanguageText(languageConstants, 'game_next') || 'NEXT',
+        submitContinue: getLanguageText(languageConstants, 'submit_continue') || 'Submit & Continue',
         enterAnswers: getLanguageText(languageConstants, 'game_enter_answers') || 'Enter Answers',
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder') || 'Type here...',
         answerNow: getLanguageText(languageConstants, 'game_answer_now') || 'ANSWER NOW',
@@ -168,8 +169,6 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
 
             {phase === 'playing' && currentQuestion && (
                 <Box sx={{ width: '100%', maxWidth: '600px', pb: 25, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {/* Date/Time Header similar to screenshot? Using simple layout for now */}
-
                     <Typography variant="h5" sx={{ textAlign: 'center', color: '#666', mb: 2 }}>
                         {currentQuestion.prompt_text}
                     </Typography>
@@ -197,7 +196,7 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
                                 }
                             }}
                             languageCode={languageCode}
-                            placeholder={t.inputPlaceholder}
+                            // placeholder={t.inputPlaceholder}
                             enableModeSelection={true}
                         />
                     </Box>
@@ -223,7 +222,7 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
                             fontWeight: 'bold'
                         }}
                     >
-                        {isSubmitting ? 'Submitting...' : t.next}
+                        {isSubmitting ? 'Submitting...' : t.submitContinue}
                     </MorenButton>
                 </Box>
             )}

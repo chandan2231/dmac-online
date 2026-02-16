@@ -59,6 +59,7 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder'),
         validationError: getLanguageText(languageConstants, 'game_validation_error'),
         answerNow: getLanguageText(languageConstants, 'game_next') || 'NEXT', // Changed from game_answer_now/ANSWER NOW
+        submitContinue: getLanguageText(languageConstants, 'submit_continue') || 'Submit & Continue',
         audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction',
         nextEllipsis: (() => {
             const val = getLanguageText(languageConstants, 'game_next_ellipsis');
@@ -69,9 +70,10 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
     // Phases:
     // - instruction: initial instructions
     // - playing: images are flashing
+    // - post_instruction: instruction after images flash
     // - input: user enters recalled items
-    // Requirement: after flashing ends, go directly to input (no intermediate screen).
-    const [phase, setPhase] = useState<'instruction' | 'playing' | 'input'>('instruction');
+    // Requirement: after flashing ends, go to post_instruction then input.
+    const [phase, setPhase] = useState<'instruction' | 'playing' | 'post_instruction' | 'input'>('instruction');
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
 
     // Input state - single text field for all answers
@@ -167,7 +169,7 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
                 }, 5000);
             } else if (currentItemIndex === gameItems.length - 1) {
                 timer = setTimeout(() => {
-                    setPhase('input');
+                    setPhase('post_instruction');
                 }, 5000);
             }
         }
@@ -211,10 +213,41 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
                 enableAudio={true}
                 audioButtonLabel={t.audioInstruction}
                 audioButtonAlignment="center"
-                instructionText={session.instructions || session.questions?.[0]?.prompt_text || ''}
+                instructionText={
+                    isRecallOnly
+                        ? (session.questions?.[0]?.prompt_text || session.instructions || '')
+                        : (session.instructions || session.questions?.[0]?.prompt_text || '')
+                }
                 languageCode={languageCode}
             >
-                <Typography>{session.instructions || session.questions?.[0]?.prompt_text}</Typography>
+                <Typography>
+                    {isRecallOnly
+                        ? (session.questions?.[0]?.prompt_text || session.instructions)
+                        : (session.instructions || session.questions?.[0]?.prompt_text)
+                    }
+                </Typography>
+            </GenericModal>
+
+            {/* Post Playing Instruction Modal */}
+            <GenericModal
+                isOpen={phase === 'post_instruction'}
+                onClose={() => { }}
+                title={(() => {
+                    const val = getLanguageText(languageConstants, 'game_instructions_for_answer');
+                    return (val && val !== 'game_instructions_for_answer') ? val : 'Instructions For Answer';
+                })()}
+                hideCancelButton={true}
+                submitButtonText={t.next}
+                onSubmit={() => setPhase('input')}
+                enableAudio={true}
+                audioButtonLabel={t.audioInstruction}
+                audioButtonAlignment="center"
+                instructionText={session.questions?.[0]?.prompt_text || ''}
+                languageCode={languageCode}
+            >
+                <Typography sx={{ color: '#d32f2f', fontSize: '1.1rem' }}>
+                    {session.questions?.[0]?.prompt_text}
+                </Typography>
             </GenericModal>
 
             {phase === 'playing' && currentItem && (
@@ -251,7 +284,7 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
                                 setValidationError(''); // Clear error when speaking
                             }}
                             languageCode={languageCode}
-                            placeholder={t.inputPlaceholder}
+                            // placeholder={t.inputPlaceholder}
                             enableModeSelection={true}
                         />
 
@@ -289,7 +322,7 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
                                     fontWeight: 'bold'
                                 }}
                             >
-                                {t.answerNow}
+                                {t.submitContinue}
                             </MorenButton>
                         </Box>
                     </Box>

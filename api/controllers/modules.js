@@ -491,7 +491,7 @@ export const submitSession = async (req, res) => {
             'SELECT is_correct FROM dmac_webapp_assessment_options WHERE question_id = ? AND option_key = ?',
             [ans.question_id, ans.selected_option_key]
           )
-          itemScore = (options.length > 0 && options[0].is_correct === 1) ? 1 : 0
+          itemScore = (options.length > 0 && options[0].is_correct === 1) ? 0.5 : 0
         } else if (module.code === 'CONNECT_DOTS') {
           const items = await fetchItems(ans.question_id, 'en')
 

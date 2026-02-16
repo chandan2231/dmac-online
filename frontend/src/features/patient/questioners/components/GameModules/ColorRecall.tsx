@@ -27,7 +27,8 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
     const t = {
         instructions: getLanguageText(languageConstants, 'game_instruction') || 'Instructions',
         start: getLanguageText(languageConstants, 'game_start') || 'START',
-        answerNow: getLanguageText(languageConstants, 'game_next') || 'NEXT', // Changed from game_answer_now/SUBMIT
+        answerNow: getLanguageText(languageConstants, 'game_next') || 'NEXT', // Changed from game_answer_now/NEXT
+        submitContinue: getLanguageText(languageConstants, 'submit_continue') || 'Submit & Continue',
         inputPlaceholder: 'Enter Answers (e.g., red blue)',
         audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
@@ -120,7 +121,7 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
                             liveTranscriptRef.current = text;
                         }}
                         languageCode={languageCode}
-                        placeholder={t.inputPlaceholder}
+                        // placeholder={t.inputPlaceholder}
                         enableModeSelection={true}
                     />
 
@@ -140,7 +141,7 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
                             fontWeight: 'bold'
                         }}
                     >
-                        {t.answerNow}
+                        {t.submitContinue}
                     </MorenButton>
                 </Box>
             )}

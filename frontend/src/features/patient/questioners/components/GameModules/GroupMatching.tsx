@@ -28,6 +28,7 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
         start: getLanguageText(languageConstants, 'game_start') || 'Start',
         audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction',
         next: getLanguageText(languageConstants, 'game_next') || 'Next',
+        submitContinue: getLanguageText(languageConstants, 'submit_continue') || 'Submit & Continue',
         finish: getLanguageText(languageConstants, 'game_finish') || 'Finish',
         dragItems: getLanguageText(languageConstants, 'game_drag_items_instruction') || 'Drag items to their correct groups'
     };
@@ -413,7 +414,7 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
                                 }
                             }}
                         >
-                            {t.next}
+                            {t.submitContinue}
                         </MorenButton>
                     </Box>
                 </Box>
