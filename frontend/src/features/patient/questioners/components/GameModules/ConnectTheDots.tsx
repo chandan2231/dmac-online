@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { type SessionData } from '../../../../../services/gameApi';
 import GenericModal from '../../../../../components/modal';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
@@ -36,10 +36,29 @@ const FIXED_POSITIONS: Record<string, { x: number, y: number }> = {
     '8': { x: 40, y: 50 },
     'Q': { x: 20, y: 50 },
     '9': { x: 15, y: 29 },
-    'P': { x: 35, y: 27 }
+    'P': { x: 35, y: 27 },
+    'R': { x: 10, y: 75 }
+};
+
+// Portrait/Vertical layout for mobile as per requested image
+const MOBILE_FIXED_POSITIONS: Record<string, { x: number, y: number }> = {
+    '5': { x: 35, y: 15 },
+    'M': { x: 65, y: 15 },
+    '10': { x: 15, y: 35 },
+    'N': { x: 60, y: 40 },
+    '6': { x: 85, y: 35 },
+    'Q': { x: 35, y: 50 },
+    'O': { x: 60, y: 60 }, // Displayed as 0
+    '7': { x: 85, y: 52 },
+    'R': { x: 15, y: 75 },
+    '9': { x: 35, y: 75 },
+    'P': { x: 60, y: 80 },
+    '8': { x: 85, y: 75 }
 };
 
 const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { languageConstants } = useLanguageConstantContext();
     const startText = getLanguageText(languageConstants, 'game_start') || 'Start';
     const instructionsTitle = getLanguageText(languageConstants, 'game_instructions') || 'Instructions';
@@ -65,7 +84,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
         // Filter out L, R, 11 as per new requirement
         items = items.filter((item: any) => {
             const key = item.image_key || item.display_text;
-            return !['L', 'R', '11'].includes(key);
+            return !['L', '11'].includes(key);
         });
 
         // Explicitly sort items by order to ensure strict sequence
@@ -81,7 +100,8 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
             // Default to random if label not found in map (fallback)
             // Use image_key for position lookup to be safe if display_text changes
             const lookupKey = item.image_key || label;
-            const pos = FIXED_POSITIONS[lookupKey] || FIXED_POSITIONS[label] || {
+            const positionsMap = isMobile ? MOBILE_FIXED_POSITIONS : FIXED_POSITIONS;
+            const pos = positionsMap[lookupKey] || positionsMap[label] || {
                 x: Math.random() * 80 + 10,
                 y: Math.random() * 80 + 10
             };
@@ -106,7 +126,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
             setLastConnectedIndex(0);
         }
 
-    }, [session]);
+    }, [session, isMobile]);
 
     const handleDotClick = (index: number) => {
         if (lastConnectedIndex === null) return;
@@ -234,7 +254,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
             <Typography
                 variant="h5"
                 sx={{
-                    mt: { xs: 2.5, sm: 6 },
+                    mt: { xs: -2, sm: -4 },
                     mb: { xs: 2, sm: 2 },
                     color: '#274765',
                     fontWeight: 'bold',

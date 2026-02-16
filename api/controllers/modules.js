@@ -496,7 +496,9 @@ export const submitSession = async (req, res) => {
           const items = await fetchItems(ans.question_id, 'en')
 
           // Filter items to match frontend (exclude L, R, 11)
-          const validItems = items.filter(i => !['L', 'R', '11', '5'].includes(i.image_key))
+          // const validItems = items.filter(i => !['L', 'R', '11', '5'].includes(i.image_key))
+          // Filter items to match frontend (exclude L, 11)
+          const validItems = items.filter(i => !['L', '11', '5'].includes(i.image_key))
 
           // Explicitly sort by order (DB should order by item_order, but ensure safety)
           validItems.sort((a, b) => (a.item_order || 0) - (b.item_order || 0))
@@ -566,7 +568,7 @@ export const submitSession = async (req, res) => {
           // might mean we floor at 2 provided condition met? No, "minimal score is 2" refers to the result of 4*0.5.
           // I'll stick to linear * 0.5.
 
-        } else if (module.code === 'NUMBER_RECALL' || module.code === 'VISUAL_NUMBER_RECALL') {
+        } else if (module.code === 'NUMBER_RECALL' || module.code === 'VISUAL_NUMBER_RECALL' || module.code === 'REVERSE_NUMBER_RECALL') {
           // Number Recall Scoring
           // Logic: Exact match of the sequence = 0.5 points.
           // Total possible: 10 * 0.5 = 5.0
@@ -649,7 +651,7 @@ export const submitSession = async (req, res) => {
             const correctCount = calculateKeywordScore(ans.answer_text, items, { uniqueWords: true })
             itemScore = Math.min(correctCount * 0.5, 5.0)
             maxScore = 5
-          } else if (module.code === 'AUDIO_WORDS') {
+          } else if (module.code === 'AUDIO_WORDS' || module.code === 'AUDIO_WORDS_RECALL') {
             const language_code = ans.language_code || body.language_code || 'en' // fallback
             const items = await fetchItems(ans.question_id, language_code)
             // Use uniqueWords mode to count multiple different words from the list
@@ -658,7 +660,7 @@ export const submitSession = async (req, res) => {
             // 1.0 points per word, max 5 words possible
             itemScore = Math.min(correctCount * 1.0, 5.0)
             maxScore = 5
-          } else if (module.code === 'AUDIO_WORDS_RECALL' || module.code === 'COLOR_RECALL') {
+          } else if (module.code === 'COLOR_RECALL') {
             const language_code = ans.language_code || body.language_code || 'en'
             const items = await fetchItems(ans.question_id, language_code)
             const correctCount = calculateKeywordScore(ans.answer_text, items, { uniqueWords: true })

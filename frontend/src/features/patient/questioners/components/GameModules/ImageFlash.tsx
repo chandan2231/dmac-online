@@ -126,9 +126,9 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
         if (items.length > 0) {
             console.log('[ImageFlash] Session items from API:', session.questions?.[0]?.items);
 
-            // Randomize items order
-            const shuffledItems = [...items].sort(() => Math.random() - 0.5);
-            console.log('[ImageFlash] Processed and Shuffled items:', shuffledItems);
+            // Randomize items order and select only 5
+            const shuffledItems = [...items].sort(() => Math.random() - 0.5).slice(0, 5);
+            console.log('[ImageFlash] Processed, Shuffled, and Sliced items (5):', shuffledItems);
 
             setGameItems(shuffledItems);
         } else {
