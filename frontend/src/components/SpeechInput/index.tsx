@@ -1,5 +1,5 @@
 import React, { useImperativeHandle, forwardRef } from 'react';
-import { TextField, InputAdornment, IconButton, type TextFieldProps } from '@mui/material';
+import { TextField, InputAdornment, IconButton, Box, type TextFieldProps } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import MicIcon from '@mui/icons-material/Mic';
 import KeyboardIcon from '@mui/icons-material/Keyboard';
@@ -43,7 +43,7 @@ const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
     onSpeechResult,
     onTranscriptChange,
     languageCode = 'en-US',
-    placeholder = 'Type or click mic to speak',
+    placeholder = '',
     enableModeSelection = false,
     ...textFieldProps
 }, ref) => {
@@ -146,7 +146,7 @@ const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
     // --- RENDER LOGIC ---
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
 
             <TextField
                 {...textFieldProps}
@@ -158,55 +158,61 @@ const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
                 multiline
                 minRows={1}
                 maxRows={4}
-                slotProps={{
-                    input: {
-                        style: { fontSize: '1.3rem' },
-                        ...textFieldProps.slotProps?.input,
-                        // If mode selection is enabled, we hide the internal persistent mic icon
-                        // because we have the big "Speak" button below.
-                        endAdornment: !enableModeSelection ? (
-                            <InputAdornment position="end">
-                                <IconButton
-                                    onClick={handleMicClick}
-                                    edge="end"
-                                    sx={{
+                slotProps={textFieldProps.slotProps}
+                InputProps={{
+                    style: { fontSize: '1.3rem' },
+                    ...textFieldProps.InputProps,
+                    // If mode selection is enabled, we hide the internal persistent mic icon
+                    // because we have the big "Speak" button below.
+                    endAdornment: !enableModeSelection ? (
+                        <InputAdornment position="end">
+                            <IconButton
+                                onClick={handleMicClick}
+                                edge="end"
+                                sx={{
+                                    background: isListening
+                                        ? '#f44336'
+                                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    color: 'white',
+                                    width: 40,
+                                    height: 40,
+                                    marginRight: '-8px',
+                                    transition: 'all 0.3s ease',
+                                    animation: isListening ? `${pulseRed} 1.5s ease-in-out infinite` : 'none',
+                                    '&:hover': {
                                         background: isListening
-                                            ? '#f44336'
-                                            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                        color: 'white',
-                                        width: 40,
-                                        height: 40,
-                                        marginRight: '-8px',
-                                        transition: 'all 0.3s ease',
-                                        animation: isListening ? `${pulseRed} 1.5s ease-in-out infinite` : 'none',
-                                        '&:hover': {
-                                            background: isListening
-                                                ? '#e53935'
-                                                : 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
-                                            transform: 'scale(1.05)',
-                                            boxShadow: isListening
-                                                ? '0 0 20px rgba(244, 67, 54, 0.6)'
-                                                : '0 4px 15px rgba(102, 126, 234, 0.4)',
-                                        },
-                                    }}
-                                >
-                                    <MicIcon sx={{ fontSize: 22 }} />
-                                </IconButton>
-                            </InputAdornment>
-                        ) : null
-                    }
+                                            ? '#e53935'
+                                            : 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                                        transform: 'scale(1.05)',
+                                        boxShadow: isListening
+                                            ? '0 0 20px rgba(244, 67, 54, 0.6)'
+                                            : '0 4px 15px rgba(102, 126, 234, 0.4)',
+                                    },
+                                }}
+                            >
+                                <MicIcon sx={{ fontSize: 22 }} />
+                            </IconButton>
+                        </InputAdornment>
+                    ) : null
                 }}
             />
 
-            {/* Buttons Row */}
+            {/* Buttons Row - Forced horizontal for parity */}
             {enableModeSelection && (
-                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+                <Box sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    gap: '16px',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%'
+                }}>
                     <IconButton
                         onClick={handleMicClick}
                         sx={{
                             borderRadius: '8px',
                             padding: '16px 28px',
-                            background: isListening ? '#f44336' : '#274765', // Red when listening, default Blue
+                            background: isListening ? '#f44336' : '#274765',
                             color: 'white',
                             display: 'flex',
                             flexDirection: 'column',
@@ -236,9 +242,9 @@ const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
                         <KeyboardIcon sx={{ fontSize: 36 }} />
                         <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>TYPE</span>
                     </IconButton>
-                </div>
+                </Box>
             )}
-        </div>
+        </Box>
     );
 });
 

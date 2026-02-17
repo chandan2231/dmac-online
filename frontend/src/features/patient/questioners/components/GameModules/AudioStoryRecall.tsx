@@ -40,6 +40,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder') || 'Type your recall here...',
         validationError: getLanguageText(languageConstants, 'game_validation_error'),
         answerNow: getLanguageText(languageConstants, 'game_next') || 'NEXT',
+        submitContinue: getLanguageText(languageConstants, 'submit_continue') || 'Submit & Continue',
         audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
 
@@ -283,7 +284,14 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
                             </Typography>
                         </Box>
 
-                        <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
+                        <Box sx={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            justifyContent: 'center',
+                            gap: 2,
+                            mt: 4,
+                            width: '100%'
+                        }}>
                             <MorenButton
                                 variant="outlined"
                                 onClick={handleRepeat}
@@ -291,11 +299,12 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
                                 sx={{
                                     borderColor: '#274765',
                                     color: '#274765',
-                                    minWidth: '180px',
+                                    width: { xs: 140, sm: 180 },
+                                    minWidth: { xs: 'none', sm: '180px' },
                                     fontWeight: 'bold',
                                     borderWidth: 2,
                                     borderRadius: '12px',
-                                    px: 4,
+                                    px: { xs: 2, sm: 4 },
                                     py: 2,
                                     '&:hover': {
                                         borderWidth: 2,
@@ -311,12 +320,13 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
                                 variant="contained"
                                 onClick={handleNextFromComplete}
                                 sx={{
-                                    minWidth: '180px',
+                                    width: { xs: 140, sm: 180 },
+                                    minWidth: { xs: 'none', sm: '180px' },
                                     backgroundColor: '#274765',
                                     color: 'white',
                                     fontWeight: 'bold',
                                     borderRadius: '12px',
-                                    px: 4,
+                                    px: { xs: 2, sm: 4 },
                                     py: 2,
                                     fontSize: '1.1rem'
                                 }}>
@@ -341,7 +351,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
                             onChange={setInputText}
                             onSpeechResult={(text) => setInputText(prev => prev + ' ' + text)}
                             languageCode={languageCode}
-                            placeholder={t.inputPlaceholder}
+                            // placeholder={t.inputPlaceholder}
                             enableModeSelection={true}
                         />
 
@@ -366,7 +376,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
                                 fontWeight: 'bold'
                             }}
                         >
-                            {t.answerNow}
+                            {t.submitContinue}
                         </MorenButton>
                     </Box >
                 )

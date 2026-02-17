@@ -125,13 +125,16 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
         const tapped = hasTappedRef.current; // Use ref for latest state
 
         let isCorrect = false;
+        let score = 0;
 
         if (letter === TARGET_LETTER) {
             // Should have tapped
             isCorrect = tapped;
+            score = tapped ? 0.25 : -0.25;
         } else {
             // Should NOT have tapped
             isCorrect = !tapped;
+            score = tapped ? -0.50 : 0.00;
         }
 
         // Record trial result
@@ -140,6 +143,7 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
             target: letter,
             action: tapped ? 'TAPPED' : 'NO_ACTION',
             result: isCorrect ? 'CORRECT' : 'WRONG',
+            score: score,
             timestamp: new Date().toISOString()
         };
 
@@ -162,12 +166,16 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
         setHasTapped(true);
         hasTappedRef.current = true;
 
-        // Advance to next letter immediately on tap
+        // Advance to next letter immediately on tap (with small delay for visual feedback)
         if (timerRef.current) {
             clearTimeout(timerRef.current);
             timerRef.current = null;
         }
-        handleTrialEnd(currentIndexRef.current);
+
+        // Delay trial end by 200ms so user sees the blue button
+        setTimeout(() => {
+            handleTrialEnd(currentIndexRef.current);
+        }, 200);
     };
 
     const finishGame = () => {
@@ -219,19 +227,16 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
 
                     <Button
                         variant="contained"
-                        // Button should be blue when clicked/tapped. 
-                        // MUI 'primary' is blue. 'success' is green. 
-                        // User said "Turn button to blue when user clicks".
-                        // Let's use 'success' (Green) as default (like the image shows Green 'TAP' button)
-                        // And change to 'primary' (Blue) if tapped? 
-                        // Prompt image shows Green "TAP". "We need to turn the button to blue when user clicks".
+                        // Button should be blue when clicked/tapped or hovered.
+                        // Default to success (green)
                         color={hasTapped ? "primary" : "success"}
                         size="large"
                         sx={{
                             width: 240,
                             height: 120,
                             fontSize: '2.5rem',
-                            pointerEvents: hasTapped ? 'none' : 'auto' // Disable after tap?
+                            pointerEvents: hasTapped ? 'none' : 'auto',
+                            transition: 'all 0.2s',
                         }}
                         onClick={handleTap}
                     >

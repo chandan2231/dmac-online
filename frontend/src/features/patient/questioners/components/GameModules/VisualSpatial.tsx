@@ -30,11 +30,46 @@ import dis12 from '../../../../../assets/visualSpatial/dis12.webp';
 import dis13 from '../../../../../assets/visualSpatial/dis13.webp';
 import dis14 from '../../../../../assets/visualSpatial/dis14.webp';
 
+import dis21 from '../../../../../assets/visualSpatial/dis21.webp';
+import dis22 from '../../../../../assets/visualSpatial/dis22.webp';
+import dis23 from '../../../../../assets/visualSpatial/dis23.webp';
+import dis24 from '../../../../../assets/visualSpatial/dis24.webp';
+
+import dis31 from '../../../../../assets/visualSpatial/dis31.webp';
+import dis32 from '../../../../../assets/visualSpatial/dis32.webp';
+import dis33 from '../../../../../assets/visualSpatial/dis33.webp';
+import dis34 from '../../../../../assets/visualSpatial/dis34.webp';
+
+import image_new1 from '../../../../../assets/visualSpatial/image_new1.webp';
+import image_new2 from '../../../../../assets/visualSpatial/image_new2.webp';
+import image_new3 from '../../../../../assets/visualSpatial/image_new3.webp';
+import image_new4 from '../../../../../assets/visualSpatial/image_new4.webp';
+
+import cube_option_one from '../../../../../assets/visualSpatial/cube_option_one.webp';
+import cube_option_two from '../../../../../assets/visualSpatial/cube_option_two.webp';
+import cube_option_three from '../../../../../assets/visualSpatial/cube_option_three.webp';
+import cube_option_four from '../../../../../assets/visualSpatial/cube_option_four.webp';
+
+import bee_first from '../../../../../assets/visualSpatial/bee_first.png';
+import bee_second from '../../../../../assets/visualSpatial/bee_second.png';
+import bee_third from '../../../../../assets/visualSpatial/bee_third.png';
+import bee_fourth from '../../../../../assets/visualSpatial/bee_fourth.png';
+
 interface VisualSpatialProps {
     session: SessionData;
     onComplete: (answers: { question_id: number, selected_option_key: string }[]) => void;
     languageCode: string;
 }
+
+// Utility to shuffle array
+const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+};
 
 const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps) => {
     const { languageConstants } = useLanguageConstantContext();
@@ -51,6 +86,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
     const [answers, setAnswers] = useState<{ question_id: number, selected_option_key: string }[]>([]);
     const [countdown, setCountdown] = useState(5);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
+    const [selectionCountdown, setSelectionCountdown] = useState(30);
 
     // Configuration: Set to false when images are uploaded to S3
     const USE_STATIC_IMAGES = true;
@@ -76,35 +112,84 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
         {
             target: dis11,
             options: [dis11, dis12, dis13, dis14]
+        },
+        {
+            target: dis21,
+            options: [dis21, dis22, dis23, dis24]
+        },
+        {
+            target: dis31,
+            options: [dis31, dis32, dis33, dis34]
+        },
+        {
+            target: image_new1,
+            options: [image_new1, image_new2, image_new3, image_new4]
+        },
+        {
+            target: cube_option_one,
+            options: [cube_option_one, cube_option_two, cube_option_three, cube_option_four]
+        },
+        {
+            target: bee_first,
+            options: [bee_first, bee_second, bee_third, bee_fourth]
         }
     ];
 
-    // Map API rounds to use static images if configured
-    const processedRounds = (session.questions || []).map((round, index) => {
-        const roundOptions = round.options ?? [];
+    // State for processed questions to ensure stable shuffle
+    const [processedRounds, setProcessedRounds] = useState<any[]>([]);
 
-        if (USE_STATIC_IMAGES && index < STATIC_IMAGE_SETS.length) {
-            const staticSet = STATIC_IMAGE_SETS[index];
+    // Map API rounds to use static images and pre-shuffle for stability
+    useEffect(() => {
+        if (!session.questions) return;
+
+        const rounds = session.questions.map((round: any, index: number) => {
+            const roundOptions = round.options ?? [];
+
+            if (USE_STATIC_IMAGES && index < STATIC_IMAGE_SETS.length) {
+                const staticSet = STATIC_IMAGE_SETS[index];
+
+                // Find the correct option in API (match by URL to target_image_url)
+                const correctOptIndex = roundOptions.findIndex((o: any) => o.image_url === round.target_image_url);
+
+                const mappedOptions = roundOptions.map((opt: any, optIndex: number) => {
+                    // Default to static option at this index
+                    let staticImage = staticSet.options[optIndex] ?? staticSet.options[0];
+
+                    if (correctOptIndex !== -1) {
+                        if (optIndex === correctOptIndex) {
+                            staticImage = staticSet.options[0]; // Always map correct one to target image
+                        } else if (optIndex === 0) {
+                            staticImage = staticSet.options[correctOptIndex] ?? staticSet.options[1]; // Swap
+                        }
+                    }
+
+                    return {
+                        ...opt,
+                        image_url: staticImage
+                    };
+                });
+
+                return {
+                    ...round,
+                    target_image_url: staticSet.target,
+                    options: shuffleArray(mappedOptions)
+                };
+            }
+
+            // Use API URLs when S3 ready
             return {
                 ...round,
-                target_image_url: staticSet.target,
-                options: roundOptions.map((opt, optIndex) => ({
-                    ...opt,
-                    image_url: staticSet.options[optIndex] ?? staticSet.options[0]
-                }))
+                options: shuffleArray(roundOptions)
             };
-        }
+        });
 
-        // Use API URLs when S3 ready
-        return {
-            ...round,
-            options: roundOptions
-        };
-    });
+        setProcessedRounds(rounds);
+    }, [session.questions]);
 
     const startRound = () => {
         setPhase('target');
         setCountdown(5);
+        setSelectionCountdown(30);
         setSelectedOption(null);
     };
 
@@ -121,6 +206,18 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
             }, 500);
         }
     }, [phase, countdown]);
+
+    // Countdown timer for selection phase
+    useEffect(() => {
+        if (phase === 'selection' && selectionCountdown > 0 && !selectedOption) {
+            const timer = setTimeout(() => {
+                setSelectionCountdown(prev => prev - 1);
+            }, 1000);
+            return () => clearTimeout(timer);
+        } else if (phase === 'selection' && selectionCountdown === 0 && !selectedOption) {
+            handleSelectOption('TIMEOUT');
+        }
+    }, [phase, selectionCountdown, selectedOption]);
 
     const handleStart = () => {
         setCurrentRoundIndex(0);
@@ -158,8 +255,12 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            p: 3
+            justifyContent: 'flex-start',
+            pt: { xs: 4, sm: 6 },
+            pb: { xs: 4, sm: 8 },
+            px: { xs: 1.5, sm: 3 },
+            minHeight: '100vh',
+            overflowY: 'auto'
         }}>
             {/* Instruction Modal */}
             <GenericModal
@@ -189,15 +290,14 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
                     width: '100%',
                     maxWidth: '800px'
                 }}>
-                    <Box sx={{ position: 'relative', width: '100%', maxWidth: '600px' }}>
+                    <Box sx={{ position: 'relative', width: '100%', maxWidth: '500px' }}>
                         <Box
                             component="img"
                             src={currentRound.target_image_url}
                             sx={{
                                 width: '100%',
-                                maxHeight: '60vh',
+                                maxHeight: '55vh',
                                 objectFit: 'contain',
-                                border: '3px solid #1976d2',
                                 borderRadius: '8px',
                                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                             }}
@@ -212,10 +312,10 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
                     <Box sx={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(2, 1fr)',
-                        gap: 3,
+                        gap: { xs: 1.5, sm: 3 },
                         mt: 2
                     }}>
-                        {currentRound.options.map((opt) => (
+                        {currentRound.options.map((opt: any) => (
                             <Box
                                 key={opt.option_key}
                                 onClick={() => !selectedOption && handleSelectOption(opt.option_key)}
@@ -224,16 +324,16 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
                                     transition: 'all 0.3s ease',
                                     border: selectedOption === opt.option_key
                                         ? '4px solid #4caf50'
-                                        : '2px solid transparent',
-                                    borderRadius: '8px',
+                                        : '2px solid #e0e0e0',
+                                    borderRadius: '12px',
                                     overflow: 'hidden',
                                     boxShadow: selectedOption === opt.option_key
                                         ? '0 4px 20px rgba(76, 175, 80, 0.4)'
-                                        : '0 2px 8px rgba(0,0,0,0.1)',
+                                        : '0 2px 8px rgba(0,0,0,0.05)',
                                     '&:hover': selectedOption ? {} : {
-                                        transform: 'scale(1.05)',
+                                        transform: 'scale(1.02)',
                                         borderColor: '#1976d2',
-                                        boxShadow: '0 4px 20px rgba(25, 118, 210, 0.3)'
+                                        boxShadow: '0 4px 20px rgba(25, 118, 210, 0.2)'
                                     }
                                 }}
                             >
@@ -242,10 +342,10 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
                                     src={opt.image_url}
                                     sx={{
                                         width: '100%',
-                                        height: '250px',
+                                        height: { xs: '140px', sm: '250px' },
                                         objectFit: 'contain',
                                         background: '#ffffff',
-                                        p: 2
+                                        p: { xs: 1, sm: 2 }
                                     }}
                                 />
                             </Box>

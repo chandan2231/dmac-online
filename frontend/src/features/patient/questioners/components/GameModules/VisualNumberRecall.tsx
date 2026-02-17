@@ -26,6 +26,7 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
         enterAnswers: getLanguageText(languageConstants, 'game_answer_now') || 'Answer Now', // Changed from game_enter_answers
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder') || 'Type the numbers...',
         answerNow: getLanguageText(languageConstants, 'game_next') || 'NEXT', // Changed from game_answer_now/ANSWER NOW
+        submitContinue: getLanguageText(languageConstants, 'submit_continue') || 'Submit & Continue',
         audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
 
@@ -39,6 +40,7 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
 
     const [inputText, setInputText] = useState('');
     const [showConfirmation, setShowConfirmation] = useState(false);
+    const [responseCountdown, setResponseCountdown] = useState(60);
     const liveTranscriptRef = useRef('');
 
     const questions = session.questions || [];
@@ -50,10 +52,26 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
         if (phase === 'display') {
             timer = setTimeout(() => {
                 setPhase('input');
+                setResponseCountdown(60);
             }, 10000); // 10 seconds
         }
         return () => clearTimeout(timer);
     }, [phase]);
+
+    // Response timer for input phase
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (phase === 'input' && responseCountdown > 0) {
+            timer = setTimeout(() => {
+                setResponseCountdown(prev => prev - 1);
+            }, 1000);
+        } else if (phase === 'input' && responseCountdown === 0) {
+            // Auto-submit on timeout
+            const finalAnswerText = (inputText + ' ' + liveTranscriptRef.current).replace(/\s/g, '');
+            processSubmit(finalAnswerText);
+        }
+        return () => clearTimeout(timer);
+    }, [phase, responseCountdown, inputText]);
 
     const handleStart = () => {
         setPhase('display');
@@ -88,6 +106,7 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
         setAnswers(newAnswers);
         setInputText('');
         liveTranscriptRef.current = '';
+        setResponseCountdown(60);
 
         if (currentIndex < questions.length - 1) {
             setCurrentIndex(prev => prev + 1);
@@ -180,8 +199,12 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
                             liveTranscriptRef.current = text;
                         }}
                         languageCode={languageCode}
-                        placeholder={t.inputPlaceholder}
+                        // placeholder={t.inputPlaceholder}
                         enableModeSelection={true}
+                        inputProps={{
+                            inputMode: 'numeric',
+                            pattern: '[0-9]*'
+                        }}
                     />
 
                     <MorenButton
@@ -200,7 +223,7 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
                             fontWeight: 'bold'
                         }}
                     >
-                        {t.answerNow}
+                        {t.submitContinue}
                     </MorenButton>
                 </Box>
             )}
