@@ -407,7 +407,8 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
                                 backgroundColor: '#1976d2',
                                 color: 'white',
                                 px: 4,
-                                py: 1.5,
+                                py: 2.1,
+                                borderRadius: '10px',
                                 fontSize: '1.2rem',
                                 '&:hover': {
                                     backgroundColor: '#1565c0'

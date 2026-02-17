@@ -340,44 +340,43 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
             {/* Recall Phase */}
             {
                 phase === 'recall' && (
-                    <Box sx={{ width: '100%', maxWidth: '600px', p: 2, pb: 25, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        <Typography variant="h6" sx={{ textAlign: 'center' }}>
-                            {t.enterAnswers}
-                        </Typography>
+                    <Box sx={{ width: '100%', height: '100%', minHeight: '85vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', pt: 0 }}>
+                        <Box sx={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: { xs: 3, sm: 4 }, px: 2, mt: { xs: 2, sm: 8 } }}>
+                            <Typography variant="h6" sx={{ textAlign: 'center' }}>
+                                {t.enterAnswers}
+                            </Typography>
 
-                        <SpeechInput
-                            fullWidth
-                            value={inputText}
-                            onChange={setInputText}
-                            onSpeechResult={(text) => setInputText(prev => prev + ' ' + text)}
-                            languageCode={languageCode}
-                            // placeholder={t.inputPlaceholder}
-                            enableModeSelection={true}
-                        />
+                            <SpeechInput
+                                fullWidth
+                                value={inputText}
+                                onChange={setInputText}
+                                onSpeechResult={(text) => setInputText(prev => prev + ' ' + text)}
+                                languageCode={languageCode}
+                                enableModeSelection={true}
+                            />
 
-                        {error && (
-                            <Typography color="error" textAlign="center">{error}</Typography>
-                        )}
+                            {error && (
+                                <Typography sx={{ color: 'error.main', textAlign: 'center', fontSize: '0.875rem' }}>
+                                    {error}
+                                </Typography>
+                            )}
 
-                        <MorenButton
-                            variant="contained"
-                            onClick={handleSubmitAnswer}
-                            sx={{
-                                position: 'absolute',
-                                bottom: '150px',
-                                left: '50%',
-                                transform: 'translateX(-50%)',
-                                width: '90%',
-                                maxWidth: '600px',
-                                zIndex: 10,
-                                mt: 2,
-                                fontSize: '1.2rem',
-                                py: 1.5,
-                                fontWeight: 'bold'
-                            }}
-                        >
-                            {t.submitContinue}
-                        </MorenButton>
+                            <MorenButton
+                                variant="contained"
+                                onClick={handleSubmitAnswer}
+                                sx={{
+                                    width: '100%',
+                                    fontSize: '1.1rem',
+                                    py: 2.8,
+                                    fontWeight: 'bold',
+                                    borderRadius: '10px',
+                                    mt: { xs: 2, sm: 4 },
+                                    mb: { xs: 0, sm: 6 }
+                                }}
+                            >
+                                {t.submitContinue}
+                            </MorenButton>
+                        </Box>
                     </Box >
                 )
             }

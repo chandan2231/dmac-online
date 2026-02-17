@@ -44,13 +44,13 @@ const FIXED_POSITIONS: Record<string, { x: number, y: number }> = {
 const MOBILE_FIXED_POSITIONS: Record<string, { x: number, y: number }> = {
     '5': { x: 35, y: 15 },
     'M': { x: 65, y: 15 },
-    '10': { x: 15, y: 35 },
+    '10': { x: 11, y: 35 },
     'N': { x: 60, y: 40 },
     '6': { x: 85, y: 35 },
     'Q': { x: 35, y: 50 },
     'O': { x: 60, y: 60 }, // Displayed as 0
     '7': { x: 85, y: 52 },
-    'R': { x: 15, y: 75 },
+    'R': { x: 11, y: 75 },
     '9': { x: 35, y: 75 },
     'P': { x: 60, y: 80 },
     '8': { x: 85, y: 75 }
