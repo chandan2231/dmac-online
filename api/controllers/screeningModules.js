@@ -143,20 +143,23 @@ export const registerScreeningUser = async (req, res) => {
     })
 
     const verifyLink = `${process.env.DOMAIN}sdmac-test/verify/${verificationToken}`
-
-    const subject = 'Verify Your Email for DMAC'
-    const greetingHtml = `<p>Dear ${name},</p>`
-    const bodyHtml = `<h2>You have successfully registered for the Self-Administered Digital Memory and Cognitive Assessment.</h2>
-                      <br>
-                      <h4>Click the link below to verify your email</h4>
-                      <a href="${verifyLink}">Verify Email</a>`
-    const emailHtml = `<div>${greetingHtml}${bodyHtml}</div>`
+    const subject = 'Start Your SDMAC Assessment';
+    const greetingHtml = `<p>Dear ${name},</p>`;
+    const bodyHtml = `<p>You have successfully registered for the <strong>Self-Administered Digital Memory and Cognitive Assessment (SDMAC)</strong>.</p>
+        <p>Please click the link below to start your assessment:</p>
+        <p>
+            <a href="${verifyLink}" style="display:inline-block;padding:10px 18px;background-color:#2c7be5;color:#ffffff;text-decoration:none;border-radius:4px;">
+            Start Assessment
+            </a>
+        </p>
+        <p>If you did not register for this assessment, please ignore this email.</p>`;
+    const emailHtml = `<div>${greetingHtml}${bodyHtml}</div>`;
 
     await sendEmail(email, subject, emailHtml, emailHtml)
 
     return res.status(200).json({
       isSuccess: true,
-      message: 'Registration successful. Please verify your email to continue.',
+      message: 'Your SDMAC registration has been completed successfully. Please check your email to start your assessment.',
       userId: insertResult?.insertId ?? null
     })
   } catch (err) {
