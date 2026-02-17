@@ -616,7 +616,7 @@ const dmacGameReportHTMLTemplate = (data) => {
 
         <!-- Footer -->
         <div class="footer">
-            <p><strong>Contact@regainmemory.com</strong></p>
+            <p><strong>Contact@regainmemory360.com</strong></p>
         </div>
     </div>
 </body>
