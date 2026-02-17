@@ -10,9 +10,11 @@ import ModuleRunner from './components/GameModules/ModuleRunner';
 import GenericModal from '../../../components/modal';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../router/router';
-import { getScreeningUserId, isScreeningUserVerified } from './storage';
+import { getScreeningUser, getScreeningUserId, isScreeningUserVerified, setScreeningUser } from './storage';
 import { useScreeningTestAttempts } from './hooks/useScreeningTestAttempts';
 import ScreeningRegistrationModal from './components/ScreeningRegistrationModal';
+import ScreeningAuthApi from '../../../services/screeningAuthApi';
+import { prepareScreeningAfterEmailVerified } from './verificationInit';
 
 const loadState = (key: string) => {
   const saved = localStorage.getItem(`dmac_screening_flow_${key}`);
@@ -25,7 +27,65 @@ const ScreeningQuestioners = () => {
 
   const userId = getScreeningUserId();
   const isVerified = isScreeningUserVerified();
+  const screeningUser = getScreeningUser();
   const languageCode = 'en';
+
+  const [screeningUserVersion, setScreeningUserVersion] = useState(0);
+  const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
+  const [verifiedOverride, setVerifiedOverride] = useState<boolean>(isVerified);
+
+  // Re-render when screening user localStorage changes in this tab.
+  useEffect(() => {
+    const bump = () => setScreeningUserVersion(v => v + 1);
+    window.addEventListener('screeningUserChanged', bump);
+    window.addEventListener('storage', bump);
+    return () => {
+      window.removeEventListener('screeningUserChanged', bump);
+      window.removeEventListener('storage', bump);
+    };
+  }, []);
+
+  // If the user registered on this device but verified elsewhere, refresh/focus should unlock.
+  useEffect(() => {
+    const effectiveVerified = verifiedOverride || isScreeningUserVerified();
+    if (!userId || effectiveVerified) return;
+
+    let cancelled = false;
+
+    const check = async () => {
+      try {
+        const res = await ScreeningAuthApi.getUserStatus(userId);
+        if (cancelled) return;
+
+        if (res?.isSuccess && res.user?.verified) {
+          setScreeningUser({
+            id: res.user.id,
+            name: res.user.name,
+            email: res.user.email,
+            patient_meta: res.user.patient_meta ?? null,
+            verified: true,
+          });
+          await prepareScreeningAfterEmailVerified(languageCode);
+          setVerificationMessage('Email verified. Starting assessment...');
+          setVerifiedOverride(true);
+        } else {
+          setVerificationMessage('Please verify your email to access the assessment.');
+        }
+      } catch {
+        if (cancelled) return;
+        setVerificationMessage('Unable to check verification status. Please refresh and try again.');
+      }
+    };
+
+    check();
+    const onFocus = () => check();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', onFocus);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, verifiedOverride, screeningUserVersion]);
 
   const [isQuestionerClosed, setIsQuestionerClosed] = useState(() => loadState('isQuestionerClosed'));
   const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(() => loadState('isDisclaimerAccepted'));
@@ -50,14 +110,16 @@ const ScreeningQuestioners = () => {
     setIsPreTestCompleted(false);
   }, [location.state, lastHandledRestartFromIdle]);
 
+  const effectiveVerified = verifiedOverride || isVerified;
+
   const { data: attemptStatus, isLoading: isLoadingAttempts } = useScreeningTestAttempts(
-    isVerified ? userId : 0,
+    effectiveVerified ? userId : 0,
     languageCode
   );
 
   // Once the screening assessment flow is entered, disable header/footer interactions
   // to prevent navigation away mid-test.
-  const isAssessmentInProgress = Boolean(isVerified && !attemptStatus?.isCompleted);
+  const isAssessmentInProgress = Boolean(effectiveVerified && !attemptStatus?.isCompleted);
 
   const handleAllModulesComplete = () => {
     // no-op for now
@@ -115,11 +177,11 @@ const ScreeningQuestioners = () => {
     navigate(ROUTES.HOME);
   };
 
-  if (!isVerified) {
+  if (!effectiveVerified) {
     return (
       <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <AppAppBar />
-        <ScreeningRegistrationModal isOpen />
+        {!screeningUser ? <ScreeningRegistrationModal isOpen /> : null}
 
         <Box
           sx={{
@@ -131,7 +193,10 @@ const ScreeningQuestioners = () => {
           }}
         >
           <Typography variant="body1" color="text.secondary" textAlign="center">
-            Please verify your email to access the assessment.
+            {verificationMessage ||
+              (screeningUser
+                ? `We’ve sent a verification link to ${screeningUser.email}. Verify your email to continue, then refresh this page.`
+                : 'Please verify your email to access the assessment.')}
           </Typography>
         </Box>
 

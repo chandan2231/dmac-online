@@ -1,5 +1,13 @@
 export const SCREENING_USER_STORAGE_KEY = 'dmac_screening_user';
 
+const notifyScreeningUserChanged = () => {
+  try {
+    window.dispatchEvent(new Event('screeningUserChanged'));
+  } catch {
+    // ignore
+  }
+};
+
 export type ScreeningUser = {
   id: number;
   name: string;
@@ -20,6 +28,15 @@ export const getScreeningUser = (): ScreeningUser | null => {
 
 export const setScreeningUser = (user: ScreeningUser) => {
   localStorage.setItem(SCREENING_USER_STORAGE_KEY, JSON.stringify(user));
+  notifyScreeningUserChanged();
+};
+
+export const clearScreeningUser = () => {
+  try {
+    localStorage.removeItem(SCREENING_USER_STORAGE_KEY);
+  } finally {
+    notifyScreeningUserChanged();
+  }
 };
 
 export const getScreeningUserId = (): number => {

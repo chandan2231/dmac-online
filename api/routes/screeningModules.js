@@ -8,7 +8,8 @@ import {
   getUserReport,
   generateReportPdf,
   registerScreeningUser,
-  verifyScreeningEmail
+  verifyScreeningEmail,
+  getScreeningUserStatus
 } from '../controllers/screeningModules.js'
 
 const router = express.Router()
@@ -22,6 +23,7 @@ router.post('/report/pdf', generateReportPdf)
 
 router.post('/register', registerScreeningUser)
 router.post('/verify-email', verifyScreeningEmail)
+router.get('/user/status', getScreeningUserStatus)
 
 router.post('/:moduleId/session/start', startSession)
 router.post('/:moduleId/session/:sessionId/submit', submitSession)
