@@ -210,37 +210,45 @@ const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
                     <IconButton
                         onClick={handleMicClick}
                         sx={{
-                            borderRadius: '8px',
-                            padding: '16px 28px',
+                            borderRadius: '10px',
+                            padding: { xs: '8px 16px', sm: '14px 25px' },
                             background: isListening ? '#f44336' : '#274765',
                             color: 'white',
                             display: 'flex',
-                            flexDirection: 'column',
-                            gap: 1,
-                            width: '140px',
+                            flexDirection: { xs: 'row', sm: 'column' },
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: { xs: 1.5, sm: 1 },
+                            flex: { xs: 1, sm: 'none' },
+                            width: { xs: 'auto', sm: '140px' },
+                            height: { xs: '68px', sm: 'auto' },
                             '&:hover': { background: isListening ? '#d32f2f' : '#1c3550' }
                         }}
                     >
-                        <MicIcon sx={{ fontSize: 36 }} />
-                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{isListening ? 'STOP' : 'SPEAK'}</span>
+                        <MicIcon sx={{ fontSize: { xs: 24, sm: 36 } }} />
+                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{isListening ? 'STOP' : 'SPEAK'}</span>
                     </IconButton>
 
                     <IconButton
                         onClick={handleTypeClick}
                         sx={{
-                            borderRadius: '8px',
-                            padding: '16px 28px',
+                            borderRadius: '10px',
+                            padding: { xs: '8px 16px', sm: '14px 25px' },
                             border: '2px solid #274765',
                             color: '#274765',
                             display: 'flex',
-                            flexDirection: 'column',
-                            gap: 1,
-                            width: '140px',
+                            flexDirection: { xs: 'row', sm: 'column' },
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: { xs: 1.5, sm: 1 },
+                            flex: { xs: 1, sm: 'none' },
+                            width: { xs: 'auto', sm: '140px' },
+                            height: { xs: '68px', sm: 'auto' },
                             '&:hover': { background: '#f5f5f5' }
                         }}
                     >
-                        <KeyboardIcon sx={{ fontSize: 36 }} />
-                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>TYPE</span>
+                        <KeyboardIcon sx={{ fontSize: { xs: 24, sm: 36 } }} />
+                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>TYPE</span>
                     </IconButton>
                 </Box>
             )}
