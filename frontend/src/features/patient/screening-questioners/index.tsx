@@ -121,6 +121,10 @@ const ScreeningQuestioners = () => {
   // to prevent navigation away mid-test.
   const isAssessmentInProgress = Boolean(effectiveVerified && !attemptStatus?.isCompleted);
 
+  const isModulesScreen = Boolean(
+    isDisclaimerAccepted && falsePositive && isPreTestCompleted && isQuestionerClosed
+  );
+
   const handleAllModulesComplete = () => {
     // no-op for now
   };
@@ -275,28 +279,30 @@ const ScreeningQuestioners = () => {
         overflow: 'hidden',
       }}
     >
-      <Box
-        aria-hidden={isAssessmentInProgress ? 'true' : undefined}
-        sx={{
-          pointerEvents: isAssessmentInProgress ? 'none' : 'auto',
-          opacity: isAssessmentInProgress ? 0.55 : 1,
-          filter: isAssessmentInProgress ? 'grayscale(1)' : 'none',
-          userSelect: isAssessmentInProgress ? 'none' : 'auto',
-        }}
-      >
-        <AppAppBar />
-      </Box>
+      {!isModulesScreen ? (
+        <Box
+          aria-hidden={isAssessmentInProgress ? 'true' : undefined}
+          sx={{
+            pointerEvents: isAssessmentInProgress ? 'none' : 'auto',
+            opacity: isAssessmentInProgress ? 0.55 : 1,
+            filter: isAssessmentInProgress ? 'grayscale(1)' : 'none',
+            userSelect: isAssessmentInProgress ? 'none' : 'auto',
+          }}
+        >
+          <AppAppBar />
+        </Box>
+      ) : null}
       <Box
         sx={{
           flex: 1,
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+          alignItems: isModulesScreen ? 'stretch' : 'center',
+          justifyContent: isModulesScreen ? 'stretch' : 'center',
           minHeight: 0,
           overflow: 'hidden',
-          px: { xs: 1, sm: 2 },
+          px: isModulesScreen ? 0 : { xs: 1, sm: 2 },
         }}
       >
       {!isDisclaimerAccepted ? <Disclaimer setIsDisclaimerAccepted={setIsDisclaimerAccepted} /> : null}
@@ -318,12 +324,23 @@ const ScreeningQuestioners = () => {
       ) : null}
 
       {isDisclaimerAccepted && falsePositive && isPreTestCompleted && isQuestionerClosed ? (
-        <ModuleRunner
-          userId={userId}
-          languageCode={languageCode}
-          onAllModulesComplete={handleAllModulesComplete}
-          lastCompletedModuleId={attemptStatus?.lastModuleCompleted?.id}
-        />
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            pb: 'calc(env(safe-area-inset-bottom, 0px))',
+          }}
+        >
+          <ModuleRunner
+            userId={userId}
+            languageCode={languageCode}
+            onAllModulesComplete={handleAllModulesComplete}
+            lastCompletedModuleId={attemptStatus?.lastModuleCompleted?.id}
+          />
+        </Box>
       ) : null}
 
       <GenericModal
@@ -365,7 +382,7 @@ const ScreeningQuestioners = () => {
           pb: 'calc(env(safe-area-inset-bottom, 0px))',
         }}
       >
-        <AppFooter />
+        {!isAssessmentInProgress ? <AppFooter /> : null}
       </Box>
     </Box>
   );
