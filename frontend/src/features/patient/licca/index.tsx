@@ -70,7 +70,7 @@ const LiccaSubscription = () => {
         }}
       >
         <Button variant="contained" size="large" onClick={handleGoToLicca}>
-          Go to LICCA
+          AI-Assisted Brain Training App
         </Button>
       </Paper>
     </Box>

@@ -34,6 +34,7 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
         enterAnswers: getLanguageText(languageConstants, 'game_answer_now') || 'Answer Now', // Changed from game_enter_answers
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder') || 'Type your recall here...',
         answerNow: getLanguageText(languageConstants, 'game_next') || 'NEXT', // Changed from game_answer_now/ANSWER NOW
+        submitContinue: getLanguageText(languageConstants, 'submit_continue') || 'Submit & Continue',
         audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
 
@@ -44,6 +45,9 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
     // Audio Playlist State
     const [playlist, setPlaylist] = useState<string[]>([]);
     const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+
+    // Allow only a single manual repeat after the initial auto-play
+    const [repeatUsed, setRepeatUsed] = useState(false);
 
     // Confirmation Modal State
     const [showConfirmation, setShowConfirmation] = useState(false);
@@ -103,6 +107,7 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
             setPhase('recall');
         } else {
             // Reset playlist position if restarting
+            setRepeatUsed(false);
             setCurrentTrackIndex(0);
             setPhase('playing_audio');
         }
@@ -110,6 +115,8 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
 
     const handleRepeat = () => {
         window.speechSynthesis.cancel();
+        if (repeatUsed) return;
+        setRepeatUsed(true);
         setCurrentTrackIndex(0); // Restart playlist
         setPhase('playing_audio');
     };
@@ -255,18 +262,27 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
                         </Typography>
                     </Box>
 
-                    <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        justifyContent: 'center',
+                        gap: 2,
+                        mt: 4,
+                        width: '100%'
+                    }}>
                         <MorenButton
                             variant="outlined"
                             onClick={handleRepeat}
+                            disabled={repeatUsed}
                             sx={{
                                 borderColor: '#274765',
                                 color: '#274765',
-                                minWidth: '180px',
+                                width: { xs: 140, sm: 180 },
+                                minWidth: { xs: 'none', sm: '180px' },
                                 fontWeight: 'bold',
                                 borderWidth: 2,
                                 borderRadius: '12px',
-                                px: 4,
+                                px: { xs: 2, sm: 4 },
                                 py: 2,
                                 '&:hover': {
                                     borderWidth: 2,
@@ -282,12 +298,13 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
                             variant="contained"
                             onClick={handleNextToPost}
                             sx={{
-                                minWidth: '180px',
+                                width: { xs: 140, sm: 180 },
+                                minWidth: { xs: 'none', sm: '180px' },
                                 backgroundColor: '#274765',
                                 color: 'white',
                                 fontWeight: 'bold',
                                 borderRadius: '12px',
-                                px: 4,
+                                px: { xs: 2, sm: 4 },
                                 py: 2,
                                 fontSize: '1.1rem'
                             }}>
@@ -310,7 +327,7 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
                         onChange={setInputText}
                         onSpeechResult={(text) => setInputText(prev => prev + ' ' + text)}
                         languageCode={languageCode}
-                        placeholder={t.inputPlaceholder}
+                        // placeholder={t.inputPlaceholder}
                         enableModeSelection={true}
                     />
 
@@ -330,7 +347,7 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
                             fontWeight: 'bold'
                         }}
                     >
-                        {t.answerNow}
+                        {t.submitContinue}
                     </MorenButton>
                 </Box>
             )}

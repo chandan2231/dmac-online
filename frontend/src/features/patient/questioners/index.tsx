@@ -13,7 +13,7 @@ import { get } from 'lodash';
 import { useTestAttempts } from './hooks/useTestAttempts';
 import GenericModal from '../../../components/modal';
 import { Typography } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../router/router';
 
 
@@ -35,6 +35,22 @@ const Questioners = () => {
   const [showExitWarning, setShowExitWarning] = useState(false);
   const { data: attemptStatus, isLoading: isLoadingAttempts } = useTestAttempts(languageCode);
   const navigate = useNavigate();
+  const location = useLocation();
+  const [lastHandledRestartFromIdle, setLastHandledRestartFromIdle] = useState<number | null>(null);
+
+  useEffect(() => {
+    const state = location.state as { restartFromIdle?: number } | null;
+    const restartTs = state?.restartFromIdle;
+    if (!restartTs) return;
+    if (lastHandledRestartFromIdle === restartTs) return;
+
+    setLastHandledRestartFromIdle(restartTs);
+    setShowExitWarning(false);
+    setIsQuestionerClosed(false);
+    setIsDisclaimerAccepted(false);
+    setFalsePositive(false);
+    setIsPreTestCompleted(false);
+  }, [location.state, lastHandledRestartFromIdle]);
 
   const handleAllModulesComplete = () => {
     // Handle completion

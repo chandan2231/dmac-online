@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { type SessionData } from '../../../../../services/gameApi';
 import GenericModal from '../../../../../components/modal';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
@@ -26,7 +26,7 @@ interface Connection {
 // Fixed positions based on the user's screenshot
 // 5 is Top Center, M is Right of 5, O (0) is Bottom Center...
 const FIXED_POSITIONS: Record<string, { x: number, y: number }> = {
-    '5': { x: 50, y: 20 },
+    '5': { x: 55, y: 15 },
     'M': { x: 65, y: 30 },
     '6': { x: 80, y: 50 },
     'N': { x: 60, y: 50 },
@@ -35,11 +35,30 @@ const FIXED_POSITIONS: Record<string, { x: number, y: number }> = {
     '10': { x: 30, y: 70 },
     '8': { x: 40, y: 50 },
     'Q': { x: 20, y: 50 },
-    '9': { x: 20, y: 30 },
-    'P': { x: 35, y: 30 }
+    '9': { x: 15, y: 29 },
+    'P': { x: 35, y: 27 },
+    'R': { x: 10, y: 75 }
+};
+
+// Portrait/Vertical layout for mobile as per requested image
+const MOBILE_FIXED_POSITIONS: Record<string, { x: number, y: number }> = {
+    '5': { x: 35, y: 15 },
+    'M': { x: 65, y: 15 },
+    '10': { x: 15, y: 35 },
+    'N': { x: 60, y: 40 },
+    '6': { x: 85, y: 35 },
+    'Q': { x: 35, y: 50 },
+    'O': { x: 60, y: 60 }, // Displayed as 0
+    '7': { x: 85, y: 52 },
+    'R': { x: 15, y: 75 },
+    '9': { x: 35, y: 75 },
+    'P': { x: 60, y: 80 },
+    '8': { x: 85, y: 75 }
 };
 
 const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { languageConstants } = useLanguageConstantContext();
     const startText = getLanguageText(languageConstants, 'game_start') || 'Start';
     const instructionsTitle = getLanguageText(languageConstants, 'game_instructions') || 'Instructions';
@@ -65,7 +84,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
         // Filter out L, R, 11 as per new requirement
         items = items.filter((item: any) => {
             const key = item.image_key || item.display_text;
-            return !['L', 'R', '11'].includes(key);
+            return !['L', '11'].includes(key);
         });
 
         // Explicitly sort items by order to ensure strict sequence
@@ -81,7 +100,8 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
             // Default to random if label not found in map (fallback)
             // Use image_key for position lookup to be safe if display_text changes
             const lookupKey = item.image_key || label;
-            const pos = FIXED_POSITIONS[lookupKey] || FIXED_POSITIONS[label] || {
+            const positionsMap = isMobile ? MOBILE_FIXED_POSITIONS : FIXED_POSITIONS;
+            const pos = positionsMap[lookupKey] || positionsMap[label] || {
                 x: Math.random() * 80 + 10,
                 y: Math.random() * 80 + 10
             };
@@ -106,7 +126,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
             setLastConnectedIndex(0);
         }
 
-    }, [session]);
+    }, [session, isMobile]);
 
     const handleDotClick = (index: number) => {
         if (lastConnectedIndex === null) return;
@@ -194,8 +214,27 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
         return '#512da8'; // Deep Purple
     };
 
+    const dotSizeSx = {
+        width: { xs: 52, sm: 60, md: 65 },
+        height: { xs: 52, sm: 60, md: 65 },
+        fontSize: { xs: '1.25rem', sm: '1.4rem', md: '1.5rem' },
+    } as const;
+
     return (
-        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+            sx={{
+                width: '100%',
+                height: '100%',
+                minHeight: { xs: 'calc(100vh - 140px)', sm: '80vh' },
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 2, sm: 3 },
+            }}
+        >
+            {/* ... Modal ... */}
             <GenericModal
                 isOpen={showInstruction}
                 onClose={() => { }}
@@ -212,24 +251,41 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
                 <Typography>{session.instructions}</Typography>
             </GenericModal>
 
-            <Typography variant="h5" sx={{ mt: 6, mb: 2, color: '#274765', fontWeight: 'bold' }}>
+            <Typography
+                variant="h5"
+                sx={{
+                    mt: { xs: -2, sm: -4 },
+                    mb: { xs: 2, sm: 2 },
+                    color: '#274765',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    fontSize: { xs: '1.35rem', sm: '1.6rem', md: '1.75rem' },
+                    px: { xs: 1, sm: 0 },
+                }}
+            >
                 {session?.questions?.[0]?.prompt_text || 'DRAW PATTERN'}
             </Typography>
 
             <Box
                 sx={{
-                    width: '95%',
-                    height: '75vh',
+                    width: '100%',
+                    maxWidth: { xs: '100%', sm: 600, md: 750 },
+                    height: {
+                        xs: 'min(60vh, 450px)',
+                        sm: 'min(60vh, 500px)',
+                        md: 'min(65vh, 600px)',
+                    },
                     position: 'relative',
                     // border: '1px solid #ccc', // Screenshot doesn't show border
                     // borderRadius: 2,
                     touchAction: 'none',
-                    bgcolor: 'transparent' // Screenshot shows white/transparent bg
+                    bgcolor: 'transparent', // Screenshot shows white/transparent bg
+                    mx: 'auto',
                 }}
             >
                 <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
                     <defs>
-                        <marker id="arrowhead" markerWidth="20" markerHeight="7" refX="36" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
+                        <marker id="arrowhead" markerWidth="14" markerHeight="6" refX="22" refY="3" orient="auto" markerUnits="userSpaceOnUse">
                             <polygon points="0 0, 10 3.5, 0 7" fill="black" />
                         </marker>
                     </defs>
@@ -251,8 +307,7 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
                                 left: `${dot.x}%`,
                                 top: `${dot.y}%`,
                                 transform: 'translate(-50%, -50%)',
-                                width: 65,
-                                height: 65,
+                                ...dotSizeSx,
                                 borderRadius: '50%',
                                 bgcolor: getDotColor(dot.id, isConnected),
                                 color: 'white',
@@ -260,12 +315,14 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 fontWeight: 'bold',
-                                fontSize: '1.5rem',
                                 cursor: 'pointer',
                                 userSelect: 'none',
                                 boxShadow: 3,
                                 zIndex: 2,
-                                transition: 'background-color 0.3s ease'
+                                transition: 'background-color 0.3s ease',
+                                '&:active': {
+                                    transform: 'translate(-50%, -50%) scale(0.98)',
+                                },
                             }}
                         >
                             {dot.label}

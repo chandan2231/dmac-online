@@ -23,6 +23,8 @@ type Props = {
 };
 
 const PROGRESS_KEY = 'dmac_screening_current_module_id';
+const FORCE_RESTART_KEY = 'dmac_screening_force_restart_from_beginning';
+const FORCE_NEW_SESSION_KEY = 'dmac_screening_force_restart_needs_new_session';
 
 const PreTest = ({
   setPreTestCompleted,
@@ -38,12 +40,34 @@ const PreTest = ({
     if (!attemptStatus?.allowed || attemptStatus?.isCompleted) return;
 
     try {
-      if (attemptStatus?.lastModuleCompleted && !attemptStatus.isCompleted) {
+      const forceRestart = Boolean(localStorage.getItem(FORCE_RESTART_KEY));
+      const savedProgress = localStorage.getItem(PROGRESS_KEY);
+
+      // If a forced-restart attempt is already in progress, do not create another Module 1 session.
+      if (forceRestart && savedProgress) {
+        setPreTestCompleted(true);
+        return;
+      }
+
+      if (!forceRestart && attemptStatus?.lastModuleCompleted && !attemptStatus.isCompleted) {
         setPreTestCompleted(true);
         return;
       }
 
       localStorage.removeItem(PROGRESS_KEY);
+
+      // Reset idle timer for the new run
+      localStorage.setItem('dmac_screening_last_activity_ts', String(Date.now()));
+
+      // One-shot override: ensure ModuleRunner starts from module 1 (ignore DB lastModuleCompleted).
+      localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+      // PreTest creates the Module 1 session itself; ModuleRunner should resume it (not create another).
+      localStorage.removeItem(FORCE_NEW_SESSION_KEY);
+      // Persist module 1 so refresh can resume even before first submit.
+      localStorage.setItem(PROGRESS_KEY, '1');
+
+      // Make sure we don't resume stale in-progress sessions from prior attempts.
+      await ScreeningGameApi.abandonInProgressSessions(userId);
 
       await ScreeningGameApi.startSession(1, userId, languageCode, false);
       setPreTestCompleted(true);

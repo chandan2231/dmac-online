@@ -57,11 +57,21 @@ const getReportPdf = async (userId: number) => {
   return res.data;
 };
 
+const abandonInProgressSessions = async (
+  userId: number
+): Promise<{ isSuccess: boolean; abandoned: number }> => {
+  const res = await HttpService.post('/screeningModules/attempts/abandon', {
+    user_id: userId,
+  });
+  return res.data;
+};
+
 const ScreeningGameApi = {
   getModules,
   startSession,
   submitSession,
   getAttemptStatus,
+  abandonInProgressSessions,
   getReportPdf,
 };
 

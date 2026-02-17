@@ -57,7 +57,7 @@ const tabLabelWithNext = (label: string, showNextIcon: boolean) => (
       color: 'inherit',
     }}
   >
-    <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
+    <Box component="span" sx={{ whiteSpace: 'normal', lineHeight: 1.2 }}>
       {label}
     </Box>
     {showNextIcon ? (
@@ -72,8 +72,6 @@ const getTabSx = (selected: boolean) => ({
   minHeight: 44,
   px: 1.75,
   py: 0.75,
-  mx: 0.5,
-  my: 1,
   borderRadius: 4,
   color: selected ? '#fff' : 'text.primary',
   background: (theme: Theme) =>
@@ -350,6 +348,18 @@ const AssessmentForm = ({
     useSubmitAssessmentTab();
   const { enqueueSnackbar } = useSnackbar();
 
+  const consentTabIndex = 5;
+  const documentsTabIndex = 6;
+  const lastTabIndex = showLastTab ? documentsTabIndex : consentTabIndex;
+
+  useEffect(() => {
+    if (showLastTab && value === consentTabIndex) {
+      setValue(documentsTabIndex);
+    }
+    // Only react when the documents tab becomes available.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showLastTab]);
+
   const [satData, setSatData] = useState<Record<string, string>>({});
   const [datData, setDatData] = useState<Record<string, string>>({});
   const [adtData, setAdtData] = useState<Record<string, string>>({});
@@ -358,10 +368,6 @@ const AssessmentForm = ({
   const [catBrainInjury, setCatBrainInjury] = useState('');
   const catBrainInjuryRef = useRef<HTMLDivElement | null>(null);
   const [catBrainInjuryError, setCatBrainInjuryError] = useState(false);
-
-  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
-  const [disclaimerSignature, setDisclaimerSignature] = useState('');
-  const [disclaimerDate, setDisclaimerDate] = useState('');
 
   const [consentAccepted, setConsentAccepted] = useState(false);
   const [consentName, setConsentName] = useState('');
@@ -374,9 +380,6 @@ const AssessmentForm = ({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const questionRefs = useRef<any>({});
-  const disclaimerAcceptedRef = useRef<HTMLDivElement | null>(null);
-  const disclaimerSignatureRef = useRef<HTMLDivElement | null>(null);
-  const disclaimerDateRef = useRef<HTMLDivElement | null>(null);
   const consentAcceptedRef = useRef<HTMLDivElement | null>(null);
   const consentNameRef = useRef<HTMLDivElement | null>(null);
   const consentSignatureRef = useRef<HTMLDivElement | null>(null);
@@ -385,11 +388,6 @@ const AssessmentForm = ({
   const [questionErrors, setQuestionErrors] = useState<Record<string, boolean>>(
     {}
   );
-  const [disclaimerErrors, setDisclaimerErrors] = useState({
-    accepted: false,
-    signature: false,
-    date: false,
-  });
   const [consentErrors, setConsentErrors] = useState({
     accepted: false,
     name: false,
@@ -466,15 +464,6 @@ const AssessmentForm = ({
 
         setCatData(map);
       }
-      if (status.disclaimer) {
-        const parsed =
-          typeof status.disclaimer === 'string'
-            ? JSON.parse(status.disclaimer)
-            : status.disclaimer;
-        setDisclaimerAccepted(true);
-        setDisclaimerSignature(parsed.signature || '');
-        setDisclaimerDate(parsed.date || '');
-      }
       if (status.consent) {
         const parsed =
           typeof status.consent === 'string'
@@ -495,7 +484,6 @@ const AssessmentForm = ({
         status.sat &&
         status.dat &&
         status.adt &&
-        status.disclaimer &&
         status.consent
       ) {
         onComplete();
@@ -621,34 +609,13 @@ const AssessmentForm = ({
           return;
         }
         payload = [
-          { label: catGateQuestion.label, answer: 'Yes' },
+          { label: catGateQuestion.label, answer: catBrainInjury },
           ...catQuestions.map(q => ({
             label: q.label,
             answer: catData[q.id],
           })),
         ];
       }
-    } else if (tab === 'disclaimer') {
-      const nextErrors = {
-        accepted: !disclaimerAccepted,
-        signature: !disclaimerSignature,
-        date: !disclaimerDate,
-      };
-      setDisclaimerErrors(nextErrors);
-
-      if (nextErrors.accepted || nextErrors.signature || nextErrors.date) {
-        enqueueSnackbar('Please accept and sign the disclaimer', {
-          variant: 'error',
-        });
-
-        if (nextErrors.accepted) scrollToElement(disclaimerAcceptedRef.current);
-        else if (nextErrors.signature)
-          scrollToElement(disclaimerSignatureRef.current);
-        else scrollToElement(disclaimerDateRef.current);
-
-        return;
-      }
-      payload = { signature: disclaimerSignature, date: disclaimerDate };
     } else if (tab === 'consent') {
       const nextErrors = {
         accepted: !consentAccepted,
@@ -690,7 +657,7 @@ const AssessmentForm = ({
     try {
       await submitTab({ tab, data: payload });
       enqueueSnackbar('Submitted successfully', { variant: 'success' });
-      if (value < 6) setValue(value + 1);
+      if (value < lastTabIndex) setValue(value + 1);
     } catch (error) {
       console.error(error);
       enqueueSnackbar('Error submitting', { variant: 'error' });
@@ -763,23 +730,23 @@ const AssessmentForm = ({
       <Tabs
         value={value}
         onChange={handleChange}
-        variant="scrollable"
-        scrollButtons="auto"
+        variant="standard"
         sx={{
-          px: 0,
+          px: 3,
+          pt: 1,
           justifyContent: 'flex-start',
           '& .MuiTabs-scroller': {
             pl: 0,
-            pr: 3,
+            pr: 0,
+            overflowX: 'hidden !important',
           },
           '& .MuiTabs-flexContainer': {
             justifyContent: 'flex-start',
+            flexWrap: 'wrap',
+            gap: 1,
           },
           '& .MuiTab-root:first-of-type': {
             ml: 0,
-          },
-          '& .MuiTabs-scrollButtons': {
-            m: 0,
           },
           '& .MuiTabs-indicator': { display: 'none' },
         }}
@@ -789,12 +756,11 @@ const AssessmentForm = ({
         <Tab label={tabLabelWithNext('Depression Diagnostic Test', true)} sx={getTabSx(value === 2)} />
         <Tab label={tabLabelWithNext('Anxiety Diagnostic Test', true)} sx={getTabSx(value === 3)} />
         <Tab label={tabLabelWithNext('Concussion Assessment Test', true)} sx={getTabSx(value === 4)} />
-        <Tab label={tabLabelWithNext('Disclaimer', true)} sx={getTabSx(value === 5)} />
-        <Tab label={tabLabelWithNext('Consent', showLastTab)} sx={getTabSx(value === 6)} />
+        <Tab label={tabLabelWithNext('Consent', showLastTab)} sx={getTabSx(value === consentTabIndex)} />
         {showLastTab && (
           <Tab
             label={tabLabelWithNext('Patient Documents', false)}
-            sx={getTabSx(value === 7)}
+            sx={getTabSx(value === documentsTabIndex)}
           />
         )}
       </Tabs>
@@ -855,7 +821,7 @@ const AssessmentForm = ({
                     enqueueSnackbar('Submitted successfully', {
                       variant: 'success',
                     });
-                    if (value < 6) setValue(value + 1);
+                    if (value < lastTabIndex) setValue(value + 1);
                   } catch (error) {
                     console.error(error);
                     enqueueSnackbar('Error submitting', { variant: 'error' });
@@ -876,326 +842,8 @@ const AssessmentForm = ({
           ? renderQuestionTab(catQuestions, catData, 'cat')
           : null}
       </TabPanel>
-
-      <TabPanel value={value} index={5}>
-        <Box
-          sx={{
-            maxHeight: '400px',
-            overflowY: 'auto',
-            mb: 2,
-            p: 2,
-            border: '1px solid #ccc',
-          }}
-        >
-          <Typography variant="h6">
-            Regain Memory 360 – Comprehensive Disclaimer & Privacy Notice
-          </Typography>
-          <Typography variant="subtitle1">
-            (PDF-Ready Professional Version)
-          </Typography>
-
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            SECTION 1 — PROGRAM OVERVIEW
-          </Typography>
-          <Typography paragraph>
-            Regain Memory 360 (RM360) is a multidisciplinary directed physical
-            optimization and cognitive training online program designed to
-            promote neuroplasticity through structured body optimization and
-            brain exercises. RM360 online tools assist your licensed physician
-            by creating awareness, who can diagnose and treat the underlying
-            risk factor for memory loss and cognitive impairment.
-          </Typography>
-          <Typography paragraph>
-            RM360 may incorporate data from third-party sleep or activity
-            tracking devices for biometric charting. Cognitive exercises are
-            developed after 20 years of research and tried on hundreds of
-            patients in the USA in the last 15 years by Dr siuresh Kumar MD,
-            Diplomate ABPN-TBIM a triple board certified neurologist practice in
-            USA. Brain exercises are selected after Dynamic cognitive test for
-            individualized online cognitive training.
-          </Typography>
-          <Typography paragraph>
-            RM360 and associated platforms provide online portals for cognitive
-            training. RM360, Regain Memory Inc., regainmemory.org,
-            regainmemory360.com, and Suresh Kumar, M.D. assume no responsibility
-            for emotional, physical, or financial damages resulting from program
-            use.
-          </Typography>
-          <Typography paragraph>
-            RM360 does not guarantee reimbursement or refund, as acceptance
-            varies by insurance provider. Documentation is generated only when
-            the program is used in the recommended sequence. RM360 and its
-            affiliates are not responsible for loss of documentation caused by
-            failure to follow usage instructions or for any resulting financial
-            losses.
-          </Typography>
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            SECTION 2 — LICCA, DMAC & RELATED APPLICATIONS
-          </Typography>
-          <Typography variant="subtitle2">2.1 Purpose and Scope</Typography>
-          <Typography paragraph>
-            The Life Integrated Computerized Cognitive Application (LICCA) and
-            Dynamic Mobile Assessment of Cognition (DMAC) are developed through
-            extensive research and comparison with standardized cognitive
-            assessments. These tools measure cognitive function to guide and
-            assist therapeutic planning to practicing physicians.
-          </Typography>
-
-          <Typography variant="subtitle2">
-            2.2 Non-Diagnostic Limitation
-          </Typography>
-          <Typography paragraph>
-            DMAC scores do NOT diagnose Alzheimer's disease or any form of
-            dementia. Users must consult a qualified provider for formal
-            diagnosis of memory disorders, TBI, MTBI, or dementia.
-          </Typography>
-
-          <Typography variant="subtitle2">2.3 Research Background</Typography>
-          <Typography paragraph>
-            RM360 cognitive systems and training tools have been developed at
-            the Headache, TBI & Cognitive Institute and presented at
-            peer-reviewed neurology and rehabilitation conferences. Early
-            controlled research demonstrated 55–65% improvement in cognitive
-            domains among acquired brain injury groups (excluding advanced
-            dementia). Results may vary in home-based settings.
-          </Typography>
-
-          <Typography variant="subtitle2">2.4 Training Requirements</Typography>
-          <Typography paragraph>
-            Cognitive training via LICCA typically requires 45–60 minutes of
-            exercise every other day, along with recommended ACT use. Elderly
-            users may require supervision, device support, or motivational
-            assistance.
-          </Typography>
-
-          <Typography variant="subtitle2">2.5 No Guarantees</Typography>
-          <Typography paragraph>
-            No guarantee of cognitive improvement is given, as RM360 cannot
-            control remote training conditions. Physicians and therapists may
-            access training history and scores to guide clinical decisions.
-          </Typography>
-
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            SECTION 3 — MEDICAL & DIAGNOSTIC DISCLAIMER
-          </Typography>
-          <Typography paragraph>
-            DMAC and related cognitive tools are intended for awareness and
-            screening only. All information is provided without warranties of
-            any kind, express or implied. Users must not rely on RM360 or DMAC
-            scores or website information as a substitute for medical advice. Do
-            not delay or discontinue medical care based on information from
-            RM360.
-          </Typography>
-          <Typography paragraph>
-            The expert advice given by qualified physicians enrolled in RM360
-            are to educate and answer questions and concerns about memory or
-            cognitive impairment. They are not implied for treatment, some of
-            the diagnostic tests or tools are designed to direct you to your
-            physician to seek treatment of underlying treatable medical problems
-            contributing to cognitive impairment.
-          </Typography>
-          <Typography paragraph>
-            Support features within the platform may provide incomplete or
-            imprecise information due to limitations of online communication.
-            RM360 and its affiliated entities do not guarantee accuracy,
-            completeness, or timeliness of website content.
-          </Typography>
-          <Typography paragraph>
-            Access to the RM360 website and tools is at the user’s own risk.
-            RM360 is not liable for direct, indirect, incidental, special,
-            consequential, or punitive damages arising from use of the platform,
-            including damage caused by malware or technical errors.
-          </Typography>
-          <Typography paragraph>
-            All RM360 content is for informational purposes only and should not
-            be interpreted as medical advice.
-          </Typography>
-
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            SECTION 4 — HIPAA & PRIVACY COMPLIANCE ADD-ON
-          </Typography>
-          <Typography variant="subtitle2">4.1 Compliance Statement</Typography>
-          <Typography paragraph>
-            RM360, Regain Memory LLC or Inc., affiliated websites, and Suresh
-            Kumar, M.D. comply with the Health Insurance Portability and
-            Accountability Act (HIPAA) and applicable state privacy laws. All
-            Protected Health Information (PHI) is stored and handled according
-            to HIPAA Privacy, Security, and Breach Notification Rules.
-          </Typography>
-
-          <Typography variant="subtitle2">
-            4.2 Types of Information Collected
-          </Typography>
-          <Typography paragraph>
-            The platform may collect PHI including: Personal identifiers (name,
-            DOB, contact info), Cognitive assessment results, Biometric, sleep,
-            or activity data (if submitted), Medical diagnosis-related
-            information, System-generated reports and documentation. RM360 does
-            not store credit card information.
-          </Typography>
-
-          <Typography variant="subtitle2">
-            4.3 Data Storage and Protection
-          </Typography>
-          <Typography paragraph>
-            PHI is stored on Amazon Web Services (AWS) encrypted servers fully
-            compliant with HIPAA standards. Safeguards include: Encryption of
-            PHI in transit and at rest, Role-based access controls, Secure
-            authentication, Continuous monitoring and auditing, Regular security
-            reviews. Users are responsible for keeping passwords confidential.
-          </Typography>
-
-          <Typography variant="subtitle2">4.4 Use of Information</Typography>
-          <Typography paragraph>
-            PHI may be used for: Cognitive therapy planning, Clinical evaluation
-            by your provider, Insurance documentation (no guarantee of
-            acceptance), De-identified research and quality improvement. PHI is
-            never sold to third parties.
-          </Typography>
-
-          <Typography variant="subtitle2">4.5 Disclosure of PHI</Typography>
-          <Typography paragraph>
-            PHI may be disclosed: To your treating clinician, With your written
-            authorization, As required by law, To HIPAA-compliant business
-            associates, For internal administrative or security purposes. We
-            follow a minimum necessary disclosure standard.
-          </Typography>
-
-          <Typography variant="subtitle2">4.6 Your HIPAA Rights</Typography>
-          <Typography paragraph>
-            You have the right to: Access your records, Request corrections,
-            Receive an accounting of disclosures, Request confidential
-            communications, Request restrictions on use/disclosure, File a
-            privacy complaint without retaliation.
-          </Typography>
-
-          <Typography variant="subtitle2">
-            4.7 Breach Notification Procedure
-          </Typography>
-          <Typography paragraph>
-            In case of a PHI breach, RM360 will: Conduct a risk assessment,
-            Notify affected individuals following HIPAA guidelines, Notify HHS
-            when required, Implement corrective actions.
-          </Typography>
-
-          <Typography variant="subtitle2">4.8 User Responsibilities</Typography>
-          <Typography paragraph>
-            Users must: Keep login credentials confidential, Log out after each
-            session, Use secure devices and networks, Report suspicious account
-            activity.
-          </Typography>
-
-          <Typography variant="subtitle2">4.9 Limitations</Typography>
-          <Typography paragraph>
-            While RM360 follows industry security standards, absolute security
-            cannot be guaranteed.
-          </Typography>
-
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            SECTION 5 — SUBSCRIPTIONS & USER RESPONSIBILITIES
-          </Typography>
-          <Typography variant="subtitle2">5.1 Subscription Policy</Typography>
-          <Typography paragraph>
-            All subscription fees paid online are non-refundable. RM360 does not
-            store payment card data and does not auto-renew subscriptions.
-          </Typography>
-
-          <Typography variant="subtitle2">
-            5.2 Security Recommendations
-          </Typography>
-          <Typography paragraph>
-            Users should not share passwords and should log out after each
-            training session.
-          </Typography>
-
-          <Typography variant="subtitle2">5.3 User Waiver of Claims</Typography>
-          <Typography paragraph>
-            By clicking ACCEPT, users waive all rights to claims against:
-            regainmemory.org, regainmemorycenter.com, retainmemory.com, Regain
-            Memory Inc., Suresh Kumar, M.D., Any affiliated companies or
-            institutions. This waiver includes any damages or harm arising from
-            the use of LICCA, MUST, ACT, PDS, or MCT programs.
-          </Typography>
-        </Box>
-
-        <Box ref={disclaimerAcceptedRef}>
-          <FormControl error={disclaimerErrors.accepted}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={disclaimerAccepted}
-                  onChange={e => {
-                    setDisclaimerAccepted(e.target.checked);
-                    setDisclaimerErrors(prev => ({
-                      ...prev,
-                      accepted: false,
-                    }));
-                  }}
-                />
-              }
-              label="I have read and agree to the disclaimer"
-            />
-            {disclaimerErrors.accepted && (
-              <FormHelperText>This field is required</FormHelperText>
-            )}
-          </FormControl>
-        </Box>
-        <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-          <Box ref={disclaimerSignatureRef} sx={{ width: '50%' }}>
-            <TextField
-              label="Name ; Type electronic signature"
-              value={disclaimerSignature}
-              onChange={e => {
-                setDisclaimerSignature(e.target.value);
-                setDisclaimerErrors(prev => ({ ...prev, signature: false }));
-              }}
-              error={disclaimerErrors.signature}
-              helperText={
-                disclaimerErrors.signature ? 'This field is required' : ''
-              }
-              fullWidth
-            />
-          </Box>
-          <Box ref={disclaimerDateRef} sx={{ width: '50%' }}>
-            <TextField
-              label="Date"
-              type="date"
-              value={disclaimerDate}
-              onChange={e => {
-                setDisclaimerDate(e.target.value);
-                setDisclaimerErrors(prev => ({ ...prev, date: false }));
-              }}
-              InputLabelProps={{ shrink: true }}
-              error={disclaimerErrors.date}
-              helperText={disclaimerErrors.date ? 'This field is required' : ''}
-              fullWidth
-            />
-          </Box>
-        </Box>
-        <Button
-          variant="contained"
-          sx={{ mt: 2 }}
-          onClick={() => handleSubmit('disclaimer')}
-          disabled={submitting}
-        >
-          {submitting ? (
-            <CircularProgress size={24} />
-          ) : (
-            <span key="assessment-disclaimer-accept">ACCEPT</span>
-          )}
-        </Button>
-      </TabPanel>
-
-      <TabPanel value={value} index={6}>
-        <Box
-          sx={{
-            maxHeight: '400px',
-            overflowY: 'auto',
-            mb: 2,
-            p: 2,
-            border: '1px solid #ccc',
-          }}
-        >
+      <TabPanel value={value} index={consentTabIndex}>
+        <Box sx={{ mb: 2, p: 2, border: '1px solid #ccc' }}>
           <Typography variant="h6">
             Consent for Research Study & Authorization to Share Protected Health
             Information
@@ -1434,7 +1082,7 @@ const AssessmentForm = ({
       </TabPanel>
 
       {showLastTab && (
-        <TabPanel value={value} index={7}>
+        <TabPanel value={value} index={documentsTabIndex}>
           {tab}
         </TabPanel>
       )}

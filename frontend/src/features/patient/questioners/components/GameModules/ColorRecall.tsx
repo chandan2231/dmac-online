@@ -4,6 +4,7 @@ import type { SessionData } from '../../../../../services/gameApi';
 import MorenButton from '../../../../../components/button';
 import SpeechInput from '../../../../../components/SpeechInput';
 import GenericModal from '../../../../../components/modal';
+import ConfirmationModal from '../../../../../components/modal/ConfirmationModal';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 
@@ -19,13 +20,15 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
     const [showInstruction, setShowInstruction] = useState(true);
     const [timeLeft, setTimeLeft] = useState(120);
     const [isActive, setIsActive] = useState(false);
+    const [showConfirmation, setShowConfirmation] = useState(false);
     const liveTranscriptRef = useRef('');
 
     // Translations
     const t = {
         instructions: getLanguageText(languageConstants, 'game_instruction') || 'Instructions',
         start: getLanguageText(languageConstants, 'game_start') || 'START',
-        answerNow: getLanguageText(languageConstants, 'game_next') || 'NEXT', // Changed from game_answer_now/SUBMIT
+        answerNow: getLanguageText(languageConstants, 'game_next') || 'NEXT', // Changed from game_answer_now/NEXT
+        submitContinue: getLanguageText(languageConstants, 'submit_continue') || 'Submit & Continue',
         inputPlaceholder: 'Enter Answers (e.g., red blue)',
         audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
@@ -52,8 +55,24 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
     };
 
     const handleSubmit = () => {
-        setIsActive(false);
         const finalText = inputText.trim() || liveTranscriptRef.current.trim();
+
+        if (!finalText) {
+            setShowConfirmation(true);
+            return;
+        }
+
+        processSubmit(finalText);
+    };
+
+    const handleConfirmSubmit = () => {
+        setShowConfirmation(false);
+        const finalText = inputText.trim() || liveTranscriptRef.current.trim();
+        processSubmit(finalText);
+    };
+
+    const processSubmit = (finalText: string) => {
+        setIsActive(false);
 
         const answer = {
             question_id: question?.question_id,
@@ -102,7 +121,7 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
                             liveTranscriptRef.current = text;
                         }}
                         languageCode={languageCode}
-                        placeholder={t.inputPlaceholder}
+                        // placeholder={t.inputPlaceholder}
                         enableModeSelection={true}
                     />
 
@@ -122,10 +141,16 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
                             fontWeight: 'bold'
                         }}
                     >
-                        {t.answerNow}
+                        {t.submitContinue}
                     </MorenButton>
                 </Box>
             )}
+
+            <ConfirmationModal
+                open={showConfirmation}
+                onClose={() => setShowConfirmation(false)}
+                onConfirm={handleConfirmSubmit}
+            />
         </Box>
     );
 };

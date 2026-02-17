@@ -1,14 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import MorenButton from '../../../../../components/button';
 import GenericModal from '../../../../../components/modal';
+import ConfirmationModal from '../../../../../components/modal/ConfirmationModal';
 import type { SessionData } from '../../../../../services/gameApi';
-import SpeechInput from '../../../../../components/SpeechInput';
+import SpeechInput, { type SpeechInputHandle } from '../../../../../components/SpeechInput';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 import AudioPlayer from './Shared/AudioPlayer';
-
-
 
 // Import local audio assets
 import firstAudio from '../../../../../assets/NumberRecall/first.mp3';
@@ -42,6 +41,7 @@ interface NumberRecallProps {
 
 const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) => {
     const { languageConstants } = useLanguageConstantContext();
+    const speechInputRef = useRef<SpeechInputHandle>(null);
 
     // Translations
     const t = {
@@ -50,37 +50,43 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
         next: getLanguageText(languageConstants, 'game_next'),
         playing: getLanguageText(languageConstants, 'game_playing'),
         completed: getLanguageText(languageConstants, 'game_completed_status'),
-        enterAnswers: getLanguageText(languageConstants, 'game_answer_now') || 'Answer Now', // Changed from game_enter_answers
+        enterAnswers: getLanguageText(languageConstants, 'game_answer_now') || 'Answer Now',
         inputPlaceholder: getLanguageText(languageConstants, 'game_input_placeholder') || 'Type the numbers...',
-        answerNow: getLanguageText(languageConstants, 'game_next') || 'NEXT', // Changed from game_answer_now/ANSWER NOW
+        answerNow: getLanguageText(languageConstants, 'game_next') || 'NEXT',
+        submitContinue: getLanguageText(languageConstants, 'submit_continue') || 'Submit & Continue',
         validationError: getLanguageText(languageConstants, 'game_validation_error') || 'Please enter an answer',
         audioInstruction: getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction'
     };
 
-    // Phases: 
-    // 'instruction' -> Initial instructions
-    // 'playing' -> Audio is playing
-    // 'input' -> User types answer
-    const [phase, setPhase] = useState<'instruction' | 'playing' | 'playing_complete' | 'input'>('instruction');
+    const [phase, setPhase] = useState<'instruction' | 'playing' | 'input'>('instruction');
     const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState<any[]>([]);
-
     const [inputText, setInputText] = useState('');
     const [error, setError] = useState('');
-
-    // Ref to hold live transcript for real-time capture
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [responseCountdown, setResponseCountdown] = useState(60);
     const liveTranscriptRef = useRef('');
 
     const questions = session.questions || [];
     const currentQuestion = questions[currentIndex];
 
-    // Map keywords in URL/filename to imported assets
+    // Response timer for input phase
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (phase === 'input' && responseCountdown > 0) {
+            timer = setTimeout(() => {
+                setResponseCountdown(prev => prev - 1);
+            }, 1000);
+        } else if (phase === 'input' && responseCountdown === 0) {
+            const finalAnswerText = (inputText + ' ' + liveTranscriptRef.current).replace(/\s/g, '');
+            processSubmit(finalAnswerText);
+        }
+        return () => clearTimeout(timer);
+    }, [phase, responseCountdown, inputText]);
+
     const resolveAudioUrl = (url: string) => {
         if (!url) return '';
-
         const lowerUrl = url.toLowerCase();
-
-        // Simple mapping based on filename keywords
         if (lowerUrl.includes('reverse_first')) return reverseFirstAudio;
         if (lowerUrl.includes('reverse_second')) return reverseSecondAudio;
         if (lowerUrl.includes('reverse_third')) return reverseThirdAudio;
@@ -102,64 +108,55 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
         if (lowerUrl.includes('eight')) return eightAudio;
         if (lowerUrl.includes('nine')) return nineAudio;
         if (lowerUrl.includes('ten')) return tenAudio;
-
-        // Fallback: If URL is absolute, return it
         if (url.startsWith('http')) return url;
-
-        // Fallback: Return as is (might be relative path valid in public/)
         return url;
     };
 
-    const getAudioUrl = resolveAudioUrl; // Alias for consistency with existing code calls
+    const getAudioUrl = resolveAudioUrl;
 
     const handleStart = () => {
         setPhase('playing');
+        setResponseCountdown(60);
     };
 
-    const handleAudioEnded = () => {
-        setPhase('playing_complete');
-    };
-
-    const handleRepeat = () => {
-        setPhase('playing');
-    };
-
-    const handleNextFromComplete = () => {
+    const handleAudioEnded = useCallback(() => {
         setPhase('input');
-    };
+        setResponseCountdown(60);
+    }, []);
 
     const handleSubmit = () => {
-        // Combine committed text with any pending live transcript
+        if (speechInputRef.current) {
+            speechInputRef.current.stopListening();
+        }
         const pendingText = liveTranscriptRef.current;
         const rawText = inputText + ' ' + pendingText;
-        // Remove all spaces for backend submission as per user request and scoring logic
         const finalAnswerText = rawText.replace(/\s/g, '');
-
-        // Removed validation check as per user request
-        /*
         if (!finalAnswerText) {
-            setError(t.validationError);
+            setShowConfirmation(true);
             return;
         }
-        */
+        processSubmit(finalAnswerText);
+    };
 
+    const handleConfirmSubmit = () => {
+        setShowConfirmation(false);
+        const finalAnswerText = (inputText + ' ' + liveTranscriptRef.current).replace(/\s/g, '');
+        processSubmit(finalAnswerText);
+    };
+
+    const processSubmit = (finalAnswerText: string) => {
         const answer = {
             question_id: currentQuestion.question_id,
             answer_text: finalAnswerText
         };
-
         const newAnswers = [...answers, answer];
         setAnswers(newAnswers);
         setInputText('');
-        liveTranscriptRef.current = ''; // Clear live transcript
+        liveTranscriptRef.current = '';
         setError('');
-
+        setResponseCountdown(60);
         if (currentIndex < questions.length - 1) {
             setCurrentIndex(prev => prev + 1);
-            // Check if we need instructions again? 
-            // Usually just "You will hear number sequences..." at start is enough.
-            // But if each question has a prompt like "Sequence 1", maybe we show a brief "Get Ready" or just play?
-            // Let's just play next.
             setPhase('playing');
         } else {
             onComplete(newAnswers);
@@ -170,7 +167,6 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
         return <Typography color="error">No questions loaded.</Typography>;
     }
 
-    // Helper: Access item safely (API returns items array)
     const currentItem = currentQuestion.items && currentQuestion.items.length > 0 ? currentQuestion.items[0] : null;
 
     return (
@@ -185,7 +181,6 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
             justifyContent: 'center',
             gap: 4
         }}>
-            {/* Instruction Modal */}
             <GenericModal
                 isOpen={phase === 'instruction'}
                 onClose={() => { }}
@@ -194,7 +189,7 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                 submitButtonText={t.start}
                 onSubmit={handleStart}
                 instructionText={session.instructions || "You will hear number sequences. After each, type what you heard."}
-                enableAudio={true} // Read instructions
+                enableAudio={true}
                 audioButtonLabel={t.audioInstruction}
                 audioButtonAlignment="center"
                 languageCode={languageCode}
@@ -202,7 +197,6 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                 <Typography>{session.instructions || "You will hear number sequences. After each, type what you heard."}</Typography>
             </GenericModal>
 
-            {/* Playing State */}
             {phase === 'playing' && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                     <Box sx={{
@@ -218,19 +212,9 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                             {t.playing || 'Listen carefully...'}
                         </Typography>
                     </Box>
-
-                    {/* Audio Player - auto plays */}
-                    {/* Audio Player - auto plays */}
-                    {/* Audio Player - auto plays */}
-                    {/* Audio Player - auto plays */}
-                    {/* Audio Player - auto plays */}
                     {(() => {
-                        console.log('[NumberRecall] currentItem:', currentItem);
                         const urlToResolve = currentItem?.audio_url || currentItem?.image_url || '';
-                        console.log('[NumberRecall] urlToResolve:', urlToResolve);
                         const resolvedSrc = getAudioUrl(urlToResolve);
-                        console.log('[NumberRecall] resolvedSrc:', resolvedSrc);
-
                         return (urlToResolve) && (
                             <AudioPlayer
                                 src={resolvedSrc}
@@ -242,66 +226,6 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                 </Box>
             )}
 
-            {/* Playing Complete State */}
-            {phase === 'playing_complete' && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <Box sx={{
-                        border: '2px solid #274765',
-                        px: 8,
-                        py: 2,
-                        minWidth: '300px',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        backgroundColor: '#f0f4f8'
-                    }}>
-                        <Typography variant="h6" sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
-                            {t.completed || 'Completed'}
-                        </Typography>
-                    </Box>
-
-                    <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
-                        <MorenButton
-                            variant="outlined"
-                            onClick={handleRepeat}
-                            sx={{
-                                borderColor: '#274765',
-                                color: '#274765',
-                                minWidth: '180px',
-                                fontWeight: 'bold',
-                                borderWidth: 2,
-                                borderRadius: '12px',
-                                px: 4,
-                                py: 2,
-                                '&:hover': {
-                                    borderWidth: 2,
-                                    borderColor: '#1e3650',
-                                    backgroundColor: 'rgba(39, 71, 101, 0.04)'
-                                }
-                            }}
-                        >
-                            {t.next === 'SIGUIENTE' ? 'REPETIR' : 'REPEAT'}
-                        </MorenButton>
-
-                        <MorenButton
-                            variant="contained"
-                            onClick={handleNextFromComplete}
-                            sx={{
-                                minWidth: '180px',
-                                backgroundColor: '#274765',
-                                color: 'white',
-                                fontWeight: 'bold',
-                                borderRadius: '12px',
-                                px: 4,
-                                py: 2,
-                                fontSize: '1.1rem'
-                            }}>
-                            {t.answerNow}
-                        </MorenButton>
-                    </Box>
-                </Box>
-            )}
-
-            {/* Input State */}
             {phase === 'input' && (
                 <Box sx={{ width: '100%', maxWidth: '600px', p: 2, pb: 25, display: 'flex', flexDirection: 'column', gap: 3 }}>
                     <Typography variant="h6" sx={{ textAlign: 'center' }}>
@@ -309,6 +233,7 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                     </Typography>
 
                     <SpeechInput
+                        ref={speechInputRef}
                         fullWidth
                         value={inputText}
                         onChange={setInputText}
@@ -317,8 +242,12 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                             liveTranscriptRef.current = text;
                         }}
                         languageCode={languageCode}
-                        placeholder={t.inputPlaceholder}
+                        // placeholder={t.inputPlaceholder}
                         enableModeSelection={true}
+                        inputProps={{
+                            inputMode: 'numeric',
+                            pattern: '[0-9]*'
+                        }}
                     />
 
                     {error && (
@@ -341,11 +270,16 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
                             fontWeight: 'bold'
                         }}
                     >
-                        {t.answerNow}
+                        {t.submitContinue}
                     </MorenButton>
                 </Box>
             )}
 
+            <ConfirmationModal
+                open={showConfirmation}
+                onClose={() => setShowConfirmation(false)}
+                onConfirm={handleConfirmSubmit}
+            />
         </Box>
     );
 };

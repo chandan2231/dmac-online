@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import GameApi, { type Module, type SessionData } from '../../../../../services/gameApi';
 import CustomLoader from '../../../../../components/loader';
@@ -20,6 +20,9 @@ import { getLanguageText } from '../../../../../utils/functions';
 import GenericModal from '../../../../../components/modal';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../../../router/router';
+import { useIdleTimeout } from '../../../../../hooks/useIdleTimeout';
+import { useTestAttempts } from '../../hooks/useTestAttempts';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ModuleRunnerProps {
     userId: number; // Actually userId might come from auth context inside here or passed down
@@ -28,9 +31,16 @@ interface ModuleRunnerProps {
     lastCompletedModuleId?: number | null;
 }
 
+type GenericAnswer = Record<string, unknown>;
+type AnswerWithText = GenericAnswer & { answer_text?: string };
+type AnswerWithScore = GenericAnswer & { score?: number };
+
 const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastCompletedModuleId }: ModuleRunnerProps) => {
     const { languageConstants } = useLanguageConstantContext();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
+
+    const { data: attemptStatus } = useTestAttempts(languageCode);
 
     // Get error message translations
     const t = {
@@ -55,6 +65,25 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     const [error, setError] = useState<string | null>(null);
     const [showCompletion, setShowCompletion] = useState(false);
 
+    const [idleModalOpen, setIdleModalOpen] = useState(false);
+    const [idleMinutes, setIdleMinutes] = useState(0);
+
+    const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
+    const IDLE_STORAGE_KEY = 'dmac_last_activity_ts';
+    const PROGRESS_KEY = 'dmac_current_module_id';
+    // When set: ignore backend lastCompletedModuleId and start from PROGRESS_KEY/first module.
+    // Cleared once Module 1 is completed in the new attempt.
+    const FORCE_RESTART_KEY = 'dmac_force_restart_from_beginning';
+    // When set: create a fresh Module 1 session exactly once (resume=false) to count a new attempt.
+    const FORCE_NEW_SESSION_KEY = 'dmac_force_restart_needs_new_session';
+
+    const attemptsBanner = useMemo(() => {
+        if (!attemptStatus) return null;
+        const remaining = Math.max(0, (attemptStatus.max_attempts ?? 3) - (attemptStatus.count ?? 0));
+        const isFinal = remaining === 0;
+        return { remaining, isFinal };
+    }, [attemptStatus]);
+
     useEffect(() => {
         const fetchModules = async () => {
             try {
@@ -62,13 +91,33 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                 const sorted = (res.modules || []).sort((a, b) => a.order_index - b.order_index);
                 setModules(sorted);
 
+                const lastActiveRaw = localStorage.getItem(IDLE_STORAGE_KEY);
+                const lastActiveTs = lastActiveRaw ? Number(lastActiveRaw) : 0;
+                const idleMs = lastActiveTs ? Date.now() - lastActiveTs : 0;
+                const isTimeExpired = Boolean(lastActiveTs) && idleMs > IDLE_TIMEOUT_MS;
+                const forceRestart = Boolean(localStorage.getItem(FORCE_RESTART_KEY));
+                const needsNewSession = Boolean(localStorage.getItem(FORCE_NEW_SESSION_KEY));
+                const shouldIgnoreBackendResume = Boolean(forceRestart);
+
+                // Only show the idle modal when the user was truly idle > 10 min.
+                if (isTimeExpired) {
+                    const minutes = Math.max(0, Math.ceil(idleMs / 60000));
+                    setIdleMinutes(minutes);
+                    setIdleModalOpen(true);
+                    localStorage.removeItem(PROGRESS_KEY);
+                    // Require a full restart from module 1, and create a fresh module-1 session once user clicks Restart.
+                    localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+                    localStorage.setItem(FORCE_NEW_SESSION_KEY, String(Date.now()));
+                    return;
+                }
+
                 // Determine start module
-                const savedId = localStorage.getItem('dmac_current_module_id');
+                const savedId = localStorage.getItem(PROGRESS_KEY);
                 let startId = sorted.length > 0 ? sorted[0].id : 0;
                 let startIndex = 0;
 
-                // Priority 1: Check backend last completed module
-                if (lastCompletedModuleId) {
+                // Priority 1: backend last completed module (only when not in a forced restart attempt)
+                if (!shouldIgnoreBackendResume && lastCompletedModuleId) {
                     const lastIndex = sorted.findIndex(m => m.id === lastCompletedModuleId);
                     if (lastIndex !== -1) {
                         // Ensure we don't go out of bounds
@@ -95,7 +144,18 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                 setCurrentModuleIndex(startIndex);
 
                 if (sorted.length > 0) {
-                    startModuleSession(startId);
+                    // Avoid double-counting attempts: only create a fresh session when explicitly requested.
+                    await startModuleSession(startId, !needsNewSession);
+
+                    // Persist current module to support refresh-resume even before first submit.
+                    if (!savedId && startId) {
+                        localStorage.setItem(PROGRESS_KEY, String(startId));
+                    }
+
+                    // One-shot: after creating the new session, stop forcing resume=false.
+                    if (needsNewSession) {
+                        localStorage.removeItem(FORCE_NEW_SESSION_KEY);
+                    }
                 } else {
                     console.warn("No active game modules found.");
                     setError(t.noModulesFound);
@@ -107,16 +167,31 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
             }
         };
         fetchModules();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lastCompletedModuleId]);
 
-    const startModuleSession = async (moduleId: number) => {
+    const { setActiveNow } = useIdleTimeout({
+        storageKey: IDLE_STORAGE_KEY,
+        enabled: !showCompletion && !idleModalOpen,
+        timeoutMs: IDLE_TIMEOUT_MS,
+        onIdle: (idleMs) => {
+            const minutes = Math.max(0, Math.ceil(idleMs / 60000));
+            setIdleMinutes(minutes);
+            setIdleModalOpen(true);
+            localStorage.removeItem(PROGRESS_KEY);
+            localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+            localStorage.setItem(FORCE_NEW_SESSION_KEY, String(Date.now()));
+        },
+    });
+
+    const startModuleSession = async (moduleId: number, resume: boolean = true) => {
         setLoading(true);
         setError(null);
         try {
             console.log(`[ModuleRunner] Starting session for module ${moduleId}`);
             // Resume exiting session (created in PreTest) for Module 1, or generally allow resume
             // To support attempt tracking via PreTest, we MUST resume if a session exists.
-            const sess = await GameApi.startSession(moduleId, userId, languageCode, true); // resume = true
+            const sess = await GameApi.startSession(moduleId, userId, languageCode, resume);
             console.log(`[ModuleRunner] Session started:`, sess);
             setSession(sess);
         } catch (error) {
@@ -127,15 +202,71 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         }
     };
 
-    const handleModuleSubmit = async (payload: any) => {
+    const restartFromBeginningDueToIdle = async () => {
+        const canRestart =
+            attemptStatus ? attemptStatus.count < attemptStatus.max_attempts : true;
+
+        setIdleModalOpen(false);
+
+        if (!canRestart) {
+            // Do not block navigation on network/API calls.
+            void GameApi.abandonInProgressSessions().catch(e => {
+                console.error('[ModuleRunner] Failed to abandon sessions after idle (final attempt)', e);
+            });
+
+            localStorage.removeItem(PROGRESS_KEY);
+            localStorage.removeItem(FORCE_RESTART_KEY);
+            localStorage.removeItem(FORCE_NEW_SESSION_KEY);
+            setLoading(false);
+            navigate(ROUTES.HOME);
+            return;
+        }
+
+        // Reset local state immediately so UI doesn't get stuck.
+        setLoading(false);
+        setError(null);
+
+        // Reset idle timer immediately on Restart
+        setActiveNow();
+
+        // Restart should take the user back to the beginning of the assessment flow.
+        // We force a new attempt on the PreTest screen (ignore backend resume).
+        localStorage.removeItem(PROGRESS_KEY);
+        localStorage.setItem(FORCE_RESTART_KEY, String(Date.now()));
+        localStorage.removeItem(FORCE_NEW_SESSION_KEY);
+
+        // Reset the "Questioners" flow state so it starts from Disclaimer (same entry path).
+        localStorage.removeItem('dmac_flow_isQuestionerClosed');
+        localStorage.removeItem('dmac_flow_isDisclaimerAccepted');
+        localStorage.removeItem('dmac_flow_falsePositive');
+        localStorage.removeItem('dmac_flow_isPreTestCompleted');
+
+        // Best-effort cleanup: do not block redirect.
+        void GameApi.abandonInProgressSessions().catch(e => {
+            console.error('[ModuleRunner] Failed to abandon sessions after idle', e);
+        });
+        void queryClient.invalidateQueries({ queryKey: ['test-attempts', languageCode] });
+
+        navigate(ROUTES.QUESTIONERS, {
+            replace: true,
+            state: { restartFromIdle: Date.now() },
+        });
+    };
+
+    const handleModuleSubmit = async (payload: GenericAnswer) => {
         if (!session) return;
         setLoading(true);
         try {
             const res = await GameApi.submitSession(session.module.id, session.session_id, payload);
 
             if (res.next_module_id) {
+                const firstModuleId = modules[0]?.id;
+                if (firstModuleId && session.module.id === firstModuleId) {
+                    // Now that Module 1 is completed in this attempt, backend resume becomes safe again.
+                    localStorage.removeItem(FORCE_RESTART_KEY);
+                }
                 // Save progress
-                localStorage.setItem('dmac_current_module_id', String(res.next_module_id));
+                localStorage.setItem(PROGRESS_KEY, String(res.next_module_id));
 
                 await startModuleSession(res.next_module_id);
                 const nextIdx = modules.findIndex(m => m.id === res.next_module_id);
@@ -144,7 +275,8 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                 // All modules completed - show completion screen
                 setShowCompletion(true);
                 // Re-enable language selector
-                localStorage.removeItem('dmac_current_module_id'); // Clear progress on complete
+                localStorage.removeItem(PROGRESS_KEY); // Clear progress on complete
+                localStorage.removeItem(FORCE_RESTART_KEY);
                 onAllModulesComplete();
             }
         } catch (error) {
@@ -171,45 +303,45 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         });
     };
 
-    const handleAudioStoryComplete = (answers: any[]) => {
+    const handleAudioStoryComplete = (answers: GenericAnswer[]) => {
         handleModuleSubmit({
             answers
         });
     };
 
-    const handleAudioWordsComplete = (answers: any[]) => {
+    const handleAudioWordsComplete = (answers: GenericAnswer[]) => {
         handleModuleSubmit({
             answers
         });
     };
 
-    const handleConnectDotsComplete = (payload: any) => {
+    const handleConnectDotsComplete = (payload: GenericAnswer) => {
         handleModuleSubmit(payload);
     };
 
-    const handleExecutiveComplete = (answers: any[]) => {
+    const handleExecutiveComplete = (answers: GenericAnswer[]) => {
         handleModuleSubmit({
             answers
         });
     };
 
-    const handleNumberRecallComplete = (answers: any[]) => {
+    const handleNumberRecallComplete = (answers: GenericAnswer[]) => {
         handleModuleSubmit({
             answers
         });
     };
 
-    const handleDrawingRecallComplete = (payload: any) => {
+    const handleDrawingRecallComplete = (payload: GenericAnswer) => {
         handleModuleSubmit(payload);
     };
 
-    const handleColorRecallComplete = (answers: any[]) => {
+    const handleColorRecallComplete = (answers: GenericAnswer[]) => {
         handleModuleSubmit({
             answers
         });
     };
 
-    const handleGroupMatchingComplete = (answers: any[]) => {
+    const handleGroupMatchingComplete = (answers: AnswerWithText[]) => {
         // Parse scores from text "Score: 1" and sum them up
         const total = answers.reduce((acc, curr) => {
             const match = (curr.answer_text || '').match(/Score:\s*(\d+)/);
@@ -222,14 +354,14 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         });
     };
 
-    const handleDisinhibitionSqTriComplete = (answers: any[]) => {
+    const handleDisinhibitionSqTriComplete = (answers: AnswerWithScore[]) => {
         handleModuleSubmit({
             answers,
             // score removed, calculated in backend
         });
     };
 
-    const handleLetterDisinhibitionComplete = (answers: any[]) => {
+    const handleLetterDisinhibitionComplete = (answers: GenericAnswer[]) => {
         handleModuleSubmit({
             answers
             // score removed, calculated in backend
@@ -250,161 +382,202 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         );
     }
 
+    if (idleModalOpen && !session) {
+        return (
+            <Box sx={{ width: '100%', height: '100%' }}>
+                <GenericModal
+                    isOpen={idleModalOpen}
+                    onClose={() => { }}
+                    disableClose={true}
+                    hideCloseIcon={true}
+                    hideCancelButton={true}
+                    title="Idle Timeout"
+                    submitButtonText={
+                        attemptStatus && attemptStatus.count >= attemptStatus.max_attempts
+                            ? 'Go Home'
+                            : 'Restart'
+                    }
+                    onSubmit={restartFromBeginningDueToIdle}
+                >
+                    {attemptStatus && attemptStatus.count >= attemptStatus.max_attempts ? (
+                        <Typography sx={{ fontSize: '1.1rem', textAlign: 'center' }}>
+                            You were idle for <strong>{idleMinutes}</strong> minutes.
+                            <br />
+                            You have reached the maximum number of attempts and cannot restart the test.
+                        </Typography>
+                    ) : (
+                        <Typography sx={{ fontSize: '1.1rem', textAlign: 'center' }}>
+                            You were idle for <strong>{idleMinutes}</strong> minutes.
+                            <br />
+                            You will be redirected to the beginning of the game and your attempt will be increased by 1.
+                        </Typography>
+                    )}
+                    {attemptsBanner?.isFinal ? (
+                        <Typography sx={{ mt: 2, fontSize: '1rem', textAlign: 'center', color: '#c62828', fontWeight: 600 }}>
+                            This is your final attempt. If you are idle again, you won’t be able to retake the test.
+                        </Typography>
+                    ) : null}
+                </GenericModal>
+                <CustomLoader />
+            </Box>
+        );
+    }
+
     if (loading || !session) {
         return <CustomLoader />;
     }
 
     const moduleCode = session.module.code;
 
-    // const handleDevSkip = () => {
-    //     console.log('[ModuleRunner] Skip button clicked');
-    //     if (!session) return;
-    //     const code = session.module.code;
-    //     console.log(`[ModuleRunner] Skipping module: ${code}`);
+    /* const handleDevSkip = () => {
+        console.log('[ModuleRunner] Skip button clicked');
+        if (!session) return;
+        const code = session.module.code;
+        console.log(`[ModuleRunner] Skipping module: ${code}`);
 
-    //     if (code === 'IMAGE_FLASH') {
-    //         handleImageFlashComplete('skipped');
-    //     } else if (code === 'VISUAL_PICTURE_RECALL') {
-    //         handleImageFlashComplete('skipped');
-    //     } else if (code === 'VISUAL_SPATIAL') {
-    //         // Construct dummy answers for all rounds
-    //         const rounds = session.questions || [];
-    //         const dummyAnswers = rounds.map(round => ({
-    //             question_id: round.question_id,
-    //             // Pick the first option key, or a fallback string if options missing
-    //             selected_option_key: round.options?.[0]?.option_key || 'skipped_option'
-    //         }));
-    //         console.log('[ModuleRunner] Skipping VisualSpatial with payload:', dummyAnswers);
-    //         handleVisualSpatialComplete(dummyAnswers);
-    //     } else if (code === 'AUDIO_STORY') {
-    //         // Construct dummy answers for stories
-    //         const stories = session.questions || [];
-    //         const dummyAnswers = stories.map(story => ({
-    //             question_id: story.question_id,
-    //             answer_text: 'skipped via dev button'
-    //         }));
-    //         console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
-    //         handleAudioStoryComplete(dummyAnswers);
-    //     }
-    //     else if (code === 'AUDIO_STORY_2') {
-    //         // Construct dummy answers for stories
-    //         const stories = session.questions || [];
-    //         const dummyAnswers = stories.map(story => ({
-    //             question_id: story.question_id,
-    //             answer_text: 'skipped via dev button'
-    //         }));
-    //         console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
-    //         handleAudioStoryComplete(dummyAnswers);
-    //     }
-    //     else if (code === 'AUDIO_STORY_1_RECALL' || code === 'AUDIO_STORY_2_RECALL') {
-    //         // Construct dummy answers for stories - same as audio story
-    //         const stories = session.questions || [];
-    //         const dummyAnswers = stories.map(story => ({
-    //             question_id: story.question_id,
-    //             answer_text: 'skipped via dev button'
-    //         }));
-    //         console.log('[ModuleRunner] Skipping AudioStoryRecall with payload:', dummyAnswers);
-    //         handleAudioStoryComplete(dummyAnswers);
-    //     }
-    //     else if (code === 'AUDIO_WORDS') {
-    //         // Construct dummy answers
-    //         const questions = session.questions || [];
-    //         const dummyAnswers = questions.map(q => ({
-    //             question_id: q.question_id,
-    //             answer_text: 'skipped via dev button',
-    //             language_code: languageCode
-    //         }));
-    //         console.log('[ModuleRunner] Skipping AudioWords with payload:', dummyAnswers);
-    //         handleAudioWordsComplete(dummyAnswers);
-    //     } else if (code === 'AUDIO_WORDS_RECALL') {
-    //         const questions = session.questions || [];
-    //         const dummyAnswers = questions.map(q => ({
-    //             question_id: q.question_id,
-    //             answer_text: 'skipped via dev button',
-    //             language_code: languageCode
-    //         }));
-    //         handleAudioWordsComplete(dummyAnswers);
-    //     } else if (code === 'CONNECT_DOTS') {
-    //         // Fake completions
-    //         const payload = {
-    //             question_id: session.questions?.[0]?.question_id,
-    //             answer_text: "L,5,M,6,N,7,O,8,P,9,Q,10,R,11", // Valid sequence
-    //             time_taken: 10
-    //         }
-    //         handleConnectDotsComplete(payload);
-    //     } else if (code === 'EXECUTIVE' || code === 'SEMANTIC') {
-    //         const questions = session.questions || [];
-    //         const dummyAnswers = questions.map(q => ({
-    //             question_id: q.question_id,
-    //             answer_text: 'skipped via dev button',
-    //             language_code: languageCode
-    //         }));
-    //         console.log('[ModuleRunner] Skipping Executive/Semantic with payload:', dummyAnswers);
-    //         handleExecutiveComplete(dummyAnswers);
-    //     } else if (code === 'NUMBER_RECALL') {
-    //         const questions = session.questions || [];
-    //         const dummyAnswers = questions.map(q => ({
-    //             question_id: q.question_id,
-    //             answer_text: '123'
-    //         }));
-    //         console.log('[ModuleRunner] Skipping NumberRecall with payload:', dummyAnswers);
-    //         handleNumberRecallComplete(dummyAnswers);
-    //     } else if (code === 'REVERSE_NUMBER_RECALL') {
-    //         const questions = session.questions || [];
-    //         const dummyAnswers = questions.map(q => ({
-    //             question_id: q.question_id,
-    //             answer_text: '321'
-    //         }));
-    //         console.log('[ModuleRunner] Skipping ReverseNumberRecall with payload:', dummyAnswers);
-    //         handleNumberRecallComplete(dummyAnswers);
-    //     } else if (code === 'COLOR_RECALL') {
-    //         const dummyAnswers = [{
-    //             question_id: session.questions?.[0]?.question_id,
-    //             answer_text: 'red, blue, green',
-    //             language_code: languageCode
-    //         }];
-    //         handleNumberRecallComplete(dummyAnswers);
-    //     } else if (code === 'DRAWING_RECALL') {
-    //         const payload = {
-    //             question_id: session.questions?.[0]?.question_id,
-    //             answer_text: JSON.stringify([]),
-    //             canvas_data: 'skipped',
-    //             language_code: languageCode
-    //         };
-    //         console.log('[ModuleRunner] Skipping DrawingRecall with payload:', payload);
-    //         handleDrawingRecallComplete(payload);
-    //     } else if (code === 'GROUP_MATCHING') {
-    //         console.log('[ModuleRunner] Skipping GroupMatching');
-    //         const dummyAnswers = (session.questions || []).map(q => ({
-    //             question_id: q.question_id,
-    //             answer_text: 'Skipped - Score 0'
-    //         }));
-    //         handleGroupMatchingComplete(dummyAnswers);
-    //     } else if (code === 'DISINHIBITION_SQ_TRI') {
-    //         const dummyAnswers = [{
-    //             question_id: session.questions?.[0]?.question_id,
-    //             answer_text: 'Skipped - Score 0',
-    //             score: 0
-    //         }];
-    //         handleDisinhibitionSqTriComplete(dummyAnswers);
-    //     } else if (code === 'VISUAL_NUMBER_RECALL') {
-    //         const questions = session.questions || [];
-    //         const dummyAnswers = questions.map(q => ({
-    //             question_id: q.question_id,
-    //             answer_text: '123'
-    //         }));
-    //         console.log('[ModuleRunner] Skipping VisualNumberRecall with payload:', dummyAnswers);
-    //         handleNumberRecallComplete(dummyAnswers);
-    //     } else if (code === 'LETTER_DISINHIBITION') {
-    //         const dummyAnswers = [{
-    //             question_id: session.questions?.[0]?.question_id,
-    //             answer_text: 'Skipped - Score 0',
-    //             score: 0
-    //         }];
-    //         console.log('[ModuleRunner] Skipping LetterDisinhibition');
-    //         handleLetterDisinhibitionComplete(dummyAnswers);
-    //     }
-    // };
+        if (code === 'IMAGE_FLASH') {
+            handleImageFlashComplete('skipped');
+        } else if (code === 'VISUAL_PICTURE_RECALL') {
+            handleImageFlashComplete('skipped');
+        } else if (code === 'VISUAL_SPATIAL') {
+            // Construct dummy answers for all rounds
+            const rounds = session.questions || [];
+            const dummyAnswers = rounds.map(round => ({
+                question_id: round.question_id,
+                // Pick the first option key, or a fallback string if options missing
+                selected_option_key: round.options?.[0]?.option_key || 'skipped_option'
+            }));
+            console.log('[ModuleRunner] Skipping VisualSpatial with payload:', dummyAnswers);
+            handleVisualSpatialComplete(dummyAnswers);
+        } else if (code === 'AUDIO_STORY') {
+            // Construct dummy answers for stories
+            const stories = session.questions || [];
+            const dummyAnswers = stories.map(story => ({
+                question_id: story.question_id,
+                answer_text: 'skipped via dev button'
+            }));
+            console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
+            handleAudioStoryComplete(dummyAnswers);
+        }
+        else if (code === 'AUDIO_STORY_2') {
+            // Construct dummy answers for stories
+            const stories = session.questions || [];
+            const dummyAnswers = stories.map(story => ({
+                question_id: story.question_id,
+                answer_text: 'skipped via dev button'
+            }));
+            console.log('[ModuleRunner] Skipping AudioStory with payload:', dummyAnswers);
+            handleAudioStoryComplete(dummyAnswers);
+        }
+        else if (code === 'AUDIO_STORY_1_RECALL' || code === 'AUDIO_STORY_2_RECALL') {
+            // Construct dummy answers for stories - same as audio story
+            const stories = session.questions || [];
+            const dummyAnswers = stories.map(story => ({
+                question_id: story.question_id,
+                answer_text: 'skipped via dev button'
+            }));
+            console.log('[ModuleRunner] Skipping AudioStoryRecall with payload:', dummyAnswers);
+            handleAudioStoryComplete(dummyAnswers);
+        }
+        else if (code === 'AUDIO_WORDS') {
+            // Construct dummy answers
+            const questions = session.questions || [];
+            const dummyAnswers = questions.map(q => ({
+                question_id: q.question_id,
+                answer_text: 'skipped via dev button',
+                language_code: languageCode
+            }));
+            console.log('[ModuleRunner] Skipping AudioWords with payload:', dummyAnswers);
+            handleAudioWordsComplete(dummyAnswers);
+        } else if (code === 'AUDIO_WORDS_RECALL') {
+            const questions = session.questions || [];
+            const dummyAnswers = questions.map(q => ({
+                question_id: q.question_id,
+                answer_text: 'skipped via dev button',
+                language_code: languageCode
+            }));
+            handleAudioWordsComplete(dummyAnswers);
+        } else if (code === 'CONNECT_DOTS') {
+            // Fake completions
+            const payload = {
+                question_id: session.questions?.[0]?.question_id,
+                answer_text: "L,5,M,6,N,7,O,8,P,9,Q,10,R,11", // Valid sequence
+                time_taken: 10
+            }
+            handleConnectDotsComplete(payload);
+        } else if (code === 'EXECUTIVE' || code === 'SEMANTIC') {
+            const questions = session.questions || [];
+            const dummyAnswers = questions.map(q => ({
+                question_id: q.question_id,
+                answer_text: 'skipped via dev button',
+                language_code: languageCode
+            }));
+            console.log('[ModuleRunner] Skipping Executive/Semantic with payload:', dummyAnswers);
+            handleExecutiveComplete(dummyAnswers);
+        } else if (code === 'NUMBER_RECALL') {
+            const questions = session.questions || [];
+            const dummyAnswers = questions.map(q => ({
+                question_id: q.question_id,
+                answer_text: '123'
+            }));
+            console.log('[ModuleRunner] Skipping NumberRecall with payload:', dummyAnswers);
+            handleNumberRecallComplete(dummyAnswers);
+        } else if (code === 'REVERSE_NUMBER_RECALL') {
+            const questions = session.questions || [];
+            const dummyAnswers = questions.map(q => ({
+                question_id: q.question_id,
+                answer_text: '321'
+            }));
+            console.log('[ModuleRunner] Skipping ReverseNumberRecall with payload:', dummyAnswers);
+            handleNumberRecallComplete(dummyAnswers);
+        } else if (code === 'COLOR_RECALL') {
+            const dummyAnswers = [{
+                question_id: session.questions?.[0]?.question_id,
+                answer_text: 'red, blue, green',
+                language_code: languageCode
+            }];
+            handleNumberRecallComplete(dummyAnswers);
+        } else if (code === 'DRAWING_RECALL') {
+            const payload = {
+                question_id: session.questions?.[0]?.question_id,
+                answer_text: JSON.stringify([]),
+                canvas_data: 'skipped',
+                language_code: languageCode
+            };
+            console.log('[ModuleRunner] Skipping DrawingRecall with payload:', payload);
+            handleDrawingRecallComplete(payload);
+        } else if (code === 'GROUP_MATCHING') {
+            console.log('[ModuleRunner] Skipping GroupMatching');
+            const dummyAnswers = (session.questions || []).map(q => ({
+                question_id: q.question_id,
+                answer_text: 'Skipped - Score 0'
+            }));
+            handleGroupMatchingComplete(dummyAnswers);
+        } else if (code === 'DISINHIBITION_SQ_TRI') {
+            const dummyAnswers = [{
+                question_id: session.questions?.[0]?.question_id,
+                answer_text: 'Skipped - Score 0',
+                score: 0
+            }];
+            handleDisinhibitionSqTriComplete(dummyAnswers);
+        } else if (code === 'VISUAL_NUMBER_RECALL') {
+            const questions = session.questions || [];
+            const dummyAnswers = questions.map(q => ({
+                question_id: q.question_id,
+                answer_text: '123'
+            }));
+            console.log('[ModuleRunner] Skipping VisualNumberRecall with payload:', dummyAnswers);
+            handleNumberRecallComplete(dummyAnswers);
+        } else if (code === 'LETTER_DISINHIBITION') {
+            const dummyAnswers = [{
+                question_id: session.questions?.[0]?.question_id,
+                answer_text: 'Skipped - Score 0',
+                score: 0
+            }];
+            console.log('[ModuleRunner] Skipping LetterDisinhibition');
+            handleLetterDisinhibitionComplete(dummyAnswers);
+        }
+    }; */
 
     const handleDownloadPdf = async () => {
         try {
@@ -424,13 +597,54 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
     return (
         <Box sx={{ width: '100%', height: '100%' }}>
+            <GenericModal
+                isOpen={idleModalOpen}
+                onClose={() => { }}
+                disableClose={true}
+                hideCloseIcon={true}
+                hideCancelButton={true}
+                title="Idle Timeout"
+                submitButtonText={
+                    attemptStatus && attemptStatus.count >= attemptStatus.max_attempts
+                        ? 'Go Home'
+                        : 'Restart'
+                }
+                onSubmit={restartFromBeginningDueToIdle}
+            >
+                {attemptStatus && attemptStatus.count >= attemptStatus.max_attempts ? (
+                    <Typography sx={{ fontSize: '1.1rem', textAlign: 'center' }}>
+                        You were idle for <strong>{idleMinutes}</strong> minutes.
+                        <br />
+                        You have reached the maximum number of attempts and cannot restart the test.
+                    </Typography>
+                ) : (
+                    <Typography sx={{ fontSize: '1.1rem', textAlign: 'center' }}>
+                        You were idle for <strong>{idleMinutes}</strong> minutes.
+                        <br />
+                        You will be redirected to the beginning of the game and your attempt will be increased by 1.
+                    </Typography>
+                )}
+                {attemptsBanner?.isFinal ? (
+                    <Typography sx={{ mt: 2, fontSize: '1rem', textAlign: 'center', color: '#c62828', fontWeight: 600 }}>
+                        This is your final attempt. If you are idle again, you won’t be able to retake the test.
+                    </Typography>
+                ) : null}
+            </GenericModal>
+
             {/* Remove this block when deploying to production */}
-            {/* <Box sx={{ position: 'fixed', top: 16, right: 16, zIndex: 99999 }}>
+            {/* <Box sx={{ 
+                position: 'fixed', 
+                top: { xs: 'auto', sm: 16 },
+                bottom: { xs: 16, sm: 'auto' },
+                right: 16, 
+                zIndex: 99999 
+            }}>
                 <Button
                     variant="contained"
                     color="error"
                     size="small"
                     onClick={handleDevSkip}
+                    sx={{ opacity: 0.8 }}
                 >
                     Skip (Dev)
                 </Button>
@@ -454,6 +668,24 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
                     </Button>
                 </Box>
             </GenericModal>
+
+            {attemptsBanner ? (
+                <Box
+                    sx={{
+                        width: '100%',
+                        mb: 1,
+                        px: { xs: 1.5, sm: 2 },
+                        py: 1,
+                        borderRadius: 1,
+                        bgcolor: attemptsBanner.isFinal ? '#ffebee' : '#fff8e1',
+                        color: attemptsBanner.isFinal ? '#c62828' : '#8a6d3b',
+                        textAlign: 'center',
+                        fontWeight: 700,
+                    }}
+                >
+                    Attempts remaining: {attemptsBanner.remaining} / {attemptStatus?.max_attempts}
+                </Box>
+            ) : null}
 
             {!showCompletion && moduleCode === 'IMAGE_FLASH' && (
                 <ImageFlash session={session} onComplete={handleImageFlashComplete} languageCode={languageCode} />

@@ -197,7 +197,7 @@ const CalendarListing = ({
                 fontWeight: 600,
               }}
             >
-              Availability List
+              My Available Time Slots
             </Typography>
           </Box>
         }

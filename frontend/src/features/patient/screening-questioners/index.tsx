@@ -1,4 +1,5 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
+import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined';
 import { useEffect, useState } from 'react';
 import AppAppBar from '../../landing-page/components/AppBar';
 import AppFooter from '../../landing-page/components/AppFooter';
@@ -8,23 +9,86 @@ import PreTest from './components/PreTest';
 import Questions from './components/Questioners';
 import ModuleRunner from './components/GameModules/ModuleRunner';
 import GenericModal from '../../../components/modal';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../router/router';
-import { getScreeningUserId, isScreeningUserVerified } from './storage';
+import { getScreeningUser, getScreeningUserId, isScreeningUserVerified, setScreeningUser } from './storage';
 import { useScreeningTestAttempts } from './hooks/useScreeningTestAttempts';
 import ScreeningRegistrationModal from './components/ScreeningRegistrationModal';
+import ScreeningAuthApi from '../../../services/screeningAuthApi';
+import { prepareScreeningAfterEmailVerified } from './verificationInit';
 
 const loadState = (key: string) => {
   const saved = localStorage.getItem(`dmac_screening_flow_${key}`);
   return saved ? JSON.parse(saved) : false;
 };
 
+const REGISTRATION_WAITING_MESSAGE =
+  'You have successfully registered for the Self-Administered Digital Memory and Cognitive Assessment (SDMAC).';
+
 const ScreeningQuestioners = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const userId = getScreeningUserId();
   const isVerified = isScreeningUserVerified();
+  const screeningUser = getScreeningUser();
   const languageCode = 'en';
+
+  const [screeningUserVersion, setScreeningUserVersion] = useState(0);
+  const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
+  const [verifiedOverride, setVerifiedOverride] = useState<boolean>(isVerified);
+
+  // Re-render when screening user localStorage changes in this tab.
+  useEffect(() => {
+    const bump = () => setScreeningUserVersion(v => v + 1);
+    window.addEventListener('screeningUserChanged', bump);
+    window.addEventListener('storage', bump);
+    return () => {
+      window.removeEventListener('screeningUserChanged', bump);
+      window.removeEventListener('storage', bump);
+    };
+  }, []);
+
+  // If the user registered on this device but verified elsewhere, refresh/focus should unlock.
+  useEffect(() => {
+    const effectiveVerified = verifiedOverride || isScreeningUserVerified();
+    if (!userId || effectiveVerified) return;
+
+    let cancelled = false;
+
+    const check = async () => {
+      try {
+        const res = await ScreeningAuthApi.getUserStatus(userId);
+        if (cancelled) return;
+
+        if (res?.isSuccess && res.user?.verified) {
+          setScreeningUser({
+            id: res.user.id,
+            name: res.user.name,
+            email: res.user.email,
+            patient_meta: res.user.patient_meta ?? null,
+            verified: true,
+          });
+          await prepareScreeningAfterEmailVerified(languageCode);
+          setVerificationMessage('Email verified. Starting assessment...');
+          setVerifiedOverride(true);
+        } else {
+          setVerificationMessage(REGISTRATION_WAITING_MESSAGE);
+        }
+      } catch {
+        if (cancelled) return;
+        setVerificationMessage('Unable to check verification status. Please refresh and try again.');
+      }
+    };
+
+    check();
+    const onFocus = () => check();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [userId, verifiedOverride, screeningUserVersion]);
 
   const [isQuestionerClosed, setIsQuestionerClosed] = useState(() => loadState('isQuestionerClosed'));
   const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(() => loadState('isDisclaimerAccepted'));
@@ -33,14 +97,36 @@ const ScreeningQuestioners = () => {
 
   const [showExitWarning, setShowExitWarning] = useState(false);
 
+  const [lastHandledRestartFromIdle, setLastHandledRestartFromIdle] = useState<number | null>(null);
+
+  useEffect(() => {
+    const state = location.state as { restartFromIdle?: number } | null;
+    const restartTs = state?.restartFromIdle;
+    if (!restartTs) return;
+    if (lastHandledRestartFromIdle === restartTs) return;
+
+    setLastHandledRestartFromIdle(restartTs);
+    setShowExitWarning(false);
+    setIsQuestionerClosed(false);
+    setIsDisclaimerAccepted(false);
+    setFalsePositive(false);
+    setIsPreTestCompleted(false);
+  }, [location.state, lastHandledRestartFromIdle]);
+
+  const effectiveVerified = verifiedOverride || isVerified;
+
   const { data: attemptStatus, isLoading: isLoadingAttempts } = useScreeningTestAttempts(
-    isVerified ? userId : 0,
+    effectiveVerified ? userId : 0,
     languageCode
   );
 
   // Once the screening assessment flow is entered, disable header/footer interactions
   // to prevent navigation away mid-test.
-  const isAssessmentInProgress = Boolean(isVerified && !attemptStatus?.isCompleted);
+  const isAssessmentInProgress = Boolean(effectiveVerified && !attemptStatus?.isCompleted);
+
+  const isModulesScreen = Boolean(
+    isDisclaimerAccepted && falsePositive && isPreTestCompleted && isQuestionerClosed
+  );
 
   const handleAllModulesComplete = () => {
     // no-op for now
@@ -98,11 +184,16 @@ const ScreeningQuestioners = () => {
     navigate(ROUTES.HOME);
   };
 
-  if (!isVerified) {
+  if (!effectiveVerified) {
+    const waitingTitle = 'Registration successful';
+    const waitingBody =
+      (verificationMessage || REGISTRATION_WAITING_MESSAGE) +
+      (screeningUser?.email ? `\n\nWe have sent an email Link to start your assessment test to your email: ${screeningUser.email}.` : '') + '\n\nThank you !';
+
     return (
       <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <AppAppBar />
-        <ScreeningRegistrationModal isOpen />
+        {!screeningUser ? <ScreeningRegistrationModal isOpen /> : null}
 
         <Box
           sx={{
@@ -113,9 +204,61 @@ const ScreeningQuestioners = () => {
             px: 2,
           }}
         >
-          <Typography variant="body1" color="text.secondary" textAlign="center">
-            Please verify your email to access the assessment.
-          </Typography>
+          <Card
+            elevation={0}
+            sx={{
+              width: '100%',
+              maxWidth: 760,
+              borderRadius: 3,
+              border: '1px solid',
+              // Color-blind friendly (blue) with strong contrast for older users.
+              borderColor: 'rgba(21, 101, 192, 0.35)',
+              bgcolor: 'rgba(21, 101, 192, 0.06)',
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Stack direction="row" spacing={2} alignItems="flex-start">
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: '50%',
+                    bgcolor: 'rgba(21, 101, 192, 0.12)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    flex: '0 0 auto',
+                    mt: '2px',
+                  }}
+                >
+                  <MarkEmailReadOutlinedIcon sx={{ color: '#1565C0', fontSize: 26 }} />
+                </Box>
+
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 18,
+                      fontWeight: 700,
+                      color: '#111',
+                      mb: 1,
+                    }}
+                  >
+                    {waitingTitle}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 18,
+                      fontWeight: 650,
+                      color: '#111',
+                      whiteSpace: 'pre-line',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {waitingBody}
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
         </Box>
 
         <Box sx={{ mt: 'auto' }}>
@@ -184,26 +327,39 @@ const ScreeningQuestioners = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Box
-        aria-hidden={isAssessmentInProgress ? 'true' : undefined}
-        sx={{
-          pointerEvents: isAssessmentInProgress ? 'none' : 'auto',
-          opacity: isAssessmentInProgress ? 0.55 : 1,
-          filter: isAssessmentInProgress ? 'grayscale(1)' : 'none',
-          userSelect: isAssessmentInProgress ? 'none' : 'auto',
-        }}
-      >
-        <AppAppBar />
-      </Box>
+    <Box
+      sx={{
+        height: '100dvh',
+        maxHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      {!isModulesScreen ? (
+        <Box
+          aria-hidden={isAssessmentInProgress ? 'true' : undefined}
+          sx={{
+            pointerEvents: isAssessmentInProgress ? 'none' : 'auto',
+            opacity: isAssessmentInProgress ? 0.55 : 1,
+            filter: isAssessmentInProgress ? 'grayscale(1)' : 'none',
+            userSelect: isAssessmentInProgress ? 'none' : 'auto',
+          }}
+        >
+          <AppAppBar />
+        </Box>
+      ) : null}
       <Box
         sx={{
           flex: 1,
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+          alignItems: isModulesScreen ? 'stretch' : 'center',
+          justifyContent: isModulesScreen ? 'stretch' : 'center',
+          minHeight: 0,
+          overflow: 'hidden',
+          px: isModulesScreen ? 0 : { xs: 1, sm: 2 },
         }}
       >
       {!isDisclaimerAccepted ? <Disclaimer setIsDisclaimerAccepted={setIsDisclaimerAccepted} /> : null}
@@ -225,12 +381,23 @@ const ScreeningQuestioners = () => {
       ) : null}
 
       {isDisclaimerAccepted && falsePositive && isPreTestCompleted && isQuestionerClosed ? (
-        <ModuleRunner
-          userId={userId}
-          languageCode={languageCode}
-          onAllModulesComplete={handleAllModulesComplete}
-          lastCompletedModuleId={attemptStatus?.lastModuleCompleted?.id}
-        />
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            pb: 'calc(env(safe-area-inset-bottom, 0px))',
+          }}
+        >
+          <ModuleRunner
+            userId={userId}
+            languageCode={languageCode}
+            onAllModulesComplete={handleAllModulesComplete}
+            lastCompletedModuleId={attemptStatus?.lastModuleCompleted?.id}
+          />
+        </Box>
       ) : null}
 
       <GenericModal
@@ -268,9 +435,11 @@ const ScreeningQuestioners = () => {
           opacity: isAssessmentInProgress ? 0.55 : 1,
           filter: isAssessmentInProgress ? 'grayscale(1)' : 'none',
           userSelect: isAssessmentInProgress ? 'none' : 'auto',
+          flexShrink: 0,
+          pb: 'calc(env(safe-area-inset-bottom, 0px))',
         }}
       >
-        <AppFooter />
+        {!isAssessmentInProgress ? <AppFooter /> : null}
       </Box>
     </Box>
   );

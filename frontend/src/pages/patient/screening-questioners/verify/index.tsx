@@ -4,9 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import ScreeningAuthApi from '../../../../services/screeningAuthApi';
 import { setScreeningUser } from '../../../../features/patient/screening-questioners/storage';
 import { ROUTES } from '../../../../router/router';
-import LanguageService from '../../../../i18n/language.service';
-import { setLocalStorageItem } from '../../../../utils/functions';
-import { LOCAL_STORAGE_KEYS } from '../../../../utils/constants';
+import { prepareScreeningAfterEmailVerified } from '../../../../features/patient/screening-questioners/verificationInit';
 
 const ScreeningVerifyEmailPage = () => {
   const { token } = useParams();
@@ -29,18 +27,7 @@ const ScreeningVerifyEmailPage = () => {
 
         setScreeningUser(res.user);
 
-        try {
-          const langCode = 'en';
-          const langRes = await LanguageService.fetchLanguageContants(langCode);
-          if (langRes?.isSuccess) {
-            setLocalStorageItem(
-              LOCAL_STORAGE_KEYS.LANGUAGE_CONSTANTS,
-              JSON.stringify(langRes.data)
-            );
-          }
-        } catch {
-          // non-blocking: verification succeeded even if texts fail
-        }
+        await prepareScreeningAfterEmailVerified('en');
 
         setMessage('Verified! Redirecting...');
         setTimeout(() => navigate(ROUTES.SCREENING_QUESTIONERS), 600);

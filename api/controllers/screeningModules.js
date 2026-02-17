@@ -10,6 +10,7 @@ import {
   startSession as startSessionBase,
   submitSession as submitSessionBase,
   getAttemptStatus as getAttemptStatusBase,
+  abandonInProgressSessions as abandonInProgressSessionsBase,
   getUserReport as getUserReportBase,
   generateReportPdf as generateReportPdfBase
 } from './modules.js'
@@ -38,6 +39,18 @@ export const getAttemptStatus = (req, res) => {
   const userId = Number(userIdRaw)
   req.user = { userId: Number.isFinite(userId) ? userId : userIdRaw }
   return getAttemptStatusBase(req, res)
+}
+
+export const abandonInProgressSessions = (req, res) => {
+  const userIdRaw =
+    req.query?.user_id ??
+    req.query?.userId ??
+    req.body?.user_id ??
+    req.body?.userId
+
+  const userId = Number(userIdRaw)
+  req.user = { userId: Number.isFinite(userId) ? userId : userIdRaw }
+  return abandonInProgressSessionsBase(req, res)
 }
 
 export const getUserReport = (req, res) => {
@@ -129,25 +142,62 @@ export const registerScreeningUser = async (req, res) => {
       })
     })
 
-    const verifyLink = `${process.env.DOMAIN}screening-questioners/verify/${verificationToken}`
-
-    const subject = 'Verify Your Email for DMAC'
-    const greetingHtml = `<p>Dear ${name},</p>`
-    const bodyHtml = `<h2>You have successfully registered for the Self-Administered Digital Memory and Cognitive Assessment.</h2>
-                      <br>
-                      <h4>Click the link below to verify your email</h4>
-                      <a href="${verifyLink}">Verify Email</a>`
-    const emailHtml = `<div>${greetingHtml}${bodyHtml}</div>`
+    const verifyLink = `${process.env.DOMAIN}sdmac-test/verify/${verificationToken}`
+    const subject = 'Start Your SDMAC Assessment';
+    const greetingHtml = `<p>Dear ${name},</p>`;
+    const bodyHtml = `<p>You have successfully registered for the <strong>Self-Administered Digital Memory and Cognitive Assessment (SDMAC)</strong>.</p>
+        <p>Please click the button below to start your assessment:</p>
+        <p>
+            <a href="${verifyLink}" style="display:inline-block;padding:10px 18px;background-color:#2c7be5;color:#ffffff;text-decoration:none;border-radius:4px;">
+            Start Assessment
+            </a>
+        </p>
+        <p>If you did not register for this assessment, please ignore this email.</p>`;
+    const emailHtml = `<div>${greetingHtml}${bodyHtml}</div>`;
 
     await sendEmail(email, subject, emailHtml, emailHtml)
 
     return res.status(200).json({
       isSuccess: true,
-      message: 'Registration successful. Please verify your email to continue.',
+      message: 'Your SDMAC registration has been completed successfully. Please check your email to start your assessment.',
       userId: insertResult?.insertId ?? null
     })
   } catch (err) {
     console.error('SCREENING REGISTER ERROR:', err)
+    return res.status(500).json({ isSuccess: false, message: 'Internal server error.' })
+  }
+}
+
+export const getScreeningUserStatus = async (req, res) => {
+  try {
+    const userIdRaw = req.query?.user_id ?? req.query?.userId
+    const userId = Number(userIdRaw)
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return res.status(400).json({ isSuccess: false, message: 'user_id is required' })
+    }
+
+    const rows = await query(
+      'SELECT id, name, email, verified, patient_meta FROM dmac_webapp_users WHERE id = ? LIMIT 1',
+      [userId]
+    )
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(404).json({ isSuccess: false, message: 'User not found' })
+    }
+
+    const row = rows[0]
+    return res.status(200).json({
+      isSuccess: true,
+      user: {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        patient_meta: row.patient_meta ?? null,
+        verified: Boolean(row.verified)
+      }
+    })
+  } catch (err) {
+    console.error('SCREENING USER STATUS ERROR:', err)
     return res.status(500).json({ isSuccess: false, message: 'Internal server error.' })
   }
 }

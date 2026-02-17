@@ -430,6 +430,27 @@ export const getAttemptStatus = async (req, res) => {
   }
 };
 
+export const abandonInProgressSessions = async (req, res) => {
+  const user_id = req.user?.userId
+  if (!user_id) return res.status(401).json({ error: 'Unauthorized' })
+
+  try {
+    const result = await query(
+      'UPDATE dmac_webapp_sessions SET status = "abandoned" WHERE user_id = ? AND status = "in_progress"',
+      [user_id]
+    )
+
+    // mysql driver returns OkPacket with affectedRows
+    return res.status(200).json({
+      isSuccess: true,
+      abandoned: result?.affectedRows ?? 0
+    })
+  } catch (err) {
+    console.error('[AbandonInProgressSessions] Error:', err)
+    return res.status(500).json({ isSuccess: false, error: err.message })
+  }
+}
+
 export const submitSession = async (req, res) => {
   const { moduleId, sessionId } = req.params
   // Standardize input: "answers" array is preferred, but handle legacy single-answer structure
@@ -470,12 +491,14 @@ export const submitSession = async (req, res) => {
             'SELECT is_correct FROM dmac_webapp_assessment_options WHERE question_id = ? AND option_key = ?',
             [ans.question_id, ans.selected_option_key]
           )
-          itemScore = (options.length > 0 && options[0].is_correct === 1) ? 1 : 0
+          itemScore = (options.length > 0 && options[0].is_correct === 1) ? 0.5 : 0
         } else if (module.code === 'CONNECT_DOTS') {
           const items = await fetchItems(ans.question_id, 'en')
 
           // Filter items to match frontend (exclude L, R, 11)
-          const validItems = items.filter(i => !['L', 'R', '11', '5'].includes(i.image_key))
+          // const validItems = items.filter(i => !['L', 'R', '11', '5'].includes(i.image_key))
+          // Filter items to match frontend (exclude L, 11)
+          const validItems = items.filter(i => !['L', '11', '5'].includes(i.image_key))
 
           // Explicitly sort by order (DB should order by item_order, but ensure safety)
           validItems.sort((a, b) => (a.item_order || 0) - (b.item_order || 0))
@@ -545,7 +568,7 @@ export const submitSession = async (req, res) => {
           // might mean we floor at 2 provided condition met? No, "minimal score is 2" refers to the result of 4*0.5.
           // I'll stick to linear * 0.5.
 
-        } else if (module.code === 'NUMBER_RECALL' || module.code === 'VISUAL_NUMBER_RECALL') {
+        } else if (module.code === 'NUMBER_RECALL' || module.code === 'VISUAL_NUMBER_RECALL' || module.code === 'REVERSE_NUMBER_RECALL') {
           // Number Recall Scoring
           // Logic: Exact match of the sequence = 0.5 points.
           // Total possible: 10 * 0.5 = 5.0
@@ -628,7 +651,7 @@ export const submitSession = async (req, res) => {
             const correctCount = calculateKeywordScore(ans.answer_text, items, { uniqueWords: true })
             itemScore = Math.min(correctCount * 0.5, 5.0)
             maxScore = 5
-          } else if (module.code === 'AUDIO_WORDS') {
+          } else if (module.code === 'AUDIO_WORDS' || module.code === 'AUDIO_WORDS_RECALL') {
             const language_code = ans.language_code || body.language_code || 'en' // fallback
             const items = await fetchItems(ans.question_id, language_code)
             // Use uniqueWords mode to count multiple different words from the list
@@ -637,7 +660,7 @@ export const submitSession = async (req, res) => {
             // 1.0 points per word, max 5 words possible
             itemScore = Math.min(correctCount * 1.0, 5.0)
             maxScore = 5
-          } else if (module.code === 'AUDIO_WORDS_RECALL' || module.code === 'COLOR_RECALL') {
+          } else if (module.code === 'COLOR_RECALL') {
             const language_code = ans.language_code || body.language_code || 'en'
             const items = await fetchItems(ans.question_id, language_code)
             const correctCount = calculateKeywordScore(ans.answer_text, items, { uniqueWords: true })

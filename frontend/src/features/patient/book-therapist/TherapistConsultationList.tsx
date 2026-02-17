@@ -210,7 +210,7 @@ const TherapistConsultationList = ({
               onClick={onAddClick}
               disabled={isAddDisabled}
             >
-              Add Book Therapist
+              Schedule Your Consultation Appointment
             </Button>
           </Box>
         }

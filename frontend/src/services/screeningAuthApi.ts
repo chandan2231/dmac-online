@@ -24,6 +24,18 @@ export type ScreeningVerifyResponse = {
   };
 };
 
+export type ScreeningUserStatusResponse = {
+  isSuccess: boolean;
+  message?: string;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+    patient_meta?: string | null;
+    verified: boolean;
+  };
+};
+
 const register = async (payload: ScreeningRegisterPayload): Promise<ScreeningRegisterResponse> => {
   const res = await HttpService.post('/screeningModules/register', payload);
   return res.data;
@@ -34,9 +46,17 @@ const verifyEmail = async (token: string): Promise<ScreeningVerifyResponse> => {
   return res.data;
 };
 
+const getUserStatus = async (userId: number): Promise<ScreeningUserStatusResponse> => {
+  const res = await HttpService.get('/screeningModules/user/status', {
+    params: { user_id: userId },
+  });
+  return res.data;
+};
+
 const ScreeningAuthApi = {
   register,
   verifyEmail,
+  getUserStatus,
 };
 
 export default ScreeningAuthApi;

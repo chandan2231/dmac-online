@@ -30,6 +30,7 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
     // Refs for timer and score
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const hasTappedRef = useRef(false);
+    const currentIndexRef = useRef(0);
 
     // Get translations
     const t = {
@@ -41,18 +42,53 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
 
     // Initialize trials
     useEffect(() => {
-        // Generate Sequence: 10 'V's and 10 Distractors
-        const targets = Array(10).fill(TARGET_LETTER);
-        const others = Array(10).fill(null).map(() => DISTRACTORS[Math.floor(Math.random() * DISTRACTORS.length)]);
+        const generateSequence = (): string[] => {
+            let targetsLeft = 10;
+            let othersLeft = 10;
+            const result: string[] = [];
+            let lastType: 'target' | 'other' | null = null;
+            let streak = 0;
 
-        // Combine and Shuffle
-        const combined = [...targets, ...others];
-        for (let i = combined.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [combined[i], combined[j]] = [combined[j], combined[i]];
-        }
+            for (let i = 0; i < TOTAL_TRIALS; i++) {
+                const canPickTarget = targetsLeft > 0 && !(lastType === 'target' && streak >= 2);
+                const canPickOther = othersLeft > 0 && !(lastType === 'other' && streak >= 2);
 
-        setTrials(combined);
+                let pick: 'target' | 'other';
+                if (canPickTarget && canPickOther) {
+                    pick = Math.random() < 0.5 ? 'target' : 'other';
+                } else if (canPickTarget) {
+                    pick = 'target';
+                } else if (canPickOther) {
+                    pick = 'other';
+                } else {
+                    // Fallback: If we reach a state where we can't satisfy the condition (rare with 1:1 ratio)
+                    // Restart generation
+                    return generateSequence();
+                }
+
+                if (pick === 'target') {
+                    result.push(TARGET_LETTER);
+                    targetsLeft--;
+                    if (lastType === 'target') streak++;
+                    else {
+                        lastType = 'target';
+                        streak = 1;
+                    }
+                } else {
+                    const randomDistractor = DISTRACTORS[Math.floor(Math.random() * DISTRACTORS.length)];
+                    result.push(randomDistractor);
+                    othersLeft--;
+                    if (lastType === 'other') streak++;
+                    else {
+                        lastType = 'other';
+                        streak = 1;
+                    }
+                }
+            }
+            return result;
+        };
+
+        setTrials(generateSequence());
     }, []);
 
     const startGame = () => {
@@ -67,6 +103,7 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
         }
 
         setCurrentTrialIndex(index);
+        currentIndexRef.current = index;
         setCurrentLetter(trials[index]);
         setHasTapped(false);
         hasTappedRef.current = false;
@@ -88,13 +125,16 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
         const tapped = hasTappedRef.current; // Use ref for latest state
 
         let isCorrect = false;
+        let score = 0;
 
         if (letter === TARGET_LETTER) {
             // Should have tapped
             isCorrect = tapped;
+            score = tapped ? 0.25 : -0.25;
         } else {
             // Should NOT have tapped
             isCorrect = !tapped;
+            score = tapped ? -0.50 : 0.00;
         }
 
         // Record trial result
@@ -103,6 +143,7 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
             target: letter,
             action: tapped ? 'TAPPED' : 'NO_ACTION',
             result: isCorrect ? 'CORRECT' : 'WRONG',
+            score: score,
             timestamp: new Date().toISOString()
         };
 
@@ -125,11 +166,16 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
         setHasTapped(true);
         hasTappedRef.current = true;
 
-        // Visual feedback is immediate (button turns blue via active/focus or custom style)
-        // Logic evaluation happens at end of trial OR immediate?
-        // Prompt: "Random letters flash on screen (1 second each)"
-        // Usually in these tests, the trial continues for the full duration even if you tap.
-        // So we just mark "Tapped" and wait for timer to expire.
+        // Advance to next letter immediately on tap (with small delay for visual feedback)
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+
+        // Delay trial end by 200ms so user sees the blue button
+        setTimeout(() => {
+            handleTrialEnd(currentIndexRef.current);
+        }, 200);
     };
 
     const finishGame = () => {
@@ -181,19 +227,16 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
 
                     <Button
                         variant="contained"
-                        // Button should be blue when clicked/tapped. 
-                        // MUI 'primary' is blue. 'success' is green. 
-                        // User said "Turn button to blue when user clicks".
-                        // Let's use 'success' (Green) as default (like the image shows Green 'TAP' button)
-                        // And change to 'primary' (Blue) if tapped? 
-                        // Prompt image shows Green "TAP". "We need to turn the button to blue when user clicks".
+                        // Button should be blue when clicked/tapped or hovered.
+                        // Default to success (green)
                         color={hasTapped ? "primary" : "success"}
                         size="large"
                         sx={{
                             width: 240,
                             height: 120,
                             fontSize: '2.5rem',
-                            pointerEvents: hasTapped ? 'none' : 'auto' // Disable after tap?
+                            pointerEvents: hasTapped ? 'none' : 'auto',
+                            transition: 'all 0.2s',
                         }}
                         onClick={handleTap}
                     >
