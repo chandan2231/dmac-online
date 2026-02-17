@@ -1,4 +1,5 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
+import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined';
 import { useEffect, useState } from 'react';
 import AppAppBar from '../../landing-page/components/AppBar';
 import AppFooter from '../../landing-page/components/AppFooter';
@@ -20,6 +21,9 @@ const loadState = (key: string) => {
   const saved = localStorage.getItem(`dmac_screening_flow_${key}`);
   return saved ? JSON.parse(saved) : false;
 };
+
+const REGISTRATION_WAITING_MESSAGE =
+  'You have successfully registered for the Self-Administered Digital Memory and Cognitive Assessment (SDMAC).';
 
 const ScreeningQuestioners = () => {
   const navigate = useNavigate();
@@ -69,7 +73,7 @@ const ScreeningQuestioners = () => {
           setVerificationMessage('Email verified. Starting assessment...');
           setVerifiedOverride(true);
         } else {
-          setVerificationMessage('Please verify your email to access the assessment.');
+          setVerificationMessage(REGISTRATION_WAITING_MESSAGE);
         }
       } catch {
         if (cancelled) return;
@@ -84,7 +88,6 @@ const ScreeningQuestioners = () => {
       cancelled = true;
       window.removeEventListener('focus', onFocus);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, verifiedOverride, screeningUserVersion]);
 
   const [isQuestionerClosed, setIsQuestionerClosed] = useState(() => loadState('isQuestionerClosed'));
@@ -182,6 +185,11 @@ const ScreeningQuestioners = () => {
   };
 
   if (!effectiveVerified) {
+    const waitingTitle = 'Registration successful';
+    const waitingBody =
+      (verificationMessage || REGISTRATION_WAITING_MESSAGE) +
+      (screeningUser?.email ? `\n\nWe have sent an email Link to start your assessment test to your email: ${screeningUser.email}.` : '') + '\n\nThank you !';
+
     return (
       <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <AppAppBar />
@@ -196,12 +204,61 @@ const ScreeningQuestioners = () => {
             px: 2,
           }}
         >
-          <Typography variant="body1" color="text.secondary" textAlign="center">
-            {verificationMessage ||
-              (screeningUser
-                ? `We’ve sent a verification link to ${screeningUser.email}. Verify your email to continue, then refresh this page.`
-                : 'Please verify your email to access the assessment.')}
-          </Typography>
+          <Card
+            elevation={0}
+            sx={{
+              width: '100%',
+              maxWidth: 760,
+              borderRadius: 3,
+              border: '1px solid',
+              // Color-blind friendly (blue) with strong contrast for older users.
+              borderColor: 'rgba(21, 101, 192, 0.35)',
+              bgcolor: 'rgba(21, 101, 192, 0.06)',
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Stack direction="row" spacing={2} alignItems="flex-start">
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: '50%',
+                    bgcolor: 'rgba(21, 101, 192, 0.12)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    flex: '0 0 auto',
+                    mt: '2px',
+                  }}
+                >
+                  <MarkEmailReadOutlinedIcon sx={{ color: '#1565C0', fontSize: 26 }} />
+                </Box>
+
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 18,
+                      fontWeight: 700,
+                      color: '#111',
+                      mb: 1,
+                    }}
+                  >
+                    {waitingTitle}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 18,
+                      fontWeight: 650,
+                      color: '#111',
+                      whiteSpace: 'pre-line',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {waitingBody}
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
         </Box>
 
         <Box sx={{ mt: 'auto' }}>

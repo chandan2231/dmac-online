@@ -146,7 +146,7 @@ export const registerScreeningUser = async (req, res) => {
     const subject = 'Start Your SDMAC Assessment';
     const greetingHtml = `<p>Dear ${name},</p>`;
     const bodyHtml = `<p>You have successfully registered for the <strong>Self-Administered Digital Memory and Cognitive Assessment (SDMAC)</strong>.</p>
-        <p>Please click the link below to start your assessment:</p>
+        <p>Please click the button below to start your assessment:</p>
         <p>
             <a href="${verifyLink}" style="display:inline-block;padding:10px 18px;background-color:#2c7be5;color:#ffffff;text-decoration:none;border-radius:4px;">
             Start Assessment
