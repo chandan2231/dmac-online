@@ -178,12 +178,22 @@ const DisinhibitionSqTri = ({ session, onComplete, languageCode }: Disinhibition
                         </Box>
                     </Box>
 
-                    <Box sx={{ display: 'flex', gap: 4 }}>
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        gap: 2,
+                        justifyContent: 'center',
+                        width: '100%'
+                    }}>
                         <Button
                             variant="contained"
                             color="success"
                             size="large"
-                            sx={{ width: 150, height: 60, fontSize: '1.2rem' }}
+                            sx={{
+                                width: { xs: 140, sm: 150 },
+                                height: 60,
+                                fontSize: '1.2rem'
+                            }}
                             onClick={() => handleAnswerSafe(SHAPES.SQUARE)}
                         >
                             {getLanguageText(languageConstants, 'SQUARE')}
@@ -192,7 +202,11 @@ const DisinhibitionSqTri = ({ session, onComplete, languageCode }: Disinhibition
                             variant="contained"
                             color="success"
                             size="large"
-                            sx={{ width: 150, height: 60, fontSize: '1.2rem' }}
+                            sx={{
+                                width: { xs: 140, sm: 150 },
+                                height: 60,
+                                fontSize: '1.2rem'
+                            }}
                             onClick={() => handleAnswerSafe(SHAPES.TRIANGLE)}
                         >
                             {getLanguageText(languageConstants, 'TRIANGLE')}
