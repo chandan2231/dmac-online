@@ -165,6 +165,40 @@ export const registerScreeningUser = async (req, res) => {
   }
 }
 
+export const getScreeningUserStatus = async (req, res) => {
+  try {
+    const userIdRaw = req.query?.user_id ?? req.query?.userId
+    const userId = Number(userIdRaw)
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return res.status(400).json({ isSuccess: false, message: 'user_id is required' })
+    }
+
+    const rows = await query(
+      'SELECT id, name, email, verified, patient_meta FROM dmac_webapp_users WHERE id = ? LIMIT 1',
+      [userId]
+    )
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(404).json({ isSuccess: false, message: 'User not found' })
+    }
+
+    const row = rows[0]
+    return res.status(200).json({
+      isSuccess: true,
+      user: {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        patient_meta: row.patient_meta ?? null,
+        verified: Boolean(row.verified)
+      }
+    })
+  } catch (err) {
+    console.error('SCREENING USER STATUS ERROR:', err)
+    return res.status(500).json({ isSuccess: false, message: 'Internal server error.' })
+  }
+}
+
 function encryptString(original) {
   const key = Buffer.from(process.env.CRYPTO_SECRET_KEY, 'hex')
 

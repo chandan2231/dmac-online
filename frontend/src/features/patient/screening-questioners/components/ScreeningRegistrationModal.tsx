@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Alert, Box, TextField, Typography } from '@mui/material';
 import GenericModal from '../../../../components/modal';
 import ScreeningAuthApi from '../../../../services/screeningAuthApi';
+import { setScreeningUser } from '../storage';
 
 type Props = {
   isOpen: boolean;
@@ -48,6 +49,14 @@ const ScreeningRegistrationModal = ({ isOpen }: Props) => {
       });
 
       if (res.isSuccess) {
+        if (res.userId) {
+          setScreeningUser({
+            id: Number(res.userId),
+            name: name.trim(),
+            email: email.trim(),
+            verified: false,
+          });
+        }
         setIsRegistered(true);
         setServerMessage(
           'You have successfully registered. Please verify your email to access the assessment.'

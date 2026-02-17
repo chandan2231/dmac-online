@@ -251,7 +251,6 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
         <Box sx={{
             width: '100%',
             height: '100%',
-            minHeight: '80vh',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',

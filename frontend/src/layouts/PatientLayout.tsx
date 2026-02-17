@@ -8,12 +8,10 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    overflowX: 'hidden',
-    overflowY: 'auto',
+    justifyContent: 'center',
+    overflow: 'hidden', // Prevents any overflow
     width: '100%',
     maxWidth: '100vw',
-    minHeight: '100dvh',
   },
 };
 
@@ -27,9 +25,7 @@ const PatientLayout = () => {
       }}
     >
       <AppAppBar />
-      <Box sx={{ width: '100%', flex: 1, display: 'flex', justifyContent: 'center' }}>
-        <Outlet />
-      </Box>
+      <Outlet />
       <AppFooter />
     </Box>
   );
