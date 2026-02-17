@@ -367,8 +367,9 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
                                 sx={{
                                     width: '100%',
                                     fontSize: '1.1rem',
-                                    py: 2,
+                                    py: 2.8,
                                     fontWeight: 'bold',
+                                    borderRadius: '10px',
                                     mt: { xs: 2, sm: 4 },
                                     mb: { xs: 0, sm: 6 }
                                 }}

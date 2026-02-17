@@ -336,11 +336,11 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
                             variant="contained"
                             onClick={handleSubmit}
                             sx={{
-                                width: '100%',
                                 maxWidth: '600px',
                                 fontSize: '1.2rem',
-                                py: 2.5,
+                                py: 3.5,
                                 fontWeight: 'bold',
+                                borderRadius: '10px',
                                 mt: { xs: 2, sm: 4 },
                                 mb: { xs: 0, sm: 6 }
                             }}

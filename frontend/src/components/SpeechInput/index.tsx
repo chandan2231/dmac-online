@@ -210,8 +210,8 @@ const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
                     <IconButton
                         onClick={handleMicClick}
                         sx={{
-                            borderRadius: '8px',
-                            padding: { xs: '8px 16px', sm: '16px 28px' },
+                            borderRadius: '10px',
+                            padding: { xs: '8px 16px', sm: '14px 25px' },
                             background: isListening ? '#f44336' : '#274765',
                             color: 'white',
                             display: 'flex',
@@ -221,7 +221,7 @@ const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
                             gap: { xs: 1.5, sm: 1 },
                             flex: { xs: 1, sm: 'none' },
                             width: { xs: 'auto', sm: '140px' },
-                            height: { xs: '56px', sm: 'auto' },
+                            height: { xs: '68px', sm: 'auto' },
                             '&:hover': { background: isListening ? '#d32f2f' : '#1c3550' }
                         }}
                     >
@@ -232,8 +232,8 @@ const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
                     <IconButton
                         onClick={handleTypeClick}
                         sx={{
-                            borderRadius: '8px',
-                            padding: { xs: '8px 16px', sm: '16px 28px' },
+                            borderRadius: '10px',
+                            padding: { xs: '8px 16px', sm: '14px 25px' },
                             border: '2px solid #274765',
                             color: '#274765',
                             display: 'flex',
@@ -243,7 +243,7 @@ const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
                             gap: { xs: 1.5, sm: 1 },
                             flex: { xs: 1, sm: 'none' },
                             width: { xs: 'auto', sm: '140px' },
-                            height: { xs: '56px', sm: 'auto' },
+                            height: { xs: '68px', sm: 'auto' },
                             '&:hover': { background: '#f5f5f5' }
                         }}
                     >

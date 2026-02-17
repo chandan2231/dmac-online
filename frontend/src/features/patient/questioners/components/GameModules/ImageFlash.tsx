@@ -302,9 +302,10 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
                             sx={{
                                 width: '100%',
                                 backgroundColor: '#1976d2',
-                                py: 2,
+                                py: 2.8,
                                 fontSize: '1.1rem',
                                 fontWeight: 'bold',
+                                borderRadius: '10px',
                                 mt: { xs: 2, sm: 4 },
                                 mb: { xs: 0, sm: 6 }
                             }}
