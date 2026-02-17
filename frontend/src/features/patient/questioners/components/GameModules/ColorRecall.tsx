@@ -84,7 +84,7 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 3 }}>
+        <Box sx={{ width: '100%', height: '100%', minHeight: '85vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', pt: 0 }}>
 
             {/* Instruction Modal */}
             <GenericModal
@@ -107,7 +107,7 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
 
             {/* Input Area */}
             {!showInstruction && (
-                <Box sx={{ width: '100%', maxWidth: '600px', pb: 25, display: 'flex', flexDirection: 'column', gap: 3, mt: 4 }}>
+                <Box sx={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: 3, px: 2, mt: { xs: 2, sm: 8 } }}>
                     <Typography variant="h6" sx={{ textAlign: 'center' }}>
                         {question?.prompt_text || "Please enter the colors you recall"}
                     </Typography>
@@ -129,16 +129,12 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
                         variant="contained"
                         onClick={handleSubmit}
                         sx={{
-                            position: 'absolute',
-                            bottom: '150px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: '90%',
-                            maxWidth: '600px',
-                            zIndex: 10,
-                            fontSize: '1.2rem',
-                            py: 2.5,
-                            fontWeight: 'bold'
+                            width: '100%',
+                            fontSize: '1.1rem',
+                            py: 2,
+                            fontWeight: 'bold',
+                            mt: { xs: 2, sm: 4 },
+                            mb: { xs: 0, sm: 6 }
                         }}
                     >
                         {t.submitContinue}

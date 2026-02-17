@@ -202,7 +202,7 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
     const currentItem = gameItems[currentItemIndex];
 
     return (
-        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', pt: 0 }}>
             <GenericModal
                 isOpen={phase === 'instruction'}
                 onClose={() => { }}
@@ -263,7 +263,7 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
 
             {
                 phase === 'input' && (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', maxWidth: '600px', px: 2, pb: 25 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 3, sm: 4 }, width: '100%', maxWidth: '600px', px: 2, mt: { xs: 2, sm: 8 } }}>
 
                         <Typography variant="h6" sx={{ textAlign: 'center', color: '#666' }}>{t.enterAnswers}</Typography>
 
@@ -274,57 +274,43 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
                                 setInputText(value);
                                 setValidationError(''); // Clear error when typing
                             }}
-                            onSpeechResult={(transcript) => {
-                                // Append to existing text with space (no comma)
-                                const currentText = inputText.trim();
-                                const newText = currentText
-                                    ? `${currentText} ${transcript.toLowerCase()}`
-                                    : transcript.toLowerCase();
-                                setInputText(newText);
+                            onSpeechResult={(text) => {
+                                const newValue = inputText + (inputText ? ', ' : '') + text;
+                                setInputText(newValue);
                                 setValidationError(''); // Clear error when speaking
                             }}
                             languageCode={languageCode}
-                            // placeholder={t.inputPlaceholder}
                             enableModeSelection={true}
                         />
 
-                        {/* Validation Error Message */}
                         {validationError && (
                             <Typography
+                                variant="body2"
                                 sx={{
-                                    color: '#d32f2f',
-                                    fontSize: '0.875rem',
+                                    color: 'error.main',
                                     textAlign: 'center',
-                                    fontWeight: 500
+                                    mt: 1
                                 }}
                             >
                                 {validationError}
                             </Typography>
                         )}
 
-                        {/* Navigation Buttons */}
-
-                        <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            <MorenButton
-                                variant="contained"
-                                onClick={handleSubmit}
-                                sx={{
-                                    position: 'absolute',
-                                    bottom: '150px',
-                                    left: '50%',
-                                    transform: 'translateX(-50%)',
-                                    width: '90%',
-                                    maxWidth: '600px',
-                                    zIndex: 10,
-                                    backgroundColor: '#1976d2',
-                                    py: 2.5,
-                                    fontSize: '1.2rem',
-                                    fontWeight: 'bold'
-                                }}
-                            >
-                                {t.submitContinue}
-                            </MorenButton>
-                        </Box>
+                        <MorenButton
+                            variant="contained"
+                            onClick={handleSubmit}
+                            sx={{
+                                width: '100%',
+                                backgroundColor: '#1976d2',
+                                py: 2,
+                                fontSize: '1.1rem',
+                                fontWeight: 'bold',
+                                mt: { xs: 2, sm: 4 },
+                                mb: { xs: 0, sm: 6 }
+                            }}
+                        >
+                            {t.submitContinue}
+                        </MorenButton>
                     </Box>
                 )
             }
@@ -334,7 +320,7 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
                 onClose={() => setShowConfirmation(false)}
                 onConfirm={handleConfirmSubmit}
             />
-        </Box >
+        </Box>
     );
 };
 
