@@ -283,6 +283,10 @@ const Questioners = () => {
   const productPackageSubscriptionListString =
     products && products.length > 0 ? products[0].subscription_list : null;
 
+  if (!user) {
+    return <CustomLoader />;
+  }
+
   if (loadingProducts) {
     return <CustomLoader />;
   }

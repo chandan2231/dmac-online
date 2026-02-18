@@ -762,17 +762,88 @@ export const patientRegistration = async (req, res) => {
     // Prepare email verification message
     const verifyLink = `${process.env.DOMAIN}patient/email/verify/${verificationToken}`
     const to = req.body.email
-    const subject = 'Verify Your Email for DMAC'
-    const greetingHtml = `<p>Dear ${req.body.name},</p>`
-    const bodyHtml = `<h2>You have successfully registered with DMAC.</h2>
-                      <br>
-                      <h4>Click the link below to verify your email</h4>
-                      <a href="${verifyLink}">Verify Email</a>`
+    const subject = 'Welcome to Regain Memory 360 — Verify your email'
+    const recipientName = String(req.body.name || 'User').trim()
+
     const emailHtml = `
-      <div>
-        ${greetingHtml}
-        ${bodyHtml}
-      </div>`
+      <div style="font-family: Arial, Helvetica, sans-serif; color:#111; line-height:1.6;">
+        <div style="max-width: 720px; margin: 0 auto; padding: 24px;">
+          <div style="border:1px solid #E5E7EB; border-radius: 12px; padding: 24px; background:#FFFFFF;">
+            <p style="margin:0 0 12px 0; font-size:16px;">Mr. /Ms. ${recipientName},</p>
+            <p style="margin:0 0 16px 0; font-size:16px;">
+              Welcome to Regain Memory 360. Your online registration is complete, and you’re taking an important step toward cognitive wellness.
+            </p>
+
+            <p style="margin:0 0 12px 0; font-size:16px; font-weight:700;">Click the link below to verify your email.</p>
+
+            <div style="margin: 16px 0 20px 0;">
+              <a href="${verifyLink}"
+                 style="display:inline-block; background:#0B5FFF; color:#FFFFFF; text-decoration:none; padding:12px 18px; border-radius:10px; font-weight:700; font-size:16px;">
+                Verify Email
+              </a>
+            </div>
+
+            <p style="margin:0 0 18px 0; font-size:16px;">
+              Once you have verified your email, follow the instructions to select a product after login.
+            </p>
+
+            <div style="margin-top: 8px; padding-top: 8px; border-top:1px solid #F0F2F5;">
+              <p style="margin:0 0 8px 0; font-size:16px; font-weight:800;">Quick overview of RM360 online services</p>
+
+              <p style="margin:12px 0 6px 0; font-size:16px; font-weight:800;">SDMAC Smart AI-Integrated Testing</p>
+              <p style="margin:0; font-size:16px;">
+                SDMAC smart, AI-based cognitive assessments identify weaker cognitive domains and automatically generate personalized brain-training schedules within LICCA, tailored to your individual cognitive profile.
+                This assessment is designed to provide an in-depth understanding of cognitive function using advanced, AI-integrated analysis.
+              </p>
+
+              <p style="margin:16px 0 6px 0; font-size:16px; font-weight:800;">Expert Guidance — Body–Brain Optimization</p>
+              <p style="margin:0 0 8px 0; font-size:16px; font-weight:700;">Personalized Medical Information Review</p>
+              <p style="margin:0; font-size:16px;">
+                An individualized collection of your medical history and common diseases—including relevant laboratory and blood test information—is organized to help guide medical decision-making through our expert-guided process.
+                This approach focuses on optimizing overall health to support brain function.
+              </p>
+              <p style="margin:10px 0 0 0; font-size:16px;">
+                Our expert guidance includes licensed physicians and/or trained clinicians who help identify cognitive concerns and guide you to seek appropriate evaluation and treatment with your primary care physician, neurologist, or geriatric specialist in your local area.
+              </p>
+
+              <p style="margin:16px 0 6px 0; font-size:16px; font-weight:800;">LICCA-CBT Brain Training &amp; Progress Tracking</p>
+              <p style="margin:0; font-size:16px;">
+                LICCA provides structured brain-training exercises along with visual progress charts, allowing you to track improvements across multiple cognitive domains over time.
+              </p>
+
+              <p style="margin:16px 0 6px 0; font-size:16px; font-weight:800;">Expected Outcomes</p>
+              <p style="margin:0; font-size:16px;">
+                With consistent participation over a 12-week (3-month) training period, many users experience improvements in memory, cognitive skills, and daily functioning. Individual results may vary.
+              </p>
+
+              <p style="margin:16px 0 6px 0; font-size:16px; font-weight:800;">Neuroplasticity-Focused Approach</p>
+              <p style="margin:0; font-size:16px;">
+                Our program is designed to support neuroplasticity, the brain’s ability to adapt and form new neural connections, helping the brain reconnect or strengthen cognitive pathways.
+              </p>
+
+              <p style="margin:18px 0 0 0; font-size:16px;">
+                For any questions, email us at <a href="mailto:help@regainmemory360.com" style="color:#0B5FFF; text-decoration:none; font-weight:700;">help@regainmemory360.com</a>.
+              </p>
+
+              <p style="margin:14px 0 0 0; font-size:16px; font-weight:700;">RM360 Administration</p>
+
+              <div style="margin-top: 18px; padding: 14px; background:#F7F7F7; border:1px solid #E5E7EB; border-radius: 10px;">
+                <p style="margin:0 0 8px 0; font-size:14px; font-weight:800;">Important Disclaimer</p>
+                <p style="margin:0; font-size:14px; color:#333;">
+                  DMAC™, RM360™, and LICCA™ are not medical diagnoses and do not replace professional medical evaluation or treatment.
+                  This program is designed to support understanding of cognitive function and guide discussions with qualified healthcare providers.
+                  Individual results may vary.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <p style="margin:16px 0 0 0; font-size:12px; color:#6B7280; text-align:center;">
+            If the button doesn’t work, copy and paste this link into your browser: ${verifyLink}
+          </p>
+        </div>
+      </div>
+    `
     const text = emailHtml
     const html = emailHtml
 
