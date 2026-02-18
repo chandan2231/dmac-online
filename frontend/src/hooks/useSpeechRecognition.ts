@@ -155,17 +155,15 @@ export const useSpeechRecognition = (
         recognition.lang = languageCode;
         isStartingRef.current = true;
 
-        // Small delay to let browser fully reset after abort
-        setTimeout(() => {
-            try {
-                recognition.start();
-            } catch (e) {
-                console.warn('Error starting recognition:', e);
-                isStartingRef.current = false;
-                isListeningRef.current = false;
-                setIsListening(false);
-            }
-        }, 50);
+        // Start immediately to satisfy mobile browser user-activation requirements
+        try {
+            recognition.start();
+        } catch (e) {
+            console.warn('Error starting recognition:', e);
+            isStartingRef.current = false;
+            isListeningRef.current = false;
+            setIsListening(false);
+        }
     }, [browserSupportsSpeechRecognition, languageCode, onError]);
 
     const stopListening = useCallback(() => {
