@@ -329,11 +329,11 @@ const ScreeningQuestioners = () => {
   return (
     <Box
       sx={{
-        height: '100dvh',
-        maxHeight: '100dvh',
+        height: { xs: 'auto', sm: '100dvh' },
+        minHeight: { xs: '100dvh', sm: '100dvh' },
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
+        overflow: { xs: 'auto', sm: 'hidden' },
       }}
     >
       {!isModulesScreen ? (
@@ -351,81 +351,82 @@ const ScreeningQuestioners = () => {
       ) : null}
       <Box
         sx={{
-          flex: 1,
+          flex: { xs: 'none', sm: 1 },
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: isModulesScreen ? 'stretch' : 'center',
-          justifyContent: isModulesScreen ? 'stretch' : 'center',
-          minHeight: 0,
-          overflow: 'hidden',
+          justifyContent: { xs: 'flex-start', sm: isModulesScreen ? 'stretch' : 'center' },
+          minHeight: { xs: 'auto', sm: 0 },
+          overflow: { xs: 'visible', sm: 'hidden' },
           px: isModulesScreen ? 0 : { xs: 1, sm: 2 },
+          pt: isModulesScreen ? 0 : { xs: 4, sm: 0 }
         }}
       >
-      {!isDisclaimerAccepted ? <Disclaimer setIsDisclaimerAccepted={setIsDisclaimerAccepted} /> : null}
+        {!isDisclaimerAccepted ? <Disclaimer setIsDisclaimerAccepted={setIsDisclaimerAccepted} /> : null}
 
-      {isDisclaimerAccepted && !falsePositive ? <FalsePositive setFalsePositive={setFalsePositive} /> : null}
+        {isDisclaimerAccepted && !falsePositive ? <FalsePositive setFalsePositive={setFalsePositive} /> : null}
 
-      {isDisclaimerAccepted && falsePositive && !isPreTestCompleted ? (
-        <PreTest
-          setPreTestCompleted={setIsPreTestCompleted}
-          userId={userId}
-          languageCode={languageCode}
-          attemptStatus={attemptStatus}
-          isLoadingAttempts={isLoadingAttempts}
-        />
-      ) : null}
-
-      {isDisclaimerAccepted && falsePositive && isPreTestCompleted && !isQuestionerClosed ? (
-        <Questions setIsQuestionerClosed={setIsQuestionerClosed} userId={userId} languageCode={languageCode} />
-      ) : null}
-
-      {isDisclaimerAccepted && falsePositive && isPreTestCompleted && isQuestionerClosed ? (
-        <Box
-          sx={{
-            flex: 1,
-            minHeight: 0,
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            pb: 'calc(env(safe-area-inset-bottom, 0px))',
-          }}
-        >
-          <ModuleRunner
+        {isDisclaimerAccepted && falsePositive && !isPreTestCompleted ? (
+          <PreTest
+            setPreTestCompleted={setIsPreTestCompleted}
             userId={userId}
             languageCode={languageCode}
-            onAllModulesComplete={handleAllModulesComplete}
-            lastCompletedModuleId={attemptStatus?.lastModuleCompleted?.id}
+            attemptStatus={attemptStatus}
+            isLoadingAttempts={isLoadingAttempts}
           />
-        </Box>
-      ) : null}
+        ) : null}
 
-      <GenericModal
-        isOpen={showExitWarning}
-        onClose={handleStay}
-        title="Warning"
-        submitButtonText="Exit"
-        cancelButtonText="Stay"
-        onSubmit={handleExit}
-        onCancel={handleStay}
-      >
-        <Typography sx={{ fontSize: '1.2rem', textAlign: 'center', mb: 2 }}>
-          {attemptStatus && attemptStatus.count < attemptStatus.max_attempts ? (
-            <span>
-              Warning! You are on attempt <strong>{attemptStatus.count}</strong> of{' '}
-              <strong>{attemptStatus.max_attempts}</strong>. If you exit now, this attempt will be forfeited.
-              You will have <strong>{attemptStatus.max_attempts - attemptStatus.count}</strong> attempts remaining.
-              Are you sure you want to exit?
-            </span>
-          ) : (
-            <span>
-              Warning! You are on your <strong>FINAL</strong> attempt (
-              <strong>{attemptStatus?.count || 3}</strong> of <strong>{attemptStatus?.max_attempts || 3}</strong>). If you
-              exit now, you will <strong>NOT</strong> be able to retake the test. Are you sure you want to exit?
-            </span>
-          )}
-        </Typography>
-      </GenericModal>
+        {isDisclaimerAccepted && falsePositive && isPreTestCompleted && !isQuestionerClosed ? (
+          <Questions setIsQuestionerClosed={setIsQuestionerClosed} userId={userId} languageCode={languageCode} />
+        ) : null}
+
+        {isDisclaimerAccepted && falsePositive && isPreTestCompleted && isQuestionerClosed ? (
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              pb: 'calc(env(safe-area-inset-bottom, 0px))',
+            }}
+          >
+            <ModuleRunner
+              userId={userId}
+              languageCode={languageCode}
+              onAllModulesComplete={handleAllModulesComplete}
+              lastCompletedModuleId={attemptStatus?.lastModuleCompleted?.id}
+            />
+          </Box>
+        ) : null}
+
+        <GenericModal
+          isOpen={showExitWarning}
+          onClose={handleStay}
+          title="Warning"
+          submitButtonText="Exit"
+          cancelButtonText="Stay"
+          onSubmit={handleExit}
+          onCancel={handleStay}
+        >
+          <Typography sx={{ fontSize: '1.2rem', textAlign: 'center', mb: 2 }}>
+            {attemptStatus && attemptStatus.count < attemptStatus.max_attempts ? (
+              <span>
+                Warning! You are on attempt <strong>{attemptStatus.count}</strong> of{' '}
+                <strong>{attemptStatus.max_attempts}</strong>. If you exit now, this attempt will be forfeited.
+                You will have <strong>{attemptStatus.max_attempts - attemptStatus.count}</strong> attempts remaining.
+                Are you sure you want to exit?
+              </span>
+            ) : (
+              <span>
+                Warning! You are on your <strong>FINAL</strong> attempt (
+                <strong>{attemptStatus?.count || 3}</strong> of <strong>{attemptStatus?.max_attempts || 3}</strong>). If you
+                exit now, you will <strong>NOT</strong> be able to retake the test. Are you sure you want to exit?
+              </span>
+            )}
+          </Typography>
+        </GenericModal>
       </Box>
       <Box
         aria-hidden={isAssessmentInProgress ? 'true' : undefined}

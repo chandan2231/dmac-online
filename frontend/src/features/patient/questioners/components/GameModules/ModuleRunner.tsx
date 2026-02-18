@@ -384,7 +384,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
     if (idleModalOpen && !session) {
         return (
-            <Box sx={{ width: '100%', height: '100%' }}>
+            <Box sx={{ width: '100%', flex: { xs: 'none', sm: 1 }, display: 'flex', flexDirection: 'column' }}>
                 <GenericModal
                     isOpen={idleModalOpen}
                     onClose={() => { }}
@@ -596,7 +596,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%' }}>
+        <Box sx={{ width: '100%', flex: { xs: 'none', sm: 1 }, display: 'flex', flexDirection: 'column' }}>
             <GenericModal
                 isOpen={idleModalOpen}
                 onClose={() => { }}
@@ -633,11 +633,11 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
             {/* Remove this block when deploying to production */}
             {/* <Box sx={{ 
-                position: 'fixed', 
+                position: 'fixed',
                 top: { xs: 'auto', sm: 16 },
                 bottom: { xs: 16, sm: 'auto' },
-                right: 16, 
-                zIndex: 99999 
+                right: 16,
+                zIndex: 99999
             }}>
                 <Button
                     variant="contained"

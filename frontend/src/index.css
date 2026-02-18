@@ -5,9 +5,24 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    height: 100svh;
+    min-height: 100svh;
     width: 100svw;
     margin: 0;
     padding: 0;
-    overflow: scroll
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Ensure scrollbars are visible on mobile if hidden */
+@media (max-width: 600px) {
+    ::-webkit-scrollbar {
+        -webkit-appearance: none;
+        width: 4px;
+        height: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+        border-radius: 4px;
+        background-color: rgba(0, 0, 0, .5);
+        box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+    }
 }

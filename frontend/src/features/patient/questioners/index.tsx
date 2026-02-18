@@ -196,11 +196,15 @@ const Questioners = () => {
     <Box
       sx={{
         width: '100%',
-        height: '100%',
+        flex: { xs: 'none', sm: 1 },
+        height: { xs: 'auto', sm: 'auto' },
+        minHeight: { xs: '100dvh', sm: 0 },
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: { xs: 'flex-start', sm: 'center' },
+        pt: { xs: 4, sm: 0 },
+        overflowY: { xs: 'auto', sm: 'hidden' }
       }}
     >
       {/* 1. Intro Screen (Disclaimer) */}

@@ -228,7 +228,7 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 2, overflowY: 'auto' }}>
+        <Box sx={{ width: '100%', flex: { xs: 'none', sm: 1 }, height: { xs: 'auto', sm: 'auto' }, minHeight: { xs: '80vh', sm: 0 }, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: { xs: 'flex-start', sm: 'center' }, p: 2, overflowY: 'auto' }}>
             <GenericModal
                 isOpen={gameState === 'instruction'}
                 onClose={() => { }}
