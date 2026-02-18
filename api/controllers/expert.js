@@ -630,12 +630,14 @@ export const updateConsultationStatus = async (req, res) => {
             <p>Please login to reschedule if needed.</p>
           `
         } else if (status === 6) {
-          subject = 'Consultation Reschedule Requested'
+          subject = 'RM360: Notice of Reschedule of appointment due to conflict.'
           htmlContent = `
             <p>Dear ${user_name},</p>
+            <p><strong>RM360: Notice of Reschedule of appointment due to conflict.</strong></p>
             <p>Your consultation scheduled for ${consultation_date} needs to be rescheduled.</p>
             <p><b>Reason:</b> ${notes}</p>
             <p>Please login to reschedule your appointment.</p>
+            <p>RM360 administration</p>
           `
         }
 

@@ -180,6 +180,7 @@ const PatientRegister = () => {
 
     const payload = {
       name: data.name,
+      age: data.age,
       email: data.email,
       mobile: data.mobile,
       password: data.password,

@@ -711,10 +711,11 @@ export const patientRegistration = async (req, res) => {
     // Insert new user into the database
     const insertQuery = `
       INSERT INTO dmac_webapp_users 
-      (name, email, mobile, password, encrypted_password, country, state, zip_code, language, verified, verification_token, role, time_zone, province_title, province_id, patient_meta, weight, weight_unit, height, height_unit) 
+      (name, age, email, mobile, password, encrypted_password, country, state, zip_code, language, verified, verification_token, role, time_zone, province_title, province_id, patient_meta, weight, weight_unit, height, height_unit) 
       VALUES (?)`
     const values = [
       req.body.name,
+      req.body.age,
       req.body.email,
       req.body.mobile,
       hashedPassword,
