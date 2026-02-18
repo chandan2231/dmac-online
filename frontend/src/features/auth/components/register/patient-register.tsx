@@ -144,8 +144,8 @@ const PatientRegister = () => {
       language: { label: '', value: '' },
       country: { label: '', value: '' },
       state: { label: '', value: '' },
-      weightUnit: 'kg',
-      heightUnit: 'cm',
+      weightUnit: 'pound',
+      heightUnit: 'inches',
     },
   });
 
