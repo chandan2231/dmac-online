@@ -35,7 +35,7 @@ import reverseTenthAudio from '../../../../../assets/ReverseAudioNumberRecall/re
 
 interface NumberRecallProps {
     session: SessionData;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -65,6 +65,7 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
     const [error, setError] = useState('');
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [responseCountdown, setResponseCountdown] = useState(60);
+    const [startTime, setStartTime] = useState<number>(Date.now());
     const liveTranscriptRef = useRef('');
 
     const questions = session.questions || [];
@@ -115,6 +116,7 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
     const getAudioUrl = resolveAudioUrl;
 
     const handleStart = () => {
+        setStartTime(Date.now());
         setPhase('playing');
         setResponseCountdown(60);
     };
@@ -159,7 +161,8 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
             setCurrentIndex(prev => prev + 1);
             setPhase('playing');
         } else {
-            onComplete(newAnswers);
+            const timeTaken = (Date.now() - startTime) / 1000;
+            onComplete(newAnswers, timeTaken);
         }
     };
 

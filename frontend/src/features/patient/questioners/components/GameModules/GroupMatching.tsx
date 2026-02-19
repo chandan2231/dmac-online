@@ -9,7 +9,7 @@ import MorenButton from '../../../../../components/button';
 
 interface GroupMatchingProps {
     session: SessionData;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -46,6 +46,7 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
 
     // Confirmation Modal State
     const [showConfirmation, setShowConfirmation] = useState(false);
+    const [startTime, setStartTime] = useState<number>(Date.now());
 
     // Score accumulating across rounds
     const [roundScores, setRoundScores] = useState<number[]>([]);
@@ -79,6 +80,7 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
     }, [roundIndex, currentQuestion]);
 
     const handleInstructionSubmit = () => {
+        setStartTime(Date.now());
         setGameState('playing');
     };
 
@@ -224,7 +226,8 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
             answer_text: `Score: ${finalScores[idx] || 0}`,
         }));
 
-        onComplete(validAnswers);
+        const timeTaken = (Date.now() - startTime) / 1000;
+        onComplete(validAnswers, timeTaken);
     };
 
     return (

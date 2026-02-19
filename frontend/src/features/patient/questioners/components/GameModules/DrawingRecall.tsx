@@ -12,7 +12,7 @@ import instructionVideo from '../../../../../assets/drawingModuleVideo/Video_202
 
 interface DrawingRecallProps {
     session: SessionData;
-    onComplete: (payload: any) => void;
+    onComplete: (payload: any, time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -41,6 +41,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentStart, setCurrentStart] = useState<Point | null>(null);
     const [shapes, setShapes] = useState<DrawnShape[]>([]);
+    const [startTime, setStartTime] = useState<number>(Date.now());
     const lastPointRef = useRef<Point | null>(null);
 
     // Video State
@@ -107,6 +108,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     };
 
     const handleMemorizeInstructionSubmit = () => {
+        setStartTime(Date.now());
         setPhase('memorize');
         setCountdown(10);
     };
@@ -402,7 +404,8 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
             score: calculatedScore
         };
 
-        onComplete(payload);
+        const timeTaken = (Date.now() - startTime) / 1000;
+        onComplete(payload, timeTaken);
     };
 
     // Render reference image (for memorize phase)

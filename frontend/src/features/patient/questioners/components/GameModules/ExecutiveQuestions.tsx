@@ -10,7 +10,7 @@ import { getLanguageText } from '../../../../../utils/functions';
 
 interface ExecutiveQuestionsProps {
     session: SessionData;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -34,6 +34,7 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
     const [inputText, setInputText] = useState('');
     const [answers, setAnswers] = useState<any[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [startTime, setStartTime] = useState<number>(Date.now());
 
     // Confirmation Modal State
     const [showConfirmation, setShowConfirmation] = useState(false);
@@ -76,6 +77,7 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
     }, [currentQuestionIndex, phase]); // Re-run when question or phase changes
 
     const handleStart = () => {
+        setStartTime(Date.now());
         setPhase('playing');
     };
 
@@ -116,7 +118,8 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
             setCurrentQuestionIndex(prev => prev + 1);
         } else {
             // All done
-            onComplete(updatedAnswers);
+            const timeTaken = (Date.now() - startTime) / 1000;
+            onComplete(updatedAnswers, timeTaken);
         }
     };
 

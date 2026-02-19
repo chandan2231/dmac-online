@@ -41,7 +41,7 @@ const ALL_IMAGES = [Bird, Boat, Bus, Car, Chair, Cow, Key, Tree, Flower, Pen];
 
 interface ImageFlashProps {
     session: SessionData;
-    onComplete: (answerText: string) => void;
+    onComplete: (answerText: string, time_taken?: number) => void;
     languageCode: string;
     isRecallOnly?: boolean;
 }
@@ -75,6 +75,7 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
     // Requirement: after flashing ends, go to post_instruction then input.
     const [phase, setPhase] = useState<'instruction' | 'playing' | 'post_instruction' | 'input'>('instruction');
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
+    const [startTime, setStartTime] = useState<number>(Date.now());
 
     // Input state - single text field for all answers
     const [inputText, setInputText] = useState('');
@@ -150,6 +151,7 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
     }, [languageCode]);
 
     const handleStart = () => {
+        setStartTime(Date.now());
         if (isRecallOnly) {
             setPhase('input');
         } else {
@@ -186,17 +188,19 @@ const ImageFlash = ({ session, onComplete, languageCode, isRecallOnly = false }:
             return;
         }
 
+        const timeTaken = (Date.now() - startTime) / 1000;
         setValidationError(''); // Clear error
-        console.log('ImageFlash submitting answers:', trimmedInput);
-        onComplete(trimmedInput);
+        console.log('ImageFlash submitting answers:', trimmedInput, 'Time taken:', timeTaken);
+        onComplete(trimmedInput, timeTaken);
     };
 
     const handleConfirmSubmit = () => {
         setShowConfirmation(false);
         // Clean up empty input or just send as string
         const trimmedInput = inputText.trim().toLowerCase();
-        console.log('ImageFlash submitting empty answer after confirmation');
-        onComplete(trimmedInput);
+        const timeTaken = (Date.now() - startTime) / 1000;
+        console.log('ImageFlash submitting empty answer after confirmation', 'Time taken:', timeTaken);
+        onComplete(trimmedInput, timeTaken);
     };
 
     const currentItem = gameItems[currentItemIndex];
