@@ -29,7 +29,7 @@ const ScreeningRegistrationModal = ({ isOpen }: Props) => {
   }, [age]);
 
   const isAgeValid = useMemo(() => {
-    return ageNumber !== null && Number.isInteger(ageNumber) && ageNumber >= 40 && ageNumber <= 100;
+    return ageNumber !== null && Number.isInteger(ageNumber) && ageNumber >= 14 && ageNumber <= 100;
   }, [ageNumber]);
 
   const isValid = useMemo(() => {
@@ -128,12 +128,12 @@ const ScreeningRegistrationModal = ({ isOpen }: Props) => {
               fullWidth
               required
               disabled={isSubmitting}
-              inputProps={{ min: 40, max: 100, step: 1 }}
+              inputProps={{ min: 14, max: 100, step: 1 }}
               error={Boolean(age) && !isAgeValid}
               helperText={
                 Boolean(age) && !isAgeValid
-                  ? 'Age must be a whole number between 40 and 100.'
-                  : 'Enter your age (40–100).'
+                  ? 'Age must be a whole number between 14 and 100.'
+                  : 'Enter your age (14–100).'
               }
             />
           </>
@@ -211,8 +211,11 @@ const ScreeningRegistrationModal = ({ isOpen }: Props) => {
         )}
 
         {!isRegistered && (
-          <Typography sx={{ mt: 1 }} variant="body2" color="text.secondary">
-            After submitting, you’ll receive an email verification link. You must verify to continue.
+          <Typography
+            sx={{ mt: 1, fontSize: 16, fontWeight: 600, color: '#111' }}
+            variant="body2"
+          >
+            After registration, you will receive an email. Please check your inbox and follow the instructions to start the assessment.
           </Typography>
         )}
       </Box>
