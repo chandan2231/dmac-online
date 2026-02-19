@@ -144,8 +144,8 @@ const PatientRegister = () => {
       language: { label: '', value: '' },
       country: { label: '', value: '' },
       state: { label: '', value: '' },
-      weightUnit: 'kg',
-      heightUnit: 'cm',
+      weightUnit: 'pound',
+      heightUnit: 'inches',
     },
   });
 
@@ -180,6 +180,7 @@ const PatientRegister = () => {
 
     const payload = {
       name: data.name,
+      age: data.age,
       email: data.email,
       mobile: data.mobile,
       password: data.password,

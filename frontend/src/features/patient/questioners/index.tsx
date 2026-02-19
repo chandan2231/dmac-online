@@ -15,9 +15,13 @@ import GenericModal from '../../../components/modal';
 import { Typography } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../router/router';
+import { useGetSubscribedProduct } from '../hooks/useGetSubscribedProduct';
+import CustomLoader from '../../../components/loader';
+import SubscriptionRequired from '../../../components/subscription-required';
 
+const REQUIRED_SUBSCRIPTION_KEY = 'DMAC Online Test';
 
-const Questioners = () => {
+const QuestionersFlow = () => {
 
   // Load initial state from localStorage or default to false
   const loadState = (key: string) => {
@@ -271,6 +275,42 @@ const Questioners = () => {
       </GenericModal>
     </Box>
   );
+};
+
+const Questioners = () => {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const subscriptionUser = user?.role === 'USER' ? user : null;
+
+  const { data: products, isLoading: loadingProducts } =
+    useGetSubscribedProduct(subscriptionUser);
+
+  const productPackageSubscriptionListString =
+    products && products.length > 0 ? products[0].subscription_list : null;
+
+  if (!user) {
+    return <CustomLoader />;
+  }
+
+  if (loadingProducts) {
+    return <CustomLoader />;
+  }
+
+  if (
+    user?.role === 'USER' &&
+    (!productPackageSubscriptionListString ||
+      !productPackageSubscriptionListString.includes(REQUIRED_SUBSCRIPTION_KEY))
+  ) {
+    return (
+      <Box p={3} height="100%" width="100%">
+        <SubscriptionRequired
+          title="Subscription Required"
+          description="You need to purchase a subscription (DMAC Online Test) to access SDMAC."
+        />
+      </Box>
+    );
+  }
+
+  return <QuestionersFlow />;
 };
 
 export default Questioners;
