@@ -362,8 +362,24 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
 
     consultant_timezone = fetched_consultant_timezone
 
-    /* 🔹 Fetch user info + timezone */
-    const userQuery = `SELECT id, email, name, google_access_token as user_access_token, google_refresh_token as user_refresh_token, time_zone, country FROM dmac_webapp_users WHERE id = ?`
+    /* 🔹 Fetch user info + timezone (+ language name) */
+    const userQuery = `
+      SELECT 
+        u.id,
+        u.email,
+        u.name,
+        u.age,
+        u.language,
+        l.language AS language_name,
+        u.google_access_token as user_access_token,
+        u.google_refresh_token as user_refresh_token,
+        u.time_zone,
+        u.country
+      FROM dmac_webapp_users u
+      LEFT JOIN dmac_webapp_language l
+        ON u.language = l.id
+      WHERE u.id = ?
+    `
     const user = await new Promise((resolve, reject) => {
       db.query(userQuery, [user_id], (err, result) =>
         err ? reject(err) : resolve(result)
@@ -378,7 +394,9 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
       user_access_token,
       user_refresh_token,
       time_zone: fetched_user_timezone,
-      country
+      country,
+      age: user_age,
+      language_name: user_language
     } = user[0]
 
     user_timezone = fetched_user_timezone
@@ -566,22 +584,34 @@ export const bookConsultationWithGoogleCalender = async (req, res) => {
     }
 
     /* 🔹 Email to USER & CONSULTANT */
-    const emailSubject = 'DMAC Consultation Booking Confirmed'
+    const emailSubject = 'RM360: New Expert Advice Scheduled'
 
     const userHtml = `
       <p>Dear ${user_name},</p>
-      <h3>Your consultation has been booked successfully.</h3>
-      <p><b>Date:</b> ${date}</p>
-      <p><b>Time:</b> ${moment(eventStartISO).tz(user_timezone).format('YYYY-MM-DD hh:mm A')}</p>
-      <p><b>Meeting Link:</b> <a href="${meetLink}">${meetLink}</a></p>
+      <p><strong>RM360: Notice of New expert advice has been scheduled with one of our health care providers.</strong></p>
+      <p><strong>Health care provider Name:</strong> ${consultant_name || ''}</p>
+      <p><strong>Date:</strong> ${date}</p>
+      <p><strong>Time:</strong> ${moment(eventStartISO)
+        .tz(user_timezone)
+        .format('YYYY-MM-DD hh:mm A')}</p>
+      <p><strong>Meeting Link:</strong> ${
+        meetLink ? `<a href="${meetLink}">${meetLink}</a>` : 'N/A'
+      }</p>
+      <p>RM360 Administration</p>
+      <p><em>(This is automated email, please do not reply to email)</em></p>
     `
 
     const consultantHtml = `
       <p>Dear ${consultant_name},</p>
-      <h3>A new consultation has been scheduled.</h3>
-      <p><b>Date:</b> ${date}</p>
-      <p><b>Time:</b> ${consultantStart.format('YYYY-MM-DD hh:mm A')}</p>
-      <p><b>Meeting Link:</b> <a href="${meetLink}">${meetLink}</a></p>
+      <p><strong>RM360 Notice of New Consultation:</strong></p>
+      <p>A new consultation has been scheduled.</p>
+      <p><strong>Patient Name:</strong> ${user_name || ''}</p>
+      <p><strong>Patient Email:</strong> ${user_email || ''}</p>
+      <p><strong>Patient Age:</strong> ${user_age ?? ''}</p>
+      <p><strong>Patient Language:</strong> ${user_language || ''}</p>
+      <p><strong>Date:</strong> ${date}</p>
+      <p><strong>Time:</strong> ${consultantStart.format('YYYY-MM-DD hh:mm A')}</p>
+      <p><strong>Meeting Link:</strong> ${meetLink ? `<a href="${meetLink}">${meetLink}</a>` : 'N/A'}</p>
     `
 
     await sendEmail(user_email, emailSubject, userHtml, userHtml)
@@ -638,11 +668,13 @@ export const rescheduleConsultationWithGoogleCalendar = async (req, res) => {
     /* 🔹 Fetch existing consultation details */
     const existingQuery = `
       SELECT c.*, 
-        u.email AS user_email, u.name AS user_name, u.google_access_token AS user_access_token, u.google_refresh_token AS user_refresh_token, u.time_zone AS user_db_timezone,
+        u.email AS user_email, u.name AS user_name, u.age AS user_age, l.language AS user_language,
+        u.google_access_token AS user_access_token, u.google_refresh_token AS user_refresh_token, u.time_zone AS user_db_timezone,
         con.email AS consultant_email, con.name AS consultant_name, con.google_access_token AS consultant_access, con.google_refresh_token AS consultant_refresh, con.time_zone AS consultant_db_timezone,
         c.consultant_timezone
       FROM dmac_webapp_consultations c
       JOIN dmac_webapp_users u ON c.user_id = u.id
+      LEFT JOIN dmac_webapp_language l ON u.language = l.id
       JOIN dmac_webapp_users con ON c.consultant_id = con.id
       WHERE c.id = ?`
     const data = await new Promise((resolve, reject) =>
@@ -670,6 +702,8 @@ export const rescheduleConsultationWithGoogleCalendar = async (req, res) => {
       consultant_timezone: booked_consultant_timezone,
       user_email,
       user_name,
+      user_age,
+      user_language,
       consultant_email,
       consultant_name,
       user_access_token,
@@ -896,22 +930,34 @@ export const rescheduleConsultationWithGoogleCalendar = async (req, res) => {
     )
 
     /* 🔹 Send Email */
-    const subject = 'DMAC Consultation Rescheduled'
+    const subject = 'RM360: Expert Appointment Rescheduled'
 
     const userHtml = `
       <p>Dear ${user_name},</p>
-      <h3>Your consultation has been rescheduled successfully.</h3>
-      <p><b>Date:</b> ${date}</p>
-      <p><b>Time:</b> ${moment(eventStartISO).tz(user_timezone).format('YYYY-MM-DD hh:mm A')}</p>
-      <p><b>Meeting Link:</b> <a href="${meet_link}">${meet_link}</a></p>
+      <p><strong>RM360 Notice: Your appointment with an expert has been rescheduled successfully.</strong></p>
+      <p><strong>Health Care Provider Name:</strong> ${consultant_name || ''}</p>
+      <p><strong>Date:</strong> ${date}</p>
+      <p><strong>Time:</strong> ${moment(eventStartISO)
+        .tz(user_timezone)
+        .format('YYYY-MM-DD hh:mm A')}</p>
+      <p><strong>Meeting Link:</strong> ${
+        meet_link ? `<a href="${meet_link}">${meet_link}</a>` : 'N/A'
+      }</p>
+      <p>RM360 Administration</p>
+      <p><em>(This is an automated email, please do not reply to email)</em></p>
     `
 
     const consultantHtml = `
       <p>Dear ${consultant_name},</p>
-      <h3>A consultation has been rescheduled.</h3>
-      <p><b>Date:</b> ${date}</p>
-      <p><b>Time:</b> ${consultantStart.format('YYYY-MM-DD hh:mm A')}</p>
-      <p><b>Meeting Link:</b> <a href="${meet_link}">${meet_link}</a></p>
+      <p><strong>RM360 Notice: Appointment Rescheduled</strong></p>
+      <p>A consultation has been rescheduled.</p>
+      <p><strong>Patient Name:</strong> ${user_name || ''}</p>
+      <p><strong>Patient Age:</strong> ${user_age ?? ''}</p>
+      <p><strong>Patient Email:</strong> ${user_email || ''}</p>
+      <p><strong>Patient Language:</strong> ${user_language || ''}</p>
+      <p><strong>Date:</strong> ${date}</p>
+      <p><strong>Time:</strong> ${consultantStart.format('YYYY-MM-DD hh:mm A')}</p>
+      <p><strong>Meeting Link:</strong> ${meet_link ? `<a href="${meet_link}">${meet_link}</a>` : 'N/A'}</p>
     `
 
     await sendEmail(user_email, subject, userHtml, userHtml)
