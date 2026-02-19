@@ -448,7 +448,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', py: 2, pt: { xs: 1, md: 2 } }}>
+        <Box sx={{ width: '100%', flex: { xs: 'none', sm: 1 }, height: { xs: 'auto', sm: 'auto' }, minHeight: { xs: '80vh', sm: 0 }, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', py: { xs: 1, sm: 2 }, pt: { xs: 1, md: 2 }, overflow: 'visible' }}>
             {/* Instruction Modal - Shows initially and before memorize phase */}
             <GenericModal
                 isOpen={phase === 'instruction' || phase === 'memorize_instruction'}
