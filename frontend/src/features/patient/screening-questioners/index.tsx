@@ -185,6 +185,12 @@ const ScreeningQuestioners = () => {
   };
 
   if (!effectiveVerified) {
+    // When landing on `/sdmac-test` without a screening user, show ONLY the registration modal.
+    // The page message should appear only after registration completes (i.e., when `screeningUser` exists).
+    if (!screeningUser) {
+      return <ScreeningRegistrationModal isOpen />;
+    }
+
     const waitingTitle = 'Registration successful';
     const waitingBody =
       (verificationMessage || REGISTRATION_WAITING_MESSAGE) +
