@@ -776,6 +776,9 @@ export const submitSession = async (req, res) => {
     if (hasProvidedScore) {
       totalScore = parseFloat(providedScore)
     }
+    if (body.time_taken) {
+      totalTimeTaken = parseFloat(body.time_taken)
+    }
 
     // Update Session
     await query(

@@ -1,4 +1,5 @@
 import '../index.css';
+import dmacLogo from '../../../../assets/dmac_logo_discription.png';
 import { Box } from '@mui/material';
 import { get } from 'lodash';
 import MorenButton from '../../../../components/button';
@@ -45,8 +46,23 @@ const Disclaimer = ({ setIsDisclaimerAccepted }: IDisclaimerProps) => {
         {get(disclaimerDetails, ['title'], '')}
       </Box>
 
+      {/* Logo */}
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Box
+          component="img"
+          src={dmacLogo}
+          alt="DMAC Logo"
+          sx={{
+            width: '100%',
+            maxWidth: { xs: '102px', sm: '128px', md: '153px' },
+            height: 'auto',
+            pb: 2
+          }}
+        />
+      </Box>
+
       {/* Content */}
-      <Box sx={{ textAlign: 'left', lineHeight: 1.6, fontSize: '1.05rem', color: '#333' }}>
+      <Box sx={{ textAlign: 'justify', lineHeight: 1.6, fontSize: '1.05rem', color: '#333' }}>
         {get(disclaimerDetails, ['content'], '')}
       </Box>
 
@@ -75,7 +91,7 @@ const Disclaimer = ({ setIsDisclaimerAccepted }: IDisclaimerProps) => {
         {get(disclaimerDetails, ['link_text'], '')}
       </Box>
 
-      <Box width="100%">
+      <Box width="100%" sx={{ mb: { xs: 4, md: 6 } }}>
         <MorenButton
           variant="contained"
           onClick={() => setIsDisclaimerAccepted(true)}
