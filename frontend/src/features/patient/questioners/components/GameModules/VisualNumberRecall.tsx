@@ -10,7 +10,7 @@ import { getLanguageText } from '../../../../../utils/functions';
 
 interface VisualNumberRecallProps {
     session: SessionData;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -41,6 +41,7 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
     const [inputText, setInputText] = useState('');
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [responseCountdown, setResponseCountdown] = useState(60);
+    const [startTime, setStartTime] = useState<number>(Date.now());
     const liveTranscriptRef = useRef('');
 
     const questions = session.questions || [];
@@ -74,6 +75,7 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
     }, [phase, responseCountdown, inputText]);
 
     const handleStart = () => {
+        setStartTime(Date.now());
         setPhase('display');
     };
 
@@ -112,7 +114,8 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
             setCurrentIndex(prev => prev + 1);
             setPhase('display');
         } else {
-            onComplete(newAnswers);
+            const timeTaken = (Date.now() - startTime) / 1000;
+            onComplete(newAnswers, timeTaken);
         }
     };
 

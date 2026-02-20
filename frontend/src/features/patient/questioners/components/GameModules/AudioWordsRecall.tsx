@@ -15,7 +15,7 @@ import audioV2 from '../../../../../assets/AudioWordRecal/audio_words_version_2.
 
 interface AudioWordsRecallProps {
     session: SessionData;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
     isRecallOnly?: boolean;
 }
@@ -41,6 +41,7 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
     // State
     const [phase, setPhase] = useState<'pre_audio_instruction' | 'playing_audio' | 'playing_complete' | 'post_audio_instruction' | 'recall'>('pre_audio_instruction');
     const [inputText, setInputText] = useState('');
+    const [startTime, setStartTime] = useState<number>(Date.now());
 
     // Audio Playlist State
     const [playlist, setPlaylist] = useState<string[]>([]);
@@ -102,6 +103,7 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
     };
 
     const handleStart = () => {
+        setStartTime(Date.now());
         window.speechSynthesis.cancel();
         if (isRecallOnly) {
             setPhase('recall');
@@ -156,7 +158,8 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
             language_code: languageCode
         };
 
-        onComplete([answer]);
+        const timeTaken = (Date.now() - startTime) / 1000;
+        onComplete([answer], timeTaken);
     };
 
     if (!question) {

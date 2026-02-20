@@ -568,8 +568,21 @@ export const submitSession = async (req, res) => {
           // might mean we floor at 2 provided condition met? No, "minimal score is 2" refers to the result of 4*0.5.
           // I'll stick to linear * 0.5.
 
-        } else if (module.code === 'NUMBER_RECALL' || module.code === 'VISUAL_NUMBER_RECALL' || module.code === 'REVERSE_NUMBER_RECALL') {
+        } else if (module.code === 'NUMBER_RECALL' || module.code === 'REVERSE_NUMBER_RECALL') {
           // Number Recall Scoring
+          // Logic: Exact match of the sequence = 0.625 points.
+          // Total possible: 8 * 0.625 = 5.0
+          const items = await fetchItems(ans.question_id, 'en')
+          if (items.length > 0) {
+            const accepted = items[0].accepted_answers || ''
+            const userAns = (ans.answer_text || '').trim()
+
+            if (userAns === accepted) {
+              itemScore = 0.625
+            }
+          }
+        } else if (module.code === 'VISUAL_NUMBER_RECALL') {
+          // Visual Number Recall Scoring
           // Logic: Exact match of the sequence = 0.5 points.
           // Total possible: 10 * 0.5 = 5.0
           const items = await fetchItems(ans.question_id, 'en')
@@ -776,6 +789,9 @@ export const submitSession = async (req, res) => {
     if (hasProvidedScore) {
       totalScore = parseFloat(providedScore)
     }
+    if (body.time_taken) {
+      totalTimeTaken = parseFloat(body.time_taken)
+    }
 
     // Update Session
     await query(
@@ -887,6 +903,10 @@ const calculateGameScores = async (user_id) => {
     {
       name: 'Immediate Auditory Memory', // Cog. Test-11
       ids: [5, 9, 3, 11]
+    },
+    {
+      name: 'Numerical Memory', // Cog. Test-12
+      ids: [9, 12, 21]
     }
   ]
 
@@ -918,25 +938,34 @@ const calculateGameScores = async (user_id) => {
 
     // Avoid division by zero
     const percentage = totalMax > 0 ? (totalScore / totalMax) * 100 : 0
+    const catTotalTime = modules.reduce((acc, curr) => acc + parseFloat(curr.timeTaken || 0), 0)
+    // Calculate average time across modules in this category
+    const catAverageTime = modules.length > 0 ? catTotalTime / modules.length : 0
 
     return {
       name: def.name,
       score: totalScore,
       maxScore: totalMax,
       percentage: percentage,
-      modules: modules
+      modules: modules,
+      totalTime: catTotalTime,
+      averageTime: catAverageTime,
     }
   })
 
   // Calculate Overall Score (Sum of all sessions found)
   const uniqueTotalScore = sessions.reduce((acc, curr) => acc + parseFloat(curr.user_score || 0), 0)
   const uniqueTotalMax = sessions.reduce((acc, curr) => acc + (curr.max_score || 5), 0)
+  const totalAssessmentTime = sessions.reduce((acc, curr) => acc + parseFloat(curr.time_taken || 0), 0)
+  const averageTimePerModule = sessions.length > 0 ? totalAssessmentTime / sessions.length : 0
 
   return {
     sessions,
     categories,
     totalScore: uniqueTotalScore,
-    totalMaxScore: uniqueTotalMax
+    totalMaxScore: uniqueTotalMax,
+    totalAssessmentTime,
+    averageTimePerModule
   }
 }
 
