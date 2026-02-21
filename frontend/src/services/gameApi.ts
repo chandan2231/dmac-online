@@ -24,6 +24,7 @@ export interface SessionData {
     module: Module;
     questions?: {
         question_id: number;
+        question_type: string;
         prompt_text: string;
         // Image Flash specific
         items?: QuestionItem[];
