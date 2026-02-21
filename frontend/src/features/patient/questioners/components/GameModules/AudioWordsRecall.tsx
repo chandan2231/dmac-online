@@ -15,7 +15,7 @@ import audioV2 from '../../../../../assets/AudioWordRecal/audio_words_version_2.
 
 interface AudioWordsRecallProps {
     session: SessionData;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
     isRecallOnly?: boolean;
 }
@@ -41,6 +41,7 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
     // State
     const [phase, setPhase] = useState<'pre_audio_instruction' | 'playing_audio' | 'playing_complete' | 'post_audio_instruction' | 'recall'>('pre_audio_instruction');
     const [inputText, setInputText] = useState('');
+    const [startTime, setStartTime] = useState<number>(Date.now());
 
     // Audio Playlist State
     const [playlist, setPlaylist] = useState<string[]>([]);
@@ -102,6 +103,7 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
     };
 
     const handleStart = () => {
+        setStartTime(Date.now());
         window.speechSynthesis.cancel();
         if (isRecallOnly) {
             setPhase('recall');
@@ -156,7 +158,8 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
             language_code: languageCode
         };
 
-        onComplete([answer]);
+        const timeTaken = (Date.now() - startTime) / 1000;
+        onComplete([answer], timeTaken);
     };
 
     if (!question) {
@@ -316,39 +319,38 @@ const AudioWordsRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
 
             {/* Recall Phase */}
             {phase === 'recall' && (
-                <Box sx={{ width: '100%', maxWidth: '600px', p: 2, pb: 25, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <Typography variant="h6" sx={{ textAlign: 'center' }}>
-                        {t.enterAnswers}
-                    </Typography>
+                <Box sx={{ width: '100%', height: '100%', minHeight: '85vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', pt: 0 }}>
+                    <Box sx={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: { xs: 3, sm: 4 }, px: 2, mt: { xs: 2, sm: 8 } }}>
+                        <Typography variant="h6" sx={{ textAlign: 'center' }}>
+                            {t.enterAnswers}
+                        </Typography>
 
-                    <SpeechInput
-                        fullWidth
-                        value={inputText}
-                        onChange={setInputText}
-                        onSpeechResult={(text) => setInputText(prev => prev + ' ' + text)}
-                        languageCode={languageCode}
-                        // placeholder={t.inputPlaceholder}
-                        enableModeSelection={true}
-                    />
+                        <SpeechInput
+                            fullWidth
+                            value={inputText}
+                            onChange={setInputText}
+                            onSpeechResult={(text) => setInputText(prev => prev + ' ' + text)}
+                            languageCode={languageCode}
+                            // placeholder={t.inputPlaceholder}
+                            enableModeSelection={true}
+                        />
 
-                    <MorenButton
-                        variant="contained"
-                        onClick={handleSubmit}
-                        sx={{
-                            position: 'absolute',
-                            bottom: '150px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: '90%',
-                            maxWidth: '600px',
-                            zIndex: 10,
-                            fontSize: '1.2rem',
-                            py: 2.5,
-                            fontWeight: 'bold'
-                        }}
-                    >
-                        {t.submitContinue}
-                    </MorenButton>
+                        <MorenButton
+                            variant="contained"
+                            onClick={handleSubmit}
+                            sx={{
+                                maxWidth: '600px',
+                                fontSize: '1.2rem',
+                                py: 3.5,
+                                fontWeight: 'bold',
+                                borderRadius: '10px',
+                                mt: { xs: 2, sm: 4 },
+                                mb: { xs: 0, sm: 6 }
+                            }}
+                        >
+                            {t.submitContinue}
+                        </MorenButton>
+                    </Box>
                 </Box>
             )}
 

@@ -6,7 +6,7 @@ import GenericModal from '../../../../../components/modal';
 
 interface LetterDisinhibitionProps {
     session: any;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -24,6 +24,7 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
     const [currentLetter, setCurrentLetter] = useState<string | null>(null);
     const [trials, setTrials] = useState<string[]>([]);
     const [hasTapped, setHasTapped] = useState(false); // Track if user tapped in current trial
+    const [startTime, setStartTime] = useState<number>(Date.now());
     // Use ref to track history without re-render dependencies or stale closures
     const trialHistoryRef = useRef<any[]>([]);
 
@@ -92,6 +93,7 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
     }, []);
 
     const startGame = () => {
+        setStartTime(Date.now());
         setGameState('PLAYING');
         startTrial(0);
     };
@@ -181,12 +183,11 @@ const LetterDisinhibition = ({ session, onComplete, languageCode }: LetterDisinh
     const finishGame = () => {
         setGameState('FINISHED');
 
-        console.log('[LetterDisinhibition] Finishing game with history:', trialHistoryRef.current);
-
+        const timeTaken = (Date.now() - startTime) / 1000;
         onComplete([{
             question_id: session.questions?.[0]?.question_id || 0,
             answer_text: JSON.stringify(trialHistoryRef.current),
-        }]);
+        }], timeTaken);
     };
 
     // Cleanup

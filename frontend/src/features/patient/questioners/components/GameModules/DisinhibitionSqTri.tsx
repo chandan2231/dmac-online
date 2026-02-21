@@ -6,7 +6,7 @@ import GenericModal from '../../../../../components/modal';
 
 interface DisinhibitionSqTriProps {
     session: any;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -26,6 +26,7 @@ const DisinhibitionSqTri = ({ session, onComplete, languageCode }: Disinhibition
     const [currentShape, setCurrentShape] = useState<string | null>(null);
     const [trials, setTrials] = useState<string[]>([]);
     const [isExiting, setIsExiting] = useState(false);
+    const [startTime, setStartTime] = useState<number>(Date.now());
     // Use ref for history to avoid stale closures
     const trialHistoryRef = useRef<any[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -47,6 +48,7 @@ const DisinhibitionSqTri = ({ session, onComplete, languageCode }: Disinhibition
     }, []);
 
     const startGame = () => {
+        setStartTime(Date.now());
         setGameState('PLAYING');
         startTrial(0);
     };
@@ -122,11 +124,12 @@ const DisinhibitionSqTri = ({ session, onComplete, languageCode }: Disinhibition
     const finishGame = () => {
         setGameState('FINISHED');
 
+        const timeTaken = (Date.now() - startTime) / 1000;
         onComplete([{
             question_id: session.questions?.[0]?.question_id || 0,
             answer_text: JSON.stringify(trialHistoryRef.current),
             // score: scoreRef.current, // Removed: Backend calculates score
-        }]);
+        }], timeTaken);
     };
 
     // Cleanup

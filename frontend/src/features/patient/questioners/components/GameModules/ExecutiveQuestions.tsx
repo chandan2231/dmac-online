@@ -10,7 +10,7 @@ import { getLanguageText } from '../../../../../utils/functions';
 
 interface ExecutiveQuestionsProps {
     session: SessionData;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -34,6 +34,7 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
     const [inputText, setInputText] = useState('');
     const [answers, setAnswers] = useState<any[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [startTime, setStartTime] = useState<number>(Date.now());
 
     // Confirmation Modal State
     const [showConfirmation, setShowConfirmation] = useState(false);
@@ -76,6 +77,7 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
     }, [currentQuestionIndex, phase]); // Re-run when question or phase changes
 
     const handleStart = () => {
+        setStartTime(Date.now());
         setPhase('playing');
     };
 
@@ -116,7 +118,8 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
             setCurrentQuestionIndex(prev => prev + 1);
         } else {
             // All done
-            onComplete(updatedAnswers);
+            const timeTaken = (Date.now() - startTime) / 1000;
+            onComplete(updatedAnswers, timeTaken);
         }
     };
 
@@ -140,13 +143,14 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
         <Box sx={{
             width: '100%',
             height: '100%',
-            minHeight: '80vh',
+            minHeight: '85vh',
             position: 'relative',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            px: 2
+            justifyContent: 'flex-start',
+            px: 2,
+            pt: 0
         }}>
             {/* Instruction Modal */}
             < GenericModal
@@ -168,7 +172,7 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
             </GenericModal >
 
             {phase === 'playing' && currentQuestion && (
-                <Box sx={{ width: '100%', maxWidth: '600px', pb: 25, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <Box sx={{ width: '100%', maxWidth: '600px', pb: 25, display: 'flex', flexDirection: 'column', gap: 4, mt: { xs: 2, sm: 8 } }}>
                     <Typography variant="h5" sx={{ textAlign: 'center', color: '#666', mb: 2 }}>
                         {currentQuestion.prompt_text}
                     </Typography>
@@ -209,17 +213,13 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
                         onClick={handleNext}
                         disabled={isSubmitting}
                         sx={{
-                            position: 'absolute',
-                            bottom: '150px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: '90%',
-                            maxWidth: '600px',
-                            zIndex: 10,
-                            backgroundColor: '#274765',
-                            fontSize: '1.2rem',
-                            py: 2.5,
-                            fontWeight: 'bold'
+                            width: '100%',
+                            fontSize: '1.1rem',
+                            py: 2.8,
+                            fontWeight: 'bold',
+                            borderRadius: '10px',
+                            mt: { xs: 2, sm: 4 },
+                            mb: { xs: 0, sm: 6 }
                         }}
                     >
                         {isSubmitting ? 'Submitting...' : t.submitContinue}

@@ -12,7 +12,7 @@ import instructionVideo from '../../../../../assets/drawingModuleVideo/Video_202
 
 interface DrawingRecallProps {
     session: SessionData;
-    onComplete: (payload: any) => void;
+    onComplete: (payload: any, time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -41,6 +41,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentStart, setCurrentStart] = useState<Point | null>(null);
     const [shapes, setShapes] = useState<DrawnShape[]>([]);
+    const [startTime, setStartTime] = useState<number>(Date.now());
     const lastPointRef = useRef<Point | null>(null);
 
     // Video State
@@ -107,6 +108,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     };
 
     const handleMemorizeInstructionSubmit = () => {
+        setStartTime(Date.now());
         setPhase('memorize');
         setCountdown(10);
     };
@@ -402,7 +404,8 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
             score: calculatedScore
         };
 
-        onComplete(payload);
+        const timeTaken = (Date.now() - startTime) / 1000;
+        onComplete(payload, timeTaken);
     };
 
     // Render reference image (for memorize phase)
@@ -448,7 +451,7 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', py: 2, pt: { xs: 1, md: 2 } }}>
+        <Box sx={{ width: '100%', flex: { xs: 'none', sm: 1 }, height: { xs: 'auto', sm: 'auto' }, minHeight: { xs: '80vh', sm: 0 }, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', py: { xs: 1, sm: 2 }, pt: { xs: 1, md: 2 }, overflow: 'visible' }}>
             {/* Instruction Modal - Shows initially and before memorize phase */}
             <GenericModal
                 isOpen={phase === 'instruction' || phase === 'memorize_instruction'}
@@ -724,7 +727,8 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                             bgcolor: '#274765',
                             color: 'white',
                             px: 6,
-                            py: 2.5,
+                            py: 3.5,
+                            borderRadius: '10px',
                             fontSize: '1.2rem',
                             fontWeight: 'bold',
                             '&:hover': { bgcolor: '#1565c0' },

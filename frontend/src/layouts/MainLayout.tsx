@@ -10,12 +10,14 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'stretch',
     justifyContent: 'flex-start',
-    height: '100vh',
-    maxHeight: '100vh',
+    height: { xs: 'auto', sm: '100dvh' },
+    minHeight: { xs: '100dvh', sm: 'auto' },
+    maxHeight: '100dvh',
     overflowY: 'auto',
     overflowX: 'hidden',
     width: '100%',
     maxWidth: '100vw',
+    flex: { xs: 'none', sm: 1 }, // Ensure layout itself doesn't wrap oddly in some contexts
   },
 };
 

@@ -597,15 +597,35 @@ export const createUsersByRole = async (req, res) => {
     const loginUrl = `${process.env.DOMAIN}login`
     const verifyLink = `${process.env.DOMAIN}verify-email/${verificationToken}`
     const to = req.body.email
-    const subject = 'Welcome to DMAC'
+
+    const normalizedRole = String(req.body.role || '').trim().toUpperCase()
+    const isRm360Role = normalizedRole === 'EXPERT' || normalizedRole === 'THERAPIST'
+    const rm360RoleLabel = normalizedRole === 'THERAPIST' ? 'therapist' : 'expert'
+
+    const subject = isRm360Role ? 'Welcome to RM360' : 'Welcome to DMAC'
 
     const greetingHtml = `<p>Dear ${req.body.name},</p>`
-    let bodyHtml = `<p>You have successfully registered with DMAC as a ${req.body.role}.</p>`
-    bodyHtml += `<p>Your login details are</p>`
-    bodyHtml += `<p>Email: ${req.body.email}</p>`
-    bodyHtml += `<p>Password: ${req.body.password}</p>`
-    bodyHtml += `<p>Login URL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">Click here</a></p>`
-    bodyHtml += `<h4>Click the link below to verify your email before login</h4><a href="${verifyLink}">Verify Email</a>`
+    let bodyHtml = ''
+
+    if (isRm360Role) {
+      bodyHtml += `<p>Welcome to Dr. Kumar’s RM360 Family — where research and technology come together to standardize healthcare delivery and improve lives, one person at a time.</p>`
+      bodyHtml += `<p>Your registration with RM360 as a healthcare provider ${rm360RoleLabel} has been successfully completed.</p>`
+      bodyHtml += `<p>Please email us to schedule your RM360 Cognitive Expert session.</p>`
+      bodyHtml += `<p><strong>Email:</strong> <a href="mailto:training@regainmemory360.com">training@regainmemory360.com</a></p>`
+      bodyHtml += `<p>Thank you for joining our network.</p>`
+      bodyHtml += `<p>Your login details are</p>`
+      bodyHtml += `<p>Email: ${req.body.email}</p>`
+      bodyHtml += `<p>Password: ${req.body.password}</p>`
+      bodyHtml += `<p>Login URL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">Click here</a></p>`
+      bodyHtml += `<p>Click the link below to verify your email before login</p><a href="${verifyLink}">Verify Email</a>`
+    } else {
+      bodyHtml += `<p>You have successfully registered with DMAC as a ${req.body.role}.</p>`
+      bodyHtml += `<p>Your login details are</p>`
+      bodyHtml += `<p>Email: ${req.body.email}</p>`
+      bodyHtml += `<p>Password: ${req.body.password}</p>`
+      bodyHtml += `<p>Login URL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">Click here</a></p>`
+      bodyHtml += `<h4>Click the link below to verify your email before login</h4><a href="${verifyLink}">Verify Email</a>`
+    }
 
     const emailHtml = `<div>${greetingHtml}${bodyHtml}</div>`
 

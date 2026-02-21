@@ -9,7 +9,7 @@ import MorenButton from '../../../../../components/button';
 
 interface GroupMatchingProps {
     session: SessionData;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -46,6 +46,7 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
 
     // Confirmation Modal State
     const [showConfirmation, setShowConfirmation] = useState(false);
+    const [startTime, setStartTime] = useState<number>(Date.now());
 
     // Score accumulating across rounds
     const [roundScores, setRoundScores] = useState<number[]>([]);
@@ -79,6 +80,7 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
     }, [roundIndex, currentQuestion]);
 
     const handleInstructionSubmit = () => {
+        setStartTime(Date.now());
         setGameState('playing');
     };
 
@@ -224,11 +226,12 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
             answer_text: `Score: ${finalScores[idx] || 0}`,
         }));
 
-        onComplete(validAnswers);
+        const timeTaken = (Date.now() - startTime) / 1000;
+        onComplete(validAnswers, timeTaken);
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 2, overflowY: 'auto' }}>
+        <Box sx={{ width: '100%', flex: { xs: 'none', sm: 1 }, height: { xs: 'auto', sm: 'auto' }, minHeight: { xs: '80vh', sm: 0 }, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: { xs: 'flex-start', sm: 'center' }, p: 2, overflowY: 'auto' }}>
             <GenericModal
                 isOpen={gameState === 'instruction'}
                 onClose={() => { }}
@@ -407,7 +410,8 @@ const GroupMatching = ({ session, onComplete, languageCode }: GroupMatchingProps
                                 backgroundColor: '#1976d2',
                                 color: 'white',
                                 px: 4,
-                                py: 1.5,
+                                py: 2.1,
+                                borderRadius: '10px',
                                 fontSize: '1.2rem',
                                 '&:hover': {
                                     backgroundColor: '#1565c0'

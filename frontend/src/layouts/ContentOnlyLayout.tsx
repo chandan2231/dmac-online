@@ -8,12 +8,16 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
-    height: '100vh',
-    maxHeight: '100vh',
-    overflow: 'hidden', // Prevents any overflow
+    justifyContent: { xs: 'flex-start', sm: 'center' },
+    height: { xs: 'auto', sm: '100dvh' },
+    minHeight: { xs: '100dvh', sm: 'auto' },
+    maxHeight: '100dvh',
+    overflowY: { xs: 'auto', sm: 'hidden' },
+    overflowX: 'hidden',
     width: '100%',
     maxWidth: '100vw',
+    pt: { xs: 4, sm: 0 },
+    flex: { xs: 'none', sm: 1 },
   },
 };
 

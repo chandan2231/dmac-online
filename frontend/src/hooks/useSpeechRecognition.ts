@@ -26,8 +26,8 @@ export const useSpeechRecognition = (
 
     const recognitionRef = useRef<any>(null);
     const isStartingRef = useRef(false);
-    const isListeningRef = useRef(false); // Track listening state synchronously for event handlers
-    const transcriptRef = useRef(''); // Track transcript synchronously for stop saving
+    const isListeningRef = useRef(false);
+    const transcriptRef = useRef('');
     const [transcript, setTranscript] = useState('');
     const [isListening, setIsListening] = useState(false);
 
@@ -38,14 +38,11 @@ export const useSpeechRecognition = (
         savedCallbacks.current = { onResult, onError };
     }, [onResult, onError]);
 
-    useEffect(() => {
-        if (!browserSupportsSpeechRecognition) {
-            onError?.('Speech Recognition not supported in this browser');
-            return;
-        }
+    const setupRecognition = useCallback((recognition: any) => {
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-        const recognition = new RecognitionCtor();
-        recognition.continuous = true;
+        // Configuration for stability
+        recognition.continuous = !isSafari; // Safari is unstable with continuous: true
         recognition.interimResults = true;
         recognition.lang = languageCode;
 
@@ -54,39 +51,29 @@ export const useSpeechRecognition = (
             isListeningRef.current = true;
             setIsListening(true);
         };
+
         recognition.onend = () => {
             isStartingRef.current = false;
             isListeningRef.current = false;
             setIsListening(false);
         };
+
         recognition.onerror = (event: any) => {
-            // Don't log or report 'aborted' errors - these are expected from our cleanup
-            if (event?.error === 'aborted') {
-                // Reset flags when error occurs
-                isStartingRef.current = false;
-                isListeningRef.current = false;
-                setIsListening(false);
-                return;
-            }
+            console.error('[SpeechRecognition] Error event:', event.error, event.message);
 
-            console.log('Speech recognition error', event);
-
-            // Reset flags when error occurs  
             isStartingRef.current = false;
             isListeningRef.current = false;
             setIsListening(false);
 
-            savedCallbacks.current.onError?.(
-                'Speech recognition error: ' + (event?.error || 'Unknown error')
-            );
+            if (event.error === 'aborted') {
+                return; // Ignore common 'aborted' / 'no-speech' resets
+            }
+
+            savedCallbacks.current.onError?.(event.error || 'Speech recognition error');
         };
 
         recognition.onresult = (event: any) => {
-            // Safety check: use refs for immediate state access
-            // This prevents "ghost typing" after clicking stop but allows valid speech
-            if (!isListeningRef.current && !isStartingRef.current) {
-                return;
-            }
+            if (!isListeningRef.current && !isStartingRef.current) return;
 
             let interimText = '';
             let finalText = '';
@@ -101,10 +88,10 @@ export const useSpeechRecognition = (
                 }
             }
 
-            const nextTranscript = (interimText || finalText).trim();
-            if (nextTranscript) {
-                setTranscript(nextTranscript);
-                transcriptRef.current = nextTranscript;
+            const currentTranscript = (interimText || finalText).trim();
+            if (currentTranscript) {
+                setTranscript(currentTranscript);
+                transcriptRef.current = currentTranscript;
             }
 
             const trimmedFinal = finalText.trim();
@@ -114,18 +101,22 @@ export const useSpeechRecognition = (
                 transcriptRef.current = '';
             }
         };
+    }, [languageCode]);
 
+    useEffect(() => {
+        if (!browserSupportsSpeechRecognition) return;
+
+        const recognition = new RecognitionCtor();
+        setupRecognition(recognition);
         recognitionRef.current = recognition;
 
         return () => {
-            try {
-                recognition.stop();
-            } catch {
-                // ignore
+            if (recognitionRef.current) {
+                try { recognitionRef.current.abort(); } catch { }
+                recognitionRef.current = null;
             }
-            recognitionRef.current = null;
         };
-    }, [RecognitionCtor, browserSupportsSpeechRecognition, languageCode, onError, onResult]);
+    }, [RecognitionCtor, browserSupportsSpeechRecognition, setupRecognition]);
 
     const startListening = useCallback(() => {
         if (!browserSupportsSpeechRecognition) {
@@ -133,71 +124,67 @@ export const useSpeechRecognition = (
             return;
         }
 
-        const recognition = recognitionRef.current;
-        if (!recognition) {
-            onError?.('Speech Recognition not initialized');
+        // Prevent double initiation
+        if (isStartingRef.current || isListeningRef.current) {
             return;
         }
 
-        // Prevent double-start
-        if (isStartingRef.current) {
-            console.log('Recognition already starting');
-            return;
+        let recognition = recognitionRef.current;
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+        // Safari robustness: Re-create if missing or recreate anyway to ensure fresh context
+        if (isSafari || !recognition) {
+            if (recognition) { try { recognition.abort(); } catch { } }
+            recognition = new RecognitionCtor();
+            setupRecognition(recognition);
+            recognitionRef.current = recognition;
         }
 
-        // Always abort before starting to ensure clean state
-        try {
-            recognition.abort();
-        } catch {
-            // ignore - recognition might not be running
-        }
-
-        recognition.lang = languageCode;
         isStartingRef.current = true;
 
-        // Small delay to let browser fully reset after abort
-        setTimeout(() => {
-            try {
-                recognition.start();
-            } catch (e) {
-                console.warn('Error starting recognition:', e);
-                isStartingRef.current = false;
-                isListeningRef.current = false;
-                setIsListening(false);
+        try {
+            recognition.start();
+        } catch (e) {
+            console.error('[SpeechRecognition] Start Exception:', e);
+            isStartingRef.current = false;
+            setIsListening(false);
+
+            // Recovery for unexpected state
+            if (e instanceof Error && e.name === 'InvalidStateError') {
+                const retryRec = new RecognitionCtor();
+                setupRecognition(retryRec);
+                recognitionRef.current = retryRec;
+                try { retryRec.start(); } catch { }
             }
-        }, 50);
-    }, [browserSupportsSpeechRecognition, languageCode, onError]);
+        }
+    }, [browserSupportsSpeechRecognition, setupRecognition, RecognitionCtor, onError]);
 
     const stopListening = useCallback(() => {
         const recognition = recognitionRef.current;
         if (!recognition) return;
 
-        // Save any pending transcript before clearing
         if (transcriptRef.current) {
             savedCallbacks.current.onResult?.(transcriptRef.current);
         }
 
-        // Immediately update state to reflect stopping
+        const wasListening = isListeningRef.current;
         isListeningRef.current = false;
         setIsListening(false);
         setTranscript('');
         transcriptRef.current = '';
 
-        try {
-            recognition.stop();
-        } catch (e) {
-            console.warn('Error stopping recognition, trying abort:', e);
-            // If stop() fails, try abort() as a more forceful method
+        if (wasListening) {
             try {
-                recognition.abort();
-            } catch {
-                // ignore
+                recognition.stop();
+            } catch (e) {
+                try { recognition.abort(); } catch { }
             }
         }
     }, []);
 
     const resetTranscript = useCallback(() => {
         setTranscript('');
+        transcriptRef.current = '';
     }, []);
 
     return {

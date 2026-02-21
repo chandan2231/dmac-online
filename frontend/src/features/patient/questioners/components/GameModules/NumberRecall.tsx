@@ -22,20 +22,20 @@ import nineAudio from '../../../../../assets/NumberRecall/nine.mp3';
 import tenAudio from '../../../../../assets/NumberRecall/ten.mp3';
 
 // Import local audio assets for Reverse Number Recall
-import reverseFirstAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_first.m4a';
-import reverseSecondAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_second.m4a';
-import reverseThirdAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_third.m4a';
-import reverseFourthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_fourth.m4a';
-import reverseFifthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_fifth.m4a';
-import reverseSixthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_sixth.m4a';
-import reverseSeventhAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_seven.m4a';
-import reverseEighthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_eight.m4a';
-import reverseNinthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_nine.m4a';
-import reverseTenthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_ten.m4a';
+import reverseFirstAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_first.mp3';
+import reverseSecondAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_second.mp3';
+import reverseThirdAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_third.mp3';
+import reverseFourthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_fourth.mp3';
+import reverseFifthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_fifth.mp3';
+import reverseSixthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_sixth.mp3';
+import reverseSeventhAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_seven.mp3';
+import reverseEighthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_eight.mp3';
+import reverseNinthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_nine.mp3';
+import reverseTenthAudio from '../../../../../assets/ReverseAudioNumberRecall/reverse_ten.mp3';
 
 interface NumberRecallProps {
     session: SessionData;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -65,6 +65,7 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
     const [error, setError] = useState('');
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [responseCountdown, setResponseCountdown] = useState(60);
+    const [startTime, setStartTime] = useState<number>(Date.now());
     const liveTranscriptRef = useRef('');
 
     const questions = session.questions || [];
@@ -115,6 +116,7 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
     const getAudioUrl = resolveAudioUrl;
 
     const handleStart = () => {
+        setStartTime(Date.now());
         setPhase('playing');
         setResponseCountdown(60);
     };
@@ -159,7 +161,8 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
             setCurrentIndex(prev => prev + 1);
             setPhase('playing');
         } else {
-            onComplete(newAnswers);
+            const timeTaken = (Date.now() - startTime) / 1000;
+            onComplete(newAnswers, timeTaken);
         }
     };
 
@@ -227,51 +230,52 @@ const NumberRecall = ({ session, onComplete, languageCode }: NumberRecallProps) 
             )}
 
             {phase === 'input' && (
-                <Box sx={{ width: '100%', maxWidth: '600px', p: 2, pb: 25, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <Typography variant="h6" sx={{ textAlign: 'center' }}>
-                        {t.enterAnswers}
-                    </Typography>
+                <Box sx={{ width: '100%', height: '100%', minHeight: '85vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', pt: 0 }}>
+                    <Box sx={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: { xs: 3, sm: 4 }, px: 2, mt: { xs: 2, sm: 8 } }}>
+                        <Typography variant="h6" sx={{ textAlign: 'center' }}>
+                            {t.enterAnswers}
+                        </Typography>
 
-                    <SpeechInput
-                        ref={speechInputRef}
-                        fullWidth
-                        value={inputText}
-                        onChange={setInputText}
-                        onSpeechResult={(text) => setInputText(prev => prev + ' ' + text)}
-                        onTranscriptChange={(text) => {
-                            liveTranscriptRef.current = text;
-                        }}
-                        languageCode={languageCode}
-                        // placeholder={t.inputPlaceholder}
-                        enableModeSelection={true}
-                        inputProps={{
-                            inputMode: 'numeric',
-                            pattern: '[0-9]*'
-                        }}
-                    />
+                        <SpeechInput
+                            ref={speechInputRef}
+                            fullWidth
+                            value={inputText}
+                            onChange={setInputText}
+                            onSpeechResult={(text) => setInputText(prev => prev + ' ' + text)}
+                            onTranscriptChange={(text) => {
+                                liveTranscriptRef.current = text;
+                            }}
+                            languageCode={languageCode}
+                            // placeholder={t.inputPlaceholder}
+                            enableModeSelection={true}
+                            slotProps={{
+                                htmlInput: {
+                                    inputMode: 'numeric',
+                                    pattern: '[0-9]*'
+                                }
+                            }}
+                        />
 
-                    {error && (
-                        <Typography color="error" textAlign="center">{error}</Typography>
-                    )}
+                        {error && (
+                            <Typography color="error" textAlign="center">{error}</Typography>
+                        )}
 
-                    <MorenButton
-                        variant="contained"
-                        onClick={handleSubmit}
-                        sx={{
-                            position: 'absolute',
-                            bottom: '150px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: '90%',
-                            maxWidth: '600px',
-                            zIndex: 10,
-                            fontSize: '1.2rem',
-                            py: 2.5,
-                            fontWeight: 'bold'
-                        }}
-                    >
-                        {t.submitContinue}
-                    </MorenButton>
+                        <MorenButton
+                            variant="contained"
+                            onClick={handleSubmit}
+                            sx={{
+                                width: '100%',
+                                fontSize: '1.1rem',
+                                py: 2.8,
+                                fontWeight: 'bold',
+                                borderRadius: '10px',
+                                mt: { xs: 2, sm: 4 },
+                                mb: { xs: 0, sm: 6 }
+                            }}
+                        >
+                            {t.submitContinue}
+                        </MorenButton>
+                    </Box>
                 </Box>
             )}
 

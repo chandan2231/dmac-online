@@ -6,7 +6,8 @@ const dmacGameReportHTMLTemplate = (data) => {
     const {
         patientName = '',
         reportDate = new Date().toLocaleDateString(),
-        categories = []
+        categories = [],
+        averageTimePerModule = 0
     } = data
 
     // Helper to get score string
@@ -202,7 +203,7 @@ const dmacGameReportHTMLTemplate = (data) => {
 
         const mapX = (zVal) => margin.left + ((zVal - minZ) / (maxZ - minZ)) * graphW;
         const maxDensity = 0.3989;
-        const mapY = (density) => (margin.top + graphH) - ((density / maxDensity) * graphH);
+        const mapY = (density) => (margin.top + graphH) - ((density / maxDensity) * graphH * 0.9);
 
         let pathD = `M ${mapX(minZ)} ${mapY(0)}`;
         for (let i = minZ; i <= maxZ; i += 0.1) {
@@ -480,6 +481,7 @@ const dmacGameReportHTMLTemplate = (data) => {
             <div class="test-info">
                 <p><strong>Name:</strong> ${patientName}</p>
                 <p><strong>Date of the test:</strong> ${reportDate}</p>
+                <p><strong>Average Time Taken (per module):</strong> ${averageTimePerModule.toFixed(2)} seconds</p>
             </div>
         </div>
 
@@ -555,17 +557,23 @@ const dmacGameReportHTMLTemplate = (data) => {
             'Parietal–Occipital Network',
             'Cerebellar–Parietal–Frontal',
             'Orbitofrontal–Limbic Network',
-            'Temporal–frontal–limbic network'
+            'Temporal–frontal–limbic network',
+            'Right DLP Frontal- Inferior Temporal'
         ];
         // Use index to pick network, fallback if categories > 11
         const network = networks[index] || 'General Neural Network';
+
+        // Special case for Reaction Time: show average time instead of percentage
+        const displayScore = (cat.name === 'Processing Speed / Reaction Time')
+            ? `${(cat.averageTime || 0).toFixed(1)} sec`
+            : `${cat.percentage.toFixed(2)}%`;
 
         return `
                             <tr>
                                 <td>Cog. Test-${index + 1}</td>
                                 <td>${cat.name}</td>
                                 <td>${network}</td>
-                                <td class="score-cell">${cat.percentage.toFixed(2)}%</td>
+                                <td class="score-cell">${displayScore}</td>
                             </tr>
                             `;
     }).join('')}
@@ -616,7 +624,7 @@ const dmacGameReportHTMLTemplate = (data) => {
 
         <!-- Footer -->
         <div class="footer">
-            <p><strong>Contact@regainmemory.com</strong></p>
+            <p><strong>Contact@regainmemory360.com</strong></p>
         </div>
     </div>
 </body>

@@ -7,6 +7,7 @@ import { ROUTES } from '../../../../router/router';
 import { Box } from '@mui/material';
 import CustomLoader from '../../../../components/loader';
 import MorenButton from '../../../../components/button';
+import { useState, useRef, useEffect } from 'react';
 
 type IFalsePositiveProps = {
   setFalsePositive: (value: boolean) => void;
@@ -19,6 +20,27 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
     isPending: isLoadingFalsePositiveDetails,
   } = useGetFalsePositivePageDetails(get(user, ['languageCode'], 'en'));
   const navigate = useNavigate();
+  const [isConsented, setIsConsented] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container || !falsePositiveDetails) return;
+
+    const content = get(falsePositiveDetails, ['content'], '');
+    container.innerHTML = content;
+
+    const handleChange = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target.type === 'checkbox') {
+        setIsConsented(target.checked);
+      }
+    };
+
+    container.addEventListener('change', handleChange);
+    return () => container.removeEventListener('change', handleChange);
+  }, [falsePositiveDetails]);
+
 
   if (isLoadingFalsePositiveDetails) {
     return <CustomLoader />;
@@ -108,7 +130,8 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
         }}
       >
         <Box
-          dangerouslySetInnerHTML={{ __html: get(falsePositiveDetails, ['content'], '') }}
+          ref={contentRef}
+          className="instructionBackground"
           sx={{ pr: 1 }}
         />
 
@@ -138,13 +161,15 @@ const FalsePositive = ({ setFalsePositive }: IFalsePositiveProps) => {
         <MorenButton
           variant="contained"
           onClick={() => setFalsePositive(true)}
+          disabled={!isConsented}
           sx={{
             width: { xs: '100%', sm: 'auto' },
-            minWidth: '200px',
-            borderRadius: '25px',
-            textTransform: 'uppercase',
-            fontWeight: 'bold',
+            minWidth: '220px',
+            borderRadius: '10px',
+            textTransform: 'none',
+            fontWeight: 600,
             py: 1.5,
+            fontSize: '18px',
           }}
         >
           {get(falsePositiveDetails, ['button_text'], '')}

@@ -10,7 +10,7 @@ import { getLanguageText } from '../../../../../utils/functions';
 
 interface VisualNumberRecallProps {
     session: SessionData;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -41,6 +41,7 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
     const [inputText, setInputText] = useState('');
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [responseCountdown, setResponseCountdown] = useState(60);
+    const [startTime, setStartTime] = useState<number>(Date.now());
     const liveTranscriptRef = useRef('');
 
     const questions = session.questions || [];
@@ -74,6 +75,7 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
     }, [phase, responseCountdown, inputText]);
 
     const handleStart = () => {
+        setStartTime(Date.now());
         setPhase('display');
     };
 
@@ -112,7 +114,8 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
             setCurrentIndex(prev => prev + 1);
             setPhase('display');
         } else {
-            onComplete(newAnswers);
+            const timeTaken = (Date.now() - startTime) / 1000;
+            onComplete(newAnswers, timeTaken);
         }
     };
 
@@ -157,8 +160,9 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
                 <Box sx={{
                     display: 'flex',
                     justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '50vh',
+                    alignItems: 'flex-start',
+                    paddingTop: '30vh',
+                    height: '100vh',
                     width: '100%'
                 }}>
                     <Box sx={{
@@ -185,46 +189,44 @@ const VisualNumberRecall = ({ session, onComplete, languageCode }: VisualNumberR
 
             {/* Input Phase */}
             {phase === 'input' && (
-                <Box sx={{ width: '100%', maxWidth: '600px', p: 2, pb: 25, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <Typography variant="h6" sx={{ textAlign: 'center' }}>
-                        {t.enterAnswers}
-                    </Typography>
+                <Box sx={{ width: '100%', height: '100%', minHeight: '85vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', pt: 0 }}>
+                    <Box sx={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: { xs: 3, sm: 4 }, px: 2, mt: { xs: 2, sm: 8 } }}>
+                        <Typography variant="h6" sx={{ textAlign: 'center' }}>
+                            {t.enterAnswers}
+                        </Typography>
 
-                    <SpeechInput
-                        fullWidth
-                        value={inputText}
-                        onChange={setInputText}
-                        onSpeechResult={(text) => setInputText(prev => prev + ' ' + text)}
-                        onTranscriptChange={(text) => {
-                            liveTranscriptRef.current = text;
-                        }}
-                        languageCode={languageCode}
-                        // placeholder={t.inputPlaceholder}
-                        enableModeSelection={true}
-                        inputProps={{
-                            inputMode: 'numeric',
-                            pattern: '[0-9]*'
-                        }}
-                    />
+                        <SpeechInput
+                            fullWidth
+                            value={inputText}
+                            onChange={setInputText}
+                            onSpeechResult={(text) => setInputText(prev => prev + ' ' + text)}
+                            languageCode={languageCode}
+                            // placeholder={t.inputPlaceholder}
+                            enableModeSelection={true}
+                            slotProps={{
+                                htmlInput: {
+                                    inputMode: 'numeric',
+                                    pattern: '[0-9]*'
+                                }
+                            }}
+                        />
 
-                    <MorenButton
-                        variant="contained"
-                        onClick={handleSubmit}
-                        sx={{
-                            position: 'absolute',
-                            bottom: '150px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: '90%',
-                            maxWidth: '600px',
-                            zIndex: 10,
-                            fontSize: '1.2rem',
-                            py: 2.5,
-                            fontWeight: 'bold'
-                        }}
-                    >
-                        {t.submitContinue}
-                    </MorenButton>
+                        <MorenButton
+                            variant="contained"
+                            onClick={handleSubmit}
+                            sx={{
+                                width: '100%',
+                                fontSize: '1.1rem',
+                                py: 2.8,
+                                fontWeight: 'bold',
+                                borderRadius: '10px',
+                                mt: { xs: 2, sm: 4 },
+                                mb: { xs: 0, sm: 6 }
+                            }}
+                        >
+                            {t.submitContinue}
+                        </MorenButton>
+                    </Box>
                 </Box>
             )}
 

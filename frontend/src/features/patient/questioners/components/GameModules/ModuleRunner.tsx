@@ -286,32 +286,36 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         }
     };
 
-    const handleImageFlashComplete = (answerText: string) => {
+    const handleImageFlashComplete = (answerText: string, time_taken?: number) => {
         if (!session?.questions?.[0]) return;
         const payload = {
             question_id: session.questions[0].question_id,
             language_code: languageCode,
-            answer_text: answerText
+            answer_text: answerText,
+            time_taken
         };
         console.log('Submitting ImageFlash payload to API:', payload);
         handleModuleSubmit(payload);
     };
 
-    const handleVisualSpatialComplete = (answers: { question_id: number, selected_option_key: string }[]) => {
+    const handleVisualSpatialComplete = (answers: { question_id: number, selected_option_key: string }[], time_taken?: number) => {
         handleModuleSubmit({
-            answers
+            answers,
+            time_taken
         });
     };
 
-    const handleAudioStoryComplete = (answers: GenericAnswer[]) => {
+    const handleAudioStoryComplete = (answers: GenericAnswer[], time_taken?: number) => {
         handleModuleSubmit({
-            answers
+            answers,
+            time_taken
         });
     };
 
-    const handleAudioWordsComplete = (answers: GenericAnswer[]) => {
+    const handleAudioWordsComplete = (answers: GenericAnswer[], time_taken?: number) => {
         handleModuleSubmit({
-            answers
+            answers,
+            time_taken
         });
     };
 
@@ -319,29 +323,32 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         handleModuleSubmit(payload);
     };
 
-    const handleExecutiveComplete = (answers: GenericAnswer[]) => {
+    const handleExecutiveComplete = (answers: GenericAnswer[], time_taken?: number) => {
         handleModuleSubmit({
-            answers
+            answers,
+            time_taken
         });
     };
 
-    const handleNumberRecallComplete = (answers: GenericAnswer[]) => {
+    const handleNumberRecallComplete = (answers: GenericAnswer[], time_taken?: number) => {
         handleModuleSubmit({
-            answers
+            answers,
+            time_taken
         });
     };
 
-    const handleDrawingRecallComplete = (payload: GenericAnswer) => {
-        handleModuleSubmit(payload);
+    const handleDrawingRecallComplete = (payload: GenericAnswer, time_taken?: number) => {
+        handleModuleSubmit({ ...payload, time_taken });
     };
 
-    const handleColorRecallComplete = (answers: GenericAnswer[]) => {
+    const handleColorRecallComplete = (answers: GenericAnswer[], time_taken?: number) => {
         handleModuleSubmit({
-            answers
+            answers,
+            time_taken
         });
     };
 
-    const handleGroupMatchingComplete = (answers: AnswerWithText[]) => {
+    const handleGroupMatchingComplete = (answers: AnswerWithText[], time_taken?: number) => {
         // Parse scores from text "Score: 1" and sum them up
         const total = answers.reduce((acc, curr) => {
             const match = (curr.answer_text || '').match(/Score:\s*(\d+)/);
@@ -350,20 +357,23 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
         handleModuleSubmit({
             answers,
-            score: total
+            score: total,
+            time_taken
         });
     };
 
-    const handleDisinhibitionSqTriComplete = (answers: AnswerWithScore[]) => {
+    const handleDisinhibitionSqTriComplete = (answers: AnswerWithScore[], time_taken?: number) => {
         handleModuleSubmit({
             answers,
+            time_taken
             // score removed, calculated in backend
         });
     };
 
-    const handleLetterDisinhibitionComplete = (answers: GenericAnswer[]) => {
+    const handleLetterDisinhibitionComplete = (answers: GenericAnswer[], time_taken?: number) => {
         handleModuleSubmit({
-            answers
+            answers,
+            time_taken
             // score removed, calculated in backend
         });
     };
@@ -384,7 +394,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
     if (idleModalOpen && !session) {
         return (
-            <Box sx={{ width: '100%', height: '100%' }}>
+            <Box sx={{ width: '100%', flex: { xs: 'none', sm: 1 }, display: 'flex', flexDirection: 'column' }}>
                 <GenericModal
                     isOpen={idleModalOpen}
                     onClose={() => { }}
@@ -596,7 +606,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%' }}>
+        <Box sx={{ width: '100%', flex: { xs: 'none', sm: 1 }, display: 'flex', flexDirection: 'column' }}>
             <GenericModal
                 isOpen={idleModalOpen}
                 onClose={() => { }}
@@ -633,11 +643,11 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
             {/* Remove this block when deploying to production */}
             {/* <Box sx={{ 
-                position: 'fixed', 
+                position: 'fixed',
                 top: { xs: 'auto', sm: 16 },
                 bottom: { xs: 16, sm: 'auto' },
-                right: 16, 
-                zIndex: 99999 
+                right: 16,
+                zIndex: 99999
             }}>
                 <Button
                     variant="contained"
