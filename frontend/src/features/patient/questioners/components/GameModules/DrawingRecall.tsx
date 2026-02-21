@@ -94,8 +94,6 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
     const instructionsText = getLanguageText(languageConstants, 'game_instructions') || 'Instructions';
     const audioInstructionText = getLanguageText(languageConstants, 'game_audio_instruction') || 'Audio Instruction';
 
-    // New translations for video screen buttons - fallback to English if not found
-    const repeatText = getLanguageText(languageConstants, 'game_repeat') || 'Repeat';
     const undoText = getLanguageText(languageConstants, 'game_undo') || 'UNDO';
 
     // Handle instruction submission - Go to Video Instruction first
@@ -113,13 +111,6 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
         setCountdown(10);
     };
 
-    const handleVideoRepeat = () => {
-        if (videoRef.current) {
-            videoRef.current.currentTime = 0;
-            videoRef.current.play();
-            setIsPlaying(true);
-        }
-    };
 
     // Countdown timer for memorize phase
     useEffect(() => {
@@ -568,42 +559,20 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                         </Box>
                     </Box>
 
-                    <Box sx={{ display: 'flex', gap: 2, mt: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
-                        <Button
-                            variant="outlined"
-                            onClick={handleVideoRepeat}
-                            sx={{
-                                borderColor: '#274765',
-                                color: '#274765',
-                                minWidth: { xs: '140px', sm: '180px' },
-                                width: { xs: '100%', sm: 'auto' },
-                                fontWeight: 'bold',
-                                borderWidth: 2,
-                                borderRadius: '12px',
-                                px: { xs: 2, sm: 4 },
-                                py: 2,
-                                textTransform: 'uppercase',
-                                '&:hover': {
-                                    borderWidth: 2,
-                                    borderColor: '#1e3650',
-                                    backgroundColor: 'rgba(39, 71, 101, 0.04)'
-                                }
-                            }}
-                        >
-                            {repeatText}
-                        </Button>
+                    <Box sx={{ display: 'flex', gap: 2, mt: 1, flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
                         <Button
                             variant="contained"
                             onClick={handleVideoNext}
                             sx={{
                                 backgroundColor: '#274765',
                                 color: 'white',
-                                minWidth: { xs: '140px', sm: '180px' },
-                                width: { xs: '100%', sm: 'auto' },
+                                minWidth: { xs: '140px', sm: '260px' },
+                                width: { xs: '75%', sm: 'auto' },
                                 fontWeight: 'bold',
                                 borderRadius: '12px',
-                                px: { xs: 2, sm: 4 },
+                                px: { xs: 2, sm: 8 },
                                 py: 2,
+                                fontSize: { xs: '1rem', sm: '1.2rem' },
                                 textTransform: 'uppercase'
                             }}
                         >
@@ -727,9 +696,9 @@ const DrawingRecall = ({ session, onComplete, languageCode }: DrawingRecallProps
                             bgcolor: '#274765',
                             color: 'white',
                             px: 6,
-                            py: 3.5,
+                            py: 2.5,
                             borderRadius: '10px',
-                            fontSize: '1.2rem',
+                            fontSize: '1.15rem',
                             fontWeight: 'bold',
                             '&:hover': { bgcolor: '#1565c0' },
                             mt: 2,

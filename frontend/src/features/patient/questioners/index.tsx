@@ -206,9 +206,9 @@ const QuestionersFlow = () => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: { xs: 'flex-start', sm: 'center' },
-        pt: { xs: 4, sm: 0 },
-        overflowY: { xs: 'auto', sm: 'hidden' }
+        justifyContent: 'flex-start',
+        pt: { xs: 4, sm: 2 },
+        overflowY: 'auto'
       }}
     >
       {/* 1. Intro Screen (Disclaimer) */}
