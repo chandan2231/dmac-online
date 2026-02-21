@@ -1,7 +1,7 @@
 import { db } from '../connect.js'
 import { isFuzzyMatch } from '../utils/stringUtils.js'
 import PdfTemplates from '../templates/generate-pdf.js'
-import { generatePdfFromHTML } from '../utils/pdfService.js'
+import { generatePdfFromHTML, generatePdfBufferFromHTML } from '../utils/pdfService.js'
 import fs from 'fs'
 
 const query = (sql, args) => {
@@ -114,6 +114,7 @@ const handleVisualSpatial = async (module, questions, languageCode) => {
     const target = options.find((o) => o.is_correct === 1)
     processedQuestions.push({
       question_id: q.id,
+      question_type: q.question_type,
       round_order: q.order_index,
       prompt_text: q.prompt_text,
       target_image_url: target ? target.image_url : null,
@@ -133,6 +134,7 @@ const handleAudioStory = async (module, questions, languageCode) => {
     if (items.length > 0) {
       processedQuestions.push({
         question_id: q.id,
+        question_type: q.question_type,
         prompt_text: q.prompt_text,
         post_instruction_text: q.post_game_text,
         item: {
@@ -154,6 +156,7 @@ const handleDefault = async (module, questions, languageCode) => {
     return {
       questions: [{
         question_id: question.id,
+        question_type: question.question_type,
         prompt_text: question.prompt_text,
         post_game_text: question.post_game_text,
         items: items.map((i) => ({
@@ -177,6 +180,7 @@ const handleExecutive = async (module, questions, languageCode) => {
     const items = await fetchItems(q.id, languageCode)
     processedQuestions.push({
       question_id: q.id,
+      question_type: q.question_type,
       prompt_text: q.prompt_text,
       post_game_text: q.post_game_text,
       items: items.map((i) => ({
@@ -198,6 +202,7 @@ const handleSemantic = async (module, questions, languageCode) => {
     const items = await fetchItems(q.id, languageCode)
     processedQuestions.push({
       question_id: q.id,
+      question_type: q.question_type,
       prompt_text: q.prompt_text,
       post_game_text: q.post_game_text,
       items: items.map((i) => ({
@@ -882,7 +887,7 @@ const calculateGameScores = async (user_id) => {
     },
     {
       name: 'Visual Memory', // Cog. Test-6
-      ids: [1, 2]
+      ids: [1, 2, 21]
     },
     {
       name: 'Language & Naming', // Cog. Test-7
@@ -1001,35 +1006,64 @@ export const generateReportPdf = async (req, res) => {
     const data = await calculateGameScores(user_id)
 
     // 2. Prepare Template Data
-    // Fetch user name if needed (optional query)
-    const userResult = await query('SELECT name FROM dmac_webapp_users WHERE id = ?', [user_id])
+    // Fetch User Details (Name and Age if available)
+    const userResult = await query('SELECT * FROM dmac_webapp_users WHERE id = ?', [user_id])
     const userName = userResult.length > 0 ? userResult[0].name : `User ${user_id}`
+    const userAge = userResult.length > 0 && userResult[0].age ? userResult[0].age : 'N/A'
+
+    // Determine last completion date from sessions
+    let lastCompletionDate = new Date()
+    if (data.sessions && data.sessions.length > 0) {
+      const dates = data.sessions.map(s => new Date(s.completed_at))
+      lastCompletionDate = new Date(Math.max(...dates))
+    }
+
+    // Check for Traumatic Brain Injury (TBI) questionnaire answer
+    const tbiResult = await query(
+      'SELECT main_answer FROM dmac_webapp_questionnaire_answers WHERE user_id = ? AND question_id = 13 ORDER BY created_at DESC LIMIT 1',
+      [user_id]
+    )
+    const showTBIGraph = tbiResult.length > 0 && tbiResult[0].main_answer?.toLowerCase() === 'yes'
 
     const templateData = {
       tenantName: 'DMAC',
       patientName: userName,
       patientId: user_id,
-      reportDate: new Date().toLocaleDateString(),
+      patientAge: userAge,
+      reportDate: lastCompletionDate.toLocaleDateString(),
       categories: data.categories,
       totalScore: data.totalScore,
-      totalMaxScore: data.totalMaxScore
+      totalMaxScore: data.totalMaxScore,
+      averageTimePerModule: data.averageTimePerModule,
+      showTBIGraph // New flag
     }
 
     // 3. Generate HTML
     const htmlTemplate = PdfTemplates.DmacGameReportPdfTemplate(templateData)
 
-    // 4. Generate PDF
-    // 'file' argument for html-pdf-node expects { content: "html..." }
-    const filePath = await generatePdfFromHTML(htmlTemplate, `report_${user_id}`, 'Game Report')
+    // Construct Footer Template (Puppeteer format)
+    const footerTemplate = `
+      <div style="font-size: 9px; width: 100%; color: #666; font-family: 'Arial', sans-serif; border-top: 1px solid #ccc; padding-top: 5px; margin: 0 40px 10px 40px; display: flex; justify-content: space-between;">
+          <div style="flex: 1; text-align: left;">Name: ${userName}</div>
+          <div style="flex: 1; text-align: center;">Date: ${templateData.reportDate}</div>
+          <div style="flex: 1; text-align: right;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></div>
+      </div>
+    `
 
-    // 5. Stream File
-    res.download(filePath, `DMAC_Report_${user_id}.pdf`, (err) => {
-      if (err) {
-        console.error('Error downloading PDF:', err)
-      }
-      // Optional: Delete file after sending?
-      // fs.unlinkSync(filePath)
+    // 4. Generate PDF Buffer
+    const pdfBuffer = await generatePdfBufferFromHTML(htmlTemplate, {
+      footerTemplate,
+      printBackground: true,
+      preferCSSPageSize: true
     })
+
+    // 5. Send PDF Buffer directly
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=DMAC_Report_${user_id}.pdf`,
+      'Content-Length': pdfBuffer.length
+    })
+    res.end(pdfBuffer)
 
   } catch (err) {
     console.error('[GenerateReportPdf] Error:', err)

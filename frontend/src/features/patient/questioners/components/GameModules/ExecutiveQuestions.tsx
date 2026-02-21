@@ -202,6 +202,7 @@ const ExecutiveQuestions = ({ session, onComplete, languageCode }: ExecutiveQues
                             languageCode={languageCode}
                             // placeholder={t.inputPlaceholder}
                             enableModeSelection={true}
+                            questionType={currentQuestion.question_type}
                         />
                     </Box>
 

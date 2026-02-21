@@ -5,9 +5,11 @@
 const dmacGameReportHTMLTemplate = (data) => {
     const {
         patientName = '',
+        patientAge = 'N/A',
         reportDate = new Date().toLocaleDateString(),
         categories = [],
-        averageTimePerModule = 0
+        averageTimePerModule = 0,
+        showTBIGraph = false
     } = data
 
     // Helper to get score string
@@ -93,6 +95,7 @@ const dmacGameReportHTMLTemplate = (data) => {
             { key: 'Language & Naming', label: 'Language' },
             { key: 'Immediate Auditory Memory', label: 'Auditory' },
             { key: 'Visual Memory', label: 'Visual' },
+            { key: 'Attention & Concentration', label: 'Attention' },
             { key: 'Delayed Recall Memory', label: 'Delayed Recall' }
         ];
 
@@ -198,15 +201,15 @@ const dmacGameReportHTMLTemplate = (data) => {
         const margin = { top: 20, right: 30, bottom: 50, left: 30 };
         const graphW = width - margin.left - margin.right;
         const graphH = height - margin.top - margin.bottom;
-        const minZ = -3.5;
-        const maxZ = 3.5;
+        const minZ = -4.0;
+        const maxZ = 4.0;
 
         const mapX = (zVal) => margin.left + ((zVal - minZ) / (maxZ - minZ)) * graphW;
         const maxDensity = 0.3989;
-        const mapY = (density) => (margin.top + graphH) - ((density / maxDensity) * graphH * 0.9);
+        const mapY = (density) => (margin.top + graphH) - ((density / maxDensity) * graphH * 0.7);
 
         let pathD = `M ${mapX(minZ)} ${mapY(0)}`;
-        for (let i = minZ; i <= maxZ; i += 0.1) {
+        for (let i = minZ; i <= maxZ; i += 0.05) {
             const density = (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * i * i);
             pathD += ` L ${mapX(i)} ${mapY(density)}`;
         }
@@ -263,55 +266,59 @@ const dmacGameReportHTMLTemplate = (data) => {
         }
 
         body {
-            font-family: 'Arial', sans-serif;
-            line-height: 1.6;
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            line-height: 1.5;
             color: #333;
-            background-color: #f5f5f5;
-            padding: 20px;
+            background-color: white;
+            padding: 0;
+            margin: 0;
         }
 
         .container {
-            max-width: 900px;
-            margin: 0 auto;
+            width: 100%;
+            padding: 20px 40px;
             background-color: white;
-            padding: 40px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 3px solid #2c5aa0;
-            padding-bottom: 20px;
+            margin-bottom: 20px;
+            border-bottom: 1.5px solid #2c5aa0;
+            padding-bottom: 15px;
         }
 
         .header h1 {
             color: #2c5aa0;
-            font-size: 24px;
+            font-size: 26px;
             margin-bottom: 15px;
-            font-weight: bold;
+            font-weight: 700;
+            text-transform: none;
         }
 
         .header .test-info {
-            margin-top: 15px;
+            margin: 0 auto;
+            max-width: 400px;
         }
 
         .header .test-info p {
-            margin: 5px 0;
-            font-size: 14px;
+            margin: 4px 0;
+            font-size: 15px;
+            color: #444;
         }
 
         .section {
             margin-bottom: 30px;
+            page-break-inside: auto;
         }
 
         .section-title {
             background-color: #2c5aa0;
             color: white;
-            padding: 12px 15px;
-            font-size: 18px;
+            padding: 10px 15px;
+            font-size: 17px;
             font-weight: bold;
             margin-bottom: 15px;
+            page-break-inside: avoid;
         }
 
         .section-title.gray {
@@ -349,9 +356,9 @@ const dmacGameReportHTMLTemplate = (data) => {
 
         .score-categories {
             background-color: white;
-            padding: 20px 15px;
-            border-left: 5px solid #2c5aa0;
-            margin: 15px 0;
+            padding: 5px 0;
+            margin: 20px 0;
+            page-break-inside: avoid;
         }
 
         .score-categories ul {
@@ -360,9 +367,11 @@ const dmacGameReportHTMLTemplate = (data) => {
         }
 
         .score-categories li {
-            padding: 12px 0;
-            border-bottom: 1px solid #e0e0e0;
-            font-size: 15px;
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14.5px;
             color: #333;
         }
 
@@ -389,66 +398,66 @@ const dmacGameReportHTMLTemplate = (data) => {
         .mapping-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
-            font-size: 14px;
+            margin: 25px 0;
+            font-size: 13.5px;
+            page-break-inside: auto;
         }
 
         .mapping-table th {
-            background-color: #2c5aa0;
-            color: white;
+            background-color: #f8f9fa;
+            color: #2c5aa0;
             padding: 12px;
             text-align: left;
-            font-weight: bold;
+            font-weight: 700;
+            border: 1px solid #dee2e6;
+            border-bottom: 2px solid #2c5aa0;
         }
 
         .mapping-table td {
-            padding: 10px 12px;
-            border: 1px solid #ddd;
+            padding: 11px 12px;
+            border: 1px solid #dee2e6;
+            vertical-align: middle;
         }
 
         .mapping-table tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        .mapping-table tr:hover {
-            background-color: #f0f0f0;
+            background-color: #fafafa;
         }
 
         .score-cell {
-            font-weight: bold;
-            text-align: center;
-            font-size: 16px;
+            font-weight: 700;
+            text-align: right;
+            font-size: 15px;
+            color: #000;
         }
 
-        .graph-placeholder {
-            background-color: #f0f0f0;
-            border: 2px dashed #2c5aa0;
-            padding: 40px;
+        .graph-container {
+            margin: 25px 0;
             text-align: center;
-            margin: 20px 0;
-            color: #666;
-            font-style: italic;
+            page-break-inside: avoid;
         }
         
-        /* Helper to ensure graph fits */
         .graph-container svg {
              max-width: 100%;
              height: auto;
+             display: block;
+             margin: 0 auto;
         }
 
         .highlight-box {
             background-color: #e3f2fd;
-            border-left: 4px solid #2c5aa0;
-            padding: 15px;
-            margin: 15px 0;
+            border-left: 4.5px solid #2c5aa0;
+            padding: 15px 20px;
+            margin: 20px 0;
+            page-break-inside: avoid;
         }
 
         .disclaimer {
             background-color: #fff9e6;
-            border: 2px solid #ffc107;
+            border: 1.5px solid #ffc107;
             padding: 20px;
-            margin-top: 30px;
-            border-radius: 5px;
+            margin: 30px 0;
+            border-radius: 4px;
+            page-break-inside: avoid;
         }
 
         .disclaimer h3 {
@@ -478,10 +487,14 @@ const dmacGameReportHTMLTemplate = (data) => {
         <!-- Header Section -->
         <div class="header">
             <h1>SDMAC-AI 5.0 Comprehensive Cognitive Test Report</h1>
-            <div class="test-info">
-                <p><strong>Name:</strong> ${patientName}</p>
-                <p><strong>Date of the test:</strong> ${reportDate}</p>
-                <p><strong>Average Time Taken (per module):</strong> ${averageTimePerModule.toFixed(2)} seconds</p>
+            <div class="test-info" style="display: flex; justify-content: space-between; align-items: flex-start; max-width: 100%; border-bottom: 1px solid #eee; padding-bottom: 6px;">
+                <div style="display: flex; flex-direction: column; text-align: left;">
+                    <p><strong>Name:</strong> ${patientName}</p>
+                    <p><strong>Age:</strong> ${patientAge}</p>
+                </div>
+                <div style="text-align: right;">
+                    <p><strong>Date:</strong> ${reportDate}</p>
+                </div>
             </div>
         </div>
 
@@ -590,10 +603,12 @@ const dmacGameReportHTMLTemplate = (data) => {
             </div>
         </div>
 
+        ${showTBIGraph ? `
         <div class="section">
             <div class="section-subtitle">Traumatic Brain Injury Pattern Graph</div>
             ${generateTBIGraph()}
         </div>
+        ` : ''}
 
         <div class="section">
             <div class="section-subtitle">Your Percentile Cognitive functional Score in comparison</div>
@@ -620,11 +635,6 @@ const dmacGameReportHTMLTemplate = (data) => {
         <div class="disclaimer">
             <h3>Disclaimer</h3>
             <p>SDMAC has been researched and developed to assess cognitive domain strengths and weaknesses. It is not intended for medical diagnosis and does not replace professional medical evaluation or treatment. This program is designed to support understanding of cognitive function and cognitive impairment and to help guide discussions with qualified healthcare providers. Individual results may vary.</p>
-        </div>
-
-        <!-- Footer -->
-        <div class="footer">
-            <p><strong>Contact@regainmemory360.com</strong></p>
         </div>
     </div>
 </body>

@@ -35,6 +35,7 @@ interface SpeechInputProps extends Omit<TextFieldProps, 'onChange'> {
     onTranscriptChange?: (transcript: string) => void;
     languageCode?: string;
     enableModeSelection?: boolean;
+    questionType?: string;
 }
 
 const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
@@ -45,6 +46,7 @@ const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
     languageCode = 'en-US',
     placeholder = '',
     enableModeSelection = false,
+    questionType,
     ...textFieldProps
 }, ref) => {
     const { enqueueSnackbar } = useSnackbar();
@@ -158,7 +160,16 @@ const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
                 multiline
                 minRows={1}
                 maxRows={4}
-                slotProps={textFieldProps.slotProps}
+                slotProps={{
+                    ...textFieldProps.slotProps,
+                    htmlInput: {
+                        ...(questionType === 'number' ? {
+                            inputMode: 'numeric',
+                            pattern: '[0-9]*',
+                        } : {}),
+                        ...textFieldProps.slotProps?.htmlInput,
+                    }
+                }}
                 InputProps={{
                     style: { fontSize: '1.3rem' },
                     ...textFieldProps.InputProps,
@@ -258,4 +269,3 @@ const SpeechInput = forwardRef<SpeechInputHandle, SpeechInputProps>(({
 
 
 export default SpeechInput;
-

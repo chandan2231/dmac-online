@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
+import MorenButton from '../../../../../components/button';
 import { type SessionData } from '../../../../../services/gameApi';
 import GenericModal from '../../../../../components/modal';
+import ConfirmationModal from '../../../../../components/modal/ConfirmationModal';
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
 
@@ -66,11 +68,20 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
 
     const [dots, setDots] = useState<Dot[]>([]);
     const [connections, setConnections] = useState<Connection[]>([]);
+    const connectionsRef = useRef<Connection[]>([]);
+
+    useEffect(() => {
+        connectionsRef.current = connections;
+    }, [connections]);
     const [lastConnectedIndex, setLastConnectedIndex] = useState<number | null>(null);
     const [startTime, setStartTime] = useState<number>(Date.now());
+    const [isFinished, setIsFinished] = useState(false);
 
     // Instruction Modal State
     const [showInstruction, setShowInstruction] = useState(true);
+
+    // Confirmation Modal State
+    const [showConfirmation, setShowConfirmation] = useState(false);
 
     const handleInstructionSubmit = () => {
         setShowInstruction(false);
@@ -126,10 +137,23 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
             setLastConnectedIndex(0);
         }
 
+
     }, [session, isMobile]);
 
+    // 150s Auto-submit Timer
+    useEffect(() => {
+        if (showInstruction || isFinished) return;
+
+        const timer = setTimeout(() => {
+            console.log('[ConnectTheDots] 150s timeout reached, auto-submitting current progress');
+            handleComplete(connectionsRef.current);
+        }, 150000);
+
+        return () => clearTimeout(timer);
+    }, [showInstruction]); // Only start when instructions closed
+
     const handleDotClick = (index: number) => {
-        if (lastConnectedIndex === null) return;
+        if (lastConnectedIndex === null || isFinished) return;
 
         // User requested to allow ANY connection (not just the correct next one)
         // so we remove the validation check.
@@ -162,7 +186,30 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
         }
     };
 
+    const handleSubmit = () => {
+        // Must have visited ALL dots to be "complete"
+        const uniqueVisited = new Set<number>();
+        connections.forEach(c => {
+            uniqueVisited.add(c.from);
+            uniqueVisited.add(c.to);
+        });
+
+        if (uniqueVisited.size < dots.length) {
+            setShowConfirmation(true);
+        } else {
+            handleComplete(connections);
+        }
+    };
+
+    const handleConfirmSubmit = () => {
+        setShowConfirmation(false);
+        handleComplete(connections);
+    };
+
     const handleComplete = (finalConnections: Connection[]) => {
+        if (isFinished) return;
+        setIsFinished(true);
+
         const endTime = Date.now();
         const timeTaken = (endTime - startTime) / 1000;
 
@@ -330,6 +377,41 @@ const ConnectTheDots = ({ session, onComplete }: ConnectTheDotsProps) => {
                     );
                 })}
             </Box>
+
+            <Box
+                sx={{
+                    width: '100%',
+                    maxWidth: '600px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    mt: { xs: 2, sm: -2 },
+                    pb: { xs: 4, sm: 0 },
+                    mx: 'auto'
+                }}
+            >
+                <MorenButton
+                    variant="contained"
+                    onClick={handleSubmit}
+                    disabled={isFinished}
+                    sx={{
+                        width: '100%',
+                        fontSize: '1.1rem',
+                        py: 2.8,
+                        fontWeight: 'bold',
+                        borderRadius: '10px',
+                        mt: { xs: 2, sm: 4 },
+                        mb: { xs: 0, sm: 6 }
+                    }}
+                >
+                    {isFinished ? 'Submitting...' : (getLanguageText(languageConstants, 'submit_continue') || 'Submit & Continue')}
+                </MorenButton>
+            </Box>
+
+            <ConfirmationModal
+                open={showConfirmation}
+                onClose={() => setShowConfirmation(false)}
+                onConfirm={handleConfirmSubmit}
+            />
         </Box>
     );
 };
