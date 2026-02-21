@@ -100,10 +100,6 @@ export const registerScreeningUser = async (req, res) => {
 
     const encryptedPassword = encryptString(randomPassword)
 
-    const patientMeta = hasValidAge
-      ? JSON.stringify({ age: ageNumber })
-      : JSON.stringify({ dob })
-
     const insertQuery = `
       INSERT INTO dmac_webapp_users (
         name,
@@ -116,7 +112,7 @@ export const registerScreeningUser = async (req, res) => {
         verification_token,
         role,
         time_zone,
-        patient_meta
+        age
       )
       VALUES (?)
     `
@@ -132,7 +128,7 @@ export const registerScreeningUser = async (req, res) => {
       verificationToken,
       'USER',
       'UTC',
-      patientMeta
+      ageNumber
     ]
 
     const insertResult = await new Promise((resolve, reject) => {
