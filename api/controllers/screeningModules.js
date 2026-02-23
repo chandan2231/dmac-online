@@ -77,7 +77,7 @@ export const generateReportPdf = (req, res) => {
 
 export const registerScreeningUser = async (req, res) => {
   try {
-    const { name, email, age, dob } = req.body || {}
+    const { name, email, age, dob, patient_meta } = req.body || {}
 
     // Age is required for screening. `dob` is accepted for backward compatibility.
     const ageNumber = Number(age)
@@ -100,9 +100,39 @@ export const registerScreeningUser = async (req, res) => {
 
     const encryptedPassword = encryptString(randomPassword)
 
+    // Age is stored in its own DB column (not inside patient_meta).
+    // Keep `dob` in meta only for backward compatibility.
+    const baseMeta = !hasValidAge && dob ? { dob } : {}
+
+    let providedMetaObj = null
+    if (patient_meta !== undefined && patient_meta !== null && patient_meta !== '') {
+      if (typeof patient_meta === 'string') {
+        try {
+          const parsed = JSON.parse(patient_meta)
+          if (parsed && typeof parsed === 'object') {
+            providedMetaObj = parsed
+          } else {
+            providedMetaObj = { otherInfo: patient_meta }
+          }
+        } catch {
+          providedMetaObj = { otherInfo: patient_meta }
+        }
+      } else if (typeof patient_meta === 'object') {
+        providedMetaObj = patient_meta
+      } else {
+        providedMetaObj = { otherInfo: String(patient_meta) }
+      }
+    }
+
+    const patientMeta = JSON.stringify({
+      ...(providedMetaObj && typeof providedMetaObj === 'object' ? providedMetaObj : {}),
+      ...baseMeta
+    })
+
     const insertQuery = `
       INSERT INTO dmac_webapp_users (
         name,
+        age,
         email,
         mobile,
         password,
@@ -119,6 +149,7 @@ export const registerScreeningUser = async (req, res) => {
 
     const values = [
       name,
+      hasValidAge ? ageNumber : null,
       email,
       '',
       hashedPassword,
