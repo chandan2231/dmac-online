@@ -53,9 +53,9 @@ const ScreeningRegistrationModal = ({ isOpen }: Props) => {
         name: name.trim(),
         email: email.trim(),
         age: ageNumber as number,
-        patient_meta: JSON.stringify({
-          ...(userEnvironmentInfo ?? {}),
-        }),
+        patient_meta: {
+          ...userEnvironmentInfo,
+        },
       });
 
       if (res.isSuccess) {
