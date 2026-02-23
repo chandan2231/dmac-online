@@ -3,6 +3,7 @@ import { Alert, Box, Card, CardContent, Stack, TextField, Typography } from '@mu
 import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined';
 import GenericModal from '../../../../components/modal';
 import ScreeningAuthApi from '../../../../services/screeningAuthApi';
+import { getUserEnvironmentInfo } from '../../../../utils/functions';
 import { setScreeningUser } from '../storage';
 
 type Props = {
@@ -46,10 +47,15 @@ const ScreeningRegistrationModal = ({ isOpen }: Props) => {
     setServerMessage(null);
 
     try {
+      const { userEnvironmentInfo } = await getUserEnvironmentInfo();
+
       const res = await ScreeningAuthApi.register({
         name: name.trim(),
         email: email.trim(),
         age: ageNumber as number,
+        patient_meta: JSON.stringify({
+          ...(userEnvironmentInfo ?? {}),
+        }),
       });
 
       if (res.isSuccess) {
