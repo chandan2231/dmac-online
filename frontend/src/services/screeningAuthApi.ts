@@ -4,6 +4,7 @@ export type ScreeningRegisterPayload = {
   name: string;
   email: string;
   age: number;
+  otherInfo?: unknown;
 };
 
 export type ScreeningRegisterResponse = {
@@ -19,7 +20,6 @@ export type ScreeningVerifyResponse = {
     id: number;
     name: string;
     email: string;
-    patient_meta?: string | null;
     verified: boolean;
   };
 };
@@ -31,8 +31,8 @@ export type ScreeningUserStatusResponse = {
     id: number;
     name: string;
     email: string;
-    patient_meta?: string | null;
     verified: boolean;
+    patient_meta?: string | null;
   };
 };
 

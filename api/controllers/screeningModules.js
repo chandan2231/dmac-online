@@ -77,7 +77,7 @@ export const generateReportPdf = (req, res) => {
 
 export const registerScreeningUser = async (req, res) => {
   try {
-    const { name, email, age, dob, patient_meta } = req.body || {}
+    const { name, email, age, dob, otherInfo } = req.body || {}
 
     // Age is required for screening. `dob` is accepted for backward compatibility.
     const ageNumber = Number(age)
@@ -93,7 +93,7 @@ export const registerScreeningUser = async (req, res) => {
 
     const verificationToken = uuidv4()  
 
-    const otherInfoJson = JSON.stringify(req.body.patient_meta ?? {})
+    const otherInfoJson = JSON.stringify(otherInfo ?? {})
 
 
 
@@ -187,23 +187,6 @@ export const getScreeningUserStatus = async (req, res) => {
   }
 }
 
-function encryptString(original) {
-  const key = Buffer.from(process.env.CRYPTO_SECRET_KEY, 'hex')
-
-  const cipher = crypto.createCipheriv(
-    process.env.CRYPTO_ALGORITHM,
-    key,
-    Buffer.alloc(16, 0)
-  )
-
-  cipher.setAutoPadding(true)
-
-  let encrypted = cipher.update(original, 'utf8', 'base64')
-  encrypted += cipher.final('base64')
-
-  return encrypted
-}
-
 export const verifyScreeningEmail = async (req, res) => {
   try {
     const { token } = req.body || {}
@@ -227,7 +210,7 @@ export const verifyScreeningEmail = async (req, res) => {
     }
 
     const users = await query(
-      'SELECT id, name, email, patient_meta, verified FROM dmac_webapp_users WHERE verification_token = ? LIMIT 1',
+      'SELECT id, name, email, verified FROM dmac_webapp_users WHERE verification_token = ? LIMIT 1',
       [token]
     )
 
@@ -243,7 +226,6 @@ export const verifyScreeningEmail = async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        patient_meta: user.patient_meta,
         verified: Boolean(user.verified)
       }
     })
