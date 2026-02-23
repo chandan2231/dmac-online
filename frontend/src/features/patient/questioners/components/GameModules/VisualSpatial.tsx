@@ -57,7 +57,7 @@ import bee_fourth from '../../../../../assets/visualSpatial/bee_fourth.png';
 
 interface VisualSpatialProps {
     session: SessionData;
-    onComplete: (answers: { question_id: number, selected_option_key: string }[]) => void;
+    onComplete: (answers: { question_id: number, selected_option_key: string }[], time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -87,6 +87,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
     const [countdown, setCountdown] = useState(5);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [selectionCountdown, setSelectionCountdown] = useState(30);
+    const [startTime, setStartTime] = useState<number>(Date.now());
 
     // Configuration: Set to false when images are uploaded to S3
     const USE_STATIC_IMAGES = true;
@@ -220,6 +221,7 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
     }, [phase, selectionCountdown, selectedOption]);
 
     const handleStart = () => {
+        setStartTime(Date.now());
         setCurrentRoundIndex(0);
         setAnswers([]);
         startRound();
@@ -240,7 +242,8 @@ const VisualSpatial = ({ session, onComplete, languageCode }: VisualSpatialProps
                 startRound();
             } else {
                 // Finished all rounds
-                onComplete(updatedAnswers);
+                const timeTaken = (Date.now() - startTime) / 1000;
+                onComplete(updatedAnswers, timeTaken);
             }
         }, 800);
     };

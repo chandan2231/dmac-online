@@ -257,65 +257,67 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
     }
   };
 
-  const handleImageFlashComplete = (answerText: string) => {
+  const handleImageFlashComplete = (answerText: string, time_taken?: number) => {
     if (!session?.questions?.[0]) return;
     const payload = {
       question_id: session.questions[0].question_id,
       language_code: languageCode,
-      answer_text: answerText
+      answer_text: answerText,
+      time_taken
     };
     handleModuleSubmit(payload);
   };
 
-  const handleVisualSpatialComplete = (answers: { question_id: number, selected_option_key: string }[]) => {
-    handleModuleSubmit({ answers });
+  const handleVisualSpatialComplete = (answers: { question_id: number, selected_option_key: string }[], time_taken?: number) => {
+    handleModuleSubmit({ answers, time_taken });
   };
 
-  const handleAudioStoryComplete = (answers: GenericAnswer[]) => {
-    handleModuleSubmit({ answers });
+  const handleAudioStoryComplete = (answers: GenericAnswer[], time_taken?: number) => {
+    handleModuleSubmit({ answers, time_taken });
   };
 
-  const handleAudioWordsComplete = (answers: GenericAnswer[]) => {
-    handleModuleSubmit({ answers });
+  const handleAudioWordsComplete = (answers: GenericAnswer[], time_taken?: number) => {
+    handleModuleSubmit({ answers, time_taken });
   };
 
   const handleConnectDotsComplete = (payload: GenericAnswer) => {
     handleModuleSubmit(payload);
   };
 
-  const handleExecutiveComplete = (answers: GenericAnswer[]) => {
-    handleModuleSubmit({ answers });
+  const handleExecutiveComplete = (answers: GenericAnswer[], time_taken?: number) => {
+    handleModuleSubmit({ answers, time_taken });
   };
 
-  const handleNumberRecallComplete = (answers: GenericAnswer[]) => {
-    handleModuleSubmit({ answers });
+  const handleNumberRecallComplete = (answers: GenericAnswer[], time_taken?: number) => {
+    handleModuleSubmit({ answers, time_taken });
   };
 
-  const handleDrawingRecallComplete = (payload: GenericAnswer) => {
-    handleModuleSubmit(payload);
+  const handleDrawingRecallComplete = (payload: GenericAnswer, time_taken?: number) => {
+    handleModuleSubmit({ ...payload, time_taken });
   };
 
-  const handleColorRecallComplete = (answers: GenericAnswer[]) => {
-    handleModuleSubmit({ answers });
+  const handleColorRecallComplete = (answers: GenericAnswer[], time_taken?: number) => {
+    handleModuleSubmit({ answers, time_taken });
   };
 
-  const handleGroupMatchingComplete = (answers: AnswerWithText[]) => {
+  const handleGroupMatchingComplete = (answers: AnswerWithText[], time_taken?: number) => {
     const total = answers.reduce((acc, curr) => {
       const match = (curr.answer_text || '').match(/Score:\s*(\d+)/);
       return acc + (match ? parseInt(match[1], 10) : 0);
     }, 0);
 
-    handleModuleSubmit({ answers, score: total });
+    handleModuleSubmit({ answers, score: total, time_taken });
   };
 
-  const handleDisinhibitionSqTriComplete = (answers: AnswerWithScore[]) => {
+  const handleDisinhibitionSqTriComplete = (answers: AnswerWithScore[], time_taken?: number) => {
     handleModuleSubmit({
-      answers
+      answers,
+      time_taken
     });
   };
 
-  const handleLetterDisinhibitionComplete = (answers: GenericAnswer[]) => {
-    handleModuleSubmit({ answers });
+  const handleLetterDisinhibitionComplete = (answers: GenericAnswer[], time_taken?: number) => {
+    handleModuleSubmit({ answers, time_taken });
   };
 
   const handleGoHome = () => {
@@ -334,7 +336,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
 
   if (idleModalOpen && !session) {
     return (
-      <Box sx={{ width: '100%', height: '100%' }}>
+      <Box sx={{ width: '100%', flex: { xs: 'none', sm: 1 }, display: 'flex', flexDirection: 'column' }}>
         <GenericModal
           isOpen={idleModalOpen}
           onClose={() => { }}
@@ -486,7 +488,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
   };
 
   return (
-    <Box sx={{ width: '100%', height: '100%' }}>
+    <Box sx={{ width: '100%', flex: { xs: 'none', sm: 1 }, display: 'flex', flexDirection: 'column' }}>
       <GenericModal
         isOpen={idleModalOpen}
         onClose={() => { }}

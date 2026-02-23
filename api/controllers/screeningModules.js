@@ -142,7 +142,7 @@ export const registerScreeningUser = async (req, res) => {
         verification_token,
         role,
         time_zone,
-        patient_meta
+        age
       )
       VALUES (?)
     `
@@ -159,7 +159,7 @@ export const registerScreeningUser = async (req, res) => {
       verificationToken,
       'USER',
       'UTC',
-      patientMeta
+      ageNumber
     ]
 
     const insertResult = await new Promise((resolve, reject) => {

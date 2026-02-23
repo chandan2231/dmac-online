@@ -10,7 +10,7 @@ import { getLanguageText } from '../../../../../utils/functions';
 
 interface ColorRecallProps {
     session: SessionData;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
 }
 
@@ -21,6 +21,7 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
     const [timeLeft, setTimeLeft] = useState(120);
     const [isActive, setIsActive] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
+    const [startTime, setStartTime] = useState<number>(Date.now());
     const liveTranscriptRef = useRef('');
 
     // Translations
@@ -50,6 +51,7 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
     }, [isActive, timeLeft]);
 
     const handleInstructionSubmit = () => {
+        setStartTime(Date.now());
         setShowInstruction(false);
         setIsActive(true);
     };
@@ -80,7 +82,8 @@ const ColorRecall = ({ session, onComplete, languageCode }: ColorRecallProps) =>
             language_code: languageCode
         };
 
-        onComplete([answer]);
+        const timeTaken = (Date.now() - startTime) / 1000;
+        onComplete([answer], timeTaken);
     };
 
     return (

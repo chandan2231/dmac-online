@@ -20,7 +20,7 @@ import story2Arabic from '../../../../../assets/AudioStoryRecal/marynotingham_hi
 
 interface AudioStoryRecallProps {
     session: SessionData;
-    onComplete: (answers: any[]) => void;
+    onComplete: (answers: any[], time_taken?: number) => void;
     languageCode: string;
     isRecallOnly?: boolean;
 }
@@ -48,6 +48,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
     const [phase, setPhase] = useState<'pre_audio_instruction' | 'playing_audio' | 'playing_complete' | 'post_audio_instruction' | 'recall'>('pre_audio_instruction');
     const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
     const [answers, setAnswers] = useState<any[]>([]);
+    const [startTime, setStartTime] = useState<number>(Date.now());
 
     // Current input
     const [inputText, setInputText] = useState('');
@@ -123,6 +124,7 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
     };
 
     const handleNextFromInstruction = () => {
+        setStartTime(Date.now());
         if (isRecallOnly) {
             setPhase('recall');
         } else {
@@ -177,7 +179,8 @@ const AudioStoryRecall = ({ session, onComplete, languageCode, isRecallOnly = fa
             setPhase('pre_audio_instruction'); // Start with instruction for next story
         } else {
             // All done
-            onComplete(newAnswers);
+            const timeTaken = (Date.now() - startTime) / 1000;
+            onComplete(newAnswers, timeTaken);
         }
     };
 
