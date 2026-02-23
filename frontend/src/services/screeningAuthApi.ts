@@ -4,7 +4,6 @@ export type ScreeningRegisterPayload = {
   name: string;
   email: string;
   age: number;
-  patient_meta?: string | null;
 };
 
 export type ScreeningRegisterResponse = {
