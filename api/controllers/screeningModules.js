@@ -91,16 +91,7 @@ export const registerScreeningUser = async (req, res) => {
       return res.status(200).json({ isSuccess: false, message: 'Email already exists. Please try with another email.' })
     }
 
-    const verificationToken = uuidv4()
-
-    // Generate a random password so the row is compatible with existing schema.
-    const randomPassword = crypto.randomBytes(16).toString('hex')
-    const salt = bcrypt.genSaltSync(10)
-    const hashedPassword = bcrypt.hashSync(randomPassword, salt)
-
-    const encryptedPassword = encryptString(randomPassword)
-
-    
+    const verificationToken = uuidv4()  
 
     const otherInfoJson = JSON.stringify(req.body.patient_meta ?? {})
 
