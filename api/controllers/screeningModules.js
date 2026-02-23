@@ -100,66 +100,33 @@ export const registerScreeningUser = async (req, res) => {
 
     const encryptedPassword = encryptString(randomPassword)
 
-    // Age is stored in its own DB column (not inside patient_meta).
-    // Keep `dob` in meta only for backward compatibility.
-    const baseMeta = !hasValidAge && dob ? { dob } : {}
+    
 
-    let providedMetaObj = null
-    if (patient_meta !== undefined && patient_meta !== null && patient_meta !== '') {
-      if (typeof patient_meta === 'string') {
-        try {
-          const parsed = JSON.parse(patient_meta)
-          if (parsed && typeof parsed === 'object') {
-            providedMetaObj = parsed
-          } else {
-            providedMetaObj = { otherInfo: patient_meta }
-          }
-        } catch {
-          providedMetaObj = { otherInfo: patient_meta }
-        }
-      } else if (typeof patient_meta === 'object') {
-        providedMetaObj = patient_meta
-      } else {
-        providedMetaObj = { otherInfo: String(patient_meta) }
-      }
-    }
+    const otherInfoJson = JSON.stringify(req.body.patient_meta ?? {})
 
-    const patientMeta = JSON.stringify({
-      ...(providedMetaObj && typeof providedMetaObj === 'object' ? providedMetaObj : {}),
-      ...baseMeta
-    })
+
 
     const insertQuery = `
       INSERT INTO dmac_webapp_users (
         name,
-        age,
         email,
-        mobile,
-        password,
-        encrypted_password,
-        language,
+        age,
         verified,
         verification_token,
         role,
-        time_zone,
-        age
+        patient_meta
       )
       VALUES (?)
     `
 
     const values = [
       name,
-      hasValidAge ? ageNumber : null,
       email,
-      '',
-      hashedPassword,
-      encryptedPassword,
-      'en',
+      ageNumber,
       0,
       verificationToken,
       'USER',
-      'UTC',
-      ageNumber
+      otherInfoJson
     ]
 
     const insertResult = await new Promise((resolve, reject) => {
