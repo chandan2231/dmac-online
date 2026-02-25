@@ -1,5 +1,6 @@
 export interface IPartner {
   id: number;
+  institution_name: string;
   name: string;
   email: string;
   phone: string | null;
@@ -18,6 +19,7 @@ export interface IPartner {
 }
 
 export interface ICreatePartnerPayload {
+  institution_name: string;
   name: string;
   email: string;
   mobile: string;

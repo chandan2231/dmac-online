@@ -1,23 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import * as Yup from 'yup';
-import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
   Box,
   Typography,
   Paper,
-  InputLabel,
   IconButton,
   Menu,
   MenuItem,
   ListItemIcon,
   ListItemText,
   Divider,
-  Radio,
-  RadioGroup,
-  FormControl,
-  FormControlLabel,
-  FormLabel,
 } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -31,17 +25,13 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 import MorenButton from '../../../../components/button';
 import ModernInput from '../../../../components/input';
-import ModernSelect, { type IOption } from '../../../../components/select';
+// ModernSelect removed - not needed for simplified form
 import GenericModal from '../../../../components/modal';
 import CustomLoader from '../../../../components/loader';
 import { GenericTable } from '../../../../components/table';
 import { useToast } from '../../../../providers/toast-provider';
-import { COUNTRIES_LIST } from '../../../../utils/constants';
-import {
-  convertLanguagesListToOptions,
-  getUserEnvironmentInfo,
-} from '../../../../utils/functions';
-import { useLanguageList } from '../../../../i18n/hooks/useGetLanguages';
+// COUNTRIES_LIST unused in simplified form
+import { getUserEnvironmentInfo } from '../../../../utils/functions';
 import PartnerPortalService, { type PartnerUserRow } from '../../partnerPortal.service';
 import type { GridColDef } from '@mui/x-data-grid';
 import { get } from 'lodash';
@@ -54,21 +44,10 @@ type UserFormValues = {
   name: string;
   email: string;
   mobile: string;
-  area: string;
-  zipCode: string;
-  language: IOption;
-  country: IOption;
-  state: IOption;
-  weight: number;
-  weightUnit: string;
-  height: number;
-  heightUnit: string;
+  age: number;
 };
 
-const optionShape = Yup.object({
-  label: Yup.string().required(),
-  value: Yup.string().required('This field is required'),
-});
+
 
 const createSchema = Yup.object({
   name: Yup.string().required('Name is required'),
@@ -76,37 +55,27 @@ const createSchema = Yup.object({
   mobile: Yup.string()
     .matches(/^\d{10}$/, 'Mobile number must be 10 digits')
     .required('Mobile number is required'),
-  area: Yup.string().required('Area is required'),
-  zipCode: Yup.string()
-    .matches(/^\d{5,6}$/, 'Zip Code must be 5 or 6 digits')
-    .required('Zip Code is required'),
-  language: optionShape,
-  country: optionShape,
-  state: optionShape,
-  weight: Yup.number().typeError('Weight must be a number').required('Weight is required'),
-  weightUnit: Yup.string().required('Weight unit is required'),
-  height: Yup.number().typeError('Height must be a number').required('Height is required'),
-  heightUnit: Yup.string().required('Height unit is required'),
+  age: Yup.number()
+    .typeError('Age must be a number')
+    .integer('Age must be a whole number')
+    .min(1, 'Age must be at least 1')
+    .max(100, 'Age cannot exceed 100')
+    .required('Age is required'),
 });
 
-type EditFormValues = Omit<UserFormValues, 'password' | 'confirmPassword' | 'email'>;
+type EditFormValues = Omit<UserFormValues, 'email'>;
 
 const editSchema = Yup.object({
   name: Yup.string().required('Name is required'),
   mobile: Yup.string()
     .matches(/^\d{10}$/, 'Mobile number must be 10 digits')
     .required('Mobile number is required'),
-  area: Yup.string().required('Area is required'),
-  zipCode: Yup.string()
-    .matches(/^\d{5,6}$/, 'Zip Code must be 5 or 6 digits')
-    .required('Zip Code is required'),
-  language: optionShape,
-  country: optionShape,
-  state: optionShape,
-  weight: Yup.number().typeError('Weight must be a number').required('Weight is required'),
-  weightUnit: Yup.string().required('Weight unit is required'),
-  height: Yup.number().typeError('Height must be a number').required('Height is required'),
-  heightUnit: Yup.string().required('Height unit is required'),
+  age: Yup.number()
+    .typeError('Age must be a number')
+    .integer('Age must be a whole number')
+    .min(1, 'Age must be at least 1')
+    .max(100, 'Age cannot exceed 100')
+    .required('Age is required'),
 });
 
 type ChangePasswordValues = {
@@ -156,11 +125,7 @@ export default function PartnerUsers() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuRowId, setMenuRowId] = useState<number | null>(null);
 
-  const { data: languageListing } = useLanguageList({ USER_TYPE: 'USER' });
-  const languageOptions = useMemo(() => {
-    const languages = get(languageListing, ['data', 'languages'], []);
-    return convertLanguagesListToOptions(languages);
-  }, [languageListing]);
+  
 
   const [addOpen, setAddOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
@@ -217,51 +182,29 @@ export default function PartnerUsers() {
   const {
     register,
     handleSubmit,
-    control,
-    setValue,
-    watch,
     reset,
     formState: { errors },
   } = useForm<UserFormValues>({
     resolver: yupResolver(createSchema),
     defaultValues: {
-      language: { label: '', value: '' },
-      country: { label: '', value: '' },
-      state: { label: '', value: '' },
-      weightUnit: 'kg',
-      heightUnit: 'cm',
-      weight: 0,
-      height: 0,
-      area: '',
-      zipCode: '',
       name: '',
       email: '',
       mobile: '',
+      age: 0,
     },
   });
 
   const {
     register: registerEdit,
     handleSubmit: handleSubmitEdit,
-    control: controlEdit,
-    setValue: setValueEdit,
-    watch: watchEdit,
     reset: resetEdit,
     formState: { errors: editErrors },
   } = useForm<EditFormValues>({
     resolver: yupResolver(editSchema),
     defaultValues: {
-      language: { label: '', value: '' },
-      country: { label: '', value: '' },
-      state: { label: '', value: '' },
-      weightUnit: 'kg',
-      heightUnit: 'cm',
-      weight: 0,
-      height: 0,
-      area: '',
-      zipCode: '',
       name: '',
       mobile: '',
+      age: 0,
     },
   });
 
@@ -275,17 +218,7 @@ export default function PartnerUsers() {
     defaultValues: { newPassword: '', confirmNewPassword: '' },
   });
 
-  const selectedCountry = watch('country');
-  const countryStates = useMemo(() => {
-    const c = COUNTRIES_LIST.find(x => x.value === selectedCountry?.value);
-    return c?.states ?? [];
-  }, [selectedCountry?.value]);
-
-  const selectedCountryEdit = watchEdit('country');
-  const countryStatesEdit = useMemo(() => {
-    const c = COUNTRIES_LIST.find(x => x.value === selectedCountryEdit?.value);
-    return c?.states ?? [];
-  }, [selectedCountryEdit?.value]);
+  
 
   const openAdd = () => {
     if (isLoadingSummary || !summary) {
@@ -519,24 +452,7 @@ export default function PartnerUsers() {
       resetEdit({
         name: u.name ?? '',
         mobile: u.mobile ?? '',
-        area: u.state ?? '',
-        zipCode: u.zip_code ?? '',
-        weight: Number(u.weight ?? 0),
-        weightUnit: String(u.weight_unit ?? 'kg'),
-        height: Number(u.height ?? 0),
-        heightUnit: String(u.height_unit ?? 'cm'),
-        language: {
-          label: String(u.language_name ?? ''),
-          value: String(u.language ?? ''),
-        },
-        country: {
-          label: String(u.country ?? ''),
-          value: String(COUNTRIES_LIST.find(c => c.label === u.country)?.value ?? ''),
-        },
-        state: {
-          label: String(u.province_title ?? ''),
-          value: String(u.province_id ?? ''),
-        },
+        age: Number((u as unknown as { age?: number }).age ?? 0),
       });
 
       setEditOpen(true);
@@ -564,26 +480,11 @@ export default function PartnerUsers() {
   const onSubmitCreate: SubmitHandler<UserFormValues> = async values => {
     try {
       const { userEnvironmentInfo } = await getUserEnvironmentInfo();
-
-      const timeZone = COUNTRIES_LIST.find(c => c.value === values.country.value)?.states.find(
-        s => s.value === values.state.value
-      )?.timeZone;
-
       const payload = {
         name: values.name,
         email: values.email,
         mobile: values.mobile,
-        state: values.area,
-        zipcode: values.zipCode,
-        country: values.country.label,
-        language: values.language.value,
-        provinceTitle: values.state.label,
-        provinceValue: values.state.value,
-        weight: values.weight,
-        weight_unit: values.weightUnit,
-        height: values.height,
-        height_unit: values.heightUnit,
-        timeZone,
+        age: values.age,
         otherInfo: userEnvironmentInfo,
       };
 
@@ -605,25 +506,11 @@ export default function PartnerUsers() {
     if (!selectedUser) return;
 
     try {
-      const timeZone = COUNTRIES_LIST.find(c => c.value === values.country.value)?.states.find(
-        s => s.value === values.state.value
-      )?.timeZone;
-
       const payload = {
         id: selectedUser.id,
         name: values.name,
         mobile: values.mobile,
-        state: values.area,
-        zipcode: values.zipCode,
-        country: values.country.label,
-        language: values.language.value,
-        provinceTitle: values.state.label,
-        provinceValue: values.state.value,
-        weight: values.weight,
-        weight_unit: values.weightUnit,
-        height: values.height,
-        height_unit: values.heightUnit,
-        timeZone,
+        age: (values as unknown as { age?: number }).age,
       };
 
       const result = await PartnerPortalService.updateUser(payload);
@@ -664,6 +551,7 @@ export default function PartnerUsers() {
       { field: 'name', headerName: 'Name', flex: 1, minWidth: 160 },
       { field: 'email', headerName: 'Email', flex: 1, minWidth: 220 },
       { field: 'mobile', headerName: 'Mobile', minWidth: 140 },
+      { field: 'age', headerName: 'Age', minWidth: 80 },
       { field: 'country', headerName: 'Country', minWidth: 140 },
       { field: 'state', headerName: 'Area', minWidth: 140 },
       {
@@ -915,195 +803,59 @@ export default function PartnerUsers() {
             </Box>
           </Box>
         ) : (
-          <Box
-            component="form"
-            onSubmit={handleSubmit(onSubmitCreate)}
-            display="flex"
-            flexDirection="column"
-            gap={2}
-          >
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <ModernInput
-                label="Name"
-                placeholder="Enter name"
-                {...register('name')}
-                error={!!errors.name}
-                helperText={errors.name?.message}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <ModernInput
-                label="Mobile"
-                placeholder="Enter mobile"
-                {...register('mobile')}
-                error={!!errors.mobile}
-                helperText={errors.mobile?.message}
-              />
-            </Grid>
-          </Grid>
-
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <FormControl component="fieldset" error={!!errors.weightUnit}>
-                <FormLabel component="legend">Weight Unit</FormLabel>
-                <Controller
-                  rules={{ required: true }}
-                  control={control}
-                  name="weightUnit"
-                  render={({ field }) => (
-                    <RadioGroup row {...field}>
-                      <FormControlLabel value="kg" control={<Radio />} label="Kg" />
-                      <FormControlLabel value="pound" control={<Radio />} label="Pound" />
-                    </RadioGroup>
-                  )}
-                />
-                {errors.weightUnit && (
-                  <Typography variant="caption" color="error">
-                    {errors.weightUnit.message}
-                  </Typography>
-                )}
-              </FormControl>
-              <ModernInput
-                label="Weight"
-                placeholder="Enter weight"
-                type="number"
-                {...register('weight')}
-                error={!!errors.weight}
-                helperText={errors.weight?.message}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl component="fieldset" error={!!errors.heightUnit}>
-                <FormLabel component="legend">Height Unit</FormLabel>
-                <Controller
-                  rules={{ required: true }}
-                  control={control}
-                  name="heightUnit"
-                  render={({ field }) => (
-                    <RadioGroup row {...field}>
-                      <FormControlLabel value="cm" control={<Radio />} label="Cm" />
-                      <FormControlLabel value="inches" control={<Radio />} label="Inches" />
-                    </RadioGroup>
-                  )}
-                />
-                {errors.heightUnit && (
-                  <Typography variant="caption" color="error">
-                    {errors.heightUnit.message}
-                  </Typography>
-                )}
-              </FormControl>
-              <ModernInput
-                label="Height"
-                placeholder="Enter height"
-                type="number"
-                {...register('height')}
-                error={!!errors.height}
-                helperText={errors.height?.message}
-              />
-            </Grid>
-          </Grid>
-
-          <ModernInput
-            label="Email"
-            placeholder="Enter email"
-            type="email"
-            {...register('email')}
-            error={!!errors.email}
-            helperText={errors.email?.message}
-          />
-
-          <ModernInput
-            label="Area"
-            placeholder="Enter area"
-            {...register('area')}
-            error={!!errors.area}
-            helperText={errors.area?.message}
-          />
-
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <Controller
-                name="country"
-                control={control}
-                render={({ field }) => (
-                  <ModernSelect
-                    label="Country"
-                    options={COUNTRIES_LIST.map(c => ({ label: c.label, value: c.value }))}
-                    {...field}
-                    onChange={(opt: IOption) => {
-                      field.onChange(opt);
-                      setValue('state', { label: '', value: '' }, { shouldValidate: true });
-                    }}
-                    error={!!errors.country}
-                    helperText={String(
-                      get(errors, ['country', 'value', 'message'], '') ||
-                        get(errors, ['country', 'message'], '')
-                    )}
-                  />
-                )}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Controller
-                name="state"
-                control={control}
-                render={({ field }) => (
-                  <ModernSelect
-                    label="State"
-                    options={countryStates.map(s => ({ label: s.label, value: s.value }))}
-                    {...field}
-                    error={!!errors.state}
-                    helperText={String(
-                      get(errors, ['state', 'value', 'message'], '') ||
-                        get(errors, ['state', 'message'], '')
-                    )}
-                  />
-                )}
-              />
-            </Grid>
-          </Grid>
-
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <Controller
-                name="language"
-                control={control}
-                render={({ field }) => (
-                  <ModernSelect
-                    label="Language"
-                    options={languageOptions}
-                    {...field}
-                    error={!!errors.language}
-                    helperText={String(
-                      get(errors, ['language', 'value', 'message'], '') ||
-                        get(errors, ['language', 'message'], '')
-                    )}
-                  />
-                )}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Box display="flex" flexDirection="column" gap={0.5} minWidth={120}>
-                <InputLabel shrink>Zipcode</InputLabel>
+          <Box component="form" onSubmit={handleSubmit(onSubmitCreate)} display="flex" flexDirection="column" gap={2}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
                 <ModernInput
-                  placeholder="Enter zipcode"
-                  {...register('zipCode')}
-                  error={!!errors.zipCode}
-                  helperText={errors.zipCode?.message}
+                  label="Name"
+                  placeholder="Enter name"
+                  {...register('name')}
+                  error={!!errors.name}
+                  helperText={errors.name?.message}
                 />
-              </Box>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <ModernInput
+                  label="Mobile"
+                  placeholder="Enter mobile"
+                  {...register('mobile')}
+                  error={!!errors.mobile}
+                  helperText={errors.mobile?.message}
+                />
+              </Grid>
             </Grid>
-          </Grid>
 
-          <Box display="flex" justifyContent="flex-end" gap={1}>
-            <MorenButton variant="text" onClick={closeAdd}>
-              Cancel
-            </MorenButton>
-            <MorenButton variant="contained" type="submit">
-              Create
-            </MorenButton>
-          </Box>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <ModernInput
+                  label="Email"
+                  placeholder="Enter email"
+                  type="email"
+                  {...register('email')}
+                  error={!!errors.email}
+                  helperText={errors.email?.message}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <ModernInput
+                  label="Age"
+                  placeholder="Enter age"
+                  type="number"
+                  {...register('age', { valueAsNumber: true })}
+                  error={!!errors.age}
+                  helperText={errors.age?.message}
+                />
+              </Grid>
+            </Grid>
+
+            <Box display="flex" justifyContent="flex-end" gap={1}>
+              <MorenButton variant="text" onClick={closeAdd}>
+                Cancel
+              </MorenButton>
+              <MorenButton variant="contained" type="submit">
+                Create
+              </MorenButton>
+            </Box>
           </Box>
         )}
       </GenericModal>
@@ -1115,22 +867,13 @@ export default function PartnerUsers() {
             <b>Name:</b> {selectedUser?.name}
           </Typography>
           <Typography>
+            <b>Age:</b> {(selectedUser as unknown as { age?: number })?.age ?? ''}
+          </Typography>
+          <Typography>
             <b>Email:</b> {selectedUser?.email}
           </Typography>
           <Typography>
             <b>Mobile:</b> {selectedUser?.mobile}
-          </Typography>
-          <Typography>
-            <b>Country:</b> {selectedUser?.country}
-          </Typography>
-          <Typography>
-            <b>Area:</b> {selectedUser?.state}
-          </Typography>
-          <Typography>
-            <b>Zip Code:</b> {selectedUser?.zip_code}
-          </Typography>
-          <Typography>
-            <b>Language:</b> {selectedUser?.language_name}
           </Typography>
           <Typography>
             <b>Verified:</b> {Number(selectedUser?.verified ?? 0) ? 'Yes' : 'No'}
@@ -1169,147 +912,17 @@ export default function PartnerUsers() {
 
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
-              <FormControl component="fieldset" error={!!editErrors.weightUnit}>
-                <FormLabel component="legend">Weight Unit</FormLabel>
-                <Controller
-                  rules={{ required: true }}
-                  control={controlEdit}
-                  name="weightUnit"
-                  render={({ field }) => (
-                    <RadioGroup row {...field}>
-                      <FormControlLabel value="kg" control={<Radio />} label="Kg" />
-                      <FormControlLabel value="pound" control={<Radio />} label="Pound" />
-                    </RadioGroup>
-                  )}
-                />
-                {editErrors.weightUnit && (
-                  <Typography variant="caption" color="error">
-                    {editErrors.weightUnit.message}
-                  </Typography>
-                )}
-              </FormControl>
+              <ModernInput label="Email" placeholder="Email" value={selectedUser?.email ?? ''} disabled />
+            </Grid>
+            <Grid item xs={12} sm={6}>
               <ModernInput
-                label="Weight"
-                placeholder="Enter weight"
+                label="Age"
+                placeholder="Enter age"
                 type="number"
-                {...registerEdit('weight')}
-                error={!!editErrors.weight}
-                helperText={editErrors.weight?.message}
+                {...registerEdit('age', { valueAsNumber: true })}
+                error={!!editErrors.age}
+                helperText={editErrors.age?.message}
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl component="fieldset" error={!!editErrors.heightUnit}>
-                <FormLabel component="legend">Height Unit</FormLabel>
-                <Controller
-                  rules={{ required: true }}
-                  control={controlEdit}
-                  name="heightUnit"
-                  render={({ field }) => (
-                    <RadioGroup row {...field}>
-                      <FormControlLabel value="cm" control={<Radio />} label="Cm" />
-                      <FormControlLabel value="inches" control={<Radio />} label="Inches" />
-                    </RadioGroup>
-                  )}
-                />
-                {editErrors.heightUnit && (
-                  <Typography variant="caption" color="error">
-                    {editErrors.heightUnit.message}
-                  </Typography>
-                )}
-              </FormControl>
-              <ModernInput
-                label="Height"
-                placeholder="Enter height"
-                type="number"
-                {...registerEdit('height')}
-                error={!!editErrors.height}
-                helperText={editErrors.height?.message}
-              />
-            </Grid>
-          </Grid>
-
-          <ModernInput label="Email" placeholder="Email" value={selectedUser?.email ?? ''} disabled />
-
-          <ModernInput
-            label="Area"
-            placeholder="Enter area"
-            {...registerEdit('area')}
-            error={!!editErrors.area}
-            helperText={editErrors.area?.message}
-          />
-
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <Controller
-                name="country"
-                control={controlEdit}
-                render={({ field }) => (
-                  <ModernSelect
-                    label="Country"
-                    options={COUNTRIES_LIST.map(c => ({ label: c.label, value: c.value }))}
-                    {...field}
-                    onChange={(opt: IOption) => {
-                      field.onChange(opt);
-                      setValueEdit('state', { label: '', value: '' }, { shouldValidate: true });
-                    }}
-                    error={!!editErrors.country}
-                    helperText={String(
-                      get(editErrors, ['country', 'value', 'message'], '') ||
-                        get(editErrors, ['country', 'message'], '')
-                    )}
-                  />
-                )}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Controller
-                name="state"
-                control={controlEdit}
-                render={({ field }) => (
-                  <ModernSelect
-                    label="State"
-                    options={countryStatesEdit.map(s => ({ label: s.label, value: s.value }))}
-                    {...field}
-                    error={!!editErrors.state}
-                    helperText={String(
-                      get(editErrors, ['state', 'value', 'message'], '') ||
-                        get(editErrors, ['state', 'message'], '')
-                    )}
-                  />
-                )}
-              />
-            </Grid>
-          </Grid>
-
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <Controller
-                name="language"
-                control={controlEdit}
-                render={({ field }) => (
-                  <ModernSelect
-                    label="Language"
-                    options={languageOptions}
-                    {...field}
-                    error={!!editErrors.language}
-                    helperText={String(
-                      get(editErrors, ['language', 'value', 'message'], '') ||
-                        get(editErrors, ['language', 'message'], '')
-                    )}
-                  />
-                )}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Box display="flex" flexDirection="column" gap={0.5} minWidth={120}>
-                <InputLabel shrink>Zipcode</InputLabel>
-                <ModernInput
-                  placeholder="Enter zipcode"
-                  {...registerEdit('zipCode')}
-                  error={!!editErrors.zipCode}
-                  helperText={editErrors.zipCode?.message}
-                />
-              </Box>
             </Grid>
           </Grid>
 
