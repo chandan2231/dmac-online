@@ -392,7 +392,7 @@ function PricingComparision({ selectedCountryCode }: PricingComparisionProps) {
                         },
                       }}
                     >
-                      BUY NOW
+                      ORDER NOW
                     </Button>
                   </TableCell>
                 );

@@ -26,6 +26,10 @@ function AppAppBar() {
     navigate(ROUTES.PRODUCTS_LISTING);
   };
 
+  const handleNavigateToAthleteCenter = () => {
+    navigate(ROUTES.ATHLETE_CENTER);
+  };
+
   const handleOpenMenu = (e: React.MouseEvent<HTMLElement>) => {
     setMenuAnchorEl(e.currentTarget);
   };
@@ -104,6 +108,15 @@ function AppAppBar() {
                 <MenuItem
                   onClick={() => {
                     handleCloseMenu();
+                    handleNavigateToAthleteCenter();
+                  }}
+                  sx={{ fontSize: 16, fontWeight: 600 }}
+                >
+                  Athlete Center
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    handleCloseMenu();
                     handleNavigateToProducts();
                   }}
                   sx={{ fontSize: 16, fontWeight: 600 }}
@@ -150,6 +163,26 @@ function AppAppBar() {
                 }}
               >
                 Explore Product
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={handleNavigateToAthleteCenter}
+                sx={{
+                  color: 'white',
+                  borderColor: 'rgba(255,255,255,0.75)',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  borderRadius: 999,
+                  px: 2.5,
+                  py: 0.9,
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    borderColor: 'white',
+                    backgroundColor: 'rgba(255,255,255,0.10)',
+                  },
+                }}
+              >
+                Athlete Center
               </Button>
               <Button
                 variant="contained"
