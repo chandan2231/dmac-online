@@ -803,60 +803,67 @@ export default function PartnerUsers() {
             </Box>
           </Box>
         ) : (
-          <Box component="form" onSubmit={handleSubmit(onSubmitCreate)} display="flex" flexDirection="column" gap={2}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <ModernInput
-                  label="Name"
-                  placeholder="Enter name"
-                  {...register('name')}
-                  error={!!errors.name}
-                  helperText={errors.name?.message}
-                />
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2
+            }}
+          >
+            <Box component="form" onSubmit={handleSubmit(onSubmitCreate)} display="flex" flexDirection="column" gap={2}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <ModernInput
+                    label="Name"
+                    placeholder="Enter name"
+                    {...register('name')}
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <ModernInput
+                    label="Mobile"
+                    placeholder="Enter mobile"
+                    {...register('mobile')}
+                    error={!!errors.mobile}
+                    helperText={errors.mobile?.message}
+                  />
+                </Grid>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <ModernInput
-                  label="Mobile"
-                  placeholder="Enter mobile"
-                  {...register('mobile')}
-                  error={!!errors.mobile}
-                  helperText={errors.mobile?.message}
-                />
-              </Grid>
-            </Grid>
 
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <ModernInput
-                  label="Email"
-                  placeholder="Enter email"
-                  type="email"
-                  {...register('email')}
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                />
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <ModernInput
+                    label="Email"
+                    placeholder="Enter email"
+                    type="email"
+                    {...register('email')}
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <ModernInput
+                    label="Age"
+                    placeholder="Enter age"
+                    type="number"
+                    {...register('age', { valueAsNumber: true })}
+                    error={!!errors.age}
+                    helperText={errors.age?.message}
+                  />
+                </Grid>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <ModernInput
-                  label="Age"
-                  placeholder="Enter age"
-                  type="number"
-                  {...register('age', { valueAsNumber: true })}
-                  error={!!errors.age}
-                  helperText={errors.age?.message}
-                />
-              </Grid>
-            </Grid>
 
-            <Box display="flex" justifyContent="flex-end" gap={1}>
-              <MorenButton variant="text" onClick={closeAdd}>
-                Cancel
-              </MorenButton>
-              <MorenButton variant="contained" type="submit">
-                Create
-              </MorenButton>
+              <Box display="flex" justifyContent="flex-end" gap={1}>
+                <MorenButton variant="text" onClick={closeAdd}>
+                  Cancel
+                </MorenButton>
+                <MorenButton variant="contained" type="submit">
+                  Create
+                </MorenButton>
+              </Box>
             </Box>
-          </Box>
+          </Paper>
         )}
       </GenericModal>
 
