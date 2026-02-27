@@ -18,6 +18,7 @@ import GroupMatching from '../../../questioners/components/GameModules/GroupMatc
 import DisinhibitionSqTri from '../../../questioners/components/GameModules/DisinhibitionSqTri';
 import VisualNumberRecall from '../../../questioners/components/GameModules/VisualNumberRecall';
 import LetterDisinhibition from '../../../questioners/components/GameModules/LetterDisinhibition';
+import ProgressBar from '../../../questioners/components/GameModules/Shared/ProgressBar';
 
 import { useLanguageConstantContext } from '../../../../../providers/language-constant-provider';
 import { getLanguageText } from '../../../../../utils/functions';
@@ -58,7 +59,7 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
   };
 
   const [modules, setModules] = useState<Module[]>([]);
-  const [, setCurrentModuleIndex] = useState(0);
+  const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [session, setSession] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -547,23 +548,25 @@ const ModuleRunner = ({ userId, languageCode, onAllModulesComplete, lastComplete
         </Box>
       </GenericModal>
 
-      {attemptsBanner ? (
-        <Box
-          sx={{
-            width: '100%',
-            mb: 1,
-            px: { xs: 1.5, sm: 2 },
-            py: 1,
-            borderRadius: 1,
-            bgcolor: attemptsBanner.isFinal ? '#ffebee' : '#fff8e1',
-            color: attemptsBanner.isFinal ? '#c62828' : '#8a6d3b',
-            textAlign: 'center',
-            fontWeight: 700,
-          }}
-        >
-          Attempts remaining: {attemptsBanner.remaining} / {attemptStatus?.max_attempts}
+      <Box sx={{ px: { xs: 1.5, sm: 2 }, mb: 2, mt: { xs: 2, sm: 0 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, gap: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <ProgressBar percentage={showCompletion ? 100 : (currentModuleIndex / modules.length) * 100} />
+          </Box>
+          {attemptsBanner && (
+            <Typography
+              sx={{
+                fontWeight: 700,
+                color: attemptsBanner.isFinal ? '#c62828' : '#8a6d3b',
+                whiteSpace: 'nowrap',
+                fontSize: '0.9rem'
+              }}
+            >
+              Attempts Remaining: {attemptsBanner.remaining} / {attemptStatus?.max_attempts}
+            </Typography>
+          )}
         </Box>
-      ) : null}
+      </Box>
 
       {!showCompletion && moduleCode === 'IMAGE_FLASH' && (
         <ImageFlash session={session} onComplete={handleImageFlashComplete} languageCode={languageCode} />

@@ -310,7 +310,10 @@ export const startSession = async (req, res) => {
     }
 
     // 3. Fetch Questions
-    const questions = await fetchQuestions(module.id, language_code);
+    let questions = await fetchQuestions(module.id, language_code);
+    if (module.code === 'REVERSE_NUMBER_RECALL') {
+      questions = questions.slice(0, 6);
+    }
 
     // 4. Construct Response
     const handler = moduleHandlers[module.code] || moduleHandlers.default;
@@ -488,7 +491,8 @@ export const submitSession = async (req, res) => {
 
     // Process each answer if provided
     if (answers && answers.length > 0) {
-      for (const ans of answers) {
+      for (let i = 0; i < answers.length; i++) {
+        const ans = answers[i]
         let itemScore = 0
 
         if (module.code === 'VISUAL_SPATIAL') {
@@ -573,7 +577,7 @@ export const submitSession = async (req, res) => {
           // might mean we floor at 2 provided condition met? No, "minimal score is 2" refers to the result of 4*0.5.
           // I'll stick to linear * 0.5.
 
-        } else if (module.code === 'NUMBER_RECALL' || module.code === 'REVERSE_NUMBER_RECALL') {
+        } else if (module.code === 'NUMBER_RECALL') {
           // Number Recall Scoring
           // Logic: Exact match of the sequence = 0.625 points.
           // Total possible: 8 * 0.625 = 5.0
@@ -584,6 +588,20 @@ export const submitSession = async (req, res) => {
 
             if (userAns === accepted) {
               itemScore = 0.625
+            }
+          }
+        } else if (module.code === 'REVERSE_NUMBER_RECALL') {
+          // Reverse Number Recall Scoring
+          // Only score first 6 entries, 0.833 points each. Total ~5.0
+          if (i < 6) {
+            const items = await fetchItems(ans.question_id, 'en')
+            if (items.length > 0) {
+              const accepted = items[0].accepted_answers || ''
+              const userAns = (ans.answer_text || '').trim()
+
+              if (userAns === accepted) {
+                itemScore = 0.833
+              }
             }
           }
         } else if (module.code === 'VISUAL_NUMBER_RECALL') {
@@ -867,7 +885,7 @@ const calculateGameScores = async (user_id) => {
   const categoriesDefinition = [
     {
       name: 'Attention & Concentration', // Cog. Test-1
-      ids: [12, 20, 4]
+      ids: [12, 16, 4]
     },
     {
       name: 'Processing Speed / Reaction Time', // Cog. Test-2
@@ -883,7 +901,7 @@ const calculateGameScores = async (user_id) => {
     },
     {
       name: 'Delayed Recall Memory', // Cog. Test-5
-      ids: [17, 18, 19, 14]
+      ids: [17, 19, 14]
     },
     {
       name: 'Visual Memory', // Cog. Test-6
@@ -1070,4 +1088,3 @@ export const generateReportPdf = async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 }
-
