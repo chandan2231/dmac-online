@@ -50,6 +50,7 @@ const changePasswordSchema = Yup.object({
 type ChangePasswordFormValues = Yup.InferType<typeof changePasswordSchema>;
 
 const editPartnerSchema = Yup.object({
+  institution_name: Yup.string().required('Institution Name is required'),
   name: Yup.string().required('Name is required'),
   mobile: Yup.string().required('Phone is required'),
   email: Yup.string().email('Invalid email').required('Email is required'),
@@ -70,6 +71,7 @@ const editPartnerSchema = Yup.object({
 type EditPartnerFormValues = Yup.InferType<typeof editPartnerSchema>;
 
 const createPartnerSchema = Yup.object({
+  institution_name: Yup.string().required('Institution Name is required'),
   name: Yup.string().required('Name is required'),
   mobile: Yup.string().required('Phone is required'),
   email: Yup.string().email('Invalid email').required('Email is required'),
@@ -135,6 +137,7 @@ const PartnersListing = () => {
   } = useForm<CreatePartnerFormValues>({
     resolver: yupResolver(createPartnerSchema),
     defaultValues: {
+      institution_name: '',
       name: '',
       mobile: '',
       email: '',
@@ -165,6 +168,7 @@ const PartnersListing = () => {
   } = useForm<EditPartnerFormValues>({
     resolver: yupResolver(editPartnerSchema),
     defaultValues: {
+      institution_name: '',
       name: '',
       mobile: '',
       email: '',
@@ -249,6 +253,7 @@ const PartnersListing = () => {
     setSelectedPartner(partner);
 
     resetEdit({
+      institution_name: partner.institution_name ?? '',
       name: partner.name ?? '',
       email: partner.email ?? '',
       mobile: String(partner.phone ?? ''),
@@ -280,6 +285,7 @@ const PartnersListing = () => {
   };
 
   const columns: GridColDef<IPartner>[] = [
+      { field: 'institution_name', headerName: 'Institution Name', flex: 1, minWidth: 220 },
       { field: 'name', headerName: 'Name', flex: 1, minWidth: 160 },
       { field: 'email', headerName: 'Email', flex: 1, minWidth: 220 },
       {
@@ -629,7 +635,15 @@ const PartnersListing = () => {
           display="flex"
           flexDirection="column"
           gap={2}
+          style={{ marginTop: '2rem' }}
         >
+          <ModernInput
+            label="Institution Name"
+            placeholder="Enter Institution Name"
+            {...register('institution_name')}
+            error={!!errors.institution_name}
+            helperText={errors.institution_name?.message}
+          />
           <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
             <ModernInput
               label="Name"
@@ -646,16 +660,7 @@ const PartnersListing = () => {
               helperText={errors.email?.message}
             />
           </Box>
-            <ModernInput
-              label="Price Per User"
-              placeholder="Enter price per user"
-              inputMode="decimal"
-              {...register('price_per_user')}
-              error={!!errors.price_per_user}
-              helperText={errors.price_per_user?.message}
-            />
-
-          <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
+          <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={1}>
             <ModernInput
               label="Phone"
               placeholder="Enter phone"
@@ -664,8 +669,22 @@ const PartnersListing = () => {
               helperText={errors.mobile?.message}
             />
           </Box>
-
-          <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
+          <ModernInput
+            label="Price Per User"
+            placeholder="Enter price per user"
+            inputMode="decimal"
+            {...register('price_per_user')}
+            error={!!errors.price_per_user}
+            helperText={errors.price_per_user?.message}
+          />
+          <ModernInput
+            label="Address"
+            placeholder="Enter address"
+            {...register('address')}
+            error={!!errors.address}
+            helperText={errors.address?.message}
+          />
+          <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={3}>
             <Box display="flex" flexDirection="column" flex={1}>
               <ModernSelect
                 label="Country"
@@ -703,27 +722,22 @@ const PartnersListing = () => {
                 <Typography color="error">{errors.state.message}</Typography>
               )}
             </Box>
+            <Box>
+              <ModernInput
+                label="Zipcode"
+                placeholder="Enter zipcode"
+                {...register('zipcode')}
+                error={!!errors.zipcode}
+                helperText={errors.zipcode?.message}
+                style={{marginTop: '1.6rem'}}
+              />
+            </Box>
           </Box>
-
-          <ModernInput
-            label="Address"
-            placeholder="Enter address"
-            {...register('address')}
-            error={!!errors.address}
-            helperText={errors.address?.message}
-          />
-
           <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
+            
             <ModernInput
-              label="Zipcode"
-              placeholder="Enter zipcode"
-              {...register('zipcode')}
-              error={!!errors.zipcode}
-              helperText={errors.zipcode?.message}
-            />
-            <ModernInput
-              label="Allowed Users"
-              placeholder="Enter allowed users"
+              label="Allowed Athletes"
+              placeholder="Enter allowed athletes"
               inputMode="numeric"
               {...register('allowed_users')}
               error={!!errors.allowed_users}

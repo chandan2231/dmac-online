@@ -237,22 +237,18 @@ export const createPartnerUser = async (req, res) => {
       name,
       email,
       mobile,
-      state,
-      zipcode,
-      country,
-      language,
-      provinceTitle,
-      provinceValue,
-      timeZone,
-      weight,
-      weight_unit,
-      height,
-      height_unit,
-      otherInfo
+      age,
+      otherInfo,
+      sports
     } = req.body || {}
 
-    if (!name || !email || !mobile || !state || !zipcode || !country || !language) {
+    if (!name || !email || !mobile || age === undefined || age === null || !sports) {
       return res.status(400).json({ message: 'Missing required fields.' })
+    }
+
+    const ageNumber = Number(age)
+    if (!Number.isFinite(ageNumber) || !Number.isInteger(ageNumber) || ageNumber < 1 || ageNumber > 100) {
+      return res.status(400).json({ message: 'Invalid age. Must be an integer between 1 and 100.' })
     }
 
     const plainPassword = generatePassword(8)
@@ -287,31 +283,23 @@ export const createPartnerUser = async (req, res) => {
 
     const insertQuery = `
       INSERT INTO dmac_webapp_users
-      (name, email, mobile, password, country, state, zip_code, language, verified, verification_token, role, time_zone, province_title, province_id, patient_meta, weight, weight_unit, height, height_unit, partner_id, status)
+      (name, age, email, mobile, password, verified, verification_token, role, patient_meta, partner_id, status, language, sports)
       VALUES (?)`
 
     const values = [
       name,
+      ageNumber,
       email,
       mobile,
       hashedPassword,
-      country,
-      state,
-      zipcode,
-      language,
       0,
       verificationToken,
       'USER',
-      timeZone ?? null,
-      provinceTitle ?? null,
-      provinceValue ?? null,
       otherInfoJson,
-      weight ?? null,
-      weight_unit ?? null,
-      height ?? null,
-      height_unit ?? null,
       partnerId,
-      1
+      1,
+      1,
+      sports
     ]
 
     const insertResult = await queryAsync(insertQuery, [values])
@@ -328,17 +316,31 @@ export const createPartnerUser = async (req, res) => {
     const loginUrl = `${process.env.DOMAIN}patient/login`
     const verifyLink = `${process.env.DOMAIN}patient/email/verify/${verificationToken}`
 
-    const subject = 'Welcome to DMAC - Verify Your Email'
-    const greetingHtml = `<p>Dear ${name},</p>`
-    let bodyHtml = `<p>Your account has been created by your partner administrator.</p>`
-    bodyHtml += `<p>Your login details are:</p>`
-    bodyHtml += `<p>Email: ${email}</p>`
-    bodyHtml += `<p>Password: ${plainPassword}</p>`
-    bodyHtml += `<p>Login URL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">Click here</a></p>`
-    bodyHtml += `<p><b>First verify the email then only you will be able to login into the portal.</b></p>`
-    bodyHtml += `<h4>Click the link below to verify your email</h4><a href="${verifyLink}">Verify Email</a>`
+    const subject = 'RM360 – Cognitive Screening Repository Program Access'
 
-    const emailHtml = `<div>${greetingHtml}${bodyHtml}</div>`
+    const emailHtml = `
+      <div>
+        <h2>RM360 – Cognitive Screening Repository Program Access</h2>
+        <p>Dear ${name},</p>
+        <p>You have been registered to participate in the RM360 – Cognitive Screening Repository Program (C-SARP).</p>
+        <p>You will be able to complete your baseline cognitive screening using the secure link provided below.</p>
+
+        <h4>Parental Consent for Minors</h4>
+        <p>For athletes under 18 years of age, a parent or legal guardian must review and electronically sign a Parental Consent and Permission Form before the C-SARP screening can proceed.</p>
+
+        <h4>Login Instructions</h4>
+        <p>Please click the URL below to access the login page:</p>
+        <p>Portal URL: <a href="${verifyLink}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:10px 18px;background-color:#1d4ed8;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">Click Here</a></p>
+        <p>Login ID: ${email}</p>
+        <p>Temporary Password: ${plainPassword}</p>
+        <p>(You will be prompted to change your password after your first login.)</p>
+
+        <p>If you have any questions or need assistance, please contact our support team:</p>
+        <p>Email: help@regainmemory360.com</p>
+
+        <p>Thank you for participating in RM360 and supporting proactive brain health.</p>
+      </div>
+    `
 
     try {
       await sendEmail(email, subject, emailHtml, emailHtml)
@@ -367,17 +369,8 @@ export const updatePartnerUser = async (req, res) => {
       id,
       name,
       mobile,
-      state,
-      zipcode,
-      country,
-      language,
-      provinceTitle,
-      provinceValue,
-      timeZone,
-      weight,
-      weight_unit,
-      height,
-      height_unit
+      age,
+      sports
     } = req.body || {}
 
     if (!id) {
@@ -393,38 +386,25 @@ export const updatePartnerUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' })
     }
 
+    const ageNumber = age === undefined || age === null ? null : Number(age)
+    if (ageNumber !== null && (!Number.isFinite(ageNumber) || !Number.isInteger(ageNumber) || ageNumber < 1 || ageNumber > 100)) {
+      return res.status(400).json({ message: 'Invalid age. Must be an integer between 1 and 100.' })
+    }
+
     await queryAsync(
       `UPDATE dmac_webapp_users
        SET name = ?,
            mobile = ?,
-           country = ?,
-           state = ?,
-           zip_code = ?,
-           language = ?,
-           time_zone = ?,
-           province_title = ?,
-           province_id = ?,
-           weight = ?,
-           weight_unit = ?,
-           height = ?,
-           height_unit = ?
+           age = ?,
+           sports = ?
        WHERE id = ?
          AND partner_id = ?
          AND role = 'USER'`,
       [
         name ?? null,
         mobile ?? null,
-        country ?? null,
-        state ?? null,
-        zipcode ?? null,
-        language ?? null,
-        timeZone ?? null,
-        provinceTitle ?? null,
-        provinceValue ?? null,
-        weight ?? null,
-        weight_unit ?? null,
-        height ?? null,
-        height_unit ?? null,
+        ageNumber,
+        sports ?? null,
         Number(id),
         partnerId
       ]

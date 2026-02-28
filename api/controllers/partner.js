@@ -80,6 +80,7 @@ export const getPartnersList = async (req, res) => {
     const query = `
       SELECT
         u.id,
+        u.institution_name,
         u.name,
         u.email,
         u.mobile AS phone,
@@ -122,6 +123,7 @@ export const createPartner = async (req, res) => {
     if (!ok) return
 
     const {
+      institution_name,
       name,
       email,
       mobile,
@@ -137,6 +139,7 @@ export const createPartner = async (req, res) => {
     } = req.body || {}
 
     if (
+      !institution_name ||
       !name ||
       !email ||
       !mobile ||
@@ -192,11 +195,12 @@ export const createPartner = async (req, res) => {
 
     const insertUserQuery = `
       INSERT INTO dmac_webapp_users
-        (name, mobile, email, password, role, verified, verification_token, time_zone, country, address, province_title, province_id, status, zip_code)
+        (institution_name, name, mobile, email, password, role, verified, verification_token, time_zone, country, address, province_title, province_id, status, zip_code)
       VALUES (?)
     `
 
     const userValues = [
+      institution_name,
       name,
       mobile,
       email,
@@ -245,17 +249,36 @@ export const createPartner = async (req, res) => {
     const loginUrl = `${process.env.DOMAIN}login`
     const verifyLink = `${process.env.DOMAIN}verify-email/${verificationToken}`
 
-    const subject = 'Welcome to RM360 as a Partner - Verify Your Email'
+    const subject = 'Welcome to the RM360 – C-SARP Program'
 
-    const greetingHtml = `<p>Dear ${name},</p>`
-    let bodyHtml = `<p>You have successfully registered with RM360 as a PARTNER.</p>`
-    bodyHtml += `<p>Your login details are</p>`
-    bodyHtml += `<p>Email: ${email}</p>`
-    bodyHtml += `<p>Password: ${passwordPlain}</p>`
-    bodyHtml += `<p>Login URL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">Click here</a></p>`
-    bodyHtml += `<h4>Click the link below to verify your email before login</h4><a href="${verifyLink}">Verify Email</a>`
+    const emailHtml = `
+      <div>
+        <h2>Welcome to the RM360 – C-SARP Program</h2>
+        <p>Dear ${name},</p>
+        <p>Thank you for registering for the RM360 – Cognitive Screening Athlete Repository Program (C-SARP).</p>
+        <p>The baseline cognitive screening helps establish an objective cognitive reference point, which may assist in preventing unnecessary future testing or treatment following a concussion or head injury.</p>
 
-    const emailHtml = `<div>${greetingHtml}${bodyHtml}</div>`
+        <h4>Athlete Center Portal Access</h4>
+        <ul>
+          <li>Register athletes</li>
+          <li>Provide secure access to their baseline cognitive screening</li>
+          <li>Manage participant records and permissions</li>
+        </ul>
+
+        <h4>Parental Consent for Minors</h4>
+        <p>For athletes under 18 years of age, the program will require a parent or legal guardian to review and electronically sign a Parental Consent and Permission Form before the C-SARP screening can proceed.</p>
+
+        <h4>Login Instructions</h4>
+        <p>Please click the URL below to access the login page:</p>
+        <p>Portal URL: <a href="${verifyLink}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:10px 18px;background-color:#1d4ed8;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">Click Here</a></p>
+        <p>Login ID: ${email}</p>
+        <p>Temporary Password: ${passwordPlain}</p>
+        <p>(You will be prompted to change your password after your first login.)</p>
+
+        <p>If you have any questions or need assistance, please contact our support team.</p>
+        <p>Thank you for choosing RM360 to support athlete brain health and safety.</p>
+      </div>
+    `
 
     try {
       await sendEmail(email, subject, emailHtml, emailHtml)
@@ -339,6 +362,7 @@ export const updatePartner = async (req, res) => {
 
     const {
       id,
+      institution_name,
       name,
       email,
       mobile,
@@ -352,7 +376,7 @@ export const updatePartner = async (req, res) => {
       price_per_user
     } = req.body || {}
 
-    if (!id || !name || !email || !mobile || !address || !country || !provinceTitle || !provinceValue) {
+    if (!id || !institution_name || !name || !email || !mobile || !address || !country || !provinceTitle || !provinceValue) {
       return res.status(400).json({ message: 'Missing required fields for partner update.' })
     }
 
@@ -385,6 +409,7 @@ export const updatePartner = async (req, res) => {
     const updateUserQuery = `
       UPDATE dmac_webapp_users
       SET
+        institution_name = ?,
         name = ?,
         mobile = ?,
         email = ?,
@@ -401,6 +426,7 @@ export const updatePartner = async (req, res) => {
       db.query(
         updateUserQuery,
         [
+          institution_name,
           name,
           mobile,
           email,

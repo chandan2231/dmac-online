@@ -1,7 +1,7 @@
-import LandingPageTypography from './LandingPageTypography';
+// import LandingPageTypography from './LandingPageTypography';
 import ProductHeroLayout from './ProductHeroLayout';
 
-const backgroundImage = '/onepirate/memory-loss.jpg';
+const backgroundImage = '/onepirate/home-banner.webp';
 
 export default function ProductHero() {
   return (
@@ -17,7 +17,7 @@ export default function ProductHero() {
         style={{ display: 'none' }}
         src={backgroundImage}
         alt="increase priority"
-      /> */}
+      />
       <LandingPageTypography
         color="inherit"
         align="center"
@@ -40,7 +40,7 @@ export default function ProductHero() {
 
       <LandingPageTypography variant="body2" color="inherit" sx={{ mt: 2 }}>
         Discover the experience
-      </LandingPageTypography>
+      </LandingPageTypography> */}
     </ProductHeroLayout>
   );
 }

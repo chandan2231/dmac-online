@@ -9,8 +9,11 @@ const ProductHeroLayoutRoot = styled('section')(({ theme }) => ({
   alignItems: 'center',
   [theme.breakpoints.up('sm')]: {
     height: '100vh',
-    minHeight: 500,
+    minHeight: 900,
     maxHeight: 1300,
+  },
+  [theme.breakpoints.up('md')]: {
+    height: '100vh',
   },
 }));
 
@@ -41,18 +44,12 @@ export default function ProductHeroLayout(
       <Container
         sx={{
           mt: 3,
-          mb: 14,
+          mb: '15rem',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
         }}
       >
-        {/* <img
-          src="/onepirate/productHeroWonder.png"
-          alt="wonder"
-          width="147"
-          height="80"
-        /> */}
         {children}
         <Box
           sx={{
@@ -61,18 +58,12 @@ export default function ProductHeroLayout(
             right: 0,
             top: 0,
             bottom: 0,
-            backgroundColor: 'common.black',
+            // backgroundColor: 'common.black',
             opacity: 0.5,
             zIndex: -1,
           }}
         />
         <Background sx={sxBackground} />
-        {/* <Box
-          component="img"
-          src="/onepirate/productHeroArrowDown.png"
-          alt="arrow down"
-          sx={{ height: '16', width: '12', position: 'absolute', bottom: 32 }}
-        /> */}
       </Container>
     </ProductHeroLayoutRoot>
   );

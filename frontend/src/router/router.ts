@@ -40,6 +40,7 @@ import PartnerPurchaseSuccessPage from '../pages/partner/purchase-success/index'
 
 // Developer Pages
 import DeveloperPageComponent from '../pages/developer';
+import AthleteCenterPage from '../pages/athlete-center';
 
 // Layouts
 import MainLayout from '../layouts/MainLayout';
@@ -167,6 +168,7 @@ export const COMPONENT_MAP = {
 
   // Developer Pages
   DeveloperPageComponent,
+  AthleteCenterPage,
 };
 
 export type ComponentKey = keyof typeof COMPONENT_MAP;
@@ -175,6 +177,7 @@ export const ROUTES = {
   // Public routes
   HOME: '/',
   PRODUCTS_LISTING: '/products',
+  ATHLETE_CENTER: '/athlete-center',
   PRIVACY_POLICY: '/privacy-policy',
   TERMS_OF_SERVICE: '/terms-of-service',
 
@@ -300,6 +303,11 @@ export const PUBLIC_ROUTES = [
     path: ROUTES.PRIVACY_POLICY,
     layout: LAYOUT_MAP['BaseLayout'],
     component: COMPONENT_MAP['PrivacyPolicyPage'],
+  },
+  {
+    path: ROUTES.ATHLETE_CENTER,
+    layout: LAYOUT_MAP['BaseLayout'],
+    component: COMPONENT_MAP['AthleteCenterPage'],
   },
   {
     path: ROUTES.TERMS_OF_SERVICE,
@@ -779,9 +787,9 @@ const ADMIN_ROUTES: IAllowedRoutes[] = [
     layout: 'MainLayout',
     component: 'PartnersListingPageComponent',
     showInSidebar: true,
-    sideBarTitle: "Partner's List",
+    sideBarTitle: "Athlete Center List",
     sideBarIcon: 'GroupIcon',
-    sideBarGroupTitle: 'PARTNERS',
+    sideBarGroupTitle: 'ATHLETE CENTER',
     sideBarGroupIcon: 'GroupIcon',
     isAChildOf: null,
   },

@@ -26,17 +26,43 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FORM_1_TITLE, RM_DISCLAIMER_BLOCKS } from './rmDisclaimerPrivacy';
+import type { ConsentContentBlock } from './rmDisclaimerPrivacy';
 import {
   FORM_2_TITLE,
   RM_RESEARCH_CONSENT_BLOCKS,
 } from './rmResearchConsentAuthorization';
+
+const FORM_3_TITLE = 'Parental Consent for Cognitive Baseline Screening';
+
+const RM_YOUTH_CONSENT_BLOCKS: ConsentContentBlock[] = [
+  { type: 'section', text: 'PAGE ATHLETIC PROGRAM VERSION (Youth Sports / Schools / Clubs)' },
+  { type: 'p', text: 'Parental Consent for Cognitive Baseline Screening' },
+  { type: 'p', text: 'RM360 – Cognitive Screening Repository Program (C-SARP)' },
+  { type: 'p', text: 'Athlete Name:   Sport:  Age: ' },
+  { type: 'section', text: 'Purpose' },
+  {
+    type: 'p',
+    text: 'RM360 provides a baseline cognitive screening to support athlete brain health and safety. Baseline results may be compared with future screenings after a concussion or head injury to help guide return-to-play decisions. This program is not a medical diagnosis and does not replace clinical care.',
+  },
+  { type: 'section', text: 'Screening Description' },
+  { type: 'p', text: 'Digital cognitive screening assessing memory, attention, reaction time, and processing speed' },
+  { type: 'p', text: 'Completed once as a baseline; may be repeated if needed' },
+  { type: 'p', text: 'Takes approximately 60 minutes' },
+  { type: 'section', text: 'Data Storage & Use' },
+  { type: 'p', text: 'Results stored securely in the RM360 Cognitive Screening Repository' },
+  { type: 'p', text: 'De-identified data may be used for research and safety improvement' },
+  { type: 'p', text: 'Results may be shared with parents/guardians and, with permission, healthcare providers or athletic staff' },
+  { type: 'section', text: 'Risks & Benefits' },
+  { type: 'p', text: 'Minimal risk (mental fatigue or frustration)' },
+  { type: 'p', text: 'Potential benefit: improved concussion management and athlete safety' },
+  { type: 'section', text: 'Voluntary Participation' },
+  { type: 'p', text: 'Participation is voluntary and not required for team membership unless stated by the organization.' },
+  { type: 'section', text: 'Parent/Guardian Authorization' },
+  { type: 'p', text: 'I authorize my child’s participation in RM360 Cognitive Screening.' },
+  
+];
 import { useToast } from '../../../providers/toast-provider';
 const VISIBLE_FORMS_COUNT = 2;
-
-const forms = [
-  { id: 1, label: FORM_1_TITLE },
-  { id: 2, label: FORM_2_TITLE },
-];
 
 export default function ConsentPage() {
   const [draftSignatures, setDraftSignatures] = useState<string[]>(['', '', '']);
@@ -45,33 +71,54 @@ export default function ConsentPage() {
   const [expandedIndex, setExpandedIndex] = useState<number>(0);
   const [showModal, setShowModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState<boolean[]>([false, false, false]);
+  const [isMinor, setIsMinor] = useState(false);
+  const [profileData, setProfileData] = useState<any>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const user = useSelector((state: RootState) => state.auth.user);
   const showTermsAck = user?.role === 'USER';
 
-  // Fetch signatures on mount
+  // Fetch profile and signatures on mount
   useEffect(() => {
-    if (user?.id) {
-      Promise.resolve(
-        PatientService.fetchConsentSignatures(Number(user.id))
-      ).then(data => {
-        setDraftSignatures(data);
-        setSavedSignatures(data);
+    if (!user?.id) return;
 
-        // Start at the first incomplete form; otherwise keep Form 1 on top
-        const firstIncomplete = data
-          .slice(0, VISIBLE_FORMS_COUNT)
-          .findIndex((sig: string) => !(sig ?? '').trim());
+    (async () => {
+      try {
+        const profile = await PatientService.getProfile(user as any);
+        console.log('Fetched profile:', profile);
+        setProfileData(profile ?? null);
+        const age = profile?.age ?? profile?.data?.age ?? null;
+        const minor = typeof age === 'number' ? age < 18 : false;
+        setIsMinor(minor);
+
+        const sigs = await PatientService.fetchConsentSignatures(Number(user.id));
+        setDraftSignatures(sigs);
+        setSavedSignatures(sigs);
+
+        const visibleCount = minor ? 3 : VISIBLE_FORMS_COUNT;
+        const firstIncomplete = sigs.slice(0, visibleCount).findIndex((sig: string) => !(sig ?? '').trim());
         setExpandedIndex(firstIncomplete === -1 ? 0 : firstIncomplete);
-      });
-    }
+      } catch (err) {
+        console.error('Error fetching profile or signatures', err);
+      }
+    })();
   }, [user?.id]);
 
-  const allFilled = savedSignatures
-    .slice(0, VISIBLE_FORMS_COUNT)
-    .every(sig => !!(sig ?? '').trim());
+  const visibleFormsCount = isMinor ? 3 : VISIBLE_FORMS_COUNT;
+
+  const forms = isMinor
+    ? [
+        { id: 1, label: FORM_1_TITLE },
+        { id: 2, label: FORM_2_TITLE },
+        { id: 3, label: FORM_3_TITLE },
+      ]
+    : [
+        { id: 1, label: FORM_1_TITLE },
+        { id: 2, label: FORM_2_TITLE },
+      ];
+
+  const allFilled = savedSignatures.slice(0, visibleFormsCount).every(sig => !!(sig ?? '').trim());
 
   // Sync consent status to localStorage for sidebar
   useEffect(() => {
@@ -132,10 +179,10 @@ export default function ConsentPage() {
       const nextSaved = [...savedSignatures];
       nextSaved[idx] = signatureValue;
 
-      const result = await PatientService.saveConsentSignatures(
-        Number(user.id),
-        nextSaved
-      );
+      // Ensure array has 3 entries before sending to backend
+      const payload = [nextSaved[0] ?? '', nextSaved[1] ?? '', nextSaved[2] ?? ''];
+
+      const result = await PatientService.saveConsentSignatures(Number(user.id), payload);
 
       if (
         typeof result === 'object' &&
@@ -150,18 +197,17 @@ export default function ConsentPage() {
       // keep draft in sync after successful save
       setDraftSignatures(nextSaved);
 
-      const filledAfterSave = nextSaved
-        .slice(0, VISIBLE_FORMS_COUNT)
-        .every(sig => !!(sig ?? '').trim());
+      const filledAfterSave = nextSaved.slice(0, visibleFormsCount).every(sig => !!(sig ?? '').trim());
 
-      // After the final consent is submitted, redirect to SDMAC.
-      if (idx === VISIBLE_FORMS_COUNT - 1 && filledAfterSave) {
+      // After the final required consent is submitted, redirect to SDMAC.
+      if (idx === visibleFormsCount - 1 && filledAfterSave) {
         navigate('/questioners', { replace: true });
         return;
       }
 
-      // Auto-open the next form in sequence
-      if (idx < forms.length - 1) {
+      // Auto-open the next form in sequence (if present)
+      const formsCount = isMinor ? 3 : 2;
+      if (idx < formsCount - 1) {
         setExpandedIndex(idx + 1);
       }
     } finally {
@@ -182,7 +228,7 @@ export default function ConsentPage() {
 
   const renderConsentDocument = (
     title: string,
-    blocks: typeof RM_DISCLAIMER_BLOCKS
+    blocks: ConsentContentBlock[]
   ) => (
     <Box
       sx={{
@@ -227,6 +273,25 @@ export default function ConsentPage() {
           }
 
           if (block.type === 'p') {
+            const text = String(block.text ?? '');
+            if (text.startsWith('Athlete Name:')) {
+              const m = text.match(/Athlete Name:\s*(.*?)\s+Sport:\s*(.*?)\s+Age:\s*(.*)/);
+              if (m) {
+                const [, nameVal, sportVal, ageVal] = m;
+                return (
+                  <Typography key={i} variant="body2" sx={{ lineHeight: 1.65 }}>
+                    {'Athlete Name: '}
+                    <Box component="span" sx={{ fontWeight: 700 }}>{nameVal}</Box>
+                    {'  Sport: '}
+                    <Box component="span" sx={{ fontWeight: 700 }}>{sportVal}</Box>
+                    {'  Age: '}
+                    <Box component="span" sx={{ fontWeight: 700 }}>{ageVal}</Box>
+                    
+                  </Typography>
+                );
+              }
+            }
+
             return (
               <Typography key={i} variant="body2" sx={{ lineHeight: 1.65 }}>
                 {block.text}
@@ -298,6 +363,20 @@ export default function ConsentPage() {
               renderForm1Disclaimer()
             ) : idx === 1 ? (
               renderConsentDocument(FORM_2_TITLE, RM_RESEARCH_CONSENT_BLOCKS)
+            ) : idx === 2 ? (
+              // Inject dynamic athlete details into the youth consent blocks
+              renderConsentDocument(
+                FORM_3_TITLE,
+                RM_YOUTH_CONSENT_BLOCKS.map(b => {
+                  if (b.type === 'p' && (b.text ?? '').startsWith('Athlete Name:')) {
+                    const name = profileData?.name ?? '';
+                    const sport = profileData?.sports ?? profileData?.sports ?? '';
+                    const age = profileData?.age ?? '';
+                    return { ...b, text: `Athlete Name: ${name}  Sport: ${sport}  Age: ${age}` };
+                  }
+                  return b;
+                })
+              )
             ) : null}
 
             {showTermsAck ? (

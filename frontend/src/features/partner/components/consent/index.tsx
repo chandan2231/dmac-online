@@ -131,6 +131,9 @@ export default function PartnerConsent() {
 
       if (idx < forms.length - 1) {
         setExpandedIndex(idx + 1);
+      } else {
+        // If this was the last visible form (second consent), redirect to partner users
+        navigate(ROUTES.PARTNER_USERS);
       }
     } finally {
       setSubmitting(prev => {
