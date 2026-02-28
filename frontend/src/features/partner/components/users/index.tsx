@@ -45,7 +45,7 @@ type UserFormValues = {
   email: string;
   mobile: string;
   age: number;
-  sports?: string | null;
+  sports: string;
 };
 
 
