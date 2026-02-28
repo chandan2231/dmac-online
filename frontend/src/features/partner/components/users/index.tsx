@@ -244,7 +244,7 @@ export default function PartnerUsers() {
 
   const openAdd = () => {
     if (isLoadingSummary || !summary) {
-      showToast('Please wait, loading athelete limits...', 'info');
+      showToast('Please wait, loading athlete limits...', 'info');
       return;
     }
     if (Number(summary?.remaining_users ?? 0) <= 0) {
@@ -266,15 +266,15 @@ export default function PartnerUsers() {
     resolver: yupResolver(
       Yup.object({
         usersToAdd: Yup.number()
-          .typeError('Atheletes must be a number')
-          .integer('Atheletes must be a whole number')
-          .positive('Atheletes must be a positive number')
-          .max(100, 'Maximum atheletes you can add is 100')
-          .test('multiple-of-10', 'You can add atheletes only in multiples of 10.', v => {
+          .typeError('Athletes must be a number')
+          .integer('Athletes must be a whole number')
+          .positive('Athletes must be a positive number')
+          .max(100, 'Maximum athletes you can add is 100')
+          .test('multiple-of-10', 'You can add athletes only in multiples of 10.', v => {
             const n = Number(v);
             return Number.isFinite(n) && n % 10 === 0;
           })
-          .required('Athelete is required'),
+          .required('Athlete is required'),
       })
     ),
     defaultValues: { usersToAdd: 10 },
@@ -514,15 +514,15 @@ export default function PartnerUsers() {
 
       const result = await PartnerPortalService.createUser(payload);
       if (result?.success) {
-        showToast('Athelete created. Email sent (verify email before login).', 'success');
+        showToast('Athlete created. Email sent (verify email before login).', 'success');
         await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS });
         await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.SUMMARY });
         closeAdd();
       } else {
-        showToast(String(result?.message ?? 'Failed to create athelete.'), 'error');
+        showToast(String(result?.message ?? 'Failed to create athlete.'), 'error');
       }
     } catch (err: unknown) {
-      showToast(String(get(err, ['message'], 'Failed to create athelete.')), 'error');
+      showToast(String(get(err, ['message'], 'Failed to create athlete.')), 'error');
     }
   };
 
@@ -540,14 +540,14 @@ export default function PartnerUsers() {
 
       const result = await PartnerPortalService.updateUser(payload);
       if (result?.success) {
-        showToast('Athelete updated successfully.', 'success');
+        showToast('Athlete updated successfully.', 'success');
         await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS });
         closeEdit();
       } else {
-        showToast(String(result?.message ?? 'Failed to update athelete details.'), 'error');
+        showToast(String(result?.message ?? 'Failed to update athlete details.'), 'error');
       }
     } catch (err: unknown) {
-      showToast(String(get(err, ['message'], 'Failed to update athelete details.')), 'error');
+      showToast(String(get(err, ['message'], 'Failed to update athlete details.')), 'error');
     }
   };
 
@@ -682,7 +682,7 @@ export default function PartnerUsers() {
       <TabHeaderLayout
         leftNode={
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            Atheletes List
+            Athletes List
           </Typography>
         }
         rightNode={
@@ -702,20 +702,20 @@ export default function PartnerUsers() {
               },
             }}
           >
-            Add Athelete
+            Add Athlete
           </MorenButton>
         }
       />
 
       <Grid container spacing={2}>
         <Grid item xs={12} md={4}>
-          <SummaryCard label="Allowed Atheletes" value={Number(summary?.allowed_users ?? 0)} />
+          <SummaryCard label="Allowed Athletes" value={Number(summary?.allowed_users ?? 0)} />
         </Grid>
         <Grid item xs={12} md={4}>
-          <SummaryCard label="Added Atheletes" value={Number(summary?.active_users ?? 0)} />
+          <SummaryCard label="Added Athletes" value={Number(summary?.active_users ?? 0)} />
         </Grid>
         <Grid item xs={12} md={4}>
-          <SummaryCard label="Remaining Atheletes" value={Number(summary?.remaining_users ?? 0)} />
+          <SummaryCard label="Remaining Athletes" value={Number(summary?.remaining_users ?? 0)} />
         </Grid>
       </Grid>
 
@@ -732,7 +732,7 @@ export default function PartnerUsers() {
       <GenericModal
         isOpen={addOpen}
         onClose={closeAdd}
-        title={addModalMode === 'purchase-slots' ? 'Purchase Atheletes' : 'Add Athelete'}
+        title={addModalMode === 'purchase-slots' ? 'Purchase Athletes' : 'Add Athlete'}
         hideCancelButton
         maxWidth={addModalMode === 'purchase-slots' ? 'sm' : 'lg'}
         size="compact"
@@ -757,16 +757,16 @@ export default function PartnerUsers() {
               }}
             >
               <Typography sx={{ fontWeight: 800 }} color="error">
-                You don&apos;t have sufficient atheletes to add. Please purchase.
+                You don&apos;t have sufficient athletes to add. Please purchase.
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                You can add atheletes only in multiples of 10 (max 100).
+                You can add athletes only in multiples of 10 (max 100).
               </Typography>
             </Paper>
 
             <Box component="form" onSubmit={handleSubmitPurchase(() => undefined)}>
               <ModernInput
-                label="Atheletes to add"
+                label="Athletes to add"
                 placeholder="10, 20, 30..."
                 type="number"
                 inputProps={{ min: 10, max: 100, step: 10 }}
@@ -790,7 +790,7 @@ export default function PartnerUsers() {
                   <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 700 }}>
                     Unit Price
                   </Typography>
-                  <Typography sx={{ fontWeight: 900 }}>${unitPrice.toFixed(2)} / Athelete</Typography>
+                  <Typography sx={{ fontWeight: 900 }}>${unitPrice.toFixed(2)} / Athlete</Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} sx={{ textAlign: { sm: 'right' } }}>
                   <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 700 }}>
@@ -803,7 +803,7 @@ export default function PartnerUsers() {
 
             {!isUsersToAddValid ? (
               <Typography variant="body2" color="text.secondary">
-                Enter a valid number of atheletes to show the payment button.
+                Enter a valid number of athletes to show the payment button.
               </Typography>
             ) : null}
 
@@ -911,7 +911,7 @@ export default function PartnerUsers() {
       </GenericModal>
 
       {/* View Details */}
-      <GenericModal isOpen={viewOpen} onClose={closeView} title="Athelete Details" hideCancelButton>
+      <GenericModal isOpen={viewOpen} onClose={closeView} title="Athlete Details" hideCancelButton>
         <Box display="flex" flexDirection="column" gap={1.25}>
           <Typography>
             <b>Name:</b> {selectedUser?.name}
@@ -944,7 +944,7 @@ export default function PartnerUsers() {
       </GenericModal>
 
       {/* Edit User */}
-      <GenericModal isOpen={editOpen} onClose={closeEdit} title="Edit Athelete Details" hideCancelButton>
+      <GenericModal isOpen={editOpen} onClose={closeEdit} title="Edit Athlete Details" hideCancelButton>
         <Box component="form" onSubmit={handleSubmitEdit(onSubmitEdit)} display="flex" flexDirection="column" gap={2}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
