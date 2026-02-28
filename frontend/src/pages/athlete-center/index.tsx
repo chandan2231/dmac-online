@@ -2,7 +2,7 @@ import React from 'react';
 import AppAppBar from '../../features/landing-page/components/AppBar';
 // import ProductHero from '../../features/landing-page/components/ProductHero';
 import ProductHeroLayout from '../../features/landing-page/components/ProductHeroLayout';
-import { Box, Container, Typography } from '@mui/material';
+import { Box, Container } from '@mui/material';
 import LandingPageTypography from '../../features/landing-page/components/LandingPageTypography';
 import AppFooter from '../../features/landing-page/components/AppFooter';
 

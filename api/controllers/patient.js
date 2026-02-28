@@ -2110,7 +2110,7 @@ export const rescheduleTherapistConsultation = async (req, res) => {
 export const getProfile = (req, res) => {
   const { user_id } = req.body
   const q =
-    'SELECT id, name, email, mobile, country, state, zip_code, language, time_zone, role, age FROM dmac_webapp_users WHERE id = ?'
+    'SELECT id, name, email, mobile, country, state, zip_code, language, time_zone, role, age, sports FROM dmac_webapp_users WHERE id = ?'
 
   db.query(q, [user_id], (err, data) => {
     if (err) return res.status(500).json(err)

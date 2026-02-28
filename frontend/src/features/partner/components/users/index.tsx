@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import * as Yup from 'yup';
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
   Box,
@@ -25,7 +25,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TabHeaderLayout } from '../../../../components/tab-header';
 import MorenButton from '../../../../components/button';
 import ModernInput from '../../../../components/input';
-// ModernSelect removed - not needed for simplified form
+import ModernSelect, { type IOption } from '../../../../components/select';
 import GenericModal from '../../../../components/modal';
 import CustomLoader from '../../../../components/loader';
 import { GenericTable } from '../../../../components/table';
@@ -45,6 +45,7 @@ type UserFormValues = {
   email: string;
   mobile: string;
   age: number;
+  sports?: string | null;
 };
 
 
@@ -61,6 +62,7 @@ const createSchema = Yup.object({
     .min(1, 'Age must be at least 1')
     .max(100, 'Age cannot exceed 100')
     .required('Age is required'),
+  sports: Yup.string().required('Sport is required'),
 });
 
 type EditFormValues = Omit<UserFormValues, 'email'>;
@@ -76,7 +78,23 @@ const editSchema = Yup.object({
     .min(1, 'Age must be at least 1')
     .max(100, 'Age cannot exceed 100')
     .required('Age is required'),
+  sports: Yup.string().required('Sport is required'),
 });
+
+const SPORT_OPTIONS: IOption[] = [
+  { label: 'American football', value: 'american-football' },
+  { label: 'Baseball', value: 'baseball' },
+  { label: 'Basketball', value: 'basketball' },
+  { label: 'Soccer', value: 'soccer' },
+  { label: 'Lacrosse (field)', value: 'lacrosse-field' },
+  { label: 'Rugby', value: 'rugby' },
+  { label: 'Ice hockey', value: 'ice-hockey' },
+  { label: 'Flag football', value: 'flag-football' },
+  { label: 'Volleyball', value: 'volleyball' },
+  { label: 'Boxing', value: 'boxing' },
+  { label: 'Cheerleading', value: 'cheerleading' },
+  { label: 'Gymnastics', value: 'gymnastics' },
+];
 
 type ChangePasswordValues = {
   newPassword: string;
@@ -183,6 +201,7 @@ export default function PartnerUsers() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<UserFormValues>({
     resolver: yupResolver(createSchema),
@@ -191,6 +210,7 @@ export default function PartnerUsers() {
       email: '',
       mobile: '',
       age: 0,
+      sports: '',
     },
   });
 
@@ -198,6 +218,7 @@ export default function PartnerUsers() {
     register: registerEdit,
     handleSubmit: handleSubmitEdit,
     reset: resetEdit,
+    control: controlEdit,
     formState: { errors: editErrors },
   } = useForm<EditFormValues>({
     resolver: yupResolver(editSchema),
@@ -205,6 +226,7 @@ export default function PartnerUsers() {
       name: '',
       mobile: '',
       age: 0,
+      sports: '',
     },
   });
 
@@ -222,7 +244,7 @@ export default function PartnerUsers() {
 
   const openAdd = () => {
     if (isLoadingSummary || !summary) {
-      showToast('Please wait, loading user limits...', 'info');
+      showToast('Please wait, loading athelete limits...', 'info');
       return;
     }
     if (Number(summary?.remaining_users ?? 0) <= 0) {
@@ -244,15 +266,15 @@ export default function PartnerUsers() {
     resolver: yupResolver(
       Yup.object({
         usersToAdd: Yup.number()
-          .typeError('Users must be a number')
-          .integer('Users must be a whole number')
-          .positive('Users must be a positive number')
-          .max(100, 'Maximum users you can add is 100')
-          .test('multiple-of-10', 'You can add users only in multiples of 10.', v => {
+          .typeError('Atheletes must be a number')
+          .integer('Atheletes must be a whole number')
+          .positive('Atheletes must be a positive number')
+          .max(100, 'Maximum atheletes you can add is 100')
+          .test('multiple-of-10', 'You can add atheletes only in multiples of 10.', v => {
             const n = Number(v);
             return Number.isFinite(n) && n % 10 === 0;
           })
-          .required('Users is required'),
+          .required('Athelete is required'),
       })
     ),
     defaultValues: { usersToAdd: 10 },
@@ -453,6 +475,7 @@ export default function PartnerUsers() {
         name: u.name ?? '',
         mobile: u.mobile ?? '',
         age: Number((u as unknown as { age?: number }).age ?? 0),
+        sports: (u as unknown as { sports?: string })?.sports ?? '',
       });
 
       setEditOpen(true);
@@ -485,20 +508,21 @@ export default function PartnerUsers() {
         email: values.email,
         mobile: values.mobile,
         age: values.age,
+        sports: values.sports,
         otherInfo: userEnvironmentInfo,
       };
 
       const result = await PartnerPortalService.createUser(payload);
       if (result?.success) {
-        showToast('User created. Email sent (verify email before login).', 'success');
+        showToast('Athelete created. Email sent (verify email before login).', 'success');
         await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS });
         await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.SUMMARY });
         closeAdd();
       } else {
-        showToast(String(result?.message ?? 'Failed to create user.'), 'error');
+        showToast(String(result?.message ?? 'Failed to create athelete.'), 'error');
       }
     } catch (err: unknown) {
-      showToast(String(get(err, ['message'], 'Failed to create user.')), 'error');
+      showToast(String(get(err, ['message'], 'Failed to create athelete.')), 'error');
     }
   };
 
@@ -510,19 +534,20 @@ export default function PartnerUsers() {
         id: selectedUser.id,
         name: values.name,
         mobile: values.mobile,
-        age: (values as unknown as { age?: number }).age,
+          age: (values as unknown as { age?: number }).age,
+          sports: (values as unknown as { sports?: string })?.sports,
       };
 
       const result = await PartnerPortalService.updateUser(payload);
       if (result?.success) {
-        showToast('User updated successfully.', 'success');
+        showToast('Athelete updated successfully.', 'success');
         await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS });
         closeEdit();
       } else {
-        showToast(String(result?.message ?? 'Failed to update user.'), 'error');
+        showToast(String(result?.message ?? 'Failed to update athelete details.'), 'error');
       }
     } catch (err: unknown) {
-      showToast(String(get(err, ['message'], 'Failed to update user.')), 'error');
+      showToast(String(get(err, ['message'], 'Failed to update athelete details.')), 'error');
     }
   };
 
@@ -657,7 +682,7 @@ export default function PartnerUsers() {
       <TabHeaderLayout
         leftNode={
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            Users
+            Atheletes List
           </Typography>
         }
         rightNode={
@@ -677,20 +702,20 @@ export default function PartnerUsers() {
               },
             }}
           >
-            Add User
+            Add Athelete
           </MorenButton>
         }
       />
 
       <Grid container spacing={2}>
         <Grid item xs={12} md={4}>
-          <SummaryCard label="Allowed users" value={Number(summary?.allowed_users ?? 0)} />
+          <SummaryCard label="Allowed Atheletes" value={Number(summary?.allowed_users ?? 0)} />
         </Grid>
         <Grid item xs={12} md={4}>
-          <SummaryCard label="Added users" value={Number(summary?.active_users ?? 0)} />
+          <SummaryCard label="Added Atheletes" value={Number(summary?.active_users ?? 0)} />
         </Grid>
         <Grid item xs={12} md={4}>
-          <SummaryCard label="Remaining users" value={Number(summary?.remaining_users ?? 0)} />
+          <SummaryCard label="Remaining Atheletes" value={Number(summary?.remaining_users ?? 0)} />
         </Grid>
       </Grid>
 
@@ -707,7 +732,7 @@ export default function PartnerUsers() {
       <GenericModal
         isOpen={addOpen}
         onClose={closeAdd}
-        title={addModalMode === 'purchase-slots' ? 'Purchase Users' : 'Add User'}
+        title={addModalMode === 'purchase-slots' ? 'Purchase Atheletes' : 'Add Athelete'}
         hideCancelButton
         maxWidth={addModalMode === 'purchase-slots' ? 'sm' : 'lg'}
         size="compact"
@@ -732,16 +757,16 @@ export default function PartnerUsers() {
               }}
             >
               <Typography sx={{ fontWeight: 800 }} color="error">
-                You don&apos;t have sufficient users to add. Please purchase.
+                You don&apos;t have sufficient atheletes to add. Please purchase.
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                You can add users only in multiples of 10 (max 100).
+                You can add atheletes only in multiples of 10 (max 100).
               </Typography>
             </Paper>
 
             <Box component="form" onSubmit={handleSubmitPurchase(() => undefined)}>
               <ModernInput
-                label="Users to add"
+                label="Atheletes to add"
                 placeholder="10, 20, 30..."
                 type="number"
                 inputProps={{ min: 10, max: 100, step: 10 }}
@@ -765,7 +790,7 @@ export default function PartnerUsers() {
                   <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 700 }}>
                     Unit Price
                   </Typography>
-                  <Typography sx={{ fontWeight: 900 }}>${unitPrice.toFixed(2)} / user</Typography>
+                  <Typography sx={{ fontWeight: 900 }}>${unitPrice.toFixed(2)} / Athelete</Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} sx={{ textAlign: { sm: 'right' } }}>
                   <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 700 }}>
@@ -778,7 +803,7 @@ export default function PartnerUsers() {
 
             {!isUsersToAddValid ? (
               <Typography variant="body2" color="text.secondary">
-                Enter a valid number of users to show the payment button.
+                Enter a valid number of atheletes to show the payment button.
               </Typography>
             ) : null}
 
@@ -852,6 +877,24 @@ export default function PartnerUsers() {
                     helperText={errors.age?.message}
                   />
                 </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Controller
+                    name="sports"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <ModernSelect
+                        label="Sport"
+                        options={SPORT_OPTIONS}
+                        value={SPORT_OPTIONS.find(o => o.value === field.value) ?? null}
+                        onChange={opt => field.onChange(opt.value)}
+                        placeholder="Select sport"
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                        fullWidth
+                      />
+                    )}
+                  />
+                </Grid>
               </Grid>
 
               <Box display="flex" justifyContent="flex-end" gap={1}>
@@ -868,7 +911,7 @@ export default function PartnerUsers() {
       </GenericModal>
 
       {/* View Details */}
-      <GenericModal isOpen={viewOpen} onClose={closeView} title="User Details" hideCancelButton>
+      <GenericModal isOpen={viewOpen} onClose={closeView} title="Athelete Details" hideCancelButton>
         <Box display="flex" flexDirection="column" gap={1.25}>
           <Typography>
             <b>Name:</b> {selectedUser?.name}
@@ -878,6 +921,13 @@ export default function PartnerUsers() {
           </Typography>
           <Typography>
             <b>Email:</b> {selectedUser?.email}
+          </Typography>
+          <Typography>
+            <b>Sport:</b>{' '}
+            {(
+              SPORT_OPTIONS.find(o => o.value === (selectedUser as unknown as { sports?: string })?.sports)
+                ?.label ?? (selectedUser as unknown as { sports?: string })?.sports ?? ''
+            )}
           </Typography>
           <Typography>
             <b>Mobile:</b> {selectedUser?.mobile}
@@ -894,7 +944,7 @@ export default function PartnerUsers() {
       </GenericModal>
 
       {/* Edit User */}
-      <GenericModal isOpen={editOpen} onClose={closeEdit} title="Edit User" hideCancelButton>
+      <GenericModal isOpen={editOpen} onClose={closeEdit} title="Edit Athelete Details" hideCancelButton>
         <Box component="form" onSubmit={handleSubmitEdit(onSubmitEdit)} display="flex" flexDirection="column" gap={2}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
@@ -929,6 +979,24 @@ export default function PartnerUsers() {
                 {...registerEdit('age', { valueAsNumber: true })}
                 error={!!editErrors.age}
                 helperText={editErrors.age?.message}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Controller
+                name="sports"
+                control={controlEdit}
+                render={({ field, fieldState }) => (
+                  <ModernSelect
+                    label="Sport"
+                    options={SPORT_OPTIONS}
+                    value={SPORT_OPTIONS.find(o => o.value === field.value) ?? null}
+                    onChange={opt => field.onChange(opt.value)}
+                    placeholder="Select sport"
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    fullWidth
+                  />
+                )}
               />
             </Grid>
           </Grid>

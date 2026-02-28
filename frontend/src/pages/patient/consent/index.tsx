@@ -282,10 +282,11 @@ export default function ConsentPage() {
                   <Typography key={i} variant="body2" sx={{ lineHeight: 1.65 }}>
                     {'Athlete Name: '}
                     <Box component="span" sx={{ fontWeight: 700 }}>{nameVal}</Box>
-                    {'  Age: '}
-                    <Box component="span" sx={{ fontWeight: 700 }}>{ageVal}</Box>
                     {'  Sport: '}
                     <Box component="span" sx={{ fontWeight: 700 }}>{sportVal}</Box>
+                    {'  Age: '}
+                    <Box component="span" sx={{ fontWeight: 700 }}>{ageVal}</Box>
+                    
                   </Typography>
                 );
               }
@@ -369,7 +370,7 @@ export default function ConsentPage() {
                 RM_YOUTH_CONSENT_BLOCKS.map(b => {
                   if (b.type === 'p' && (b.text ?? '').startsWith('Athlete Name:')) {
                     const name = profileData?.name ?? '';
-                    const sport = profileData?.sport ?? profileData?.sport_name ?? '';
+                    const sport = profileData?.sports ?? profileData?.sports ?? '';
                     const age = profileData?.age ?? '';
                     return { ...b, text: `Athlete Name: ${name}  Sport: ${sport}  Age: ${age}` };
                   }

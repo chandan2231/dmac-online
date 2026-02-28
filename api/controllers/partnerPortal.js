@@ -238,10 +238,11 @@ export const createPartnerUser = async (req, res) => {
       email,
       mobile,
       age,
-      otherInfo
+      otherInfo,
+      sports
     } = req.body || {}
 
-    if (!name || !email || !mobile || age === undefined || age === null) {
+    if (!name || !email || !mobile || age === undefined || age === null || !sports) {
       return res.status(400).json({ message: 'Missing required fields.' })
     }
 
@@ -282,7 +283,7 @@ export const createPartnerUser = async (req, res) => {
 
     const insertQuery = `
       INSERT INTO dmac_webapp_users
-      (name, age, email, mobile, password, verified, verification_token, role, patient_meta, partner_id, status, language)
+      (name, age, email, mobile, password, verified, verification_token, role, patient_meta, partner_id, status, language, sports)
       VALUES (?)`
 
     const values = [
@@ -297,7 +298,8 @@ export const createPartnerUser = async (req, res) => {
       otherInfoJson,
       partnerId,
       1,
-      1
+      1,
+      sports
     ]
 
     const insertResult = await queryAsync(insertQuery, [values])
@@ -368,6 +370,7 @@ export const updatePartnerUser = async (req, res) => {
       name,
       mobile,
       age,
+      sports
     } = req.body || {}
 
     if (!id) {
@@ -392,7 +395,8 @@ export const updatePartnerUser = async (req, res) => {
       `UPDATE dmac_webapp_users
        SET name = ?,
            mobile = ?,
-           age = ?
+           age = ?,
+           sports = ?
        WHERE id = ?
          AND partner_id = ?
          AND role = 'USER'`,
@@ -400,6 +404,7 @@ export const updatePartnerUser = async (req, res) => {
         name ?? null,
         mobile ?? null,
         ageNumber,
+        sports ?? null,
         Number(id),
         partnerId
       ]
