@@ -66,6 +66,7 @@ const editPartnerSchema = Yup.object({
     .typeError('Allowed users must be a number')
     .integer('Must be an integer')
     .min(0, 'Must be 0 or more')
+    .max(50, 'Must be 50 or less')
     .required('Allowed users is required'),
 });
 type EditPartnerFormValues = Yup.InferType<typeof editPartnerSchema>;
@@ -87,6 +88,7 @@ const createPartnerSchema = Yup.object({
     .typeError('Allowed users must be a number')
     .integer('Must be an integer')
     .min(0, 'Must be 0 or more')
+    .max(50, 'Must be 50 or less')
     .required('Allowed users is required'),
 });
 
@@ -145,7 +147,7 @@ const PartnersListing = () => {
       state: '',
       address: '',
       zipcode: '',
-      allowed_users: 0,
+      allowed_users: 50,
       price_per_user: 19.99,
     },
   });
@@ -176,7 +178,7 @@ const PartnersListing = () => {
       state: '',
       address: '',
       zipcode: '',
-      allowed_users: 0,
+      allowed_users: 50,
       price_per_user: 19.99,
     },
   });
@@ -261,7 +263,7 @@ const PartnersListing = () => {
       country: String(partner.country ?? ''),
       state: String(partner.province_id ?? ''),
       zipcode: String(partner.zipcode ?? ''),
-      allowed_users: Number(partner.allowed_users ?? 0),
+      allowed_users: Math.min(Number(partner.allowed_users ?? 50), 50),
       price_per_user: Number(partner.price_per_user ?? 19.99),
     });
 
@@ -304,19 +306,19 @@ const PartnersListing = () => {
       },
       {
         field: 'allowed_users',
-        headerName: 'Allowed Users',
+        headerName: 'Allowed Athletes',
         flex: 0.6,
         minWidth: 120,
       },
       {
         field: 'active_users',
-        headerName: 'Active Users',
+        headerName: 'Active Athletes',
         flex: 0.6,
         minWidth: 120,
       },
       {
         field: 'remaining_users',
-        headerName: 'Remaining Users',
+        headerName: 'Remaining Athletes',
         flex: 0.7,
         minWidth: 140,
       },
@@ -454,7 +456,7 @@ const PartnersListing = () => {
                   <ListItemIcon>
                     <GroupAddOutlinedIcon sx={{ fontSize: 21 }} />
                   </ListItemIcon>
-                  <ListItemText primary="Add More Users" primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }} />
+                  <ListItemText primary="Add More Athletes" primaryTypographyProps={{ fontSize: 15, fontWeight: 500 }} />
                 </MenuItem>
               </Menu>
             </>
@@ -566,7 +568,7 @@ const PartnersListing = () => {
 
     const result = await PartnerService.addMorePartnerUsers(payload);
     if (result.success) {
-      showToast('Users added successfully', 'success');
+      showToast('Athletes added successfully', 'success');
       const historyResult = await PartnerService.getPartnerAddedUsersHistory(
         selectedPartner.id
       );
@@ -844,7 +846,7 @@ const PartnersListing = () => {
 
               <Box display="flex" alignItems="center" gap={1} width="50%">
                 <Typography variant="body2" color="textSecondary" minWidth={120}>
-                  Allowed Users:
+                  Allowed Athletes:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
                   {selectedPartner.allowed_users ?? 0}
@@ -853,7 +855,7 @@ const PartnersListing = () => {
 
               <Box display="flex" alignItems="center" gap={1} width="50%">
                 <Typography variant="body2" color="textSecondary" minWidth={120}>
-                  Active Users:
+                  Active Athletes:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
                   {selectedPartner.active_users ?? 0}
@@ -862,7 +864,7 @@ const PartnersListing = () => {
 
               <Box display="flex" alignItems="center" gap={1} width="50%">
                 <Typography variant="body2" color="textSecondary" minWidth={120}>
-                  Remaining Users:
+                  Remaining Athletes:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
                   {selectedPartner.remaining_users ?? 0}
@@ -871,7 +873,7 @@ const PartnersListing = () => {
 
               <Box display="flex" alignItems="center" gap={1} width="50%">
                 <Typography variant="body2" color="textSecondary" minWidth={120}>
-                  Price Per User:
+                  Price Per Athlete:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
                   {(() => {
@@ -1026,7 +1028,7 @@ const PartnersListing = () => {
 
           <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
             <ModernInput
-              label="Allowed Users"
+              label="Allowed Athletes"
               inputMode="numeric"
               {...registerEdit('allowed_users')}
               error={!!editErrors.allowed_users}
@@ -1047,11 +1049,11 @@ const PartnersListing = () => {
         </Box>
       </GenericModal>
 
-      {/* Add More Users */}
+      {/* Add More Athletes */}
       <GenericModal
         isOpen={isAddMoreUsersModalOpen}
         onClose={closeAddMoreUsers}
-        title={`Add More Users${selectedPartner ? ` - ${selectedPartner.name}` : ''}`}
+        title={`Add More Athletes${selectedPartner ? ` - ${selectedPartner.name}` : ''}`}
         hideCancelButton
       >
         <Box
@@ -1062,7 +1064,7 @@ const PartnersListing = () => {
           gap={2}
         >
           <ModernInput
-            label="Add Users"
+            label="Add Athletes"
             type="number"
             inputMode="numeric"
             required
@@ -1094,7 +1096,7 @@ const PartnersListing = () => {
 
           <Box mt={2}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-              Added Users History
+              Added Athlete History
             </Typography>
 
             {additionsHistory.length === 0 ? (
@@ -1113,7 +1115,7 @@ const PartnersListing = () => {
                     borderRadius="8px"
                   >
                     <Typography variant="body2">
-                      Added Users: <strong>{item.added_users}</strong>
+                      Added Athletes: <strong>{item.added_users}</strong>
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       {item.added_date}
